@@ -75,4 +75,12 @@ public static class Win32Api
 
 	[DllImport("user32.dll", CharSet = CharSet.Auto)]
 	public static extern int SendMessage(IntPtr hWnd, int wMsg, IntPtr wParam, IntPtr lParam);
+
+	public static readonly int SW_SHOWNOACTIVATE = 4;
+	public static readonly uint SWP_NOACTIVATE = 0x0010;
+
+	[DllImport("user32.dll")]
+	public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
+	[DllImport("msvcr70.dll", CallingConvention = CallingConvention.Cdecl)]
+	public static extern int _fpreset();
 }

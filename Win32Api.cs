@@ -83,4 +83,59 @@ public static class Win32Api
 	public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
 	[DllImport("msvcr70.dll", CallingConvention = CallingConvention.Cdecl)]
 	public static extern int _fpreset();
+
+	internal struct LASTINPUTINFO
+	{
+		public uint cbSize;
+
+		public uint dwTime;
+	}
+
+	[DllImport("User32.dll")]
+	public static extern bool LockWorkStation();
+
+	[DllImport("User32.dll")]
+	private static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
+
+	[DllImport("Kernel32.dll")]
+	private static extern uint GetLastError();
+
+	public static uint GetIdleTime()
+	{
+		LASTINPUTINFO lastInPut = new LASTINPUTINFO();
+		lastInPut.cbSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf(lastInPut);
+		GetLastInputInfo(ref lastInPut);
+
+		return ((uint)Environment.TickCount - lastInPut.dwTime);
+	}
+
+	public static long GetTickCount()
+	{
+		return Environment.TickCount;
+	}
+
+	public static long GetLastInputTime()
+	{
+		LASTINPUTINFO lastInPut = new LASTINPUTINFO();
+		lastInPut.cbSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf(lastInPut);
+		if (!GetLastInputInfo(ref lastInPut))
+		{
+			throw new Exception(GetLastError().ToString());
+		}
+
+		return lastInPut.dwTime;
+	}
+
+	public const int TV_FIRST = 0x1100;
+	public const int TVM_SETEXTENDEDSTYLE = TV_FIRST + 44;
+	public const int TVM_GETEXTENDEDSTYLE = TV_FIRST + 45;
+	public const int TVS_EX_DOUBLEBUFFER = 0x004;
+	public const int TVS_EX_AUTOHSCROLL = 0x0020;
+	public const int TVS_EX_FADEINOUTEXPANDOS = 0x0040;
+
+	[DllImport("user32.dll", CharSet = CharSet.Unicode)]
+	internal static extern int SendMessage(IntPtr hWnd, UInt32 Msg, int wParam, int lParam);
+
+	[DllImport("uxtheme.dll", CharSet = CharSet.Unicode)]
+	public extern static int SetWindowTheme(IntPtr hWnd, string pszSubAppName, string pszSubIdList);
 }

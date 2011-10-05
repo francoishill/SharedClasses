@@ -12,8 +12,10 @@ namespace MonitorSystem
 {
 	public partial class CustomBalloonTip : Form
 	{
+		public delegate void SimpleDelegate();
+
 		public enum IconTypes { Error, Information, Question, Shield, Warning, None };
-		public CustomBalloonTip(string Title, string Message, int Duration, CustomBalloonTip.IconTypes iconType, Form1.SimpleDelegate VoidDelegateToRunOnClick)
+		public CustomBalloonTip(string Title, string Message, int Duration, CustomBalloonTip.IconTypes iconType, SimpleDelegate VoidDelegateToRunOnClick)
 		{
 			InitializeComponent();
 
@@ -62,7 +64,7 @@ namespace MonitorSystem
 		//}
 
 		Component[] controls;
-		private void AddDelgateToRelevantControls(Form1.SimpleDelegate VoidDelegateToRunOnClick)
+		private void AddDelgateToRelevantControls(SimpleDelegate VoidDelegateToRunOnClick)
 		{
 			foreach (object c in controls)
 			{
@@ -94,13 +96,13 @@ namespace MonitorSystem
 
 		public void StartTimerForClosing()
 		{
-			Form1.PerformVoidFunctionSeperateThread(() =>
+			ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 			{
 				int EndTop = this.Top + this.Height;
 				while (this.Top < EndTop)
 				{
 					Thread.Sleep(10);
-					Form1.UpdateGuiFromThread(this, () =>
+					ThreadingInterop.UpdateGuiFromThread(this, () =>
 						{
 							if (this.Top + 5 > EndTop) this.Top = EndTop;
 							else this.Top += 5;
@@ -123,7 +125,7 @@ namespace MonitorSystem
 				{
 					timer_ShowDuration.Stop();
 					Rectangle bounds = new Rectangle(this.Location, this.Size);
-					Form1.PerformVoidFunctionSeperateThread(() =>
+					ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 					{
 						for (int i = 0; i <= 10; i++)
 						{

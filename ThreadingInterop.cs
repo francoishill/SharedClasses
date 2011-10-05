@@ -6,7 +6,8 @@ using System.Windows.Forms;
 
 public class ThreadingInterop
 {
-	public static void PerformVoidFunctionSeperateThread(MethodInvoker method)
+	//PerformVoidFunctionSeperateThread(() => { MessageBox.Show("Test"); MessageBox.Show("Test1"); });
+	public static void PerformVoidFunctionSeperateThread(MethodInvoker method, bool WaitUntilFinish = true)
 	{
 		System.Threading.Thread th = new System.Threading.Thread(() =>
 		{
@@ -14,7 +15,8 @@ public class ThreadingInterop
 		});
 		th.Start();
 		//th.Join();
-		while (th.IsAlive) { Application.DoEvents(); }
+		if (WaitUntilFinish)
+			while (th.IsAlive) { Application.DoEvents(); }
 	}
 
 	public static void UpdateGuiFromThread(Control controlToUpdate, Action action)

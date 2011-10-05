@@ -1,33 +1,31 @@
-﻿namespace MonitorSystem
+﻿partial class CustomBalloonTip
 {
-	partial class CustomBalloonTip
+	/// <summary>
+	/// Required designer variable.
+	/// </summary>
+	private System.ComponentModel.IContainer components = null;
+
+	/// <summary>
+	/// Clean up any resources being used.
+	/// </summary>
+	/// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+	protected override void Dispose(bool disposing)
 	{
-		/// <summary>
-		/// Required designer variable.
-		/// </summary>
-		private System.ComponentModel.IContainer components = null;
-
-		/// <summary>
-		/// Clean up any resources being used.
-		/// </summary>
-		/// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-		protected override void Dispose(bool disposing)
+		if (disposing && (components != null))
 		{
-			if (disposing && (components != null))
-			{
-				components.Dispose();
-			}
-			base.Dispose(disposing);
+			components.Dispose();
 		}
+		base.Dispose(disposing);
+	}
 
-		#region Windows Form Designer generated code
+	#region Windows Form Designer generated code
 
-		/// <summary>
-		/// Required method for Designer support - do not modify
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent()
-		{
+	/// <summary>
+	/// Required method for Designer support - do not modify
+	/// the contents of this method with the code editor.
+	/// </summary>
+	private void InitializeComponent()
+	{
 			this.components = new System.ComponentModel.Container();
 			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(CustomBalloonTip));
 			this.button_Close = new System.Windows.Forms.Button();
@@ -64,13 +62,15 @@
             this.pictureBox_Icon,
             this.label_Title,
             this.label_Message});
-			this.statusStrip1.Location = new System.Drawing.Point(0, -2);
+			this.statusStrip1.Location = new System.Drawing.Point(0, 0);
 			this.statusStrip1.Name = "statusStrip1";
 			this.statusStrip1.RenderMode = System.Windows.Forms.ToolStripRenderMode.ManagerRenderMode;
 			this.statusStrip1.Size = new System.Drawing.Size(654, 22);
 			this.statusStrip1.SizingGrip = false;
 			this.statusStrip1.TabIndex = 4;
 			this.statusStrip1.Text = "statusStrip1";
+			this.statusStrip1.MouseEnter += new System.EventHandler(this.CustomBalloonTip_MouseEnter);
+			this.statusStrip1.MouseLeave += new System.EventHandler(this.CustomBalloonTip_MouseLeave);
 			// 
 			// pictureBox_Icon
 			// 
@@ -81,6 +81,8 @@
 			this.pictureBox_Icon.ShowDropDownArrow = false;
 			this.pictureBox_Icon.Size = new System.Drawing.Size(20, 20);
 			this.pictureBox_Icon.Text = "toolStripDropDownButton1";
+			this.pictureBox_Icon.MouseEnter += new System.EventHandler(this.CustomBalloonTip_MouseEnter);
+			this.pictureBox_Icon.MouseLeave += new System.EventHandler(this.CustomBalloonTip_MouseLeave);
 			// 
 			// label_Title
 			// 
@@ -90,23 +92,27 @@
 			this.label_Title.Name = "label_Title";
 			this.label_Title.Size = new System.Drawing.Size(123, 22);
 			this.label_Title.Text = "toolStripStatusLabel1";
+			this.label_Title.MouseEnter += new System.EventHandler(this.CustomBalloonTip_MouseEnter);
+			this.label_Title.MouseLeave += new System.EventHandler(this.CustomBalloonTip_MouseLeave);
 			// 
 			// label_Message
 			// 
 			this.label_Message.Font = new System.Drawing.Font("Verdana", 7F);
 			this.label_Message.Margin = new System.Windows.Forms.Padding(20, 0, 0, 0);
 			this.label_Message.Name = "label_Message";
-			this.label_Message.Size = new System.Drawing.Size(476, 22);
+			this.label_Message.Size = new System.Drawing.Size(445, 22);
 			this.label_Message.Spring = true;
 			this.label_Message.Text = "toolStripStatusLabel2";
 			this.label_Message.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+			this.label_Message.MouseEnter += new System.EventHandler(this.CustomBalloonTip_MouseEnter);
+			this.label_Message.MouseLeave += new System.EventHandler(this.CustomBalloonTip_MouseLeave);
 			// 
 			// CustomBalloonTip
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(220)))), ((int)(((byte)(230)))), ((int)(((byte)(240)))));
-			this.ClientSize = new System.Drawing.Size(654, 20);
+			this.ClientSize = new System.Drawing.Size(654, 22);
 			this.ControlBox = false;
 			this.Controls.Add(this.statusStrip1);
 			this.Controls.Add(this.button_Close);
@@ -123,21 +129,22 @@
 			this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
 			this.TopMost = true;
 			this.Shown += new System.EventHandler(this.CustomBalloonTip_Shown);
+			this.MouseEnter += new System.EventHandler(this.CustomBalloonTip_MouseEnter);
+			this.MouseLeave += new System.EventHandler(this.CustomBalloonTip_MouseLeave);
 			this.Resize += new System.EventHandler(this.CustomBalloonTip_Resize);
 			this.statusStrip1.ResumeLayout(false);
 			this.statusStrip1.PerformLayout();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
-		}
-
-		#endregion
-
-		private System.Windows.Forms.Button button_Close;
-		private System.Windows.Forms.Timer timer_ShowDuration;
-		private System.Windows.Forms.StatusStrip statusStrip1;
-		private System.Windows.Forms.ToolStripStatusLabel label_Title;
-		private System.Windows.Forms.ToolStripStatusLabel label_Message;
-		private System.Windows.Forms.ToolStripDropDownButton pictureBox_Icon;
 	}
+
+	#endregion
+
+	private System.Windows.Forms.Button button_Close;
+	private System.Windows.Forms.Timer timer_ShowDuration;
+	private System.Windows.Forms.StatusStrip statusStrip1;
+	private System.Windows.Forms.ToolStripStatusLabel label_Title;
+	private System.Windows.Forms.ToolStripStatusLabel label_Message;
+	private System.Windows.Forms.ToolStripDropDownButton pictureBox_Icon;
 }

@@ -18,6 +18,11 @@ public static class Win32Api
 	[DllImport("user32.dll")]
 	public static extern IntPtr GetForegroundWindow();
 
+	// For Windows Mobile, replace user32.dll with coredll.dll 
+	[DllImport("user32.dll")]
+	[return: MarshalAs(UnmanagedType.Bool)]
+	public static extern bool SetForegroundWindow(IntPtr hWnd);
+
 	public static readonly int WM_HOTKEY = 786;
 	[DllImport("user32.dll")]
 	public static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);

@@ -30,7 +30,7 @@ public class VisualStudioInterop
 
 	private enum BuildType { Rebuild, Build };
 	private enum ProjectConfiguration { Debug, Release };
-	private static string BuildVsProjectReturnNewversionString(TextBox messagesTextbox, string projectFilename, BuildType buildType, ProjectConfiguration configuration)
+	private static string BuildVsProjectReturnNewversionString(TextBox messagesTextbox, string projectFilename, BuildType buildType, ProjectConfiguration configuration, bool AutomaticallyUpdateRevision)
 	{
 		string msbuildpath;
 		if (!FindMsbuildPath4(out msbuildpath))
@@ -121,29 +121,34 @@ public class VisualStudioInterop
 			else if (appversion.Trim().Length == 0) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Unable to obtain app version string");
 			else
 			{
-				bool autoIncreaseRevision = appversion.Contains("%2a");
-				int newrevisionnum = apprevision + 1;
-				newFileLines[apprevlinenum] = newFileLines[apprevlinenum].Substring(0, newFileLines[apprevlinenum].IndexOf(apprevstart) + apprevstart.Length)
-					+ newrevisionnum
-					+ newFileLines[apprevlinenum].Substring(newFileLines[apprevlinenum].IndexOf(apprevend));
-				//Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, newFileLines[apprevlinenum]);
-
-				string newversionstring = appversion.Substring(0, appversion.LastIndexOf('.') + 1) + newrevisionnum;
-				if (!autoIncreaseRevision)
-					newFileLines[appverlinenum] = newFileLines[appverlinenum].Substring(0, newFileLines[appverlinenum].IndexOf(appverstart) + appverstart.Length)
-						+ appversion.Substring(0, appversion.LastIndexOf('.') + 1) + (apprevision + 1)
-						+ newFileLines[appverlinenum].Substring(newFileLines[appverlinenum].IndexOf(appverend));
-				//Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, newFileLines[appverlinenum]);
-
-				StreamWriter sw = new StreamWriter(projectFilename);
-				try
+				string oldversionstring = appversion.Substring(0, appversion.LastIndexOf('.') + 1) + apprevision;
+				if (AutomaticallyUpdateRevision)
 				{
-					foreach (string line in newFileLines)
-						sw.WriteLine(line);
-				}
-				finally { sw.Close(); }
+					bool autoIncreaseRevision = appversion.Contains("%2a");
+					int newrevisionnum = apprevision + 1;
+					newFileLines[apprevlinenum] = newFileLines[apprevlinenum].Substring(0, newFileLines[apprevlinenum].IndexOf(apprevstart) + apprevstart.Length)
+						+ newrevisionnum
+						+ newFileLines[apprevlinenum].Substring(newFileLines[apprevlinenum].IndexOf(apprevend));
+					//Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, newFileLines[apprevlinenum]);
 
-				return newversionstring;
+					string newversionstring = appversion.Substring(0, appversion.LastIndexOf('.') + 1) + newrevisionnum;
+					if (!autoIncreaseRevision)
+						newFileLines[appverlinenum] = newFileLines[appverlinenum].Substring(0, newFileLines[appverlinenum].IndexOf(appverstart) + appverstart.Length)
+							+ appversion.Substring(0, appversion.LastIndexOf('.') + 1) + (apprevision + 1)
+							+ newFileLines[appverlinenum].Substring(newFileLines[appverlinenum].IndexOf(appverend));
+					//Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, newFileLines[appverlinenum]);
+
+					StreamWriter sw = new StreamWriter(projectFilename);
+					try
+					{
+						foreach (string line in newFileLines)
+							sw.WriteLine(line);
+					}
+					finally { sw.Close(); }
+
+					return newversionstring;
+				}
+				else return oldversionstring;
 			}
 		}
 		return null;
@@ -160,7 +165,7 @@ public class VisualStudioInterop
 		return s;
 	}
 
-	public static void PerformPublish(TextBox messagesTextbox, string projName)
+	public static void PerformPublish(TextBox messagesTextbox, string projName, bool AutomaticallyUpdateRevision = false)
 	{
 		string projDir =
 					Directory.Exists(projName) ? projName :
@@ -180,7 +185,7 @@ public class VisualStudioInterop
 		if (!ProjFileFound) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Could not find project file (csproj) in dir " + projDir);
 		else
 		{
-			string newversionstring = BuildVsProjectReturnNewversionString(messagesTextbox, csprojFileName, BuildType.Rebuild, ProjectConfiguration.Release);
+			string newversionstring = BuildVsProjectReturnNewversionString(messagesTextbox, csprojFileName, BuildType.Rebuild, ProjectConfiguration.Release, AutomaticallyUpdateRevision);
 			if (newversionstring == null) return;
 
 			ThreadingInterop.PerformVoidFunctionSeperateThread(() =>

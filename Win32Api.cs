@@ -143,4 +143,85 @@ public static class Win32Api
 
 	[DllImport("uxtheme.dll", CharSet = CharSet.Unicode)]
 	public extern static int SetWindowTheme(IntPtr hWnd, string pszSubAppName, string pszSubIdList);
+
+	public enum MouseGestures
+	{
+		LR = 0,
+		LM = 1,
+		LRM = 2,
+		LMR = 3,
+		RL = 4,
+		RM = 5,
+		RML = 6,
+		ML = 7,
+		MR = 8,
+	}
+
+	/// <summary>
+	/// Defines the various types of hooks that are available in Windows
+	/// </summary>
+	public enum HookTypes : int
+	{
+		WH_JOURNALRECORD = 0,
+		WH_JOURNALPLAYBACK = 1,
+		WH_KEYBOARD = 2,
+		WH_GETMESSAGE = 3,
+		WH_CALLWNDPROC = 4,
+		WH_CBT = 5,
+		WH_SYSMSGFILTER = 6,
+		WH_MOUSE = 7,
+		WH_HARDWARE = 8,
+		WH_DEBUG = 9,
+		WH_SHELL = 10,
+		WH_FOREGROUNDIDLE = 11,
+		WH_CALLWNDPROCRET = 12,
+		WH_KEYBOARD_LL = 13,
+		WH_MOUSE_LL = 14
+	}
+
+	public delegate int HookProc(int nCode, Int32 wParam, IntPtr lParam);
+	[DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
+	public static extern int SetWindowsHookEx
+	(
+			int idHook,
+			HookProc lpfn,
+			IntPtr hInstance,
+			int threadId
+	);
+
+	public const int WM_SETCURSOR = 0x20;
+	public const int WM_TIMER = 0x113;
+
+	public const int WM_MOUSEMOVE = 0x200;
+	public const int WM_MBUTTONDOWN = 0x0207;
+	public const int WM_MBUTTONUP = 0x0208;
+	public const int WM_MBUTTONDBLCLK = 0x0209;
+
+	public const int WM_LBUTTONDOWN = 0x0201;
+	public const int WM_LBUTTONUP = 0x0202;
+	public const int WM_LBUTTONDBLCLK = 0x0203;
+
+	public const int WM_RBUTTONDOWN = 0x0204;
+	public const int WM_RBUTTONUP = 0x0205;
+	public const int WM_RBUTTONDBLCLK = 0x0206;
+
+	public const int WM_ACTIVATE = 0x006;
+	public const int WM_ACTIVATEAPP = 0x01C;
+	public const int WM_NCACTIVATE = 0x086;
+	public const int WM_CLOSE = 0x010;
+
+	public const int WM_PAINT = 0x000F;
+	public const int WM_ERASEBKGND = 0x0014;
+
+	[DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
+	public static extern bool UnhookWindowsHookEx(int idHook);
+
+	[DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
+	public static extern int CallNextHookEx
+	(
+			int idHook,
+			int nCode,
+			Int32 wParam,
+			IntPtr lParam
+	);
 }

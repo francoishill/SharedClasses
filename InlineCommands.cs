@@ -520,7 +520,7 @@ public class InlineCommands
 			return commandArguments != null && commandArguments.Count > 0;
 		}
 
-		public bool CommandHasAutocompleteArguments()
+		public bool CommandHasPredefinedArguments()
 		{
 			return commandPredefinedArguments != null && commandPredefinedArguments.Count > 0;
 		}

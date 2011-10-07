@@ -315,7 +315,8 @@ public class InlineCommands
 		public string UserLabel;
 		public List<CommandArgumentClass> commandArguments;
 		public PerformCommandTypeEnum PerformCommandType;
-		public CommandDetails(string commandNameIn, string UserLabelIn, List<CommandArgumentClass> commandArgumentsIn, PerformCommandTypeEnum PerformCommandTypeIn)
+		public CommandForm commandForm;
+		public CommandDetails(string commandNameIn, string UserLabelIn, List<CommandArgumentClass> commandArgumentsIn, PerformCommandTypeEnum PerformCommandTypeIn, CommandForm commandFormIn = null)
 		{
 			commandName = commandNameIn;
 			commandPredefinedArguments = new AutoCompleteStringCollection();
@@ -360,6 +361,8 @@ public class InlineCommands
 			UserLabel = UserLabelIn;
 			commandArguments = commandArgumentsIn;
 			PerformCommandType = PerformCommandTypeIn;
+
+			commandForm = commandFormIn;
 		}
 
 		public void PerformCommand(TextBox textboxWithCommand, TextBox messagesTextbox)

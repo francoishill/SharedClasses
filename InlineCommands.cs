@@ -315,8 +315,9 @@ public class InlineCommands
 		public string UserLabel;
 		public List<CommandArgumentClass> commandArguments;
 		public PerformCommandTypeEnum PerformCommandType;
-		public CommandForm commandForm;
-		public CommandDetails(string commandNameIn, string UserLabelIn, List<CommandArgumentClass> commandArgumentsIn, PerformCommandTypeEnum PerformCommandTypeIn, CommandForm commandFormIn = null)
+		//public CommandForm commandForm;
+		public MainWindow commandWindow;
+		public CommandDetails(string commandNameIn, string UserLabelIn, List<CommandArgumentClass> commandArgumentsIn, PerformCommandTypeEnum PerformCommandTypeIn, MainWindow commandWindowIn = null)//CommandForm commandFormIn = null)
 		{
 			commandName = commandNameIn;
 			commandPredefinedArguments = new AutoCompleteStringCollection();
@@ -362,7 +363,8 @@ public class InlineCommands
 			commandArguments = commandArgumentsIn;
 			PerformCommandType = PerformCommandTypeIn;
 
-			commandForm = commandFormIn;
+			//commandForm = commandFormIn;
+			commandWindow = commandWindowIn;
 		}
 
 		public void PerformCommand(string fullCommandText, TextBox textboxtoClearOnSuccess, TextBox messagesTextbox)
@@ -609,7 +611,7 @@ public class InlineCommands
 			public TypeArg TypeOfArgument;
 			public Dictionary<string, string> TokenWithReplaceStringPair;
 			public PathAutocompleteEnum PathAutocomplete;
-			public TextBox textBox;
+			public System.Windows.Controls.TextBox textBox;
 			//public functionDelegate function;
 			public CommandArgumentClass(string ArgumentNameIn, bool RequiredIn, TypeArg TypeOfArgumentIn, Dictionary<string, string> TokenWithReplaceStringPairIn, PathAutocompleteEnum PathAutocompleteIn = PathAutocompleteEnum.None)//, functionDelegate functionIn)
 			{

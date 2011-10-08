@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using System.Reflection;
 
 public partial class OverlayForm : Form
 {
@@ -21,7 +22,7 @@ public partial class OverlayForm : Form
 		this.Close();//.Hide();
 	}
 
-	private void tmpQuickCustomBalloonTip(string msg)
+	public static void tmpQuickCustomBalloonTip(string msg)
 	{
 		CustomBalloonTip.ShowCustomBalloonTip("Title", msg, 2000, CustomBalloonTip.IconTypes.Information, delegate { });
 	}
@@ -31,17 +32,17 @@ public partial class OverlayForm : Form
 		this.Opacity = 0;
 		this.Show();
 		//button1.Location = new Point((this.Width - button1.Width) / 2, (this.Height - button1.Height) / 2);
-		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+		//ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+		//{
+		for (int i = 0; i < 60; i++)
 		{
-			for (int i = 0; i < 60; i++)
+			ThreadingInterop.PerformVoidFunctionSeperateThread(() => { System.Threading.Thread.Sleep(3); });
+			ThreadingInterop.UpdateGuiFromThread(this, () =>
 			{
-				System.Threading.Thread.Sleep(4);
-				ThreadingInterop.UpdateGuiFromThread(this, () =>
-				{
-					this.Opacity += 0.01;
-				});
-			}
-		});
+				this.Opacity += 0.01;
+			});
+		}
+		//});
 
 		int leftGap = 20;
 		int topGap = 20;
@@ -67,39 +68,79 @@ public partial class OverlayForm : Form
 			if (form.Height > MaxHeightInRow) MaxHeightInRow = form.Height;
 
 			if (form.Tag == null)
-				form.Tag = new OverlayChildManager(true, false, false);
+				form.Tag = new OverlayChildManager(true, false);
 
-			form.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable;
+			form.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
 			form.MaximizeBox = false;
 			form.MinimizeBox = false;
 			form.ShowInTaskbar = false;
 			//form.ShowIcon = false;
 
-			if (!IsMouseDownEventAdded(form))
+			if (!IsEventsAdded(form))
 			{
-				AddEventToControlSubcontrols(form);
-				MarkformMouseDowneventAdded(form);
-			}
+				//AddMouseDownEventToControlandSubcontrols(form);
+				AddFormClosingEventToControl(form);
+				AddKeydownEventToControlandSubcontrols(form);
 
-			if (!IsClosingEventAdded(form))
-			{
-				form.FormClosing += (s, closeargs) =>
-				{
-					Form thisForm = s as Form;
-					if (closeargs.CloseReason == CloseReason.UserClosing)
-					{
-						closeargs.Cancel = true;
-						thisForm.Hide();
-						SetFormAllowShow(thisForm, false);
-						//UserMessages.ShowMessage("Userclose");
-					}
-				};
-				MarkformClosingeventAdded(form);
+				MarkformEventsAdded(form);
 			}
 			form.TopMost = true;
 			if (MayFormBeShow(form))
+			{
+				form.Opacity = 0.75F;
+				PropertyInfo propertyFreezeEvent_Activated = form.GetType().GetProperty("FreezeEvent_Activated");
+				if (propertyFreezeEvent_Activated != null) propertyFreezeEvent_Activated.SetValue(form, true, null);
 				form.Show();
+				//if (propertyFreezeEvent_Activated != null) propertyFreezeEvent_Activated.SetValue(form, false, null);
+			}
 		}
+	}
+
+	private void AddKeydownEventToControlandSubcontrols(Control control)
+	{
+		if (control is TextBox) (control as TextBox).Multiline = true;
+		control.KeyDown += new KeyEventHandler(control_KeyDown);
+		foreach (Control subcontrol in control.Controls)
+			AddKeydownEventToControlandSubcontrols(subcontrol);
+	}
+
+	private void control_KeyDown(object sender, KeyEventArgs e)
+	{
+		if (e.KeyCode == Keys.Tab) e.Handled = true;
+
+		if (e.KeyCode == Keys.Tab && ModifierKeys == Keys.Control)
+		{
+			if (ListOfChildForms != null && ListOfChildForms.IndexOf((sender as Control).FindForm()) != -1)
+			{
+				int currentActiveFormIndex = ListOfChildForms.IndexOf((sender as Control).FindForm());
+				int newIndexToActivate = currentActiveFormIndex == ListOfChildForms.Count - 1 ? 0 : currentActiveFormIndex + 1;
+				ListOfChildForms[newIndexToActivate].Activate();
+			}
+		}
+		else if (e.KeyCode == Keys.Tab && (ModifierKeys & (Keys.Control | Keys.Shift)) == (Keys.Control | Keys.Shift))
+		{
+			if (ListOfChildForms != null && ListOfChildForms.IndexOf((sender as Control).FindForm()) != -1)
+			{
+				int currentActiveFormIndex = ListOfChildForms.IndexOf((sender as Control).FindForm());
+				int newIndexToActivate = currentActiveFormIndex == 0 ? ListOfChildForms.Count - 1 : currentActiveFormIndex - 1;
+				ListOfChildForms[newIndexToActivate].Activate();
+			}
+		}
+	}
+
+	private void AddFormClosingEventToControl(Form form)
+	{
+		form.FormClosing += (s, closeargs) =>
+		{
+			Form thisForm = s as Form;
+			if (closeargs.CloseReason == CloseReason.UserClosing)
+			{
+				closeargs.Cancel = true;
+				thisForm.Hide();
+				SetFormAllowShow(thisForm, false);
+				//UserMessages.ShowMessage("Userclose");
+			}
+		};
 	}
 
 	private void SetFormAllowShow(Form form, bool allowShowValue)
@@ -116,39 +157,25 @@ public partial class OverlayForm : Form
 		return (form.Tag as OverlayChildManager).AllowShow;
 	}
 
-	private bool IsClosingEventAdded(Form form)
+	private bool IsEventsAdded(Form form)
 	{
 		if (form == null) return false;
 		if (!(form.Tag is OverlayChildManager)) return false;
-		return (form.Tag as OverlayChildManager).ClosingEventAttached;
+		return (form.Tag as OverlayChildManager).EventAttached;
 	}
 
-	private bool IsMouseDownEventAdded(Form form)
-	{
-		if (form == null) return false;
-		if (!(form.Tag is OverlayChildManager)) return false;
-		return (form.Tag as OverlayChildManager).MouseDownEventAttached;
-	}
-
-	private void MarkformClosingeventAdded(Form form)
+	private void MarkformEventsAdded(Form form)
 	{
 		if (form == null) return;
 		if (!(form.Tag is OverlayChildManager)) return;
-		(form.Tag as OverlayChildManager).ClosingEventAttached = true;
+		(form.Tag as OverlayChildManager).EventAttached = true;
 	}
 
-	private void MarkformMouseDowneventAdded(Form form)
-	{
-		if (form == null) return;
-		if (!(form.Tag is OverlayChildManager)) return;
-		(form.Tag as OverlayChildManager).MouseDownEventAttached = true;
-	}
-
-	private void AddEventToControlSubcontrols(Control control)
+	private void AddMouseDownEventToControlandSubcontrols(Control control)
 	{
 		control.MouseDown += new MouseEventHandler(form_MouseDown);
 		foreach (Control subcontrol in control.Controls)
-			AddEventToControlSubcontrols(subcontrol);
+			AddMouseDownEventToControlandSubcontrols(subcontrol);
 	}
 
 	private void form_MouseDown(object sender, MouseEventArgs e)
@@ -175,14 +202,12 @@ public partial class OverlayForm : Form
 	public class OverlayChildManager
 	{
 		public bool AllowShow;
-		public bool ClosingEventAttached;
-		public bool MouseDownEventAttached;
+		public bool EventAttached;
 
-		public OverlayChildManager(bool AllowShowIn, bool ClosingEventAttachedIn, bool MouseDownEventAttachedIn)
+		public OverlayChildManager(bool AllowShowIn, bool EventAttachedIn)
 		{
 			AllowShow = AllowShowIn;
-			ClosingEventAttached = ClosingEventAttachedIn;
-			MouseDownEventAttached = MouseDownEventAttachedIn;
+			EventAttached = EventAttachedIn;
 		}
 	}
 }

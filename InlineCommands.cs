@@ -365,151 +365,151 @@ public class InlineCommands
 			commandForm = commandFormIn;
 		}
 
-		public void PerformCommand(TextBox textboxWithCommand, TextBox messagesTextbox)
+		public void PerformCommand(string fullCommandText, TextBox textboxtoClearOnSuccess, TextBox messagesTextbox)
+		{
+			string TextboxTextIn = fullCommandText;//textboxtoClearOnSuccess.Text;
+			string argStr = TextboxTextIn.Substring(TextboxTextIn.IndexOf(' ') + 1);
+
+			switch (PerformCommandType)
 			{
-				string TextboxTextIn = textboxWithCommand.Text;
-				string argStr = TextboxTextIn.Substring(TextboxTextIn.IndexOf(' ') + 1);
-
-				switch (PerformCommandType)
-				{
-					case PerformCommandTypeEnum.CheckFileExistRun_ElseTryRun:
-					case PerformCommandTypeEnum.CheckDirectoryExistRun_ElseTryRun:
-						if (commandArguments.Count > 1) MessageBox.Show("More than one command argument not yet incorporated");
+				case PerformCommandTypeEnum.CheckFileExistRun_ElseTryRun:
+				case PerformCommandTypeEnum.CheckDirectoryExistRun_ElseTryRun:
+					if (commandArguments.Count > 1) MessageBox.Show("More than one command argument not yet incorporated");
+					else
+					{
+						string exepath = argStr;
+						if (commandArguments[0].TokenWithReplaceStringPair != null && commandArguments[0].TokenWithReplaceStringPair.ContainsKey(exepath))
+							exepath = commandArguments[0].TokenWithReplaceStringPair[exepath] ?? exepath;
+						if (
+							(File.Exists(exepath) && PerformCommandType == PerformCommandTypeEnum.CheckFileExistRun_ElseTryRun) ||
+							(Directory.Exists(exepath) && PerformCommandType == PerformCommandTypeEnum.CheckDirectoryExistRun_ElseTryRun))
+							System.Diagnostics.Process.Start(exepath);
 						else
 						{
-							string exepath = argStr;
-							if (commandArguments[0].TokenWithReplaceStringPair != null && commandArguments[0].TokenWithReplaceStringPair.ContainsKey(exepath))
-								exepath = commandArguments[0].TokenWithReplaceStringPair[exepath] ?? exepath;
-							if (
-								(File.Exists(exepath) && PerformCommandType == PerformCommandTypeEnum.CheckFileExistRun_ElseTryRun) ||
-								(Directory.Exists(exepath) && PerformCommandType == PerformCommandTypeEnum.CheckDirectoryExistRun_ElseTryRun))
-								System.Diagnostics.Process.Start(exepath);
-							else
+							try
 							{
-								try
-								{
-									System.Diagnostics.Process.Start(exepath);
-								}
-								catch (Exception exc) { Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, exc.Message); }
+								System.Diagnostics.Process.Start(exepath);
 							}
+							catch (Exception exc) { Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, exc.Message); }
 						}
-						break;
+					}
+					break;
 
-					case PerformCommandTypeEnum.AddTodoitemFirepuma:
-						PhpInterop.AddTodoItemFirepuma(
-							messagesTextbox,
-							PhpInterop.ServerAddress,
-							PhpInterop.doWorkAddress,
-							PhpInterop.Username,
-							PhpInterop.Password,
-						 "QuickAccess",
-						 "Quick todo",
-						 argStr.Split(';')[2],
-						 argStr.Split(';')[3],
-						 false,
-						 DateTime.Now.AddMinutes(Convert.ToInt32(argStr.Split(';')[0])),
-						 DateTime.Now,
-						 0,
-						 false,
-						 Convert.ToInt32(argStr.Split(';')[1]));
-						break;
+				case PerformCommandTypeEnum.AddTodoitemFirepuma:
+					PhpInterop.AddTodoItemFirepuma(
+						messagesTextbox,
+						PhpInterop.ServerAddress,
+						PhpInterop.doWorkAddress,
+						PhpInterop.Username,
+						PhpInterop.Password,
+					 "QuickAccess",
+					 "Quick todo",
+					 argStr.Split(';')[2],
+					 argStr.Split(';')[3],
+					 false,
+					 DateTime.Now.AddMinutes(Convert.ToInt32(argStr.Split(';')[0])),
+					 DateTime.Now,
+					 0,
+					 false,
+					 Convert.ToInt32(argStr.Split(';')[1]));
+					break;
 
-					case PerformCommandTypeEnum.CreateNewOutlookMessage:
-						MicrosoftOfficeInterop.CreateNewOutlookMessage(
-							messagesTextbox,
-									argStr.Split(';')[0],
-									argStr.Split(';')[1],
-									argStr.Split(';').Length >= 3 ? argStr.Split(';')[2] : "");
-						break;
+				case PerformCommandTypeEnum.CreateNewOutlookMessage:
+					MicrosoftOfficeInterop.CreateNewOutlookMessage(
+						messagesTextbox,
+								argStr.Split(';')[0],
+								argStr.Split(';')[1],
+								argStr.Split(';').Length >= 3 ? argStr.Split(';')[2] : "");
+					break;
 
-					case PerformCommandTypeEnum.WebOpenUrl:
-						string url = argStr;
-						if (!url.StartsWith("http://") && !url.StartsWith("https://") && !url.StartsWith("www."))
-							url = "http://" + url;
-						System.Diagnostics.Process.Start(url);
-						break;
+				case PerformCommandTypeEnum.WebOpenUrl:
+					string url = argStr;
+					if (!url.StartsWith("http://") && !url.StartsWith("https://") && !url.StartsWith("www."))
+						url = "http://" + url;
+					System.Diagnostics.Process.Start(url);
+					break;
 
-					case PerformCommandTypeEnum.WebSearchGoogle:
-						System.Diagnostics.Process.Start("http://www.google.co.za/search?q=" + argStr);
-						break;
+				case PerformCommandTypeEnum.WebSearchGoogle:
+					System.Diagnostics.Process.Start("http://www.google.co.za/search?q=" + argStr);
+					break;
 
-					case PerformCommandTypeEnum.KillProcess:
-						string processName = argStr;
-						Process[] processes = Process.GetProcessesByName(processName);
-						if (processes.Length > 1) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "More than one process found, cannot kill");
-						else if (processes.Length == 0) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Cannot find process with name " + processName);
-						else
-						{
-							processes[0].Kill();
-							Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Process killed: " + processName);
-						}
-						break;
+				case PerformCommandTypeEnum.KillProcess:
+					string processName = argStr;
+					Process[] processes = Process.GetProcessesByName(processName);
+					if (processes.Length > 1) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "More than one process found, cannot kill");
+					else if (processes.Length == 0) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Cannot find process with name " + processName);
+					else
+					{
+						processes[0].Kill();
+						Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Process killed: " + processName);
+					}
+					break;
 
-					case PerformCommandTypeEnum.StartupBat:
-						string filePath = @"C:\Francois\Other\Startup\work Startup.bat";
-						string comm = argStr;
-						//getall/getline 'xxx'/comment #/uncomment #
-						StartupbatInterop.PerformStartupbatCommand(messagesTextbox, filePath, comm);
-						break;
+				case PerformCommandTypeEnum.StartupBat:
+					string filePath = @"C:\Francois\Other\Startup\work Startup.bat";
+					string comm = argStr;
+					//getall/getline 'xxx'/comment #/uncomment #
+					StartupbatInterop.PerformStartupbatCommand(messagesTextbox, filePath, comm);
+					break;
 
-					case PerformCommandTypeEnum.Call:
-						if (commandArguments[0].TokenWithReplaceStringPair != null && commandArguments[0].TokenWithReplaceStringPair.ContainsKey(argStr))
-							Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, commandArguments[0].TokenWithReplaceStringPair[argStr] ?? argStr);
-						else Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Call command not recognized: " + argStr);
-						break;
+				case PerformCommandTypeEnum.Call:
+					if (commandArguments[0].TokenWithReplaceStringPair != null && commandArguments[0].TokenWithReplaceStringPair.ContainsKey(argStr))
+						Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, commandArguments[0].TokenWithReplaceStringPair[argStr] ?? argStr);
+					else Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Call command not recognized: " + argStr);
+					break;
 
-					case PerformCommandTypeEnum.Cmd:
-					case PerformCommandTypeEnum.VsCmd:
-						string cmdpath = argStr;
-						if (commandArguments[0].TokenWithReplaceStringPair != null && commandArguments[0].TokenWithReplaceStringPair.ContainsKey(cmdpath))
-							cmdpath = commandArguments[0].TokenWithReplaceStringPair[cmdpath] ?? cmdpath;
+				case PerformCommandTypeEnum.Cmd:
+				case PerformCommandTypeEnum.VsCmd:
+					string cmdpath = argStr;
+					if (commandArguments[0].TokenWithReplaceStringPair != null && commandArguments[0].TokenWithReplaceStringPair.ContainsKey(cmdpath))
+						cmdpath = commandArguments[0].TokenWithReplaceStringPair[cmdpath] ?? cmdpath;
 
-						WindowsInterop.StartCommandPromptOrVScommandPrompt(messagesTextbox, cmdpath, PerformCommandType == PerformCommandTypeEnum.VsCmd);
-						break;
+					WindowsInterop.StartCommandPromptOrVScommandPrompt(messagesTextbox, cmdpath, PerformCommandType == PerformCommandTypeEnum.VsCmd);
+					break;
 
-					case PerformCommandTypeEnum.Btw:
-						if (PhpInterop.AddBtwTextFirepuma(messagesTextbox, argStr))
-							textboxWithCommand.Text = "";
-						break;
+				case PerformCommandTypeEnum.Btw:
+					if (PhpInterop.AddBtwTextFirepuma(messagesTextbox, argStr))
+						textboxtoClearOnSuccess.Text = "";
+					break;
 
-					case PerformCommandTypeEnum.Svncommit:
-					case PerformCommandTypeEnum.Svnupdate:
-					case PerformCommandTypeEnum.Svnstatus:
-						string svnargs = argStr;// textBox1.Text.ToLower().Substring(10);
-						//if (svncommitargs.Contains(' '))
-						//{
-						//string svncommand = svncommandwithargs.Substring(0, svncommandwithargs.IndexOf(' ')).ToLower();
-						//string projnameAndlogmessage = svncommandwithargs.Substring(svncommandwithargs.IndexOf(' ') + 1);
-						//if (svncommitargs.Contains(';'))//projnameAndlogmessage.Contains(';'))
-						//{
-						SvnInterop.SvnCommand svnCommand =
+				case PerformCommandTypeEnum.Svncommit:
+				case PerformCommandTypeEnum.Svnupdate:
+				case PerformCommandTypeEnum.Svnstatus:
+					string svnargs = argStr;// textBox1.Text.ToLower().Substring(10);
+					//if (svncommitargs.Contains(' '))
+					//{
+					//string svncommand = svncommandwithargs.Substring(0, svncommandwithargs.IndexOf(' ')).ToLower();
+					//string projnameAndlogmessage = svncommandwithargs.Substring(svncommandwithargs.IndexOf(' ') + 1);
+					//if (svncommitargs.Contains(';'))//projnameAndlogmessage.Contains(';'))
+					//{
+					SvnInterop.SvnCommand svnCommand =
 								PerformCommandType == PerformCommandTypeEnum.Svncommit ? SvnInterop.SvnCommand.Commit
-							: PerformCommandType == PerformCommandTypeEnum.Svnupdate ? SvnInterop.SvnCommand.Update
-							: PerformCommandType == PerformCommandTypeEnum.Svnstatus ? SvnInterop.SvnCommand.Status
-							: SvnInterop.SvnCommand.Status;
+						: PerformCommandType == PerformCommandTypeEnum.Svnupdate ? SvnInterop.SvnCommand.Update
+						: PerformCommandType == PerformCommandTypeEnum.Svnstatus ? SvnInterop.SvnCommand.Status
+						: SvnInterop.SvnCommand.Status;
 
-						string svnprojname = svnargs.Contains(ArgumentSeparator) ? svnargs.Split(ArgumentSeparator)[0] : svnargs;
-						string svnlogmessage = svnargs.Contains(ArgumentSeparator) ? svnargs.Split(ArgumentSeparator)[1] : "";
-						if (commandArguments[0].TokenWithReplaceStringPair != null && commandArguments[0].TokenWithReplaceStringPair.ContainsKey(svnprojname))
-							svnargs = (commandArguments[0].TokenWithReplaceStringPair[svnprojname] ?? svnprojname) + (svnargs.Contains(ArgumentSeparator) ? ArgumentSeparator + svnlogmessage : "");
-						SvnInterop.PerformSvn(messagesTextbox, svnargs, svnCommand);
-						//}
-						//else appendLogTextbox_OfPassedTextbox(messagesTextbox, "Error: No semicolon. Command syntax is 'svncommit proj/othercommand projname;logmessage'");
-						//}
-						break;
+					string svnprojname = svnargs.Contains(ArgumentSeparator) ? svnargs.Split(ArgumentSeparator)[0] : svnargs;
+					string svnlogmessage = svnargs.Contains(ArgumentSeparator) ? svnargs.Split(ArgumentSeparator)[1] : "";
+					if (commandArguments[0].TokenWithReplaceStringPair != null && commandArguments[0].TokenWithReplaceStringPair.ContainsKey(svnprojname))
+						svnargs = (commandArguments[0].TokenWithReplaceStringPair[svnprojname] ?? svnprojname) + (svnargs.Contains(ArgumentSeparator) ? ArgumentSeparator + svnlogmessage : "");
+					SvnInterop.PerformSvn(messagesTextbox, svnargs, svnCommand);
+					//}
+					//else appendLogTextbox_OfPassedTextbox(messagesTextbox, "Error: No semicolon. Command syntax is 'svncommit proj/othercommand projname;logmessage'");
+					//}
+					break;
 
-					case PerformCommandTypeEnum.PublishVs:
-						VisualStudioInterop.PerformPublish(messagesTextbox, argStr);
-						break;
+				case PerformCommandTypeEnum.PublishVs:
+					VisualStudioInterop.PerformPublish(messagesTextbox, argStr);
+					break;
 
-					case PerformCommandTypeEnum.Undefined:
-						MessageBox.Show("PerformCommandType is not defined");
-						break;
-					default:
-						MessageBox.Show("PerformCommandType is not incorporated yet: " + PerformCommandType.ToString());
-						break;
-				}
+				case PerformCommandTypeEnum.Undefined:
+					MessageBox.Show("PerformCommandType is not defined");
+					break;
+				default:
+					MessageBox.Show("PerformCommandType is not incorporated yet: " + PerformCommandType.ToString());
+					break;
 			}
+		}
 
 		public bool CommandHasRequiredArguments()
 		{
@@ -609,6 +609,7 @@ public class InlineCommands
 			public TypeArg TypeOfArgument;
 			public Dictionary<string, string> TokenWithReplaceStringPair;
 			public PathAutocompleteEnum PathAutocomplete;
+			public TextBox textBox;
 			//public functionDelegate function;
 			public CommandArgumentClass(string ArgumentNameIn, bool RequiredIn, TypeArg TypeOfArgumentIn, Dictionary<string, string> TokenWithReplaceStringPairIn, PathAutocompleteEnum PathAutocompleteIn = PathAutocompleteEnum.None)//, functionDelegate functionIn)
 			{

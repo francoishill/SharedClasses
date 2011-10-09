@@ -266,5 +266,12 @@ public static class Win32Api
 	/// Animates a window.
 	/// </summary>
 	[DllImport("user32.dll", CharSet = CharSet.Auto)]
-	public static extern int AnimateWindow(IntPtr hwand, int dwTime, int dwFlags);	
+	public static extern int AnimateWindow(IntPtr hwand, int dwTime, int dwFlags);
+
+	public const int GWL_EXSTYLE = -20;
+	public const int WS_EX_NOACTIVATE = 0x08000000;
+	[DllImport("user32.dll")]
+	public static extern IntPtr SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+	[DllImport("user32.dll")]
+	public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
 }

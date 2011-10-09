@@ -34,6 +34,7 @@
 		this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 		this.BackColor = System.Drawing.Color.Black;
 		this.ClientSize = new System.Drawing.Size(292, 270);
+		this.DoubleBuffered = true;
 		this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
 		this.Name = "OverlayForm";
 		this.Opacity = 0D;
@@ -44,7 +45,7 @@
 		this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
 		this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.OverlayForm_FormClosing);
 		this.Shown += new System.EventHandler(this.OverlayForm_Shown);
-		this.Click += new System.EventHandler(this.OverlayForm_Click);
+		this.MouseClick += new System.Windows.Forms.MouseEventHandler(this.OverlayForm_MouseClick);
 		this.ResumeLayout(false);
 
 	}

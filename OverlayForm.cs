@@ -20,9 +20,10 @@ public partial class OverlayForm : System.Windows.Forms.Form
 		InitializeComponent();
 	}
 
-	private void OverlayForm_Click(object sender, EventArgs e)
+	private void OverlayForm_MouseClick(object sender, System.Windows.Forms.MouseEventArgs e)
 	{
-		this.Close();//.Hide();
+		if (e.Button == System.Windows.Forms.MouseButtons.Left)
+			this.Close();//.Hide();
 	}
 
 	public static void tmpQuickCustomBalloonTip(string msg)
@@ -64,6 +65,8 @@ public partial class OverlayForm : System.Windows.Forms.Form
 				//AddMouseDownEventToControlandSubcontrols(form);
 				AddClosingEventToWindow(window);//form);
 				AddMouseLeftButtonDownEventToWindow(window);
+				//AddMouseRightButtonDownEventToWindow(window);
+				AddMouseWheelEventToWindow(window);
 				//AddKeydownEventToControlandSubcontrols(form);
 				AddKeyupEventToWindowAndChildren(window);
 
@@ -80,6 +83,7 @@ public partial class OverlayForm : System.Windows.Forms.Form
 		}
 
 		AutoLayoutOfForms();
+
 
 		/*foreach (Form form in ListOfChildForms)
 		{
@@ -132,6 +136,24 @@ public partial class OverlayForm : System.Windows.Forms.Form
 		};
 	}
 
+	//private void AddMouseRightButtonDownEventToWindow(Window window)
+	//{
+	//  window.MouseRightButtonDown += (s, closeargs) =>
+	//  {
+	//    //Win32Api.SetForegroundWindow(IntPtr.Zero);
+	//    //(s as Window).focus
+	//  };
+	//}
+
+	private void AddMouseWheelEventToWindow(Window window)
+	{
+		window.MouseWheel += (s, evtargs) =>
+		{
+			if (evtargs.Delta > 0) ActivatePreviousWindowInChildList(FindWindowOfControl(s as System.Windows.Controls.Control));
+			else ActivateNextWindowInChildList(FindWindowOfControl(s as System.Windows.Controls.Control));
+		};
+	}
+
 	private bool IsWindowAlreadyPositioned(Window window)//Form form)
 	{
 		if (window == null) return false;
@@ -149,7 +171,7 @@ public partial class OverlayForm : System.Windows.Forms.Form
 	private void AutoLayoutOfForms()
 	{
 		int leftGap = 20;
-		int topGap = 20;
+		int topGap = 10;
 
 		int NextLeftPos = leftGap;
 		int MaxHeightInRow = 0;
@@ -226,12 +248,7 @@ public partial class OverlayForm : System.Windows.Forms.Form
 			//  int newIndexToActivate = currentActiveFormIndex == ListOfChildForms.Count - 1 ? 0 : currentActiveFormIndex + 1;
 			//  ListOfChildForms[newIndexToActivate].Activate();
 			//}
-			if (ListOfChildWindows != null && ListOfChildWindows.IndexOf(FindWindowOfControl(sender as System.Windows.Controls.Control)) != -1)
-			{
-				int currentActiveFormIndex = ListOfChildWindows.IndexOf(FindWindowOfControl(sender as System.Windows.Controls.Control));
-				int newIndexToActivate = currentActiveFormIndex == ListOfChildWindows.Count - 1 ? 0 : currentActiveFormIndex + 1;
-				ListOfChildWindows[newIndexToActivate].Activate();
-			}
+			ActivateNextWindowInChildList(FindWindowOfControl(sender as System.Windows.Controls.Control));
 		}
 		//else if (e.KeyCode == Keys.Tab && (ModifierKeys & (Keys.Control | Keys.Shift)) == (Keys.Control | Keys.Shift))
 		else if (e.Key == System.Windows.Input.Key.Tab && (ModifierKeys & (System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift)) == (System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift))
@@ -242,12 +259,27 @@ public partial class OverlayForm : System.Windows.Forms.Form
 			//  int newIndexToActivate = currentActiveFormIndex == 0 ? ListOfChildForms.Count - 1 : currentActiveFormIndex - 1;
 			//  ListOfChildForms[newIndexToActivate].Activate();
 			//}
-			if (ListOfChildWindows != null && ListOfChildWindows.IndexOf(FindWindowOfControl(sender as System.Windows.Controls.Control)) != -1)
-			{
-				int currentActiveFormIndex = ListOfChildWindows.IndexOf(FindWindowOfControl(sender as System.Windows.Controls.Control));
-				int newIndexToActivate = currentActiveFormIndex == 0 ? ListOfChildWindows.Count - 1 : currentActiveFormIndex - 1;
-				ListOfChildWindows[newIndexToActivate].Activate();
-			}
+			ActivatePreviousWindowInChildList(FindWindowOfControl(sender as System.Windows.Controls.Control));
+		}
+	}
+
+	private void ActivatePreviousWindowInChildList(Window window)
+	{
+		if (ListOfChildWindows != null && ListOfChildWindows.IndexOf(window) != -1)
+		{
+			int currentActiveFormIndex = ListOfChildWindows.IndexOf(window);
+			int newIndexToActivate = currentActiveFormIndex == 0 ? ListOfChildWindows.Count - 1 : currentActiveFormIndex - 1;
+			ListOfChildWindows[newIndexToActivate].Activate();
+		}
+	}
+
+	private void ActivateNextWindowInChildList(Window window)
+	{
+		if (ListOfChildWindows != null && ListOfChildWindows.IndexOf(window) != -1)
+		{
+			int currentActiveFormIndex = ListOfChildWindows.IndexOf(window);
+			int newIndexToActivate = currentActiveFormIndex == ListOfChildWindows.Count - 1 ? 0 : currentActiveFormIndex + 1;
+			ListOfChildWindows[newIndexToActivate].Activate();
 		}
 	}
 

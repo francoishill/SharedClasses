@@ -316,8 +316,8 @@ public class InlineCommands
 		public List<CommandArgumentClass> commandArguments;
 		public PerformCommandTypeEnum PerformCommandType;
 		//public CommandForm commandForm;
-		public MainWindow commandWindow;
-		public CommandDetails(string commandNameIn, string UserLabelIn, List<CommandArgumentClass> commandArgumentsIn, PerformCommandTypeEnum PerformCommandTypeIn, MainWindow commandWindowIn = null)//CommandForm commandFormIn = null)
+		public CommandWindow commandWindow;
+		public CommandDetails(string commandNameIn, string UserLabelIn, List<CommandArgumentClass> commandArgumentsIn, PerformCommandTypeEnum PerformCommandTypeIn, CommandWindow commandWindowIn = null)//CommandForm commandFormIn = null)
 		{
 			commandName = commandNameIn;
 			commandPredefinedArguments = new AutoCompleteStringCollection();

@@ -41,10 +41,11 @@
 		this.ShowIcon = false;
 		this.ShowInTaskbar = false;
 		this.Text = "OverlayForm";
-		this.TopMost = true;
 		this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
+		this.Activated += new System.EventHandler(this.OverlayForm_Activated);
 		this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.OverlayForm_FormClosing);
 		this.Shown += new System.EventHandler(this.OverlayForm_Shown);
+		this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OverlayForm_KeyDown);
 		this.MouseClick += new System.Windows.Forms.MouseEventHandler(this.OverlayForm_MouseClick);
 		this.ResumeLayout(false);
 

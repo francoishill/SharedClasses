@@ -12,6 +12,20 @@ using System.Windows.Input;
 
 public partial class OverlayForm : System.Windows.Forms.Form
 {
+	public class OverlayChildManager
+	{
+		public bool AllowShow;
+		public bool EventAttached;
+		public bool WindowAlreadyPositioned;
+
+		public OverlayChildManager(bool AllowShowIn, bool EventAttachedIn, bool WindowAlreadyPositionedIn)
+		{
+			AllowShow = AllowShowIn;
+			EventAttached = EventAttachedIn;
+			WindowAlreadyPositioned = WindowAlreadyPositionedIn;
+		}
+	}
+
 	//public List<Form> ListOfChildForms = new List<Form>();
 	public List<Window> ListOfChildWindows = new List<Window>();
 
@@ -40,7 +54,7 @@ public partial class OverlayForm : System.Windows.Forms.Form
 		//{
 		for (int i = 0; i < 80; i++)
 		{
-			ThreadingInterop.PerformVoidFunctionSeperateThread(() => { System.Threading.Thread.Sleep(3); });
+			ThreadingInterop.PerformVoidFunctionSeperateThread(() => { System.Threading.Thread.Sleep(1); });
 			ThreadingInterop.UpdateGuiFromThread(this, () =>
 			{
 				this.Opacity += 0.01;
@@ -68,7 +82,7 @@ public partial class OverlayForm : System.Windows.Forms.Form
 				//AddMouseRightButtonDownEventToWindow(window);
 				AddMouseWheelEventToWindow(window);
 				//AddKeydownEventToControlandSubcontrols(form);
-				AddKeyupEventToWindowAndChildren(window);
+				AddKeydownEventToWindowAndChildren(window);
 
 				MarkformEventsAdded(window);
 			}
@@ -77,55 +91,12 @@ public partial class OverlayForm : System.Windows.Forms.Form
 			if (MayFormBeShow(window))
 			{
 				//window.Opacity = 0.75F;
-				window.Show();				
+				window.Show();
 				//if (propertyFreezeEvent_Activated != null) propertyFreezeEvent_Activated.SetValue(form, false, null);
 			}
 		}
 
 		AutoLayoutOfForms();
-
-
-		/*foreach (Form form in ListOfChildForms)
-		{
-			form.StartPosition = FormStartPosition.Manual;
-			if (NextLeftPos + form.Width + leftGap >= workingArea.Right)
-			{
-				NextTopPos += MaxHeightInRow + topGap;
-				NextLeftPos = leftGap;
-				MaxHeightInRow = 0;
-			}
-
-			form.Location = new Point(NextLeftPos, NextTopPos);
-			NextLeftPos += form.Width + leftGap;
-			if (form.Height > MaxHeightInRow) MaxHeightInRow = form.Height;
-
-			if (form.Tag == null)
-				form.Tag = new OverlayChildManager(true, false);
-
-			form.FormBorderStyle = Forms.FormBorderStyle.SizableToolWindow;
-			form.MaximizeBox = false;
-			form.MinimizeBox = false;
-			form.ShowInTaskbar = false;
-			//form.ShowIcon = false;
-
-			if (!IsEventsAdded(form))
-			{
-				//AddMouseDownEventToControlandSubcontrols(form);
-				AddFormClosingEventToControl(form);
-				AddKeydownEventToControlandSubcontrols(form);
-
-				MarkformEventsAdded(form);
-			}
-			form.TopMost = true;
-			if (MayFormBeShow(form))
-			{
-				form.Opacity = 0.75F;
-				PropertyInfo propertyFreezeEvent_Activated = form.GetType().GetProperty("FreezeEvent_Activated");
-				if (propertyFreezeEvent_Activated != null) propertyFreezeEvent_Activated.SetValue(form, true, null);
-				form.Show();
-				//if (propertyFreezeEvent_Activated != null) propertyFreezeEvent_Activated.SetValue(form, false, null);
-			}
-		}*/
 	}
 
 	private void AddMouseLeftButtonDownEventToWindow(Window window)
@@ -207,58 +178,39 @@ public partial class OverlayForm : System.Windows.Forms.Form
 		}
 	}
 
-	private void AddKeyupEventToWindowAndChildren(Window window)
+	private void AddKeydownEventToWindowAndChildren(Window window)
 	{
-		window.KeyUp += new System.Windows.Input.KeyEventHandler(control_KeyUp1);
+		window.KeyDown += new System.Windows.Input.KeyEventHandler(control_KeyDown1);
 		foreach (object o in LogicalTreeHelper.GetChildren(window))
 			if (o is System.Windows.Controls.Control)
 			{
-				(o as System.Windows.Controls.Control).KeyUp += new System.Windows.Input.KeyEventHandler(control_KeyUp1);
+				(o as System.Windows.Controls.Control).KeyUp += new System.Windows.Input.KeyEventHandler(control_KeyDown1);
 			}
 	}
 
-	private void AddKeydownEventToControlandSubcontrols(System.Windows.Forms.Control control)
+	void control_KeyDown1(object sender, System.Windows.Input.KeyEventArgs e)
 	{
-		//if (control is TextBox) (control as TextBox).Multiline = true;
-		control.KeyDown += new System.Windows.Forms.KeyEventHandler(control_KeyDown);
-		//control.KeyDown += new System.Windows.Input.KeyEventHandler(control_KeyDown1);
-		foreach (System.Windows.Forms.Control subcontrol in control.Controls)
-			AddKeydownEventToControlandSubcontrols(subcontrol);
-	}
-
-	void control_KeyUp1(object sender, System.Windows.Input.KeyEventArgs e)
-	{
-		//if (e.Key == System.Windows.Input.Key.Tab)
-		//  e.Handled = true;// == Keys.Tab) e.Handled = true;
-
-		//if (e.KeyCode == Keys.Tab && ModifierKeys == Keys.Control)
-		//if (e.Key == System.Windows.Input.Key.Tab) UserMessages.ShowMessage("Tab");
-		if (e.Key == System.Windows.Input.Key.Tab && ModifierKeys == System.Windows.Forms.Keys.None)
+		if (e.Key == Key.Escape)
 		{
-			TraversalRequest tRequest = new TraversalRequest(FocusNavigationDirection.Next);
-			UIElement keyboardFocus = Keyboard.FocusedElement as UIElement;
-			if (keyboardFocus != null)
-				keyboardFocus.MoveFocus(tRequest);
+			this.Activate();
 		}
+
+		//if (e.Key == System.Windows.Input.Key.Tab && ModifierKeys == System.Windows.Forms.Keys.None)
+		//{
+		//  TraversalRequest tRequest = new TraversalRequest(FocusNavigationDirection.Next);
+		//  UIElement keyboardFocus = Keyboard.FocusedElement as UIElement;
+		//  if (keyboardFocus != null)
+		//    keyboardFocus.MoveFocus(tRequest);
+		//}
 		if (e.Key == System.Windows.Input.Key.Tab && ModifierKeys == System.Windows.Forms.Keys.Control)
 		{
-			//if (ListOfChildForms != null && ListOfChildForms.IndexOf((sender as Control).FindForm()) != -1)
-			//{
-			//  int currentActiveFormIndex = ListOfChildForms.IndexOf((sender as Control).FindForm());
-			//  int newIndexToActivate = currentActiveFormIndex == ListOfChildForms.Count - 1 ? 0 : currentActiveFormIndex + 1;
-			//  ListOfChildForms[newIndexToActivate].Activate();
-			//}
+			e.Handled = true;
 			ActivateNextWindowInChildList(FindWindowOfControl(sender as System.Windows.Controls.Control));
 		}
 		//else if (e.KeyCode == Keys.Tab && (ModifierKeys & (Keys.Control | Keys.Shift)) == (Keys.Control | Keys.Shift))
 		else if (e.Key == System.Windows.Input.Key.Tab && (ModifierKeys & (System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift)) == (System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift))
 		{
-			//if (ListOfChildForms != null && ListOfChildForms.IndexOf((sender as Control).FindForm()) != -1)
-			//{
-			//  int currentActiveFormIndex = ListOfChildForms.IndexOf((sender as Control).FindForm());
-			//  int newIndexToActivate = currentActiveFormIndex == 0 ? ListOfChildForms.Count - 1 : currentActiveFormIndex - 1;
-			//  ListOfChildForms[newIndexToActivate].Activate();
-			//}
+			e.Handled = true;
 			ActivatePreviousWindowInChildList(FindWindowOfControl(sender as System.Windows.Controls.Control));
 		}
 	}
@@ -271,6 +223,8 @@ public partial class OverlayForm : System.Windows.Forms.Form
 			int newIndexToActivate = currentActiveFormIndex == 0 ? ListOfChildWindows.Count - 1 : currentActiveFormIndex - 1;
 			ListOfChildWindows[newIndexToActivate].Activate();
 		}
+		else if (ListOfChildWindows != null)
+			ListOfChildWindows[0].Activate();
 	}
 
 	private void ActivateNextWindowInChildList(Window window)
@@ -281,6 +235,8 @@ public partial class OverlayForm : System.Windows.Forms.Form
 			int newIndexToActivate = currentActiveFormIndex == ListOfChildWindows.Count - 1 ? 0 : currentActiveFormIndex + 1;
 			ListOfChildWindows[newIndexToActivate].Activate();
 		}
+		else if (ListOfChildWindows != null)
+			ListOfChildWindows[0].Activate();
 	}
 
 	private Window FindWindowOfControl(System.Windows.Controls.Control control)
@@ -289,42 +245,6 @@ public partial class OverlayForm : System.Windows.Forms.Form
 		while (!(tmpControl is Window))
 			tmpControl = (System.Windows.Controls.Control)tmpControl.Parent;
 		return tmpControl as Window;
-	}
-
-	private void control_KeyDown(object sender, System.Windows.Forms.KeyEventArgs e)
-	{
-		if (e.KeyCode == System.Windows.Forms.Keys.Tab) e.Handled = true;
-
-		if (e.KeyCode == System.Windows.Forms.Keys.Tab && ModifierKeys == System.Windows.Forms.Keys.Control)
-		{
-			//if (ListOfChildForms != null && ListOfChildForms.IndexOf((sender as Control).FindForm()) != -1)
-			//{
-			//  int currentActiveFormIndex = ListOfChildForms.IndexOf((sender as Control).FindForm());
-			//  int newIndexToActivate = currentActiveFormIndex == ListOfChildForms.Count - 1 ? 0 : currentActiveFormIndex + 1;
-			//  ListOfChildForms[newIndexToActivate].Activate();
-			//}
-			if (ListOfChildWindows != null && ListOfChildWindows.IndexOf(FindWindowOfControl(sender as System.Windows.Controls.Control)) != -1)
-			{
-				int currentActiveFormIndex = ListOfChildWindows.IndexOf(FindWindowOfControl(sender as System.Windows.Controls.Control));
-				int newIndexToActivate = currentActiveFormIndex == ListOfChildWindows.Count - 1 ? 0 : currentActiveFormIndex + 1;
-				ListOfChildWindows[newIndexToActivate].Activate();
-			}
-		}
-		else if (e.KeyCode == System.Windows.Forms.Keys.Tab && (ModifierKeys & (System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift)) == (System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift))
-		{
-			//if (ListOfChildForms != null && ListOfChildForms.IndexOf((sender as Control).FindForm()) != -1)
-			//{
-			//  int currentActiveFormIndex = ListOfChildForms.IndexOf((sender as Control).FindForm());
-			//  int newIndexToActivate = currentActiveFormIndex == 0 ? ListOfChildForms.Count - 1 : currentActiveFormIndex - 1;
-			//  ListOfChildForms[newIndexToActivate].Activate();
-			//}
-			if (ListOfChildWindows != null && ListOfChildWindows.IndexOf(FindWindowOfControl(sender as System.Windows.Controls.Control)) != -1)
-			{
-				int currentActiveFormIndex = ListOfChildWindows.IndexOf(FindWindowOfControl(sender as System.Windows.Controls.Control));
-				int newIndexToActivate = currentActiveFormIndex == 0 ? ListOfChildWindows.Count - 1 : currentActiveFormIndex - 1;
-				ListOfChildWindows[newIndexToActivate].Activate();
-			}
-		}
 	}
 
 	private void AddClosingEventToWindow(System.Windows.Window window)//Form form)
@@ -371,22 +291,22 @@ public partial class OverlayForm : System.Windows.Forms.Form
 		(window.Tag as OverlayChildManager).EventAttached = true;
 	}
 
-	private void AddMouseDownEventToControlandSubcontrols(System.Windows.Forms.Control control)
-	{
-		control.MouseDown += new System.Windows.Forms.MouseEventHandler(form_MouseDown);
-		foreach (System.Windows.Forms.Control subcontrol in control.Controls)
-			AddMouseDownEventToControlandSubcontrols(subcontrol);
-	}
+	//private void AddMouseDownEventToControlandSubcontrols(System.Windows.Forms.Control control)
+	//{
+	//  control.MouseDown += new System.Windows.Forms.MouseEventHandler(form_MouseDown);
+	//  foreach (System.Windows.Forms.Control subcontrol in control.Controls)
+	//    AddMouseDownEventToControlandSubcontrols(subcontrol);
+	//}
 
-	private void form_MouseDown(object sender, System.Windows.Forms.MouseEventArgs e)
-	{
-		if (e.Button == System.Windows.Forms.MouseButtons.Left)
-		{
-			Win32Api.ReleaseCapture();
-			if (!(sender is System.Windows.Forms.TextBox) && !(sender is System.Windows.Forms.RichTextBox))
-				Win32Api.SendMessage(((System.Windows.Forms.Control)sender).FindForm().Handle, Win32Api.WM_NCLBUTTONDOWN, new IntPtr(Win32Api.HT_CAPTION), IntPtr.Zero);
-		}
-	}
+	//private void form_MouseDown(object sender, System.Windows.Forms.MouseEventArgs e)
+	//{
+	//  if (e.Button == System.Windows.Forms.MouseButtons.Left)
+	//  {
+	//    Win32Api.ReleaseCapture();
+	//    if (!(sender is System.Windows.Forms.TextBox) && !(sender is System.Windows.Forms.RichTextBox))
+	//      Win32Api.SendMessage(((System.Windows.Forms.Control)sender).FindForm().Handle, Win32Api.WM_NCLBUTTONDOWN, new IntPtr(Win32Api.HT_CAPTION), IntPtr.Zero);
+	//  }
+	//}
 
 	private void OverlayForm_FormClosing(object sender, System.Windows.Forms.FormClosingEventArgs e)
 	{
@@ -396,26 +316,27 @@ public partial class OverlayForm : System.Windows.Forms.Form
 				window.Owner = null;
 				window.Hide();
 			}
-		//foreach (Form form in ListOfChildForms)
-		//  if (form != null && !form.IsDisposed)
-		//  {
-		//    form.Owner = null;
-		//    form.Hide();
-		//  }
-		//ListOfChildForms = null;
 	}
 
-	public class OverlayChildManager
+	private void OverlayForm_Activated(object sender, EventArgs e)
 	{
-		public bool AllowShow;
-		public bool EventAttached;
-		public bool WindowAlreadyPositioned;
+		this.TopMost = true;
+		this.TopMost = false;
+	}
 
-		public OverlayChildManager(bool AllowShowIn, bool EventAttachedIn, bool WindowAlreadyPositionedIn)
+	private void OverlayForm_KeyDown(object sender, System.Windows.Forms.KeyEventArgs e)
+	{
+		if (e.KeyCode == System.Windows.Forms.Keys.Escape)
+			this.Close();
+		else if (e.KeyCode == System.Windows.Forms.Keys.Tab && ModifierKeys == System.Windows.Forms.Keys.Control)
 		{
-			AllowShow = AllowShowIn;
-			EventAttached = EventAttachedIn;
-			WindowAlreadyPositioned = WindowAlreadyPositionedIn;
+			if (ListOfChildWindows != null && ListOfChildWindows.Count > 0)
+				ListOfChildWindows[0].Activate();
+		}
+		else if (e.KeyCode == System.Windows.Forms.Keys.Tab && (ModifierKeys & (System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift)) == (System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift))
+		{
+			if (ListOfChildWindows != null && ListOfChildWindows.Count > 0)
+				ListOfChildWindows[ListOfChildWindows.Count - 1].Activate();
 		}
 	}
 }

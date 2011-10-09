@@ -74,9 +74,7 @@ public partial class OverlayForm : System.Windows.Forms.Form
 			if (MayFormBeShow(window))
 			{
 				//window.Opacity = 0.75F;
-				PropertyInfo propertyFreezeEvent_Activated = window.GetType().GetProperty("FreezeEvent_Activated");
-				if (propertyFreezeEvent_Activated != null) propertyFreezeEvent_Activated.SetValue(window, true, null);
-				window.Show();
+				window.Show();				
 				//if (propertyFreezeEvent_Activated != null) propertyFreezeEvent_Activated.SetValue(form, false, null);
 			}
 		}
@@ -177,6 +175,13 @@ public partial class OverlayForm : System.Windows.Forms.Form
 			}
 			NextLeftPos += (int)window.Width + leftGap;
 			if (window.Height > MaxHeightInRow) MaxHeightInRow = (int)window.Height;
+			
+			//PositionBeforeActivated = new Point(this.Left, this.Top);
+			PropertyInfo propertyPositionBeforeActivated = window.GetType().GetProperty("PositionBeforeActivated");
+			if (propertyPositionBeforeActivated != null) propertyPositionBeforeActivated.SetValue(window, new System.Windows.Point(window.Left, window.Top), null);
+			
+			PropertyInfo propertyFreezeEvent_Activated = window.GetType().GetProperty("AllowedToAnimationLocation");
+			if (propertyFreezeEvent_Activated != null) propertyFreezeEvent_Activated.SetValue(window, true, null);
 		}
 	}
 

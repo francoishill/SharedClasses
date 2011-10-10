@@ -69,8 +69,18 @@ public class InlineCommands
 			"mail to;subject;body",
 			new List<CommandDetails.CommandArgumentClass>()
 					{
-						new CommandDetails.CommandArgumentClass("Toaddress", true, CommandDetails.TypeArg.Text, null),
-						new CommandDetails.CommandArgumentClass("Subject", true, CommandDetails.TypeArg.Text, null),
+						new CommandDetails.CommandArgumentClass("Toaddress", true, CommandDetails.TypeArg.Text,
+							new Dictionary<string,string>()
+							{
+								{ "fhill@gls.co.za", null },
+								{ "francoishill11@gmail.com", null },
+								{ "fhillhome@gmail.com", null }
+							}),
+						new CommandDetails.CommandArgumentClass("Subject", true, CommandDetails.TypeArg.Text,
+							new Dictionary<string,string>()
+							{
+								{ "Please remember", null },
+							}),
 						new CommandDetails.CommandArgumentClass("Body", false, CommandDetails.TypeArg.Text, null)
 					},
 			CommandDetails.PerformCommandTypeEnum.CreateNewOutlookMessage);
@@ -316,8 +326,9 @@ public class InlineCommands
 		public List<CommandArgumentClass> commandArguments;
 		public PerformCommandTypeEnum PerformCommandType;
 		//public CommandForm commandForm;
-		public CommandWindow commandWindow;
-		public CommandDetails(string commandNameIn, string UserLabelIn, List<CommandArgumentClass> commandArgumentsIn, PerformCommandTypeEnum PerformCommandTypeIn, CommandWindow commandWindowIn = null)//CommandForm commandFormIn = null)
+		//public CommandWindow commandUsercontrol;
+		public CommandUserControl commandUsercontrol;
+		public CommandDetails(string commandNameIn, string UserLabelIn, List<CommandArgumentClass> commandArgumentsIn, PerformCommandTypeEnum PerformCommandTypeIn, CommandUserControl commandUsercontrolIn = null)
 		{
 			commandName = commandNameIn;
 			commandPredefinedArguments = new AutoCompleteStringCollection();
@@ -363,8 +374,7 @@ public class InlineCommands
 			commandArguments = commandArgumentsIn;
 			PerformCommandType = PerformCommandTypeIn;
 
-			//commandForm = commandFormIn;
-			commandWindow = commandWindowIn;
+			commandUsercontrol = commandUsercontrolIn;
 		}
 
 		public void PerformCommand(string fullCommandText, ComboBox textboxtoClearOnSuccess, TextBox messagesTextbox)

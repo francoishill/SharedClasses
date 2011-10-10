@@ -30,7 +30,8 @@ public class VisualStudioInterop
 
 	private enum BuildType { Rebuild, Build };
 	private enum ProjectConfiguration { Debug, Release };
-	private static string BuildVsProjectReturnNewversionString(TextBox messagesTextbox, string projectFilename, BuildType buildType, ProjectConfiguration configuration, bool AutomaticallyUpdateRevision)
+	private enum PlatformTarget { x86, x64 };
+	private static string BuildVsProjectReturnNewversionString(TextBox messagesTextbox, string projectFilename, BuildType buildType, ProjectConfiguration configuration, PlatformTarget platformTarget, bool AutomaticallyUpdateRevision)
 	{
 		string msbuildpath;
 		if (!FindMsbuildPath4(out msbuildpath))
@@ -47,6 +48,7 @@ public class VisualStudioInterop
 			"/t:" + buildType.ToString().ToLower() +
 			" /p:configuration=" + configuration.ToString().ToLower() +
 			" /p:AllowUnsafeBlocks=true" +
+			" /p:PlatformTarget=" + platformTarget.ToString() +
 			" \"" + projectFilename + "\"");
 
 		startinfo.UseShellExecute = false;
@@ -185,7 +187,7 @@ public class VisualStudioInterop
 		if (!ProjFileFound) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Could not find project file (csproj) in dir " + projDir);
 		else
 		{
-			string newversionstring = BuildVsProjectReturnNewversionString(messagesTextbox, csprojFileName, BuildType.Rebuild, ProjectConfiguration.Release, AutomaticallyUpdateRevision);
+			string newversionstring = BuildVsProjectReturnNewversionString(messagesTextbox, csprojFileName, BuildType.Rebuild, ProjectConfiguration.Release, PlatformTarget.x64, AutomaticallyUpdateRevision);
 			if (newversionstring == null) return;
 
 			ThreadingInterop.PerformVoidFunctionSeperateThread(() =>

@@ -9,6 +9,7 @@ public static class Win32Api
 	public static readonly int WM_NCLBUTTONDOWN = 0xA1;
 	public static readonly int HT_CAPTION = 0x2;
 
+	public const int CB_SHOWDROPDOWN = 0x014F;
 	[DllImportAttribute("user32.dll")]
 	public static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
 	[DllImportAttribute("user32.dll")]

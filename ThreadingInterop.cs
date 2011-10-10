@@ -26,9 +26,9 @@ public class ThreadingInterop
 		else action.Invoke();
 	}
 
-	delegate void AutocompleteCallback(TextBox txtBox, String text);
-	delegate void ClearAutocompleteCallback(TextBox txtBox);
-	public static void ClearTextboxAutocompleteCustomSource(TextBox txtBox)
+	delegate void AutocompleteCallback(ComboBox txtBox, String text);
+	delegate void ClearAutocompleteCallback(ComboBox txtBox);
+	public static void ClearTextboxAutocompleteCustomSource(ComboBox txtBox)
 	{
 		if (txtBox.InvokeRequired)
 		{
@@ -41,7 +41,7 @@ public class ThreadingInterop
 		}
 	}
 
-	public static void AddTextboxAutocompleteCustomSource(TextBox txtBox, string textToAdd)
+	public static void AddTextboxAutocompleteCustomSource(ComboBox txtBox, string textToAdd)
 	{
 		if (txtBox.InvokeRequired)
 		{

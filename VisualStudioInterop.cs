@@ -190,6 +190,7 @@ public class VisualStudioInterop
 
 			ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 			{
+				if (!Directory.Exists(WindowsInterop.LocalAppDataPath + @"\FJH\NSISinstaller\NSISexports")) Directory.CreateDirectory(WindowsInterop.LocalAppDataPath + @"\FJH\NSISinstaller\NSISexports");
 				using (StreamWriter sw2 = new StreamWriter(WindowsInterop.LocalAppDataPath + @"\FJH\NSISinstaller\NSISexports\DotNetChecker.nsh"))
 				{
 					sw2.Write(NsisInterop.DotNetChecker_NSH_file);
@@ -213,15 +214,17 @@ public class VisualStudioInterop
 					Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Successfully created NSIS file: " + nsisFileName);
 				}
 
+				//TODO: Must make provision if pc (to do building and compiling of NSIS scripts), does not have the DotNetChecker.dll plugin for NSIS
 				string MakeNsisFilePath = @"C:\Program Files (x86)\NSIS\makensis.exe";
 				if (!File.Exists(MakeNsisFilePath)) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Could not find MakeNsis.exe: " + MakeNsisFilePath);
 				else
 				{
 					Process nsisCompileProc = Process.Start(MakeNsisFilePath, "\"" + nsisFileName + "\"");
 					nsisCompileProc.WaitForExit();
-					Process.Start("explorer", "/select, \"" +
-						Path.GetDirectoryName(nsisFileName) + "\\" +
-						NsisInterop.GetSetupNameForProduct(InsertSpacesBeforeCamelCase(projName), newversionstring) + "\"");
+
+					string resultSetupFileName = Path.GetDirectoryName(nsisFileName) + "\\" + NsisInterop.GetSetupNameForProduct(InsertSpacesBeforeCamelCase(projName), newversionstring);
+					if (File.Exists(resultSetupFileName)) Process.Start("explorer", "/select, \"" + resultSetupFileName + "\"");
+					else Process.Start("explorer", "/select, \"" + Path.GetDirectoryName(nsisFileName) + "\"");
 				}
 			});
 		}

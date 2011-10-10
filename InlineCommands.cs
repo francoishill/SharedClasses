@@ -367,7 +367,7 @@ public class InlineCommands
 			commandWindow = commandWindowIn;
 		}
 
-		public void PerformCommand(string fullCommandText, TextBox textboxtoClearOnSuccess, TextBox messagesTextbox)
+		public void PerformCommand(string fullCommandText, ComboBox textboxtoClearOnSuccess, TextBox messagesTextbox)
 		{
 			string TextboxTextIn = fullCommandText;//textboxtoClearOnSuccess.Text;
 			string argStr = TextboxTextIn.Substring(TextboxTextIn.IndexOf(' ') + 1);

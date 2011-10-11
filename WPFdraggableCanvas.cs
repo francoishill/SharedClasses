@@ -166,26 +166,52 @@ namespace DragCanvas
 
 		#region OnPreviewMouseLeftButtonDown
 
-
-		protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)
+		protected override void OnPreviewMouseDown(MouseButtonEventArgs e)
 		{
-			base.OnPreviewMouseLeftButtonDown(e);
-			this.isDragInProgress = false;
-			this.origCursorLocation = e.GetPosition(this);
-			this.ElementBeingDragged = this.FindCanvasChild(e.Source as DependencyObject);
-			if (this.ElementBeingDragged == null)
-				return;
+			base.OnPreviewMouseDown(e);
+			if (e.ChangedButton == MouseButton.Middle)
+			{
+				this.isDragInProgress = false;
+				this.origCursorLocation = e.GetPosition(this);
+				this.ElementBeingDragged = this.FindCanvasChild(e.Source as DependencyObject);
+				if (this.ElementBeingDragged == null)
+					return;
+				//if (this.ElementBeingDragged is TextBox)
+				//  return;
 
-			double left = Canvas.GetLeft(this.ElementBeingDragged);
-			double right = Canvas.GetRight(this.ElementBeingDragged);
-			double top = Canvas.GetTop(this.ElementBeingDragged);
-			double bottom = Canvas.GetBottom(this.ElementBeingDragged);
-			this.origHorizOffset = ResolveOffset(left, right, out this.modifyLeftOffset);
-			this.origVertOffset = ResolveOffset(top, bottom, out this.modifyTopOffset);
-			e.Handled = true;
+				double left = Canvas.GetLeft(this.ElementBeingDragged);
+				double right = Canvas.GetRight(this.ElementBeingDragged);
+				double top = Canvas.GetTop(this.ElementBeingDragged);
+				double bottom = Canvas.GetBottom(this.ElementBeingDragged);
+				this.origHorizOffset = ResolveOffset(left, right, out this.modifyLeftOffset);
+				this.origVertOffset = ResolveOffset(top, bottom, out this.modifyTopOffset);
+				e.Handled = true;
 
-			this.isDragInProgress = true;
+				this.isDragInProgress = true;
+			}
 		}
+
+		//protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)
+		//{
+		//  base.OnPreviewMouseLeftButtonDown(e);
+		//  this.isDragInProgress = false;
+		//  this.origCursorLocation = e.GetPosition(this);
+		//  this.ElementBeingDragged = this.FindCanvasChild(e.Source as DependencyObject);
+		//  if (this.ElementBeingDragged == null)
+		//    return;
+		//  if (this.ElementBeingDragged is TextBox)
+		//    return;
+
+		//  double left = Canvas.GetLeft(this.ElementBeingDragged);
+		//  double right = Canvas.GetRight(this.ElementBeingDragged);
+		//  double top = Canvas.GetTop(this.ElementBeingDragged);
+		//  double bottom = Canvas.GetBottom(this.ElementBeingDragged);
+		//  this.origHorizOffset = ResolveOffset(left, right, out this.modifyLeftOffset);
+		//  this.origVertOffset = ResolveOffset(top, bottom, out this.modifyTopOffset);
+		//  e.Handled = true;
+
+		//  this.isDragInProgress = true;
+		//}
 
 		#endregion
 

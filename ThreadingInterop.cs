@@ -6,6 +6,7 @@ using System.Windows.Forms;
 
 public class ThreadingInterop
 {
+	//TODO: Have a look at this function (automatically queues to a thread) - System.Threading.ThreadPool.QueueUserWorkItem()
 	//PerformVoidFunctionSeperateThread(() => { MessageBox.Show("Test"); MessageBox.Show("Test1"); });
 	public static void PerformVoidFunctionSeperateThread(MethodInvoker method, bool WaitUntilFinish = true)
 	{

@@ -187,7 +187,13 @@ public class VisualStudioInterop
 		if (!ProjFileFound) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Could not find project file (csproj) in dir " + projDir);
 		else
 		{
-			string newversionstring = BuildVsProjectReturnNewversionString(messagesTextbox, csprojFileName, BuildType.Rebuild, ProjectConfiguration.Release, PlatformTarget.x64, AutomaticallyUpdateRevision);
+			string newversionstring = BuildVsProjectReturnNewversionString(
+				messagesTextbox,
+				csprojFileName,
+				BuildType.Rebuild,
+				ProjectConfiguration.Release,
+				PlatformTarget.x86,//.x64,
+				AutomaticallyUpdateRevision);
 			if (newversionstring == null) return;
 
 			ThreadingInterop.PerformVoidFunctionSeperateThread(() =>

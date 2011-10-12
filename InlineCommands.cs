@@ -205,6 +205,7 @@ public class InlineCommands
 								{ "GLSreports_xmlsql", @"C:\ProgramData\GLS\ReportSQLqueries" },
 								{ "QuickAccess", null },
 								{ "MonitorSystem", null },
+								//TODO: Need to add SharedClasses into all autocomplete lists (svncommint, svnupdate, etc...)
 								{ "NSISinstaller", null }
 							},
 							CommandDetails.PathAutocompleteEnum.Both),

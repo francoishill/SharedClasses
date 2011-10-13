@@ -14,6 +14,7 @@ using System.Windows.Shapes;
 using System.Windows.Interop;
 using System.Windows.Media.Animation;
 using System.Reflection;
+using System.IO;
 
 	/// <summary>
 	/// Interaction logic for MainWindow.xaml
@@ -125,20 +126,6 @@ public partial class OverlayWindow : Window
 			//usercontrol.ShowInTaskbar = false;
 			//form.ShowIcon = false;
 
-			if (!IsEventsAdded(usercontrol))//form))
-			{
-				//AddMouseDownEventToControlandSubcontrols(form);
-				AddClosingEventToUsercontrol(usercontrol);//form);
-				AddMouseLeftButtonDownEventToCommandUsercontrol(usercontrol);
-				AddMouseLeftButtonDownEventToChildren(usercontrol);
-				//AddMouseRightButtonDownEventToWindow(window);
-				AddMouseWheelEventToWindow(usercontrol);
-				//AddKeydownEventToControlandSubcontrols(form);
-				AddKeydownEventToWindowAndChildren(usercontrol);
-
-				MarkformEventsAdded(usercontrol);
-			}
-
 			//WpfDraggableCanvas draggableCanvas = new WpfDraggableCanvas();
 			//draggableCanvas.
 			//draggableCanvas.Children.Add(usercontrol);
@@ -157,7 +144,7 @@ public partial class OverlayWindow : Window
 			if (MayUsercontrolBeShown(usercontrol))
 			{
 				usercontrol.Visibility = Visibility.Visible;
-				usercontrol.currentFocusedElement.Focus();
+				//usercontrol.currentFocusedElement.Focus();
 			}
 			else usercontrol.Visibility = Visibility.Hidden;
 		}
@@ -167,6 +154,41 @@ public partial class OverlayWindow : Window
 		if (ListOfCommandUsercontrols.Count > 0)
 			//if (!ListOfCommandUsercontrols[0].currentFocusedElement.IsFocused)
 			ListOfCommandUsercontrols[0].currentFocusedElement.Focus();
+
+		//AddEventsToAllChildUsercontrols();
+	}
+
+	public void AddEventsToAllChildUsercontrols()
+	{
+		foreach (CommandUserControl usercontrol in ListOfCommandUsercontrols)
+		{
+			if (!IsEventsAdded(usercontrol))//form))
+			{
+				//AddMouseDownEventToControlandSubcontrols(form);
+				AddClosingEventToUsercontrol(usercontrol);//form);
+				AddGotAndLostKeyboardFocusEventToCommandUsercontrol(usercontrol);
+				AddMouseLeftButtonDownEventToCommandUsercontrol(usercontrol);
+				AddMouseLeftButtonDownEventToChildren(usercontrol);
+				//AddMouseRightButtonDownEventToWindow(window);
+				AddMouseWheelEventToWindow(usercontrol);
+				//AddKeydownEventToControlandSubcontrols(form);
+				AddKeydownEventToWindowAndChildren(usercontrol);
+
+				MarkformEventsAdded(usercontrol);
+			}
+		}
+	}
+
+	private void AddGotAndLostKeyboardFocusEventToCommandUsercontrol(CommandUserControl usercontrol)
+	{
+		usercontrol.GotKeyboardFocus += (s, closeargs) =>
+		{
+			usercontrol.ActivateControl();
+		};
+		usercontrol.LostKeyboardFocus += (s, closeargs) =>
+		{
+			usercontrol.DeactivateControl();
+		};
 	}
 
 	private void AddMouseLeftButtonDownEventToCommandUsercontrol(CommandUserControl usercontrol)
@@ -181,10 +203,11 @@ public partial class OverlayWindow : Window
 			//  usercontrol.LayoutTransform = new MatrixTransform();
 			//usercontrol.Opacity = 1;
 
-			int indexOfClosedItem = ListOfCommandUsercontrols.IndexOf(usercontrol);
-			for (int i = indexOfClosedItem + 1; i < ListOfCommandUsercontrols.Count; i++)
-				MarkfWindowNOTAlreadyPositioned(ListOfCommandUsercontrols[i]);
-			AutoLayoutOfForms(indexOfClosedItem + 1);
+			//int indexOfClosedItem = ListOfCommandUsercontrols.IndexOf(usercontrol);
+			//for (int i = indexOfClosedItem + 1; i < ListOfCommandUsercontrols.Count; i++)
+			//  MarkfWindowNOTAlreadyPositioned(ListOfCommandUsercontrols[i]);
+			//AutoLayoutOfForms(indexOfClosedItem + 1);
+
 			//ActivateNextWindowInChildList(usercontrol);
 
 			//DONE TODO: DragMove to be implemented for usercontrol because its not window anymore
@@ -303,6 +326,7 @@ public partial class OverlayWindow : Window
 			if (ForceDoLayoutForFollowingControls || !IsWindowAlreadyPositioned(usercontrol))
 			{
 				usercontrol.Margin = new Thickness(NextLeftPos, NextTopPos, 0, 0);
+				usercontrol.autoLayoutMaginBeforeAnimation = usercontrol.Margin;
 				//usercontrol.Left = NextLeftPos;
 				//usercontrol.Top = NextTopPos;
 				MarkfWindowAsAlreadyPositioned(usercontrol);
@@ -399,13 +423,13 @@ public partial class OverlayWindow : Window
 	{
 		usercontrol.AnimationComplete_Closing += (snder, evtargs) =>
 		{
-			AutoLayoutOfForms(ListOfCommandUsercontrols.IndexOf(snder as CommandUserControl) + 1, true);
+			//AutoLayoutOfForms(ListOfCommandUsercontrols.IndexOf(snder as CommandUserControl) + 1, true);
 			//if (snder is CommandUserControl)
 			//  (snder as CommandUserControl)
 		};
 		usercontrol.AnimationComplete_Activating += (snder, evtargs) =>
 		{
-			AutoLayoutOfForms(ListOfCommandUsercontrols.IndexOf(snder as CommandUserControl) + 1, true);
+			//AutoLayoutOfForms(ListOfCommandUsercontrols.IndexOf(snder as CommandUserControl) + 1, true);
 		};
 		//usercontrol.storyboardFadeout.Completed += (sendr, evtargs) =>
 		//{

@@ -225,7 +225,7 @@
         Content='Testing'
         HorizontalAlignment='Center'
         VerticalAlignment='Top'
-        FontSize='14' />
+        FontSize='18' />
       <Grid
         HorizontalAlignment='Stretch'
         VerticalAlignment='Stretch'

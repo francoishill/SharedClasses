@@ -453,8 +453,11 @@ public class InlineCommands
 					else if (processes.Length == 0) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Cannot find process with name " + processName);
 					else
 					{
-						processes[0].Kill();
-						Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Process killed: " + processName);
+						if (UserMessages.Confirm("Confirm to kill process '" + processes[0].ProcessName + "'"))
+						{
+							processes[0].Kill();
+							Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Process killed: " + processName);
+						}
 					}
 					break;
 
@@ -474,10 +477,14 @@ public class InlineCommands
 				case PerformCommandTypeEnum.Cmd:
 				case PerformCommandTypeEnum.VsCmd:
 					string cmdpath = argStr;
-					if (commandArguments[0].TokenWithReplaceStringPair != null && commandArguments[0].TokenWithReplaceStringPair.ContainsKey(cmdpath))
-						cmdpath = commandArguments[0].TokenWithReplaceStringPair[cmdpath] ?? cmdpath;
+					foreach (string commaSplitted in cmdpath.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+					{
+						string cmdpathSplitted = commaSplitted;
+						if (commandArguments[0].TokenWithReplaceStringPair != null && commandArguments[0].TokenWithReplaceStringPair.ContainsKey(cmdpathSplitted))
+							cmdpathSplitted = commandArguments[0].TokenWithReplaceStringPair[cmdpathSplitted] ?? cmdpathSplitted;
 
-					WindowsInterop.StartCommandPromptOrVScommandPrompt(messagesTextbox, cmdpath, PerformCommandType == PerformCommandTypeEnum.VsCmd);
+						WindowsInterop.StartCommandPromptOrVScommandPrompt(messagesTextbox, cmdpathSplitted, PerformCommandType == PerformCommandTypeEnum.VsCmd);
+					}
 					break;
 
 				case PerformCommandTypeEnum.Btw:
@@ -501,25 +508,32 @@ public class InlineCommands
 						: PerformCommandType == PerformCommandTypeEnum.Svnstatus ? SvnInterop.SvnCommand.Status
 						: SvnInterop.SvnCommand.Status;
 
-					string svnprojname = svnargs.Contains(ArgumentSeparator) ? svnargs.Split(ArgumentSeparator)[0] : svnargs;
-					string svnlogmessage = svnargs.Contains(ArgumentSeparator) ? svnargs.Split(ArgumentSeparator)[1] : "";
-					if (commandArguments[0].TokenWithReplaceStringPair != null && commandArguments[0].TokenWithReplaceStringPair.ContainsKey(svnprojname))
-						svnargs = (commandArguments[0].TokenWithReplaceStringPair[svnprojname] ?? svnprojname) + (svnargs.Contains(ArgumentSeparator) ? ArgumentSeparator + svnlogmessage : "");
-					SvnInterop.PerformSvn(messagesTextbox, svnargs, svnCommand);
+					string[] splittedArgsOnlyForUpdateAndStatus = svnargs.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+					if (svnCommand == SvnInterop.SvnCommand.Commit) splittedArgsOnlyForUpdateAndStatus = new string[] { svnargs };
+					foreach (string commaSplitted in splittedArgsOnlyForUpdateAndStatus)
+					{
+						string tmpsplit = commaSplitted;
+						string svnprojname = tmpsplit.Contains(ArgumentSeparator) ? tmpsplit.Split(ArgumentSeparator)[0] : tmpsplit;
+						string svnlogmessage = tmpsplit.Contains(ArgumentSeparator) ? tmpsplit.Split(ArgumentSeparator)[1] : "";
+						if (commandArguments[0].TokenWithReplaceStringPair != null && commandArguments[0].TokenWithReplaceStringPair.ContainsKey(svnprojname))
+							tmpsplit = (commandArguments[0].TokenWithReplaceStringPair[svnprojname] ?? svnprojname) + (tmpsplit.Contains(ArgumentSeparator) ? ArgumentSeparator + svnlogmessage : "");
+						SvnInterop.PerformSvn(messagesTextbox, tmpsplit, svnCommand);
+					}
 					//}
 					//else appendLogTextbox_OfPassedTextbox(messagesTextbox, "Error: No semicolon. Command syntax is 'svncommit proj/othercommand projname;logmessage'");
 					//}
 					break;
 
 				case PerformCommandTypeEnum.PublishVs:
-					VisualStudioInterop.PerformPublish(messagesTextbox, argStr);
+					foreach (string commaSplit in argStr.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+						VisualStudioInterop.PerformPublish(messagesTextbox, commaSplit);//argStr);
 					break;
 
 				case PerformCommandTypeEnum.Undefined:
-					MessageBox.Show("PerformCommandType is not defined");
+					UserMessages.ShowWarningMessage("PerformCommandType is not defined: " + fullCommandText);
 					break;
 				default:
-					MessageBox.Show("PerformCommandType is not incorporated yet: " + PerformCommandType.ToString());
+					UserMessages.ShowWarningMessage("PerformCommandType is not incorporated yet: " + PerformCommandType.ToString());
 					break;
 			}
 		}

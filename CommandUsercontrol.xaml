@@ -1,0 +1,245 @@
+﻿<UserControl
+  x:Class='CommandUserControl'
+  xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
+  xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
+  xmlns:mc='http://schemas.openxmlformats.org/markup-compatibility/2006'
+  xmlns:d='http://schemas.microsoft.com/expression/blend/2008'
+  xmlns:clr='clr-namespace:System;assembly=mscorlib'
+  mc:Ignorable='d'
+  d:DesignHeight='299'
+  d:DesignWidth='549'
+  Margin='20'
+  Background='Transparent'
+  Name='parentUsercontrol'
+  VerticalAlignment='Top'
+  HorizontalAlignment='Left'
+  MouseLeftButtonDown='parentUsercontrol_MouseLeftButtonDown'
+  MouseLeftButtonUp='parentUsercontrol_MouseLeftButtonUp'
+  MouseDoubleClick='parentUsercontrol_MouseDoubleClick'
+  GotKeyboardFocus='parentUsercontrol_GotKeyboardFocus'
+  LostKeyboardFocus='parentUsercontrol_LostKeyboardFocus'
+  AllowDrop='True'
+    Drop='parentUsercontrol_Drop'>
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <!--<ResourceDictionary Source='/PresentationFramework.Aero;V3.0.0.0;31bf3856ad364e35;component\themes/aero.normalcolor.xaml' />-->
+        <!--<ResourceDictionary Source='/PresentationFramework.Classic,Version=3.0.0.0,Culture=neutral,PublicKeyToken=31bf3856ad364e35;component/themes/Classic.xaml' />-->
+        <!--<ResourceDictionary Source='/PresentationFramework.Royale,Version=3.0.0.0,Culture=neutral,PublicKeyToken=31bf3856ad364e35;component/themes/royale.normalcolor.xaml' />-->
+        <!--<ResourceDictionary Source='/PresentationFramework.Luna,Version=3.0.0.0,Culture=neutral,PublicKeyToken=31bf3856ad364e35;component/themes/luna.homestead.xaml' />-->
+        <!--<ResourceDictionary Source='/PresentationFramework.Luna,Version=3.0.0.0,Culture=neutral,PublicKeyToken=31bf3856ad364e35;component/themes/luna.metallic.xaml' />-->
+        <!--<ResourceDictionary Source='/PresentationFramework.Luna,Version=3.0.0.0,Culture=neutral,PublicKeyToken=31bf3856ad364e35;component/themes/luna.normalcolor.xaml' />-->
+
+        <ResourceDictionary>
+          <!--<clr:Double
+            x:Key='ScaleFactorWhenClosed'>0.3</clr:Double>
+          <clr:Double
+            x:Key='OpacityWhenClosed'>0.1</clr:Double>-->
+        </ResourceDictionary>
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </UserControl.Resources>
+  <UserControl.Triggers>
+    <EventTrigger
+      RoutedEvent='GotKeyboardFocus'>
+      <BeginStoryboard>
+        <Storyboard>
+          <ColorAnimation
+            Storyboard.TargetName='mainGradient1'
+            Storyboard.TargetProperty='Color'
+            To='#bbb'
+            Duration='0:0:0:0.1'
+            AutoReverse='False'
+            RepeatBehavior='1x' />
+          <ColorAnimation
+            Storyboard.TargetName='mainGradient2'
+            Storyboard.TargetProperty='Color'
+            To='#777'
+            Duration='0:0:0:0.1'
+            AutoReverse='False'
+            RepeatBehavior='1x' />
+        </Storyboard>
+      </BeginStoryboard>
+    </EventTrigger>
+    <EventTrigger
+      RoutedEvent='LostKeyboardFocus'>
+      <BeginStoryboard>
+        <Storyboard>
+          <ColorAnimation
+            Storyboard.TargetName='mainGradient1'
+            Storyboard.TargetProperty='Color'
+            Duration='0:0:0:0.1'
+            AutoReverse='False'
+            RepeatBehavior='1x' />
+          <ColorAnimation
+            Storyboard.TargetName='mainGradient2'
+            Storyboard.TargetProperty='Color'
+            Duration='0:0:0:0.1'
+            AutoReverse='False'
+            RepeatBehavior='1x' />
+        </Storyboard>
+      </BeginStoryboard>
+    </EventTrigger>
+    <!--<EventTrigger
+      RoutedEvent='MouseDown'>
+      <BeginStoryboard>
+        <Storyboard
+          Name='storyboardFadein'
+          AutoReverse='False'
+          RepeatBehavior='1x'
+          Duration='0:0:0:0.8'
+          Storyboard.TargetName='parentUsercontrol'
+          Completed='storyboardFadein_Completed'
+          FillBehavior='HoldEnd'>
+          <DoubleAnimation
+            Storyboard.TargetProperty='Opacity'
+            To='1' />
+          <DoubleAnimation
+            Storyboard.TargetProperty='(RenderTransform).(ScaleTransform.ScaleY)'
+            To='1' />
+          <DoubleAnimation
+            Storyboard.TargetProperty='(RenderTransform).(ScaleTransform.ScaleX)'
+            To='1' />
+        </Storyboard>
+      </BeginStoryboard>
+    </EventTrigger>-->
+  </UserControl.Triggers>
+  <Border
+    Name='mainBorder'
+    Margin='10'
+    CornerRadius='15'
+    Padding='10'
+    VerticalAlignment='Stretch'
+    HorizontalAlignment='Stretch'>
+    <Border.Background>
+      <RadialGradientBrush
+        SpreadMethod='Repeat'
+        ColorInterpolationMode='ScRgbLinearInterpolation'
+        RadiusX='5'
+        RadiusY='2'>
+        <RadialGradientBrush.GradientStops>
+          <!---webkit-gradient(linear, center top, center bottom, from(#BBB), color-stop(25%,#DDD), to(#BBB))-->
+          <GradientStop
+            x:Name='mainGradient1'
+            Color='#777'
+            Offset='0' />
+          <GradientStop
+            x:Name='mainGradient2'
+            Color='#444'
+            Offset='0.3' />
+        </RadialGradientBrush.GradientStops>
+      </RadialGradientBrush>
+    </Border.Background>
+    <Grid
+      Name='mainGrid'
+      HorizontalAlignment='Stretch'
+      VerticalAlignment='Stretch'
+      Margin='0,0,0,0'>
+      <Border
+        HorizontalAlignment='Left'
+        VerticalAlignment='Top'
+        CornerRadius='3'>
+        <Border.Background>
+          <LinearGradientBrush
+            StartPoint='0,0'
+            EndPoint='0,1'>
+            <LinearGradientBrush.GradientStops>
+              <GradientStop
+                Color='#aaa'
+                Offset='0' />
+              <GradientStop
+                Color='#ddd'
+                Offset='0.25' />
+              <GradientStop
+                Color='#aaa'
+                Offset='1' />
+            </LinearGradientBrush.GradientStops>
+          </LinearGradientBrush>
+        </Border.Background>
+        <Label
+          Name='labelShortcutKeyNumber'
+          Foreground='#000'
+          Content='0' />
+      </Border>
+      <Border
+        Name='border_Closebutton'
+        HorizontalAlignment='Right'
+        VerticalAlignment='Top'
+        CornerRadius='3'
+        Width='20'
+        Height='20'
+        Cursor='Hand'
+        MouseUp='border_Closebutton_MouseUp'>
+        <Border.Triggers>
+          <!--<EventTrigger
+            RoutedEvent='MouseUp'>
+            <BeginStoryboard>
+              <Storyboard
+                Name='storyboardFadeout'
+                AutoReverse='False'
+                RepeatBehavior='1x'
+                Duration='0:0:0:0.8'
+                Storyboard.TargetName='parentUsercontrol'                
+                Completed='storyboardFadeout_Completed'
+                FillBehavior='HoldEnd'>
+                <DoubleAnimation
+                  Storyboard.TargetProperty='Opacity'
+                  To='{StaticResource OpacityWhenClosed}' />
+                <DoubleAnimation
+                  Storyboard.TargetProperty='(RenderTransform).(ScaleTransform.ScaleY)'
+                  To='{StaticResource ScaleFactorWhenClosed}'/>
+                <DoubleAnimation
+                  Storyboard.TargetProperty='(RenderTransform).(ScaleTransform.ScaleX)'
+                  To='{StaticResource ScaleFactorWhenClosed}' />
+              </Storyboard>
+            </BeginStoryboard>
+          </EventTrigger>-->
+        </Border.Triggers>
+        <Border.Background>
+          <LinearGradientBrush
+            StartPoint='0,0'
+            EndPoint='0,1'>
+            <LinearGradientBrush.GradientStops>
+              <GradientStop
+                Color='#aaa'
+                Offset='0' />
+              <GradientStop
+                Color='#ddd'
+                Offset='0.25' />
+              <GradientStop
+                Color='#aaa'
+                Offset='1' />
+            </LinearGradientBrush.GradientStops>
+          </LinearGradientBrush>
+        </Border.Background>
+        <Label
+          Content='x'
+          Padding='0'
+          HorizontalContentAlignment='Center'
+          VerticalContentAlignment='Center'
+          Foreground='Red' />
+      </Border>
+      <Label
+        Name='labelTitle'
+        Foreground='LightGreen'
+        Content='Testing'
+        HorizontalAlignment='Center'
+        VerticalAlignment='Top'
+        FontSize='14' />
+      <Grid
+        HorizontalAlignment='Stretch'
+        VerticalAlignment='Stretch'
+        Margin='0,38,0,0'
+        Name='gridTable'>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition
+            Width='auto' />
+          <ColumnDefinition
+            Width='auto' />
+          <ColumnDefinition
+            Width='auto' />
+        </Grid.ColumnDefinitions>
+      </Grid>
+    </Grid>
+  </Border>
+</UserControl>

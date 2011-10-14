@@ -173,8 +173,8 @@ public partial class CommandUserControl : UserControl
 		}
 
 		Rect workingArea = SystemParameters.WorkArea;
-		newLeftPosition = workingArea.Left + (workingArea.Width - this.ActualWidth) / 2;
-		newTopPosition = workingArea.Top + (workingArea.Height - this.ActualHeight) / 2;
+		newLeftPosition = workingArea.Left + (workingArea.Width - this.ActualWidth * ActivatedScaleX) / 2;
+		newTopPosition = workingArea.Top + (workingArea.Height - this.ActualHeight * ActivatedScaleY) / 2;
 
 		this.RenderTransform = new MatrixTransform();
 		this.LayoutTransform = new ScaleTransform();

@@ -13,10 +13,11 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Media.Media3D;
 using System.Windows.Media.Animation;
+using System.IO;
 
-	/// <summary>
-	/// Interaction logic for tmpUserControl.xaml
-	/// </summary>
+/// <summary>
+/// Interaction logic for tmpUserControl.xaml
+/// </summary>
 public partial class CommandUserControl : UserControl
 {
 	public event EventHandler AnimationComplete_Closing;
@@ -30,8 +31,6 @@ public partial class CommandUserControl : UserControl
 	public double DeactivatedScaleY { get { return 0.6; } }
 	public double DeactivatedScaleX { get { return 0.6; } }
 	public double DeactivatedOpacity { get { return 1; } }
-	//public double InitialScaleYlayour = 0.75;
-	//public double InitialScaleXlayour = 0.75;
 	public double ActivatedScaleX { get { return 1.5; } }
 	public double ActivatedScaleY { get { return 1.5; } }
 	public CommandUserControl(string CommandTitle)
@@ -70,7 +69,7 @@ public partial class CommandUserControl : UserControl
 
 	public void AddControl(string label, System.Windows.Controls.Control control, Color labelColor)
 	{
-		Label labelControl = new Label() { Content = label, Margin = new Thickness(3, 5, 3, 0), MinWidth = 50, Foreground = Brushes.White };
+		Label labelControl = new Label() { Content = label, Margin = new Thickness(3, 5, 3, 0), Foreground = new SolidColorBrush(labelColor), MinWidth = 50 };
 
 		AddRowToGrid();
 
@@ -92,7 +91,7 @@ public partial class CommandUserControl : UserControl
 	{
 		if (tmpTreeview == null)
 		{
-			tmpTreeview = new TreeView() { MinWidth = 100, MinHeight = 20, MaxHeight = 40, VerticalAlignment = System.Windows.VerticalAlignment.Top };
+			tmpTreeview = new TreeView() { MinWidth = 150, MinHeight = 20, MaxHeight = 80, VerticalAlignment = System.Windows.VerticalAlignment.Top, Focusable = true };
 			gridTable.Children.Add(tmpTreeview);
 			Grid.SetColumn(tmpTreeview, 2);
 			if (gridTable.RowDefinitions.Count == 0) AddRowToGrid();
@@ -114,10 +113,10 @@ public partial class CommandUserControl : UserControl
 		double newScaleX = overWriteScale == -1 ? DeactivatedScaleX : overWriteScale;
 		double newScaleY = overWriteScale == -1 ? DeactivatedScaleY : overWriteScale;
 
-		Duration animationDuration = new Duration(TimeSpan.FromSeconds(0.8));
+		Duration animationDuration = new Duration(TimeSpan.FromSeconds(0.5));
 
 		double currentYscale = 1;
-		double currentXscale = 1;		
+		double currentXscale = 1;
 		if (!(parentUsercontrol.LayoutTransform is ScaleTransform)) parentUsercontrol.LayoutTransform = new ScaleTransform();
 		else
 		{
@@ -152,17 +151,9 @@ public partial class CommandUserControl : UserControl
 		{
 			if (AnimationComplete_Closing != null)
 				AnimationComplete_Closing(this, new EventArgs());
-			//this.Opacity = DeactivatedOpacity;
-			//this.LayoutTransform = new ScaleTransform(DeactivatedScaleX, DeactivatedScaleX);
-			//this.Opacity = findResource("ScaleFactorWhenClosed")
 			ResetToDeactivatedLayout();
 		};
 		storyboard.Begin(this);
-
-		//while (1==1)//storyboard.GetCurrentState == 
-		//  System.Windows.Forms.MessageBox.Show(storyboard.GetCurrentState(this).ToString());
-		//this.RenderTransform = new ScaleTransform(1, 1, this.ActualWidth / 2, this.ActualHeight / 2);
-		//this.Opacity = System.Windows.Visibility.Collapsed;
 	}
 
 	public Thickness autoLayoutMaginBeforeAnimation = new Thickness();
@@ -187,7 +178,7 @@ public partial class CommandUserControl : UserControl
 
 		this.RenderTransform = new MatrixTransform();
 		this.LayoutTransform = new ScaleTransform();
-		DoubleAnimation opacityAnimation = new DoubleAnimation() {  To = 1, Duration = animationDuration };
+		DoubleAnimation opacityAnimation = new DoubleAnimation() { To = 1, Duration = animationDuration };
 		DoubleAnimation scaleyAnimation = new DoubleAnimation() { From = currentYscale, To = ActivatedScaleY, Duration = animationDuration };
 		DoubleAnimation scalexAnimation = new DoubleAnimation() { From = currentXscale, To = ActivatedScaleX, Duration = animationDuration };
 		ThicknessAnimation marginAnimation = new ThicknessAnimation() { From = this.Margin, To = new Thickness(newLeftPosition, newTopPosition, 0, 0), Duration = animationDuration };
@@ -214,143 +205,30 @@ public partial class CommandUserControl : UserControl
 			if (AnimationComplete_Activating != null)
 				AnimationComplete_Activating(this, new EventArgs());
 			ResetToActivatedLayout();
-			//this.Opacity = findResource("ScaleFactorWhenClosed")
 		};
 		Canvas.SetZIndex(this, 99);
 		storyboard.Begin(this);
-
-		//while (1==1)//storyboard.GetCurrentState == 
-		//  System.Windows.Forms.MessageBox.Show(storyboard.GetCurrentState(this).ToString());
-		//this.RenderTransform = new ScaleTransform(1, 1, this.ActualWidth / 2, this.ActualHeight / 2);
-		//this.Opacity = System.Windows.Visibility.Collapsed;
 	}
 
-	//public static readonly double ScaleFactorWhenClosed = 0.1;
-	//public static readonly double OpacityWhenClosed = 0.3;
-	private void storyboardFadeout_Completed(object sender, EventArgs e)
-	{
-		//System.Windows.Forms.MessageBox.Show(findResource("ScaleFactorWhenClosed").ToString());
-		//double scaleFactorWhenclosed = double.Parse(findResource("ScaleFactorWhenClosed").ToString());
-		//this.RenderTransform = new ScaleTransform(scaleFactorWhenclosed, scaleFactorWhenclosed);
-		//this.Visibility = System.Windows.Visibility.Collapsed;
-		//this.LayoutTransform = new ScaleTransform(0.1, 0.1);
-	}
+	//private object findResource(string name)
+	//{
+	//  return this.FindResource(name);
+	//}
 
-	private object findResource(string name)
+	public void FocusRelevantInputElement()
 	{
-		return this.FindResource(name);
-	}
-
-	private void parentUsercontrol_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-	{
-		this.Focus();
 		if (this.Tag != null && this.Tag is OverlayWindow.OverlayChildManager && (this.Tag as OverlayWindow.OverlayChildManager).FirstUIelementToFocus != null)
 		{
 			if (currentFocusedElement == null)
 			{
 				(this.Tag as OverlayWindow.OverlayChildManager).FirstUIelementToFocus.Focus();
 				currentFocusedElement = (this.Tag as OverlayWindow.OverlayChildManager).FirstUIelementToFocus;
+				currentFocusedElement.Focus();
 			}
 			else
 			{
 				currentFocusedElement.Focus();
 			}
 		}
-
-		//ActivateControl();
-		
-		//System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
-		//timer.Interval = 100;
-		//timer.Tick += delegate
-		//{
-		//  DoLargeScale();
-		//  timer.Stop();
-		//  timer.Dispose();
-		//  timer = null;
-		//};
-		//timer.Start();
 	}
-
-	private void parentUsercontrol_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-	{
-		//DoLargeScale();
-	}
-
-	private bool LargeScalingWasDone = false;
-	private void parentUsercontrol_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
-	{
-		//DoLargeScale();
-		//ActivateControl();
-	}
-
-	private void DoLargeScale()
-	{
-		//if (this.RenderTransform is MatrixTransform)
-		//{
-		//this.Opacity = 1;
-		Canvas.SetZIndex(this, 99);
-
-		TransformGroup transformGroup = new TransformGroup();
-		//transformGroup.Children.Add(new TranslateTransform(100, 100));
-		transformGroup.Children.Add(new ScaleTransform(3, 3));
-		transformGroup.Children.Add(new SkewTransform(10, 10));
-		//this.LayoutTransform = transformGroup;
-		this.RenderTransform = transformGroup;
-
-		LargeScalingWasDone = true;
-		//}
-		////else if (this.LayoutTransform is ScaleTransform)
-		////{
-		////  ScaleTransform scaleTransform = this.LayoutTransform as ScaleTransform;
-		////  System.Windows.Forms.MessageBox.Show(scaleTransform.ScaleX + ", " + scaleTransform.ScaleY);
-		////}
-	}
-
-	private void parentUsercontrol_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
-	{
-		//ScaleToOriginal();
-		//CloseControl();
-	}
-
-	private void ScaleToOriginal()
-	{
-		if (LargeScalingWasDone)
-		{
-			//this.LayoutTransform = new MatrixTransform();
-			this.RenderTransform = new MatrixTransform();
-			Canvas.SetZIndex(this, 0);
-			this.UpdateLayout();
-		}
-	}
-
-	private void parentUsercontrol_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-	{
-		if (this.Opacity != 1)
-		{
-			ActivateControl();
-		}
-	}
-
-    private void parentUsercontrol_Drop(object sender, DragEventArgs e)
-    {
-        if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
-        {
-            e.Handled = true;
-            string[] filesDropped = e.Data.GetData(System.Windows.DataFormats.FileDrop) as string[];
-            foreach (string filedropped in filesDropped)
-                UserMessages.ShowInfoMessage("File " + filedropped + " was dropped onto " + labelTitle.Content.ToString());
-        }
-    }
-
-	//private void storyboardFadein_Completed(object sender, EventArgs e)
-	//{
-
-	//}
-
-	//private void mainGrid_GotFocus(object sender, RoutedEventArgs e)
-	//{
-	//  System.Windows.Forms.MessageBox.Show("Test");
-	//  if (this.Tag != null && this.Tag is Control)
-	//    (this.Tag as Control).Focus();
-	//}
 }

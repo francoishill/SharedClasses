@@ -8,13 +8,14 @@
 	mc:Ignorable='d'
 	d:DesignHeight='299'
 	d:DesignWidth='549'
-	Margin='20'
+	Margin='10'
 	Background='Transparent'
 	Focusable='True'
 	Name='parentUsercontrol'
 	VerticalAlignment='Top'
 	HorizontalAlignment='Left'
-	AllowDrop='True'>
+	AllowDrop='True'
+	KeyboardNavigation.TabNavigation='Cycle'>
 	<UserControl.Resources>
 		<ResourceDictionary>
 			<ResourceDictionary.MergedDictionaries>
@@ -26,6 +27,133 @@
 				<!--<ResourceDictionary Source='/PresentationFramework.Luna,Version=3.0.0.0,Culture=neutral,PublicKeyToken=31bf3856ad364e35;component/themes/luna.normalcolor.xaml' />-->
 
 				<ResourceDictionary>
+					<!--<SolidColorBrush
+						Color="Transparent"
+						x:Key="{x:Static SystemColors.HighlightBrushKey}" />-->
+
+					<LinearGradientBrush
+						x:Key="{x:Static SystemColors.HighlightBrushKey}"
+						EndPoint="0,1"
+						StartPoint="0,0">
+						<GradientStop
+							Color="#FFD9F4FF"
+							Offset="0" />
+						<GradientStop
+							Color="#FF9BDDFB"
+							Offset="1" />
+					</LinearGradientBrush>
+					<LinearGradientBrush
+						x:Key="{x:Static SystemColors.ControlBrushKey}"
+						EndPoint="0,1"
+						StartPoint="0,0">
+						<GradientStop
+							Color="#FFEEEDED"
+							Offset="0" />
+						<GradientStop
+							Color="#FFDDDDDD"
+							Offset="1" />
+					</LinearGradientBrush>
+					<SolidColorBrush
+						x:Key="{x:Static SystemColors.HighlightTextBrushKey}"
+						Color="Black" />
+					<SolidColorBrush
+						x:Key="{x:Static SystemColors.ControlTextBrushKey}"
+						Color="Black" />
+
+					<Style
+						TargetType="{x:Type TreeViewItem}">
+						<Setter
+							Property="BorderThickness"
+							Value="1" />
+						<Style.Triggers>
+							<Trigger
+								Property="IsSelected"
+								Value="True">
+								<Setter
+									Property="BorderBrush"
+									Value="#adc6e5" />
+							</Trigger>
+							<MultiTrigger>
+								<MultiTrigger.Conditions>
+									<Condition
+										Property="IsSelected"
+										Value="True" />
+									<Condition
+										Property="IsSelectionActive"
+										Value="False" />
+								</MultiTrigger.Conditions>
+								<Setter
+									Property="BorderBrush"
+									Value="LightGray" />
+							</MultiTrigger>
+						</Style.Triggers>
+						<Style.Resources>
+							<Style
+								TargetType="Border">
+								<Setter
+									Property="CornerRadius"
+									Value="2" />
+							</Style>
+						</Style.Resources>
+					</Style>
+					
+					<!--<DataTemplate
+						x:Key='ItemTemplate'>
+						<TextBlock
+							Text='{Binding}'
+							Foreground='Green'
+							Background='Transparent' />
+					</DataTemplate>
+
+					<DataTemplate
+						x:Key='SelectedTemplate'>
+						<TextBlock
+							Text='{Binding}'
+							Foreground='Green'>
+                            <TextBlock.Background>
+                                <LinearGradientBrush
+									StartPoint='0,0'
+									EndPoint='0,1'>
+                                    <LinearGradientBrush.GradientStops>
+                                        <GradientStop
+											Offset='0'
+											Color='#bcd' />
+                                        <GradientStop
+											Offset='0.75'
+											Color='#cde' />
+                                        <GradientStop
+											Offset='1'
+											Color='#abc' />
+                                    </LinearGradientBrush.GradientStops>
+                                </LinearGradientBrush>
+                            </TextBlock.Background>
+						</TextBlock>
+					</DataTemplate>
+
+					<Style
+						TargetType='{x:Type TreeViewItem}'>
+						<Setter
+							Property='HeaderTemplate'
+							Value='{StaticResource ItemTemplate}' />
+						<Setter
+							Property='FontFamily'
+							Value='Comic Sans MS' />
+						<Style.Triggers>
+							<MultiTrigger>
+								<MultiTrigger.Conditions>
+									<Condition
+										Property='IsSelected'
+										Value='True' />
+									<Condition
+										Property='IsFocused'
+										Value='True' />
+								</MultiTrigger.Conditions>
+								<Setter
+									Property='HeaderTemplate'
+									Value='{StaticResource SelectedTemplate}' />
+							</MultiTrigger>
+						</Style.Triggers>
+					</Style>-->
 					<!--<clr:Double
             x:Key='ScaleFactorWhenClosed'>0.3</clr:Double>
           <clr:Double
@@ -75,29 +203,7 @@
 				</Storyboard>
 			</BeginStoryboard>
 		</EventTrigger>
-		<!--<EventTrigger
-      RoutedEvent='MouseDown'>
-      <BeginStoryboard>
-        <Storyboard
-          Name='storyboardFadein'
-          AutoReverse='False'
-          RepeatBehavior='1x'
-          Duration='0:0:0:0.8'
-          Storyboard.TargetName='parentUsercontrol'
-          Completed='storyboardFadein_Completed'
-          FillBehavior='HoldEnd'>
-          <DoubleAnimation
-            Storyboard.TargetProperty='Opacity'
-            To='1' />
-          <DoubleAnimation
-            Storyboard.TargetProperty='(RenderTransform).(ScaleTransform.ScaleY)'
-            To='1' />
-          <DoubleAnimation
-            Storyboard.TargetProperty='(RenderTransform).(ScaleTransform.ScaleX)'
-            To='1' />
-        </Storyboard>
-      </BeginStoryboard>
-    </EventTrigger>-->
+
 	</UserControl.Triggers>
 	<Border
 		Name='mainBorder'
@@ -166,29 +272,6 @@
 				Cursor='Hand'
 				MouseUp='border_Closebutton_MouseUp'>
 				<Border.Triggers>
-					<!--<EventTrigger
-            RoutedEvent='MouseUp'>
-            <BeginStoryboard>
-              <Storyboard
-                Name='storyboardFadeout'
-                AutoReverse='False'
-                RepeatBehavior='1x'
-                Duration='0:0:0:0.8'
-                Storyboard.TargetName='parentUsercontrol'                
-                Completed='storyboardFadeout_Completed'
-                FillBehavior='HoldEnd'>
-                <DoubleAnimation
-                  Storyboard.TargetProperty='Opacity'
-                  To='{StaticResource OpacityWhenClosed}' />
-                <DoubleAnimation
-                  Storyboard.TargetProperty='(RenderTransform).(ScaleTransform.ScaleY)'
-                  To='{StaticResource ScaleFactorWhenClosed}'/>
-                <DoubleAnimation
-                  Storyboard.TargetProperty='(RenderTransform).(ScaleTransform.ScaleX)'
-                  To='{StaticResource ScaleFactorWhenClosed}' />
-              </Storyboard>
-            </BeginStoryboard>
-          </EventTrigger>-->
 				</Border.Triggers>
 				<Border.Background>
 					<LinearGradientBrush
@@ -224,16 +307,104 @@
 			<Grid
 				HorizontalAlignment='Stretch'
 				VerticalAlignment='Stretch'
-				Margin='0,38,0,0'
-				Name='gridTable'>
+				Margin='0,38,0,0'>
 				<Grid.ColumnDefinitions>
 					<ColumnDefinition
-						Width='auto' />
+						Width='Auto' />
 					<ColumnDefinition
 						Width='auto' />
 					<ColumnDefinition
-						Width='auto' />
+						Width='354*' />
 				</Grid.ColumnDefinitions>
+				<Grid.RowDefinitions>
+					<RowDefinition
+						Height='auto' />
+					<RowDefinition
+						Height='177*' />
+				</Grid.RowDefinitions>
+				<Expander
+					Name='expanderContainingTreeview'
+					ExpandDirection='Right'
+					IsExpanded='False'
+					Grid.RowSpan='2'>
+					<TreeView
+						Grid.Column='0'
+						Name='treeViewPredefinedArguments'
+						Focusable='True'
+						UseLayoutRounding='True'
+						PreviewDragOver='treeView1_PreviewDragOver'
+						PreviewDrop='treeView1_PreviewDrop'>
+						<TreeViewItem
+							Header='My command 1' />
+						<TreeViewItem
+							Header='My command 2' IsSelected='True' />
+					</TreeView>
+				</Expander>
+				<Expander
+					Name='expanderContainingTextboxes'
+					ExpandDirection='Right'
+					IsExpanded='False'
+					Grid.Column='1'
+					BorderThickness='0'>
+					<!--<Expander.Background>
+						<LinearGradientBrush StartPoint='0,0' EndPoint='0,1'>
+							<GradientStop
+								Offset='0'
+								Color='#cde' />
+							<GradientStop
+								Offset='0.7'
+								Color='#fff' />
+							<GradientStop
+								Offset='1'
+								Color='#cde' />
+						</LinearGradientBrush>
+					</Expander.Background>-->
+					<Grid
+						Name='gridCustomArguments'>
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition />
+							<ColumnDefinition />
+						</Grid.ColumnDefinitions>
+						<Grid.RowDefinitions>
+							<RowDefinition
+								Height='auto' />
+							<RowDefinition
+								Height='auto' />
+						</Grid.RowDefinitions>
+						<Label
+							Content='Label'
+							Grid.Column='0'
+							Grid.Row='0'
+							Height='28'
+							HorizontalAlignment='Left'
+							Name='label1'
+							VerticalAlignment='Top' />
+						<TextBox
+							Grid.Column='1'
+							Grid.Row='0'
+							Height='23'
+							HorizontalAlignment='Left'
+							Name='textBox1'
+							VerticalAlignment='Top'
+							Width='120' />
+						<Label
+							Content='Label'
+							Grid.Column='0'
+							Grid.Row='1'
+							Height='28'
+							HorizontalAlignment='Left'
+							Name='label2'
+							VerticalAlignment='Top' />
+						<TextBox
+							Grid.Column='1'
+							Grid.Row='1'
+							Height='23'
+							HorizontalAlignment='Left'
+							Name='textBox2'
+							VerticalAlignment='Top'
+							Width='120' />
+					</Grid>
+				</Expander>
 			</Grid>
 		</Grid>
 	</Border>

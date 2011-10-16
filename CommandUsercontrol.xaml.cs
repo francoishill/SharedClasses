@@ -14,6 +14,8 @@ using System.Windows.Shapes;
 using System.Windows.Media.Media3D;
 using System.Windows.Media.Animation;
 using System.IO;
+using System.Windows.Media.Effects;
+using System.Windows.Interop;
 
 /// <summary>
 /// Interaction logic for tmpUserControl.xaml
@@ -30,15 +32,23 @@ public partial class CommandUserControl : UserControl
 	/// </summary>
 	public double DeactivatedScaleY { get { return 0.6; } }
 	public double DeactivatedScaleX { get { return 0.6; } }
-	public double DeactivatedOpacity { get { return 1; } }
-	public double ActivatedScaleX { get { return 1.5; } }
-	public double ActivatedScaleY { get { return 1.5; } }
+	public double DeactivatedOpacity { get { return 0.3; } }
+	public double ActivatedScaleX { get { return 2.5; } }
+	public double ActivatedScaleY { get { return 2.5; } }
+	public double ActivatedOpacity { get { return 0.95; } }
 	public CommandUserControl(string CommandTitle)
 	{
 		InitializeComponent();
 
 		labelTitle.Content = CommandTitle;
 		ResetToDeactivatedLayout();
+		this.Opacity = DeactivatedOpacity;
+
+		//ItemContainerStyle = new Style();
+		//ItemContainerStyle.Resources.Add(SystemColors.HighlightBrushKey,
+		//        Brushes.Transparent);
+		//ItemContainerStyle.Resources.Add(SystemColors.ControlBrushKey,
+		//        Brushes.Transparent);
 	}
 
 	public void ResetToDeactivatedLayout()
@@ -49,22 +59,34 @@ public partial class CommandUserControl : UserControl
 		if (!(this.LayoutTransform is ScaleTransform)) this.LayoutTransform = new ScaleTransform(DeactivatedScaleX, DeactivatedScaleY);
 		if ((this.LayoutTransform as ScaleTransform).ScaleY != DeactivatedScaleY) (this.LayoutTransform as ScaleTransform).ScaleY = DeactivatedScaleY;
 		if ((this.LayoutTransform as ScaleTransform).ScaleX != DeactivatedScaleX) (this.LayoutTransform as ScaleTransform).ScaleX = DeactivatedScaleX;
-		if (this.Opacity != 1) this.Opacity = DeactivatedOpacity;
+		if (this.Opacity != DeactivatedOpacity) this.Opacity = DeactivatedOpacity;
 		this.Margin = autoLayoutMaginBeforeAnimation;
 		Canvas.SetZIndex(this, 0);
+		//this.Effect = new BlurEffect();
 	}
 
 	public void ResetToActivatedLayout()
 	{
 		//if (!(this.LayoutTransform is MatrixTransform)) this.LayoutTransform = new MatrixTransform();
-		if (!(this.RenderTransform is MatrixTransform)) this.RenderTransform = new MatrixTransform();
-
-		if (!(this.LayoutTransform is ScaleTransform)) this.LayoutTransform = new ScaleTransform(DeactivatedScaleX, DeactivatedScaleY);
+		//if (!(this.RenderTransform is MatrixTransform)) this.RenderTransform = new MatrixTransform();
+		if (!(this.LayoutTransform is ScaleTransform)) this.LayoutTransform = new ScaleTransform(ActivatedScaleX, ActivatedScaleY);
 		if ((this.LayoutTransform as ScaleTransform).ScaleY != ActivatedScaleY) (this.LayoutTransform as ScaleTransform).ScaleY = ActivatedScaleY;
 		if ((this.LayoutTransform as ScaleTransform).ScaleX != ActivatedScaleX) (this.LayoutTransform as ScaleTransform).ScaleX = ActivatedScaleX;
-		if (this.Opacity != 1) this.Opacity = 1;
-		this.Margin = new Thickness(this.newLeftPosition, this.newTopPosition, 0, 0);
+		this.UpdateLayout();
+		if (this.Opacity != ActivatedOpacity) this.Opacity = ActivatedOpacity;
+		if (this.Margin.Left != newLeftPosition && this.Margin.Top != newTopPosition) this.Margin = new Thickness(this.newLeftPosition, this.newTopPosition, 0, 0);
 		Canvas.SetZIndex(this, 99);
+		//this.Effect = null;
+	}
+
+	public void RemoveAndHideControls()
+	{
+		//expanderContainingTreeview.IsExpanded = false;
+		expanderContainingTreeview.Visibility = System.Windows.Visibility.Collapsed;
+		expanderContainingTextboxes.Visibility = System.Windows.Visibility.Collapsed;
+		gridCustomArguments.Children.Clear();
+		gridCustomArguments.RowDefinitions.Clear();
+		treeViewPredefinedArguments.Items.Clear();
 	}
 
 	public void AddControl(string label, System.Windows.Controls.Control control, Color labelColor)
@@ -73,34 +95,76 @@ public partial class CommandUserControl : UserControl
 
 		AddRowToGrid();
 
-		gridTable.Children.Add(labelControl);
+		gridCustomArguments.Children.Add(labelControl);
 		Grid.SetColumn(labelControl, 0);
-		Grid.SetRow(labelControl, gridTable.RowDefinitions.Count - 1);
+		Grid.SetRow(labelControl, gridCustomArguments.RowDefinitions.Count - 1);
 
-		gridTable.Children.Add(control);
+		gridCustomArguments.Children.Add(control);
 		Grid.SetColumn(control, 1);
-		Grid.SetRow(control, gridTable.RowDefinitions.Count - 1);
+		Grid.SetRow(control, gridCustomArguments.RowDefinitions.Count - 1);
+		//expanderContainingTextboxes.IsExpanded = true;
+		expanderContainingTextboxes.Visibility = System.Windows.Visibility.Visible;
 	}
 
 	private void AddRowToGrid()
 	{
-		gridTable.RowDefinitions.Add(new RowDefinition() { Height = GridLength.Auto });
+		gridCustomArguments.RowDefinitions.Add(new RowDefinition() { Height = GridLength.Auto });
+	}
+
+	public void CollapseCustomInput()
+	{
+		expanderContainingTextboxes.IsExpanded = false;
+	}
+
+	public void CollapseTreeview()
+	{
+		expanderContainingTreeview.IsExpanded = false;
+	}
+
+	public void ExpandCustomInputs()
+	{
+		expanderContainingTextboxes.IsExpanded = true;
+	}
+
+	public void ExpandTreeviewInput()
+	{
+		expanderContainingTreeview.IsExpanded = true;
 	}
 
 	public void AddTreeviewItem(object itemToAdd)
 	{
-		if (tmpTreeview == null)
-		{
-			tmpTreeview = new TreeView() { MinWidth = 150, MinHeight = 20, MaxHeight = 80, VerticalAlignment = System.Windows.VerticalAlignment.Top, Focusable = true };
-			gridTable.Children.Add(tmpTreeview);
-			Grid.SetColumn(tmpTreeview, 2);
-			if (gridTable.RowDefinitions.Count == 0) AddRowToGrid();
-			Grid.SetRow(tmpTreeview, 0);
-			Grid.SetRowSpan(tmpTreeview, 1000);
-		}
-		tmpTreeview.Items.Add(itemToAdd);
+		//if (tmpTreeview == null)
+		//{
+		//  tmpTreeview = new TreeView()
+		//  {
+		//    MinWidth = 150,
+		//    MinHeight = 20,
+		//    //MaxHeight = 80,
+		//    VerticalAlignment = System.Windows.VerticalAlignment.Top,
+		//    Focusable = true,
+		//    UseLayoutRounding = true
+		//  };
+
+		//  tmpTreeview.ItemContainerStyle = new Style(typeof(TreeViewItem));
+		//  //tmpTreeview.ItemContainerStyle.Setters.Add(new Setter(TreeViewItem.IsExpandedProperty, new Binding() { Path = new PropertyPath(TreeViewItem.IsExpandedProperty), Mode = BindingMode.TwoWay }));
+		//  //tmpTreeview.ItemContainerStyle.Setters.Add(new Setter(TreeViewItem.IsSelectedProperty, new Binding() { Path = new PropertyPath(TreeViewItem.IsSelectedProperty), Mode = BindingMode.TwoWay }));
+		//  //tmpTreeview.ItemContainerStyle.Setters.Add(new Setter(TreeViewItem.FontWeightProperty, FontWeights.Normal));
+		//  Trigger tmpTrigger = new Trigger() { Property = TreeViewItem.IsSelectedProperty, Value = true };
+		//  tmpTrigger.Setters.Add(new Setter(TreeViewItem.ForegroundProperty, Brushes.DarkBlue));
+		//  tmpTreeview.ItemContainerStyle.Triggers.Add(tmpTrigger);
+
+		//  gridTable.Children.Add(tmpTreeview);
+		//  Grid.SetColumn(tmpTreeview, 2);
+		//  if (gridTable.RowDefinitions.Count == 0) AddRowToGrid();
+		//  Grid.SetRow(tmpTreeview, 0);
+		//  Grid.SetRowSpan(tmpTreeview, 1000);
+		//}
+		//tmpTreeview.Items.Add(itemToAdd);
+		treeViewPredefinedArguments.Items.Add(itemToAdd);
+		expanderContainingTreeview.Visibility = System.Windows.Visibility.Visible;
+		//expanderContainingTreeview.IsExpanded = true;
 	}
-	TreeView tmpTreeview = null;
+	//TreeView tmpTreeview = null;
 
 	private void border_Closebutton_MouseUp(object sender, MouseButtonEventArgs e)
 	{
@@ -178,7 +242,7 @@ public partial class CommandUserControl : UserControl
 
 		this.RenderTransform = new MatrixTransform();
 		this.LayoutTransform = new ScaleTransform();
-		DoubleAnimation opacityAnimation = new DoubleAnimation() { To = 1, Duration = animationDuration };
+		DoubleAnimation opacityAnimation = new DoubleAnimation() { To = ActivatedOpacity, Duration = animationDuration };
 		DoubleAnimation scaleyAnimation = new DoubleAnimation() { From = currentYscale, To = ActivatedScaleY, Duration = animationDuration };
 		DoubleAnimation scalexAnimation = new DoubleAnimation() { From = currentXscale, To = ActivatedScaleX, Duration = animationDuration };
 		ThicknessAnimation marginAnimation = new ThicknessAnimation() { From = this.Margin, To = new Thickness(newLeftPosition, newTopPosition, 0, 0), Duration = animationDuration };
@@ -230,5 +294,15 @@ public partial class CommandUserControl : UserControl
 				currentFocusedElement.Focus();
 			}
 		}
+	}
+
+	private void treeView1_PreviewDragOver(object sender, DragEventArgs e)
+	{
+		e.Handled = true;
+	}
+
+	private void treeView1_PreviewDrop(object sender, DragEventArgs e)
+	{
+		e.Handled = true;
 	}
 }

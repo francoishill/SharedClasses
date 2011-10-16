@@ -36,67 +36,6 @@
         <!--<ResourceDictionary Source='/PresentationFramework.Luna,Version=3.0.0.0,Culture=neutral,PublicKeyToken=31bf3856ad364e35;component/themes/luna.normalcolor.xaml' />-->
 
         <ResourceDictionary>
-          <DataTemplate
-            x:Key='ItemTemplate'>
-            <TextBlock
-              Text='{Binding}'
-              Foreground='Green'
-              Background='Transparent' />
-          </DataTemplate>
-
-          <DataTemplate
-            x:Key='SelectedTemplate'>
-            <TextBlock
-              Text='{Binding}'
-              Foreground='Green'>
-                            <TextBlock.Background>
-                                <LinearGradientBrush
-                  StartPoint='0,0'
-                  EndPoint='0,1'>
-                                    <LinearGradientBrush.GradientStops>
-                                        <GradientStop
-                      Offset='0'
-                      Color='#ccc' />
-                                        <GradientStop
-                      Offset='0.85'
-                      Color='#ddd' />
-                                        <GradientStop
-                      Offset='1'
-                      Color='#bbb' />
-                                    </LinearGradientBrush.GradientStops>
-                                </LinearGradientBrush>
-                            </TextBlock.Background>
-            </TextBlock>
-          </DataTemplate>
-
-          <Style
-            TargetType='{x:Type TreeViewItem}'>
-            <Setter
-              Property='HeaderTemplate'
-              Value='{StaticResource ItemTemplate}' />
-            <!--<Setter Property='Background' Value='Transparent' />-->
-            <Setter
-              Property='FontFamily'
-              Value='Comic Sans MS' />
-            <Style.Triggers>
-              <MultiTrigger>
-                <MultiTrigger.Conditions>
-                  <Condition
-                    Property='IsSelected'
-                    Value='True' />
-                  <Condition
-                    Property='IsFocused'
-                    Value='True' />
-                </MultiTrigger.Conditions>
-                <Setter
-                  Property='HeaderTemplate'
-                  Value='{StaticResource SelectedTemplate}' />
-              </MultiTrigger>
-              <!--<Trigger Property='IsSelected' Value='True'>
-                                <Setter Property='HeaderTemplate' Value='{StaticResource SelectedTemplate}' />
-                            </Trigger>-->
-            </Style.Triggers>
-          </Style>
         </ResourceDictionary>
       </ResourceDictionary.MergedDictionaries>
     </ResourceDictionary>

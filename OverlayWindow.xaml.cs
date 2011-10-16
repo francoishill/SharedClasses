@@ -17,9 +17,9 @@ using System.Reflection;
 using System.IO;
 using System.Diagnostics;
 
-	/// <summary>
-	/// Interaction logic for MainWindow.xaml
-	/// </summary>
+/// <summary>
+/// Interaction logic for MainWindow.xaml
+/// </summary>
 public partial class OverlayWindow : Window
 {
 	public class OverlayChildManager
@@ -47,7 +47,7 @@ public partial class OverlayWindow : Window
 		System.Windows.Forms.Integration.ElementHost.EnableModelessKeyboardInterop(this);
 	}
 
-	private Element currentElement = new Element(); 
+	private Element currentElement = new Element();
 	private void overlayWindow_MouseDown(object sender, MouseButtonEventArgs e)
 	{
 		if (e.ChangedButton == MouseButton.Left && currentElement.InputElement == null)
@@ -109,31 +109,49 @@ public partial class OverlayWindow : Window
 		};
 	}
 
-	public void SetFocusToNewUsercontrol(CommandUserControl usercontrolToFocus)
+	public void SetFocusToNewUsercontrol(CommandUserControl usercontrolToFocus, bool forceSetFocus = false)
 	{
-		if (currentActiveUsercontrol != usercontrolToFocus)
+		//Console.WriteLine("currentActiveUsercontrol == usercontrolToFocus: " + (currentActiveUsercontrol == usercontrolToFocus));
+		if (currentActiveUsercontrol != usercontrolToFocus || forceSetFocus)
 		{
 			if (currentActiveUsercontrol != usercontrolToFocus && currentActiveUsercontrol != null)
 				currentActiveUsercontrol.DeactivateControl();
 			currentActiveUsercontrol = usercontrolToFocus;
-			usercontrolToFocus.ActivateControl();
 			usercontrolToFocus.currentFocusedElement.Focus();
+			usercontrolToFocus.ActivateControl();			
 		}
 	}
 
 	public CommandUserControl currentActiveUsercontrol = null;
 	private void AddMouseLeftButtonDownEventToChildren(CommandUserControl usercontrol)
 	{
-		foreach (object o in LogicalTreeHelper.GetChildren(usercontrol.gridTable))
+		List<object> totalChildList = new List<object>();
+		System.Collections.IEnumerable gridCustomArguments_ChildList = LogicalTreeHelper.GetChildren(usercontrol.gridCustomArguments);
+		System.Collections.IEnumerable treeViewPredefinedArguments_ChildList = LogicalTreeHelper.GetChildren(usercontrol.expanderContainingTreeview);
+		foreach (object o in gridCustomArguments_ChildList) totalChildList.Add(o);
+		foreach (object o in treeViewPredefinedArguments_ChildList) totalChildList.Add(o);
+
+		foreach (object o in totalChildList)
 			if (o is UIElement && (o as UIElement).Focusable)
 			{
-				(o as UIElement).PreviewMouseLeftButtonDown += (sendr, evtargs) =>
+				(o as UIElement).MouseLeftButtonDown += (sendr, evtargs) =>
 				{
 					usercontrol.currentFocusedElement = sendr as UIElement;
 					SetFocusToNewUsercontrol(usercontrol);
-					Console.WriteLine("usercontrol.currentFocusedElement = " + (sendr as UIElement).GetType().ToString() + ", usercontrol focus = " + usercontrol.IsKeyboardFocused);
 					//evtargs.Handled = true;
 				};
+				if (o is TreeView)
+				{
+					foreach (TreeViewItem item in (o as TreeView).Items)
+					{
+						Console.WriteLine(item.Header.ToString());
+						item.PreviewMouseLeftButtonDown += (sendr, evtargs) =>
+						{
+							usercontrol.currentFocusedElement = o as UIElement;
+							SetFocusToNewUsercontrol(usercontrol);
+						};
+					}
+				}
 			}
 	}
 
@@ -233,41 +251,55 @@ public partial class OverlayWindow : Window
 	private void AddKeydownEventToWindowAndChildren(Control usercontrol)
 	{
 		usercontrol.KeyDown += new System.Windows.Input.KeyEventHandler(control_KeyDown1);
-		foreach (object o in LogicalTreeHelper.GetChildren(usercontrol))
-			if (o is System.Windows.Controls.Control)
-			{
-				(o as System.Windows.Controls.Control).KeyUp += new System.Windows.Input.KeyEventHandler(control_KeyDown1);
-			}
+		//foreach (object o in LogicalTreeHelper.GetChildren(usercontrol))
+		//  if (o is System.Windows.Controls.Control)
+		//  {
+		//    (o as System.Windows.Controls.Control).KeyUp += new System.Windows.Input.KeyEventHandler(control_KeyDown1);
+		//  }
 	}
 
 	private void AddDropEventToUsercontrol(CommandUserControl usercontrol)
 	{
-		usercontrol.Drop += (snder, evtargs) =>
-		{
-			if (evtargs.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
+		//usercontrol.Drop += new DragEventHandler(usercontrol_Drop);
+		foreach (object o in LogicalTreeHelper.GetChildren(usercontrol.mainGrid))
+			if (o is System.Windows.Controls.Control)
 			{
-				string commandName = (snder as CommandUserControl).labelTitle.Content.ToString().ToLower();
-				evtargs.Handled = true;
-				string[] filesDropped = evtargs.Data.GetData(System.Windows.DataFormats.FileDrop) as string[];
-				if ((new string[] { "cmd", "vscmd" }).Any(s => commandName == s) && InlineCommands.CommandList.ContainsKey(commandName)
-					&& Directory.Exists(filesDropped[0]))
-				{
-					System.Windows.Forms.ComboBox tmpCombobox = new System.Windows.Forms.ComboBox();
-					System.Windows.Forms.TextBox tmpTextbox = new System.Windows.Forms.TextBox();
-					InlineCommands.CommandList[commandName].PerformCommand(commandName + " " + filesDropped[0], tmpCombobox, tmpTextbox);
-					tmpCombobox.Dispose();
-					tmpTextbox.Dispose();
-					tmpCombobox = null;
-					tmpTextbox = null;
-					this.Close();
-				}
-				else
-				{
-					foreach (string filedropped in filesDropped)
-						UserMessages.ShowInfoMessage("File " + filedropped + " was dropped onto " + (snder as CommandUserControl).labelTitle.Content.ToString());
-				}
+				//if (o is TextBox) System.Windows.Forms.MessageBox.Show("Test");
+				//else System.Windows.Forms.MessageBox.Show(o.GetType().ToString());
+				(o as System.Windows.Controls.Control).AllowDrop = true;
+				(o as System.Windows.Controls.Control).Drop += new DragEventHandler(usercontrol_Drop);
 			}
-		};
+	}
+
+	void usercontrol_Drop(object sender, DragEventArgs e)
+	{
+		if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
+		{
+			string commandName = (sender as CommandUserControl).labelTitle.Content.ToString().ToLower();
+			e.Handled = true;
+			string[] filesDropped = e.Data.GetData(System.Windows.DataFormats.FileDrop) as string[];
+			if ((new string[] { "cmd", "vscmd" }).Any(s => commandName == s) && InlineCommands.CommandList.ContainsKey(commandName)
+				&& Directory.Exists(filesDropped[0]))
+			{
+				System.Windows.Forms.ComboBox tmpCombobox = new System.Windows.Forms.ComboBox();
+				System.Windows.Forms.TextBox tmpTextbox = new System.Windows.Forms.TextBox();
+				InlineCommands.CommandList[commandName].PerformCommand(commandName + " " + filesDropped[0], tmpCombobox, tmpTextbox);
+				tmpCombobox.Dispose();
+				tmpTextbox.Dispose();
+				tmpCombobox = null;
+				tmpTextbox = null;
+				this.Close();
+			}
+			else
+			{
+				foreach (string filedropped in filesDropped)
+					if (File.Exists(filedropped))
+						UserMessages.ShowInfoMessage("File " + filedropped + " was dropped onto " + (sender as CommandUserControl).labelTitle.Content.ToString());
+					else if (Directory.Exists(filedropped))
+						UserMessages.ShowInfoMessage("Folder " + filedropped + " was dropped onto " + (sender as CommandUserControl).labelTitle.Content.ToString());
+					else UserMessages.ShowWarningMessage("File/folder not found: " + filedropped);
+			}
+		}
 	}
 
 	void control_KeyDown1(object sender, System.Windows.Input.KeyEventArgs e)
@@ -301,7 +333,7 @@ public partial class OverlayWindow : Window
 		}
 		else if (ListOfCommandUsercontrols != null)
 			SetFocusToNewUsercontrol(ListOfCommandUsercontrols[0]);
-			//ListOfCommandUsercontrols[0].Focus();
+		//ListOfCommandUsercontrols[0].Focus();
 	}
 
 	private void ActivateNextWindowInChildList(CommandUserControl usercontrol)
@@ -432,7 +464,7 @@ public partial class OverlayWindow : Window
 		else if (IsAnumberKey(e.Key) && IsOnlyControlModifierDown())
 		{
 			if (ListOfCommandUsercontrols.Count > NumberKeys.IndexOf(e.Key))
-				ListOfCommandUsercontrols[NumberKeys.IndexOf(e.Key)].currentFocusedElement.Focus();
+				SetFocusToNewUsercontrol(ListOfCommandUsercontrols[NumberKeys.IndexOf(e.Key)]);//.currentFocusedElement.Focus();
 		}
 	}
 
@@ -480,14 +512,14 @@ public partial class OverlayWindow : Window
 		#endregion
 	}
 
-    private void overlayWindow_Drop(object sender, DragEventArgs e)
-    {
-        if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
-        {
-            e.Handled = true;
-            string[] filesDropped = e.Data.GetData(System.Windows.DataFormats.FileDrop) as string[];
-            foreach (string filedropped in filesDropped)
-                UserMessages.ShowInfoMessage("File " + filedropped + " was dropped onto OverlayWindow");
-        }
-    }
+	private void overlayWindow_Drop(object sender, DragEventArgs e)
+	{
+		if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
+		{
+			e.Handled = true;
+			string[] filesDropped = e.Data.GetData(System.Windows.DataFormats.FileDrop) as string[];
+			foreach (string filedropped in filesDropped)
+				UserMessages.ShowInfoMessage("File " + filedropped + " was dropped onto OverlayWindow");
+		}
+	}
 }

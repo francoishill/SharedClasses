@@ -14,6 +14,7 @@
 	Name='parentUsercontrol'
 	VerticalAlignment='Top'
 	HorizontalAlignment='Left'
+	MinWidth='150'
 	AllowDrop='True'
 	KeyboardNavigation.TabNavigation='Cycle'>
 	<UserControl.Resources>
@@ -320,7 +321,7 @@
 					<RowDefinition
 						Height='auto' />
 					<RowDefinition
-						Height='177*' />
+						Height='auto' />
 				</Grid.RowDefinitions>
 				<Expander
 					Name='expanderContainingTreeview'
@@ -332,6 +333,8 @@
 						Name='treeViewPredefinedArguments'
 						Focusable='True'
 						UseLayoutRounding='True'
+						VirtualizingStackPanel.IsVirtualizing='True'
+						VirtualizingStackPanel.VirtualizationMode='Recycling'
 						PreviewDragOver='treeView1_PreviewDragOver'
 						PreviewDrop='treeView1_PreviewDrop'>
 						<TreeViewItem

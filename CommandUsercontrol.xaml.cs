@@ -295,14 +295,4 @@ public partial class CommandUserControl : UserControl
 			}
 		}
 	}
-
-	private void treeView1_PreviewDragOver(object sender, DragEventArgs e)
-	{
-		e.Handled = true;
-	}
-
-	private void treeView1_PreviewDrop(object sender, DragEventArgs e)
-	{
-		e.Handled = true;
-	}
 }

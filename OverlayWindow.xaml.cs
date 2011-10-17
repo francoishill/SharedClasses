@@ -92,6 +92,7 @@ public partial class OverlayWindow : Window
 				AddMouseWheelEventToWindow(usercontrol);
 				AddKeydownEventToWindowAndChildren(usercontrol);
 				AddDropEventToUsercontrol(usercontrol);
+				AddSelectedItemChangedEventToUsercontrolTreeview(usercontrol);
 
 				MarkformEventsAdded(usercontrol);
 			}
@@ -260,13 +261,22 @@ public partial class OverlayWindow : Window
 
 	private void AddDropEventToUsercontrol(CommandUserControl usercontrol)
 	{
-		//usercontrol.Drop += new DragEventHandler(usercontrol_Drop);
-		foreach (object o in LogicalTreeHelper.GetChildren(usercontrol.mainGrid))
+		usercontrol.Drop += new DragEventHandler(usercontrol_Drop);
+		foreach (object o in LogicalTreeHelper.GetChildren(usercontrol.gridCustomArguments))
 			if (o is System.Windows.Controls.Control)
 			{
 				//if (o is TextBox) System.Windows.Forms.MessageBox.Show("Test");
 				//else System.Windows.Forms.MessageBox.Show(o.GetType().ToString());
+				//Console.WriteLine("AddDropEventToUsercontrol, " + o.GetType().ToString());
 				(o as System.Windows.Controls.Control).AllowDrop = true;
+				(o as System.Windows.Controls.Control).PreviewDragOver += (sendr, evtargs) =>
+				{
+					if (evtargs.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
+					{
+						evtargs.Effects = DragDropEffects.Copy;
+						evtargs.Handled = true;
+					}
+				};
 				(o as System.Windows.Controls.Control).Drop += new DragEventHandler(usercontrol_Drop);
 			}
 	}
@@ -275,15 +285,28 @@ public partial class OverlayWindow : Window
 	{
 		if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
 		{
-			string commandName = (sender as CommandUserControl).labelTitle.Content.ToString().ToLower();
+			string commandName = "";
+			if (sender is CommandUserControl)
+				commandName = (sender as CommandUserControl).labelTitle.Content.ToString();
+			else if (sender is TextBox && (sender as TextBox).Tag is InlineCommands.CommandDetails)
+				commandName = ((sender as TextBox).Tag as InlineCommands.CommandDetails).commandName;
+			else
+			{
+				string controlType = sender.GetType().ToString();
+				string tagType = (sender as Control).Tag == null ? "NULL" : (sender as Control).Tag.GetType().ToString();
+				UserMessages.ShowWarningMessage(string.Format("Cannot drop unto control of type {0}, with tag of type {1}", controlType, tagType));
+				return;
+			}
+
+			string commandNameLowercase = commandName.ToLower();
 			e.Handled = true;
 			string[] filesDropped = e.Data.GetData(System.Windows.DataFormats.FileDrop) as string[];
-			if ((new string[] { "cmd", "vscmd" }).Any(s => commandName == s) && InlineCommands.CommandList.ContainsKey(commandName)
+			if ((new string[] { "cmd", "vscmd" }).Any(s => commandNameLowercase == s) && InlineCommands.CommandList.ContainsKey(commandNameLowercase)
 				&& Directory.Exists(filesDropped[0]))
 			{
 				System.Windows.Forms.ComboBox tmpCombobox = new System.Windows.Forms.ComboBox();
 				System.Windows.Forms.TextBox tmpTextbox = new System.Windows.Forms.TextBox();
-				InlineCommands.CommandList[commandName].PerformCommand(commandName + " " + filesDropped[0], tmpCombobox, tmpTextbox);
+				InlineCommands.CommandList[commandNameLowercase].PerformCommand(commandNameLowercase + " " + filesDropped[0], tmpCombobox, tmpTextbox);
 				tmpCombobox.Dispose();
 				tmpTextbox.Dispose();
 				tmpCombobox = null;
@@ -294,12 +317,21 @@ public partial class OverlayWindow : Window
 			{
 				foreach (string filedropped in filesDropped)
 					if (File.Exists(filedropped))
-						UserMessages.ShowInfoMessage("File " + filedropped + " was dropped onto " + (sender as CommandUserControl).labelTitle.Content.ToString());
+						UserMessages.ShowInfoMessage("File " + filedropped + " was dropped onto " + commandName);
 					else if (Directory.Exists(filedropped))
-						UserMessages.ShowInfoMessage("Folder " + filedropped + " was dropped onto " + (sender as CommandUserControl).labelTitle.Content.ToString());
+						UserMessages.ShowInfoMessage("Folder " + filedropped + " was dropped onto " + commandName);
 					else UserMessages.ShowWarningMessage("File/folder not found: " + filedropped);
 			}
 		}
+	}
+
+	void AddSelectedItemChangedEventToUsercontrolTreeview(CommandUserControl usercontrol)
+	{
+		usercontrol.treeViewPredefinedArguments.SelectedItemChanged += (sendr, evtargs) =>
+		{
+			//TODO: Last continue here...
+			//(((sendr as TreeView).SelectedItem as TreeViewItem).Tag as object[])[0]
+		};
 	}
 
 	void control_KeyDown1(object sender, System.Windows.Input.KeyEventArgs e)

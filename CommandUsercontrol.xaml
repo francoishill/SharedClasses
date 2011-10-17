@@ -334,9 +334,7 @@
 						Focusable='True'
 						UseLayoutRounding='True'
 						VirtualizingStackPanel.IsVirtualizing='True'
-						VirtualizingStackPanel.VirtualizationMode='Recycling'
-						PreviewDragOver='treeView1_PreviewDragOver'
-						PreviewDrop='treeView1_PreviewDrop'>
+						VirtualizingStackPanel.VirtualizationMode='Recycling'>
 						<TreeViewItem
 							Header='My command 1' />
 						<TreeViewItem

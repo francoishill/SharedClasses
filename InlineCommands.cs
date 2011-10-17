@@ -5,6 +5,110 @@ using System.Text;
 using System.Windows.Forms;
 using System.IO;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
+using System.Runtime.InteropServices;
+
+public class CommandsManagerClass
+{
+	public delegate bool ActionDelegate(params string[] p);
+
+	private static Dictionary<string, CommandClass> commandList = new Dictionary<string, CommandClass>();
+
+	public static void AddToCommandList(CommandClass command)
+	{
+		commandList.Add(command.Name, command);
+	}
+
+	public static bool InvokeCommandAction(string fullCommandString)
+	{
+		string commandName = fullCommandString.Substring(0, fullCommandString.IndexOf(' '));
+		if (!commandList.ContainsKey(commandName.ToLower()) && UserMessages.ShowErrorMessage("Could not invoke command, command not found: " + commandName.ToLower()))
+			return false;
+
+		CommandClass commandToCall = commandList[commandName.ToLower()];
+		string[] commandParams = fullCommandString.Substring(fullCommandString.IndexOf(' ') + 1).Split(commandToCall.CommandArgumentSeparatorChar);
+		if (commandParams.Length == 0 && UserMessages.ShowErrorMessage("Could not invoke command, command has no parameters passed: " + fullCommandString))
+			return false;
+
+		//string[] arguments = fullCommandString.Substring(.Split(commandToCall.CommandArgumentSeparatorChar);
+		//MessageBox.Show("Invoking: " + fullCommandString);
+		commandToCall.Action(commandParams);
+		return false;
+	}
+
+	public enum ArgumentTypeEnum { Text, Int }
+	[Flags]
+	public enum ValidationTypeEnum
+	{
+		None = 0,
+		File = 1,
+		Directory = 2,
+		Email = 4
+	}
+
+	interface IGeneralObjectWithName
+	{
+		string Name { get; set; }
+		string DisplayName { get; set; }
+		string Description { get; set; }
+	}
+
+	public class CommandClass : IGeneralObjectWithName
+	{
+		public string Name { get; set; }
+		public string DisplayName { get; set; }
+		public string Description { get; set; }
+		public List<CommandArgument> CommandArguments { get; set; }
+		public char CommandArgumentSeparatorChar { get; set; }
+		public ActionDelegate Action { get; set; }
+
+		public CommandClass(string NameIn, string DisplayNameIn, string DescriptionIn, List<CommandArgument> CommandArgumentsIn, ActionDelegate ActionIn, char CommandArgumentSeparatorCharIn = ';')
+		{
+			Name = NameIn;
+			DisplayName = DisplayNameIn;
+			Description = DescriptionIn;
+			CommandArguments = CommandArgumentsIn;
+			CommandArgumentSeparatorChar = CommandArgumentSeparatorCharIn;
+			Action = ActionIn;
+		}
+	}
+
+	public class CommandArgument : IGeneralObjectWithName
+	{
+		public string Name { get; set; }
+		public string DisplayName { get; set; }
+		public string Description { get; set; }
+		public bool Required { get; set; }
+		public ArgumentTypeEnum ArgumentType { get; set; }
+		public ValidationTypeEnum ValidationType { get; set; }
+
+		public CommandArgument(string NameIn, string DisplayNameIn, string DescriptionIn, bool RequiredIn, ArgumentTypeEnum ArgumentTypeIn, ValidationTypeEnum ValidationTypeIn)
+		{
+			Name = NameIn;
+			DisplayName = DisplayNameIn;
+			Description = DescriptionIn;
+			Required = RequiredIn;
+			ArgumentType = ArgumentTypeIn;
+			ValidationType = ValidationTypeIn;
+		}
+
+		public bool ValidateArgument(ValidationTypeEnum validationType, string ArgumentText)
+		{
+			if (validationType == ValidationTypeEnum.File) return File.Exists(ArgumentText);
+			if (validationType == ValidationTypeEnum.Directory) return Directory.Exists(ArgumentText);
+			if (validationType == ValidationTypeEnum.Email) return IsValidEmail(ArgumentText);
+			return false;
+		}
+
+		public static bool IsValidEmail(string strIn)
+		{
+			// Return true if strIn is in valid e-mail format.
+			return Regex.IsMatch(strIn,
+						 @"^(?("")(""[^""]+?""@)|(([0-9a-zA-Z]((\.(?!\.))|[-!#\$%&'\*\+/=\?\^`\{\}\|~\w])*)(?<=[0-9a-zA-Z])@))" +
+						 @"(?(\[)(\[(\d{1,3}\.){3}\d{1,3}\])|(([0-9a-zA-Z][-\w]*[0-9a-zA-Z]\.)+[a-zA-Z]{2,6}))$");
+		}
+	}
+}
 
 public class InlineCommands
 {

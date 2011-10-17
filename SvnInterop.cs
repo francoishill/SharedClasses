@@ -25,8 +25,11 @@ public class SvnInterop
 			string projDir =
 					Directory.Exists(projnameOrDir) ? projnameOrDir :
 				Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects\" + projnameOrDir;//"";
-			string svnpath = "svn";
-			if (Directory.Exists(projDir))
+			string svnpath = @"C:\Program Files\TortoiseSVN\bin\svn.exe";// "svn";
+
+			if (!File.Exists(svnpath)) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Error: svn.exe does not exists: " + svnpath);
+			else if (!Directory.Exists(projDir)) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Error: folder not found: " + projDir);
+			else
 			{
 				ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 				{
@@ -70,7 +73,6 @@ public class SvnInterop
 					svnproc.WaitForExit();
 				});
 			}
-			else Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Error: folder not found: " + projDir);
 		}
 		catch (Exception exc)
 		{

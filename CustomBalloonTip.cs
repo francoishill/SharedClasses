@@ -211,12 +211,13 @@ public partial class CustomBalloonTip : Form
 		int gapFromSide = 100;
 		cbt.Location = new Point(Screen.PrimaryScreen.WorkingArea.Left + gapFromSide, Screen.PrimaryScreen.WorkingArea.Top + TopStart - cbt.Height);
 		cbt.Width = Screen.PrimaryScreen.WorkingArea.Width - gapFromSide * 2;
-		cbt.FormClosed += delegate
+		cbt.FormClosed += (snder, evtargs) =>
 		{
-			if (VisibleBalloonTipForms.Contains(cbt))
+			CustomBalloonTip thisCustomTip = snder as CustomBalloonTip;
+			if (VisibleBalloonTipForms.Contains(thisCustomTip))
 			{
-				int indexOfRemoved = VisibleBalloonTipForms.IndexOf(cbt);
-				int cbtHeight = cbt.Height;
+				int indexOfRemoved = VisibleBalloonTipForms.IndexOf(thisCustomTip);
+				int cbtHeight = thisCustomTip.Height;
 				for (int i = indexOfRemoved + 1; i < VisibleBalloonTipForms.Count; i++)
 				{
 					CustomBalloonTip tmpForm = VisibleBalloonTipForms[i];
@@ -245,12 +246,13 @@ public partial class CustomBalloonTip : Form
 					}, false);
 					//VisibleBalloonTipForms[i].Top -= cbt.Height;
 				}
-				VisibleBalloonTipForms.Remove(cbt);
+				VisibleBalloonTipForms.Remove(thisCustomTip);
 				//foreach (
 			}
 		};
 
 		IntPtr currentActiveWindow = Win32Api.GetForegroundWindow();
+		VisibleBalloonTipForms.Add(cbt);
 		cbt.Show();
 		if (Win32Api.GetForegroundWindow() != currentActiveWindow)
 			Win32Api.SetForegroundWindow(currentActiveWindow);

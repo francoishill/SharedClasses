@@ -25,7 +25,7 @@ public class ApplicationRecoveryAndRestart
 
 		// register for Application Restart
 		ApplicationRestartRecoveryManager.RegisterForApplicationRestart(
-				new RestartSettings("/restart", RestartRestrictions.None));
+				new RestartSettings("/restart", RestartRestrictions.NotOnPatch | RestartRestrictions.NotOnReboot));
 
 		// register for Application Recovery
 		//RecoverySettings recoverySettings =  new RecoverySettings(new RecoveryData(PerformRecovery, null), 0);

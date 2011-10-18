@@ -44,8 +44,25 @@ public class UserMessages
 		return true;
 	}
 
-	public static bool Confirm(string Message, string Title = "Confirm", bool DefaultYesButton = false, IWin32Window owner = null)
+	public static bool Confirm(string Message, string Title = "Confirm", bool DefaultYesButton = false, IWin32Window owner = null, bool AlwayOnTop = true)
 	{
-		return MessageBox.Show(owner, Message, Title, MessageBoxButtons.YesNo, MessageBoxIcon.Question, DefaultYesButton ? MessageBoxDefaultButton.Button1 : MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+		if (owner == null && Form.ActiveForm != null) owner = Form.ActiveForm;
+		bool useTempForm = false;
+		Form tempForm = null;
+		if (owner == null)
+		{
+			useTempForm = true;
+			tempForm = new Form();
+			owner = tempForm;
+		}
+		if (AlwayOnTop) ((Form)owner).TopMost = true;
+		bool result = MessageBox.Show(owner, Message, Title, MessageBoxButtons.YesNo, MessageBoxIcon.Question, DefaultYesButton ? MessageBoxDefaultButton.Button1 : MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+		if (useTempForm && tempForm != null && !tempForm.IsDisposed) tempForm.Dispose();
+		return result;
+	}
+
+	public static string Prompt(string Message, string Title = "Prompt", string DefaultResponse = "")
+	{
+		return Microsoft.VisualBasic.Interaction.InputBox(Message, Title, DefaultResponse);
 	}
 }

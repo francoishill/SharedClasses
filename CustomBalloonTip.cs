@@ -10,10 +10,12 @@ using System.Threading;
 
 public partial class CustomBalloonTip : Form
 {
-	public delegate void SimpleDelegate();
+	//public delegate void SimpleDelegate();
+	public delegate void SimpleDelegateWithSender(object returnObject);
+	public string KeyForForm;
 
 	public enum IconTypes { Error, Information, Question, Shield, Warning, None };
-	public CustomBalloonTip(string Title, string Message, int Duration, CustomBalloonTip.IconTypes iconType, SimpleDelegate OnClickCallback, bool OnClickCallbackOnSeparateThread = true)
+	public CustomBalloonTip(string Title, string Message, int Duration, CustomBalloonTip.IconTypes iconType, SimpleDelegateWithSender OnClickCallback, bool OnClickCallbackOnSeparateThread = true)
 	{
 		InitializeComponent();
 
@@ -82,38 +84,52 @@ public partial class CustomBalloonTip : Form
 		Win32Api.SetForegroundWindow(LastActiveWindow);
 	}
 
+	private void CloseOwnerFormOfControl(Control control)
+	{
+		Form formOfControl = control.FindForm();
+		if (formOfControl != null && !formOfControl.IsDisposed)
+			formOfControl.Close();
+	}
+
 	Component[] controls;
-	private void AddDelgateToRelevantControls_Click(SimpleDelegate VoidDelegateToRunOnClick, bool OnClickCallbackOnSeparateThread)
+	private void AddDelgateToRelevantControls_Click(SimpleDelegateWithSender VoidDelegateToRunOnClick, bool OnClickCallbackOnSeparateThread)
 	{
 		foreach (object c in controls)
 		{
 			if (c is Control)
-				((Control)c).Click += delegate
+				((Control)c).Click += (snder, evtargs) =>
 				{
-					this.Close();
+					string senderKey = ((snder as Control).FindForm() as CustomBalloonTip).KeyForForm;
+					CloseOwnerFormOfControl(snder as Control);
+					//CustomBalloonTip thisCustomTip = snder as CustomBalloonTip;
+					//thisCustomTip.Close();
 					if (OnClickCallbackOnSeparateThread)
-						ThreadingInterop.PerformVoidFunctionSeperateThread(() => { VoidDelegateToRunOnClick.Invoke(); });
+						ThreadingInterop.PerformVoidFunctionSeperateThread(() => { VoidDelegateToRunOnClick.Invoke(senderKey); });
 					else
-						VoidDelegateToRunOnClick.Invoke();
+						VoidDelegateToRunOnClick.Invoke(senderKey);
 				};
 			else if (c is ToolStripItem)
-				((ToolStripItem)c).Click += delegate
+				((ToolStripItem)c).Click += (snder, evtargs) =>
 				{
-					this.Close();
+					//CustomBalloonTip thisCustomTip = snder as CustomBalloonTip;
+					//thisCustomTip.Close();
+					if ((snder as ToolStripItem).GetCurrentParent() != null)
+						CloseOwnerFormOfControl((snder as ToolStripItem).GetCurrentParent());
 					if (OnClickCallbackOnSeparateThread)
-						ThreadingInterop.PerformVoidFunctionSeperateThread(() => { VoidDelegateToRunOnClick.Invoke(); });
+						ThreadingInterop.PerformVoidFunctionSeperateThread(() => { VoidDelegateToRunOnClick.Invoke(snder); });
 					else
-						VoidDelegateToRunOnClick.Invoke();
+						VoidDelegateToRunOnClick.Invoke(snder);
 				};
-			else if (c is StatusStrip)
-				((StatusStrip)c).Click += delegate
-				{
-					this.Close();
-					if (OnClickCallbackOnSeparateThread)
-						ThreadingInterop.PerformVoidFunctionSeperateThread(() => { VoidDelegateToRunOnClick.Invoke(); });
-					else
-						VoidDelegateToRunOnClick.Invoke();
-				};
+			//else if (c is StatusStrip)//StatusStrip is control
+			//  ((StatusStrip)c).Click += (snder, evtargs) =>
+			//  {
+			//    CustomBalloonTip thisCustomTip = snder as CustomBalloonTip;
+			//    thisCustomTip.Close();
+			//    if (OnClickCallbackOnSeparateThread)
+			//      ThreadingInterop.PerformVoidFunctionSeperateThread(() => { VoidDelegateToRunOnClick.Invoke(); });
+			//    else
+			//      VoidDelegateToRunOnClick.Invoke();
+			//  };
 		}
 	}
 
@@ -125,7 +141,7 @@ public partial class CustomBalloonTip : Form
 	delegate void DecreaseOpacityCallback();
 	private void CustomBalloonTip_Shown(object sender, EventArgs e)
 	{
-		VisibleBalloonTipForms.Add(this);
+		//VisibleBalloonTipForms.Add(this);
 		StartTimerForClosing();
 	}
 
@@ -200,9 +216,10 @@ public partial class CustomBalloonTip : Form
 
 	//delegate void MoveWindowUpCallback();
 	public static List<CustomBalloonTip> VisibleBalloonTipForms = new List<CustomBalloonTip>();
-	public static void ShowCustomBalloonTip(string Title, string Message, int Duration, CustomBalloonTip.IconTypes iconType, SimpleDelegate OnClickCallback)
+	public static void ShowCustomBalloonTip(string Title, string Message, int Duration, CustomBalloonTip.IconTypes iconType, SimpleDelegateWithSender OnClickCallback, string keyForForm = null)
 	{
-		CustomBalloonTip cbt = new CustomBalloonTip(Title, Message, Duration, iconType, delegate { OnClickCallback.Invoke(); });
+		CustomBalloonTip cbt = new CustomBalloonTip(Title, Message, Duration, iconType, OnClickCallback);
+		cbt.KeyForForm = keyForForm;
 		//this.Location = new Point(Screen.PrimaryScreen.WorkingArea.Right - this.Width, Screen.PrimaryScreen.WorkingArea.Bottom - this.Height);
 		int TopStart = 0;
 		foreach (CustomBalloonTip tmpVisibleFrms in VisibleBalloonTipForms)

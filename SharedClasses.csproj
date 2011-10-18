@@ -44,6 +44,7 @@
     <Compile Include="CustomBalloonTip.Designer.cs">
       <DependentUpon>CustomBalloonTip.cs</DependentUpon>
     </Compile>
+    <Compile Include="FileSystemInterop.cs" />
     <Compile Include="InlineCommands.cs" />
     <Compile Include="Logging.cs" />
     <Compile Include="MicrosoftOfficeInterop.cs" />
@@ -60,6 +61,8 @@
       <DependentUpon>OverlayWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="PhpInterop.cs" />
+    <Compile Include="QueueingActionsInterop.cs" />
+    <Compile Include="SettingsInterop.cs" />
     <Compile Include="SnarlNetworkProtocol.cs" />
     <Compile Include="StartupbatInterop.cs" />
     <Compile Include="StylingInterop.cs" />

@@ -9,6 +9,7 @@ using SystemIcons = System.Drawing.SystemIcons;
 using Screen = System.Windows.Forms.Screen;
 using Rectangle = System.Drawing.Rectangle;
 using System.Threading;
+using System.Windows.Media.Animation;
 
 /// <summary>
 /// Interaction logic for tmpUserControl.xaml
@@ -108,7 +109,6 @@ public partial class CustomBalloonTipwpf : Window
 			}
 		};
 
-		cbt.Top = Screen.PrimaryScreen.WorkingArea.Top + TopStart - cbt.ActualHeight;
 		IntPtr currentActiveWindow = Win32Api.GetForegroundWindow();
 		VisibleBalloonTipForms.Add(cbt);
 		cbt.Show();
@@ -116,7 +116,10 @@ public partial class CustomBalloonTipwpf : Window
 			Win32Api.SetForegroundWindow(currentActiveWindow);
 
 		//cbt.Width = Screen.PrimaryScreen.WorkingArea.Width - gapFromSide * 2;
+		cbt.Top = Screen.PrimaryScreen.WorkingArea.Top + TopStart - cbt.ActualHeight;
 		cbt.Left = Screen.PrimaryScreen.WorkingArea.Left + (Screen.PrimaryScreen.WorkingArea.Width - cbt.Width) / 2;// - 2*gapFromSide)/2;
+
+		cbt.TranslateAnimateWindowRelatively(0.1, cbt.ActualHeight, 0);//200);
 
 		//ShowInactiveTopmost(cbt);
 		//cbt.StartTimerForClosing();
@@ -135,7 +138,7 @@ public partial class CustomBalloonTipwpf : Window
 				//{
 					for (int i = 0; i <= 10; i++)
 					{
-						//Thread.Sleep(20);
+						Thread.Sleep(20);
 						Rectangle checkRectangle = new Rectangle(bounds.X - 15, bounds.Y - 15, bounds.Width + 30, bounds.Height + 30);
 						while (checkRectangle.Contains(System.Windows.Forms.Control.MousePosition))
 						{ }//Thread.Sleep(1);
@@ -162,35 +165,52 @@ public partial class CustomBalloonTipwpf : Window
 		}
 	}
 
-	private void TranslateWindowToCorrectPosition()
+	public void TranslateAnimateWindowRelatively(double animationDurationInSeconds, double topRelativeToCurrent, double leftRelativeToCurrent)
 	{
-		////ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
-		////{
-		//double EndTop = this.Top + this.Height;
-		//while (this.Top < EndTop)
-		//{
-		//  //Thread.Sleep(10);
-		//  //ThreadingInterop.UpdateGuiFromThread(this, () =>
-		//  //{
-		//  if (this.Top + 5 > EndTop) this.Top = EndTop;
-		//  else this.Top += 5;
-		//  //});
-		//  //Action SlideDown = (Action)(() =>
-		//  //{
-		//  //  if (this.Top + 5 > EndTop) this.Top = EndTop;
-		//  //  else this.Top += 5;
-		//  //});
-		//  //if (this.InvokeRequired)
-		//  //  this.Invoke(SlideDown, new object[] { });
-		//  //else
-		//  //  SlideDown.Invoke();
-		//}
-		////});
+		Duration animationDuration = new Duration(TimeSpan.FromSeconds(animationDurationInSeconds));
+
+		//Rect workingArea = SystemParameters.WorkArea;
+		double newTopPosition = this.Top + topRelativeToCurrent;//this.ActualHeight;//workingArea.Top + (workingArea.Height - this.ActualHeight * ActivatedScaleY) / 2;
+		double newLeftPosition = this.Left + leftRelativeToCurrent;
+
+		DoubleAnimation topAnimation = new DoubleAnimation()
+		{
+			From = this.Top,
+			To = newTopPosition,
+			Duration = animationDuration
+		};
+
+		DoubleAnimation leftAnimation = new DoubleAnimation()
+		{
+			From = this.Left,
+			To = newLeftPosition,
+			Duration = animationDuration
+		};
+
+		Storyboard storyboard = new Storyboard()
+		{
+			Name = "storyboardFadeout",
+			AutoReverse = false,
+			RepeatBehavior = new RepeatBehavior(1),
+			FillBehavior = FillBehavior.Stop
+		};
+		Storyboard.SetTargetName(storyboard, this.Name);
+		Storyboard.SetTargetProperty(topAnimation, new PropertyPath(Window.TopProperty));
+		Storyboard.SetTargetProperty(leftAnimation, new PropertyPath(Window.LeftProperty));
+		storyboard.Children.Add(topAnimation);
+		storyboard.Children.Add(leftAnimation);
+
+		storyboard.Completed += delegate
+		{
+			this.Top = newTopPosition;
+			this.Left = newLeftPosition;
+		};
+		storyboard.Begin(this);
 	}
 
 	private void customBalloonTipwpf_Loaded(object sender, RoutedEventArgs e)
 	{
 		StartTimerForClosing();
-		TranslateWindowToCorrectPosition();
+		//TranslateWindowToCorrectPosition();
 	}
 }

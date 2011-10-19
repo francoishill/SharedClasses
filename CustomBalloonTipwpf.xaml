@@ -10,11 +10,13 @@
 	mc:Ignorable="d"
 	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-	d:DesignHeight='197'
+	d:DesignHeight='61'
+	MaxHeight='61'
+	MinWidth='300'
 	d:DesignWidth='631'
 	SizeToContent='WidthAndHeight'
 	Background='Transparent'
-	FontSize='12'
+	FontSize='10'
 	FontFamily='Segoe Print'
 	Topmost='True'
 	FontWeight='Bold'
@@ -25,26 +27,26 @@
 	<Border
 		Padding='20,0'
 		CornerRadius='8'
-		BorderThickness='2'
+		BorderThickness='1'
 		BorderBrush='#789'>
 		<Border.Background>
 			<LinearGradientBrush StartPoint='0,0' EndPoint='0,1'>
 				<GradientStop
 					Offset='0'
-					Color='#bcd' />
+					Color='#ddd' />
 				<GradientStop
 					Offset='0.5'
-					Color='#def' />
+					Color='#fff' />
 				<GradientStop
 					Offset='1'
-					Color='#bcd' />
+					Color='#ddd' />
 			</LinearGradientBrush>
 		</Border.Background>
 		<StackPanel
 			Orientation='Horizontal'
 			UseLayoutRounding='True'
 			VerticalAlignment='Top'
-			HorizontalAlignment='Stretch'>
+			HorizontalAlignment='Left'>
 			<Image
 				Width='16'
 				Height='16'
@@ -52,11 +54,15 @@
 			<Label
 				Content='Title'
 				Foreground='DarkGreen'
-				Name='label_Title' />
+				Name='label_Title'
+				Padding='0'
+				Margin='10,0,0,0' />
 			<Label
 				Content='Message'
 				Foreground='DarkBlue'
-				Name='label_Message' />
+				Name='label_Message'
+				Padding='0'
+				Margin='10,0,0,0' />
 		</StackPanel>
 	</Border>
 </Window>

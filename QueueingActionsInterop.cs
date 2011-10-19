@@ -29,7 +29,7 @@ public class QueueingActionsInterop
 		private void InvokeAction(object state)
 		{
 			// This method executes on a threadpool thread
-			lock (s_Lock)
+			//lock (s_Lock)
 			{
 				this.Dequeue().Invoke();
 				s_TestFinished.Set();

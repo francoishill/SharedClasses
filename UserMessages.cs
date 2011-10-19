@@ -3,66 +3,91 @@ public class UserMessages
 {
 	/*All methods to show messages that is of type boolean (except Confirm) will return true
 	Reason being is that it makes it easy to show a message in a method which would should exit when the message is shown*/
-	private static bool ShowMsg(IWin32Window Owner, string Message, string Title, MessageBoxIcon icon, bool AlwayOnTop)
+	private static bool ShowMsg(IWin32Window Owner, string Message, string Title, MessageBoxIcon icon, bool AlwaysOnTop)
 	{
 		if (Owner == null && Form.ActiveForm != null) Owner = Form.ActiveForm;
 		bool useTempForm = false;
-		Form tempForm = null;
+		//Form tempForm = null;
+		Form topmostForm = null;
 		if (Owner == null)
 		{
 			useTempForm = true;
-			tempForm = new Form();
-			Owner = tempForm;
+			topmostForm = GetTopmostForm();// new Form();
+			Owner = topmostForm;
 		}
-		if (AlwayOnTop) ((Form)Owner).TopMost = true;
+		((Form)Owner).TopMost = AlwaysOnTop;
 		MessageBox.Show(Owner, Message, Title, MessageBoxButtons.OK, icon);
-		if (useTempForm && tempForm != null && !tempForm.IsDisposed) tempForm.Dispose();
+		if (useTempForm && topmostForm != null && !topmostForm.IsDisposed) topmostForm.Dispose();
 		return true;
 	}
 
-	public static bool ShowErrorMessage(string Message, string Title = "Error", IWin32Window owner = null, bool AlwayOnTop = true)
+	public static bool ShowErrorMessage(string Message, string Title = "Error", IWin32Window owner = null, bool AlwaysOnTop = true)
 	{
-		ShowMsg(owner, Message, Title, MessageBoxIcon.Error, AlwayOnTop);
+		ShowMsg(owner, Message, Title, MessageBoxIcon.Error, AlwaysOnTop);
 		return true;
 	}
 
-	public static bool ShowWarningMessage(string Message, string Title = "Warning", IWin32Window owner = null, bool AlwayOnTop = true)
+	public static bool ShowWarningMessage(string Message, string Title = "Warning", IWin32Window owner = null, bool AlwaysOnTop = true)
 	{
-		ShowMsg(owner, Message, Title, MessageBoxIcon.Warning, AlwayOnTop);
+		ShowMsg(owner, Message, Title, MessageBoxIcon.Warning, AlwaysOnTop);
 		return true;
 	}
 
-	public static bool ShowInfoMessage(string Message, string Title = "Warning", IWin32Window owner = null, bool AlwayOnTop = true)
+	public static bool ShowInfoMessage(string Message, string Title = "Warning", IWin32Window owner = null, bool AlwaysOnTop = true)
 	{
-		ShowMsg(owner, Message, Title, MessageBoxIcon.Information, AlwayOnTop);
+		ShowMsg(owner, Message, Title, MessageBoxIcon.Information, AlwaysOnTop);
 		return true;
 	}
 
-	public static bool ShowMessage(string Message, string Title = "Warning", IWin32Window owner = null, bool AlwayOnTop = true)
+	public static bool ShowMessage(string Message, string Title = "Warning", IWin32Window owner = null, bool AlwaysOnTop = true)
 	{
-		ShowMsg(owner, Message, Title, MessageBoxIcon.None, AlwayOnTop);
+		ShowMsg(owner, Message, Title, MessageBoxIcon.None, AlwaysOnTop);
 		return true;
 	}
 
-	public static bool Confirm(string Message, string Title = "Confirm", bool DefaultYesButton = false, IWin32Window owner = null, bool AlwayOnTop = true)
+	public static bool Confirm(string Message, string Title = "Confirm", bool DefaultYesButton = false, IWin32Window owner = null, bool AlwaysOnTop = true)
 	{
+		//DialogResult result = MessageBox.Show(topmostForm, Message, Title, MessageBoxButtons.YesNo, MessageBoxIcon.Question, DefaultYesButton ? MessageBoxDefaultButton.Button1 : MessageBoxDefaultButton.Button2);
+		//topmostForm.Dispose(); // clean it up all the way
+
 		if (owner == null && Form.ActiveForm != null) owner = Form.ActiveForm;
 		bool useTempForm = false;
-		Form tempForm = null;
+		//Form tempForm = null;
+		Form topmostForm = null;
 		if (owner == null)
 		{
 			useTempForm = true;
-			tempForm = new Form();
-			owner = tempForm;
+			//tempForm = new Form();
+			topmostForm = GetTopmostForm();
+			owner = topmostForm;
 		}
-		if (AlwayOnTop) ((Form)owner).TopMost = true;
+		((Form)owner).TopMost = AlwaysOnTop;
 		bool result = MessageBox.Show(owner, Message, Title, MessageBoxButtons.YesNo, MessageBoxIcon.Question, DefaultYesButton ? MessageBoxDefaultButton.Button1 : MessageBoxDefaultButton.Button2) == DialogResult.Yes;
-		if (useTempForm && tempForm != null && !tempForm.IsDisposed) tempForm.Dispose();
+		if (useTempForm && topmostForm != null && !topmostForm.IsDisposed) topmostForm.Dispose();
 		return result;
 	}
 
 	public static string Prompt(string Message, string Title = "Prompt", string DefaultResponse = "")
 	{
 		return Microsoft.VisualBasic.Interaction.InputBox(Message, Title, DefaultResponse);
+	}
+
+	private static Form GetTopmostForm()
+	{
+		Form topmostForm = new Form();
+		// We do not want anyone to see this window so position it off the
+		// visible screen and make it as small as possible
+		topmostForm.Size = new System.Drawing.Size(1, 1);
+		topmostForm.StartPosition = FormStartPosition.Manual;
+		System.Drawing.Rectangle rect = SystemInformation.VirtualScreen;
+		topmostForm.Location = new System.Drawing.Point(rect.Bottom + 10, rect.Right + 10);
+		topmostForm.Show();
+		// Make this form the active form and make it TopMost
+
+		topmostForm.Focus();
+		topmostForm.BringToFront();
+		topmostForm.TopMost = true;
+		return topmostForm;
+		// Finally show the MessageBox with the form just created as its owner
 	}
 }

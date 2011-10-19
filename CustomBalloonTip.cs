@@ -15,7 +15,7 @@ public partial class CustomBalloonTip : Form
 	public string KeyForForm;
 
 	public enum IconTypes { Error, Information, Question, Shield, Warning, None };
-	public CustomBalloonTip(string Title, string Message, int Duration, CustomBalloonTip.IconTypes iconType, SimpleDelegateWithSender OnClickCallback, bool OnClickCallbackOnSeparateThread = true)
+	public CustomBalloonTip(string Title, string Message, int Duration, IconTypes iconType, SimpleDelegateWithSender OnClickCallback, bool OnClickCallbackOnSeparateThread = true)
 	{
 		InitializeComponent();
 
@@ -216,7 +216,7 @@ public partial class CustomBalloonTip : Form
 
 	//delegate void MoveWindowUpCallback();
 	public static List<CustomBalloonTip> VisibleBalloonTipForms = new List<CustomBalloonTip>();
-	public static void ShowCustomBalloonTip(string Title, string Message, int Duration, CustomBalloonTip.IconTypes iconType, SimpleDelegateWithSender OnClickCallback, string keyForForm = null)
+	public static void ShowCustomBalloonTip(string Title, string Message, int Duration, IconTypes iconType, SimpleDelegateWithSender OnClickCallback, string keyForForm = null)
 	{
 		CustomBalloonTip cbt = new CustomBalloonTip(Title, Message, Duration, iconType, OnClickCallback);
 		cbt.KeyForForm = keyForForm;

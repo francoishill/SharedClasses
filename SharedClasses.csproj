@@ -44,6 +44,9 @@
     <Compile Include="CustomBalloonTip.Designer.cs">
       <DependentUpon>CustomBalloonTip.cs</DependentUpon>
     </Compile>
+    <Compile Include="CustomBalloonTipwpf.xaml.cs">
+      <DependentUpon>CustomBalloonTipwpf.xaml</DependentUpon>
+    </Compile>
     <Compile Include="FileSystemInterop.cs" />
     <Compile Include="InlineCommands.cs" />
     <Compile Include="Logging.cs" />
@@ -87,6 +90,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="Microsoft.WindowsAPICodePack, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>DLLs\Microsoft.WindowsAPICodePack.dll</HintPath>
@@ -132,6 +136,10 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="CommandUsercontrol.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="CustomBalloonTipwpf.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

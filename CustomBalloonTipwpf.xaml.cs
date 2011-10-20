@@ -40,7 +40,7 @@ public partial class CustomBalloonTipwpf : Window
 			case IconTypes.Question: this.pictureBox_Icon.Source = Imaging.CreateBitmapSourceFromHIcon(SystemIcons.Question.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions()); break;
 			case IconTypes.Shield: this.pictureBox_Icon.Source = Imaging.CreateBitmapSourceFromHIcon(SystemIcons.Shield.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions()); break;
 			case IconTypes.Warning: this.pictureBox_Icon.Source = Imaging.CreateBitmapSourceFromHIcon(SystemIcons.Warning.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions()); break;
-			default: break;
+			default: this.pictureBox_Icon.Visibility = System.Windows.Visibility.Collapsed; break;
 		}
 
 		this.MouseLeftButtonUp += (snder, evtargs) =>
@@ -55,10 +55,11 @@ public partial class CustomBalloonTipwpf : Window
 	}
 
 	public static List<CustomBalloonTipwpf> VisibleBalloonTipForms = new List<CustomBalloonTipwpf>();
-	public static void ShowCustomBalloonTip(string Title, string Message, int Duration, IconTypes iconType, SimpleDelegateWithSender OnClickCallback, string keyForForm = null, bool CallbackOnSeparateThread = false)
+	public static void ShowCustomBalloonTip(string Title, string Message, int Duration, IconTypes iconType, SimpleDelegateWithSender OnClickCallback, string keyForForm = null, bool CallbackOnSeparateThread = false, double Scaling = 1)
 	{
 		//TODO: Also think about moving all these notifications into usercontrols in one MAIN window
 		CustomBalloonTipwpf cbt = new CustomBalloonTipwpf(Title, Message, Duration, iconType, OnClickCallback, CallbackOnSeparateThread);
+		if (Scaling != 1) cbt.mainBorder.LayoutTransform = new ScaleTransform(Scaling, Scaling);
 		cbt.KeyForForm = keyForForm;
 		//this.Location = new Point(Screen.PrimaryScreen.WorkingArea.Right - this.Width, Screen.PrimaryScreen.WorkingArea.Bottom - this.Height);
 		double TopStart = 0;

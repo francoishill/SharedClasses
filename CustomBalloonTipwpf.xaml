@@ -10,7 +10,7 @@
 	mc:Ignorable="d"
 	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-	d:DesignHeight='61'
+	d:DesignHeight='81'
 	MaxHeight='61'
 	MinWidth='300'
 	d:DesignWidth='631'
@@ -25,6 +25,7 @@
 	ShowActivated='False'
 	ResizeMode='NoResize'>
 	<Border
+		Name='mainBorder'
 		Padding='20,0'
 		CornerRadius='8'
 		BorderThickness='1'
@@ -48,9 +49,10 @@
 			VerticalAlignment='Top'
 			HorizontalAlignment='Left'>
 			<Image
+				Name='pictureBox_Icon'
 				Width='16'
 				Height='16'
-				Name='pictureBox_Icon'></Image>
+				UseLayoutRounding='True'></Image>
 			<Label
 				Content='Title'
 				Foreground='DarkGreen'

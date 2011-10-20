@@ -9,7 +9,7 @@ public class QueueingActionsInterop
 	private class CustomQueue : Queue<Action>
 	{
 		static object s_Lock = new object();        // needed because the counter is accessed from multiple threads 
-		static AutoResetEvent s_TestFinished = new AutoResetEvent(false);        // signals when the test is finished 
+		//static AutoResetEvent s_TestFinished = new AutoResetEvent(false);        // signals when the test is finished 
 
 		public new void Enqueue(Action item)
 		{
@@ -19,24 +19,34 @@ public class QueueingActionsInterop
 
 		private void EnsureQueueIsProcessing()
 		{
-			while (this.Count > 0)
+			if (this.Count > 0)
 			{
-				ThreadPool.QueueUserWorkItem(new WaitCallback(InvokeAction));
-				s_TestFinished.WaitOne();        // we wait until the last task has finished 
+				//InvokeAction(null);
+				//Action action = this.Dequeue();
+				ThreadPool.QueueUserWorkItem(new WaitCallback(InvokeAction));//, action);
+				//s_TestFinished.WaitOne();        // we wait until the last task has finished 
+				//s_TestFinished.WaitOne(1000);        // we wait until the last task has finished 
 			}
 		}
 
-		private void InvokeAction(object state)
+		private void InvokeAction(object ActionToInvoke)
 		{
 			// This method executes on a threadpool thread
 			lock (s_Lock)
 			{
-				if (this.Count > 0)
-				{
-					this.Dequeue().Invoke();
-				}
-				s_TestFinished.Set();
+				//(ActionToInvoke as Action)();
+				//bool isbusy = true;
+				//if (this.Count > 0) this.Dequeue()();
+				this.Dequeue()();
+				//  .BeginInvoke(
+				//  delegate
+				//  {
+				//    isbusy = false;
+
+				//  }, null);//.DynamicInvoke();//.Invoke();
+				//while (isbusy) { }				
 			}
+			//s_TestFinished.Set();
 		}
 	}
 
@@ -47,3 +57,60 @@ public class QueueingActionsInterop
 		QueuedActions.Enqueue(action);
 	}
 }
+
+/*public class TestAnotherQueueingActionsInterop
+{
+	Queue<Action> actionQueue = new Queue<Action>();
+
+	public void EnqueueJointPosition(Position position)
+	{
+		var vector = DefineVector(Axis.Robot, Guid.NewGuid().ToString());
+		vector.Position = position;
+
+		SetJoints(vector, vector.Position, PointType.AbsoluteJointCoordinate);
+
+		actionQueue.Enqueue(() => MoveJoint(vector));
+	}
+
+	public void EnqueueAction(Action<RobotController> item)
+	{
+		actionQueue.Enqueue(() => item(this));
+	}
+
+	//private ManualResetEvent trigger;
+	private bool canMove = false;
+
+	public void RunMovementQueue()
+	{
+		//trigger = new ManualResetEvent(true);
+
+		MotionEnded += RobotController_MotionEnded;
+		MotionStarted += RobotController_MotionStarted;
+
+		canMove = true;
+
+		while (actionQueue.Count > 0)
+		{
+			if (canMove)
+			{
+				canMove = false;
+
+				var action = actionQueue.Dequeue();
+				action();
+			}
+		}
+
+		MotionStarted -= RobotController_MotionStarted;
+		MotionEnded -= RobotController_MotionEnded;
+	}
+
+	private void RobotController_MotionStarted(object sender, MotionEventArgs e)
+	{
+		canMove = false;
+	}
+
+	private void RobotController_MotionEnded(object sender, MotionEventArgs e)
+	{
+		canMove = true;
+	}
+}*/

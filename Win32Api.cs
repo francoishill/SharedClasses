@@ -138,6 +138,13 @@ public static class Win32Api
 	public const int TVS_EX_DOUBLEBUFFER = 0x004;
 	public const int TVS_EX_AUTOHSCROLL = 0x0020;
 	public const int TVS_EX_FADEINOUTEXPANDOS = 0x0040;
+	public const int TVS_EX_MULTISELECT =0x0002;
+	public const int TVS_EX_NOINDENTSTATE= 0x0008;
+	public const int TVS_EX_RICHTOOLTIP =0x0010;
+	public const int TVS_EX_PARTIALCHECKBOXES =0x0080;
+	public const int TVS_EX_EXCLUSIONCHECKBOXES= 0x0100;
+	public const int TVS_EX_DIMMEDCHECKBOXES =0x0200;
+	public const int TVS_EX_DRAWIMAGEASYNC =0x0400;
 
 	[DllImport("user32.dll", CharSet = CharSet.Unicode)]
 	internal static extern int SendMessage(IntPtr hWnd, UInt32 Msg, int wParam, int lParam);

@@ -35,6 +35,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ApplicationRecoveryAndRestart.cs" />
+    <Compile Include="AutoCompleteInterop.cs" />
     <Compile Include="CommandUsercontrol.xaml.cs">
       <DependentUpon>CommandUsercontrol.xaml</DependentUpon>
     </Compile>
@@ -53,6 +54,7 @@
     <Compile Include="MicrosoftOfficeInterop.cs" />
     <Compile Include="MotionBlurEffect.cs" />
     <Compile Include="MouseHooks.cs" />
+    <Compile Include="NetworkInterop.cs" />
     <Compile Include="NsisInterop.cs" />
     <Compile Include="OverlayForm.cs">
       <SubType>Form</SubType>

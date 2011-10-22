@@ -9,6 +9,16 @@ using System.Collections.Generic;
 
 public class NetworkInterop
 {
+	public static IPAddress GetIPAddressFromString(string ipAddressString)
+	{
+		IPAddress returnIPAddress;
+		if (!IPAddress.TryParse(ipAddressString, out returnIPAddress)){
+			UserMessages.ShowErrorMessage("Invalid IP address: " + (ipAddressString ?? ""));
+			return null;
+		}
+		return returnIPAddress;
+	}
+
 	public static IPAddress GetLocalIPaddress()
 	{
 		IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
@@ -19,10 +29,10 @@ public class NetworkInterop
 
 	public static IPEndPoint GetLocalIPEndPoint(int portNumber)
 	{
-		IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
-		IPAddress ipAddress = ipHostInfo.AddressList[0];
-		foreach (IPAddress ip in ipHostInfo.AddressList) if (ip.AddressFamily == AddressFamily.InterNetwork) ipAddress = ip;
-		return new IPEndPoint(ipAddress, portNumber);
+		//IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
+		//IPAddress ipAddress = ipHostInfo.AddressList[0];
+		//foreach (IPAddress ip in ipHostInfo.AddressList) if (ip.AddressFamily == AddressFamily.InterNetwork) ipAddress = ip;
+		return new IPEndPoint(GetLocalIPaddress(), portNumber);
 	}
 
 	public delegate void ProgressChangedEventHandler(object sender, ProgressChangedEventArgs e);
@@ -73,7 +83,7 @@ public class NetworkInterop
 	/// <param name="maxBufferPerTransfer">Maximum file size per transfer (files larger than this buffer will be split).</param>
 	/// <param name="maxTotalFileSize">Maximum size of the total size (including all splits if larger than maximum buffer).</param>
 	/// <param name="maxNumberPendingConnections">Maximum number of pending connections to keep waiting while one is busy.</param>
-	public static void StartServer(ref Socket serverListeningSocketToUse, Form formToHookSocketClosingIntoFormClosingEvent = null, int listeningPort = defaultListeningPort, string FolderToSaveIn = defaultFolderToSaveIn, int maxBufferPerTransfer = defaultMaxBufferPerTransfer, int maxTotalFileSize = defaultMaxTotalFileSize, int maxNumberPendingConnections = defaultMaxNumberPendingConnections)
+	public static void StartServer(ref Socket serverListeningSocketToUse, Form formToHookSocketClosingIntoFormClosingEvent = null, IPAddress ipAddress = null, int listeningPort = defaultListeningPort, string FolderToSaveIn = defaultFolderToSaveIn, int maxBufferPerTransfer = defaultMaxBufferPerTransfer, int maxTotalFileSize = defaultMaxTotalFileSize, int maxNumberPendingConnections = defaultMaxNumberPendingConnections)
 	{
 		serverListeningSocketToUse = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 		serverListeningSocketToUse.NoDelay = true;
@@ -101,7 +111,7 @@ public class NetworkInterop
 
 		string data = null;
 
-		serverListeningSocketToUse.Bind(NetworkInterop.GetLocalIPEndPoint(listeningPort));
+		serverListeningSocketToUse.Bind(ipAddress == null ? NetworkInterop.GetLocalIPEndPoint(listeningPort) : new IPEndPoint(ipAddress, listeningPort));
 		serverListeningSocketToUse.Listen(maxNumberPendingConnections);
 
 		if (textFeedback != null)
@@ -254,7 +264,7 @@ public class NetworkInterop
 		}
 	}
 
-	public static void TransferFile(string filePath, ref Socket senderSocketToUse, int maxBufferPerTransfer = defaultMaxBufferPerTransfer)
+	public static void TransferFile(string filePath, ref Socket senderSocketToUse, IPAddress ipAddress = null, int listeningPort = defaultListeningPort, int maxBufferPerTransfer = defaultMaxBufferPerTransfer)
 	{
 		byte[] byData;
 		if (!File.Exists(filePath))
@@ -266,7 +276,7 @@ public class NetworkInterop
 
 			while (counter * maxBufferPerTransfer < AllFileDataBytes.Length)
 			{
-				if (ConnectToServer(ref senderSocketToUse))
+				if (ConnectToServer(ref senderSocketToUse, ipAddress, listeningPort))
 				{
 					if (textFeedback != null)
 						textFeedback(null, new TextFeedbackEventArgs("Connected to server, transferring file segment " + (counter + 1) + "..."));
@@ -339,7 +349,7 @@ public class NetworkInterop
 		return tmpstr;
 	}
 
-	public static bool ConnectToServer(ref Socket socketToInitialize, int listeningPort = defaultListeningPort, int maxBufferPerTransfer = defaultMaxBufferPerTransfer)
+	public static bool ConnectToServer(ref Socket socketToInitialize, IPAddress ipAddress = null, int listeningPort = defaultListeningPort, int maxBufferPerTransfer = defaultMaxBufferPerTransfer)
 	{
 		try
 		{
@@ -349,7 +359,7 @@ public class NetworkInterop
 			socketToInitialize.NoDelay = true;
 			socketToInitialize.Ttl = 112;
 			socketToInitialize.SendBufferSize = maxBufferPerTransfer;
-			socketToInitialize.Connect(NetworkInterop.GetLocalIPEndPoint(listeningPort));
+			socketToInitialize.Connect(ipAddress == null ? NetworkInterop.GetLocalIPEndPoint(listeningPort) : new IPEndPoint(ipAddress, listeningPort));
 			return true;
 		}
 		catch (SocketException se)

@@ -66,13 +66,74 @@ public class AutoCompleteInterop
 		richTextboxListWithAutocompleteEnabled[richTextbox].completeAutocompleteList = newFullListOfAutocompleteItems;
 	}
 
+	private static void UpdatePositionOfPopupWindow(RichTextBox richTextbox)
+	{
+		Console.WriteLine("Updating position for: " + richTextbox.Name);
+		Point popupPosition = richTextbox.GetPositionFromCharIndex(richTextbox.SelectionStart);
+		popupPosition.X -= (int)(richTextbox.CreateGraphics().MeasureString(richTextbox.Text[richTextbox.SelectionStart - 1].ToString(), richTextbox.Font).Width / 2);
+		popupPosition.Y += (int)(richTextbox.Font.GetHeight()) + 3;
+		if (richTextboxListWithAutocompleteEnabled.ContainsKey(richTextbox))
+			richTextboxListWithAutocompleteEnabled[richTextbox].Location = richTextbox.PointToScreen(popupPosition);
+	}
+
+	private static void UpdateHeightOfPopupWindow(RichTextBox thisRichTextbox)
+	{
+		if (!richTextboxListWithAutocompleteEnabled.ContainsKey(thisRichTextbox)) return;
+		AutocompletePopupTreeviewForm autocompletePopupForm = richTextboxListWithAutocompleteEnabled[thisRichTextbox];
+		int popupHeight = (int)(autocompletePopupForm.treeView1.Nodes.Count * autocompletePopupForm.treeView1.ItemHeight) + 10;
+		autocompletePopupForm.Height = popupHeight < 500 ? popupHeight : 500;
+	}
+
 	private static Dictionary<RichTextBox, AutocompletePopupTreeviewForm> richTextboxListWithAutocompleteEnabled = new Dictionary<RichTextBox, AutocompletePopupTreeviewForm>();
+	private static Dictionary<RichTextBox, Form> parentFormListOfRichTextboxes = new Dictionary<RichTextBox, Form>();
 	public static void EnableRichTextboxAutocomplete(RichTextBox richTextbox, string[] fullListOfAutocompleteItems = null)
 	{
 		if (richTextboxListWithAutocompleteEnabled.ContainsKey(richTextbox))
 			UserMessages.ShowWarningMessage("Autocomplete was already enabled on richtextbox: " + richTextbox.Name);
 		else
 		{
+			Form parentFormOfRichTextbox = richTextbox.FindForm();
+			if (parentFormOfRichTextbox != null)
+			{
+				if (!parentFormListOfRichTextboxes.ContainsKey(richTextbox))
+					parentFormListOfRichTextboxes.Add(richTextbox, parentFormOfRichTextbox);
+
+				parentFormOfRichTextbox.Move += (snder, evtargs) =>
+				{
+					foreach (RichTextBox rb in parentFormListOfRichTextboxes.Keys)
+					{
+						Console.WriteLine("Checking for " + rb.Name);
+						if (parentFormListOfRichTextboxes[rb] == snder as Form)
+						{
+							Kry die reg dit werk nie
+							UpdatePositionOfPopupWindow(rb);
+							//break;
+						}
+					}
+					//UpdatePositionOfPopupWindow(parentFormListOfRichTextboxes[snder as Form]);
+				};
+			}
+
+			richTextbox.Move += (snder, evtargs) =>
+			{
+				UpdatePositionOfPopupWindow(snder as RichTextBox);
+			};
+
+			richTextbox.Disposed += (snder, evtargs) =>
+			{
+				AutocompletePopupTreeviewForm thisAutocompletePopupTreeviewForm = richTextboxListWithAutocompleteEnabled[snder as RichTextBox];
+				if (thisAutocompletePopupTreeviewForm != null && !thisAutocompletePopupTreeviewForm.Disposing && !thisAutocompletePopupTreeviewForm.IsDisposed)
+					thisAutocompletePopupTreeviewForm.Close();
+			};
+
+			richTextbox.LostFocus += (snder, evtargs) =>
+			{
+				AutocompletePopupTreeviewForm thisAutocompletePopupTreeviewForm = richTextboxListWithAutocompleteEnabled[snder as RichTextBox];
+				if (!thisAutocompletePopupTreeviewForm.treeView1.Focused)
+					if (thisAutocompletePopupTreeviewForm != null && !thisAutocompletePopupTreeviewForm.Disposing && !thisAutocompletePopupTreeviewForm.IsDisposed)
+						thisAutocompletePopupTreeviewForm.Hide();
+			};
+
 			richTextbox.KeyDown += (snder, evtargs) =>
 			{
 				if (!richTextboxListWithAutocompleteEnabled.ContainsKey(snder as RichTextBox))
@@ -151,16 +212,9 @@ public class AutoCompleteInterop
 					RichTextBox thisRichTextbox = snder as RichTextBox;
 					if (thisRichTextbox.SelectionStart > 0 && thisRichTextbox.Text[thisRichTextbox.SelectionStart - 1] != ' ')
 					{
-						//if (!thisAutocompletePopupForm.Visible)
-						//{
-						Point popupPosition = thisRichTextbox.GetPositionFromCharIndex(thisRichTextbox.SelectionStart);
-						popupPosition.X -= (int)(thisRichTextbox.CreateGraphics().MeasureString(thisRichTextbox.Text[thisRichTextbox.SelectionStart - 1].ToString(), thisRichTextbox.Font).Width / 2);
-						popupPosition.Y += (int)(thisRichTextbox.Font.GetHeight()) + 3;
-						thisAutocompletePopupForm.Location = (snder as RichTextBox).PointToScreen(popupPosition);
-						//}
+						UpdatePositionOfPopupWindow(thisRichTextbox);
 						if (thisAutocompletePopupForm.treeView1.SelectedNode == null && thisAutocompletePopupForm.treeView1.Nodes.Count > 0)
 							thisAutocompletePopupForm.treeView1.SelectedNode = thisAutocompletePopupForm.treeView1.Nodes[0];
-						//if (currentAutocompleteList.Any(s => s.StartsWith(richTextBox1.Text)))
 						string word = GetWordBeforeTextCaret(snder as RichTextBox);
 						if (word != null)
 						{
@@ -169,12 +223,10 @@ public class AutoCompleteInterop
 								string[] newAutocompleteList = Array.FindAll(thisAutocompletePopupForm.completeAutocompleteList,
 								 s =>
 									 s.Trim().ToUpper().StartsWith(word.Trim().ToUpper())//The item starts with (case-insensitive) the last types word at the cursor
-									//&& Array.Find(filteredAutocompleteList, sel => sel.ToLower().Equals(s.ToLower())) == null//it does not contain the full word
 									 );
 
 								if (newAutocompleteList != null && newAutocompleteList.Length > 0)
 								{
-									//UpdateAutocompleteList(thisAutocompletePopupForm.treeView1, newAutocompleteList);
 									thisAutocompletePopupForm.treeView1.Nodes.Clear();
 									foreach (string wordInList in newAutocompleteList)
 										thisAutocompletePopupForm.treeView1.Nodes.Add(wordInList, wordInList);
@@ -186,8 +238,7 @@ public class AutoCompleteInterop
 								else thisAutocompletePopupForm.Hide();
 							}
 							//int popupHeight = (int)(thisAutocompletePopupForm.treeView1.Nodes.Count * thisAutocompletePopupForm.treeView1.Font.GetHeight());
-							int popupHeight = (int)(thisAutocompletePopupForm.treeView1.Nodes.Count * thisAutocompletePopupForm.treeView1.ItemHeight) + 10;
-							thisAutocompletePopupForm.Height = popupHeight < 500 ? popupHeight : 500;
+							UpdateHeightOfPopupWindow(thisRichTextbox);
 						}
 					}
 					else if (thisAutocompletePopupForm.Visible) thisAutocompletePopupForm.Hide();
@@ -196,6 +247,8 @@ public class AutoCompleteInterop
 			};
 
 			AutocompletePopupTreeviewForm autoCompletePopupForm = new AutocompletePopupTreeviewForm(fullListOfAutocompleteItems);
+			autoCompletePopupForm.Font = richTextbox.Font;
+
 			autoCompletePopupForm.treeView1.KeyDown += (snder, evtargs) =>
 			{
 				if (evtargs.KeyCode == Keys.Enter)

@@ -83,7 +83,7 @@ public class NetworkInterop
 	/// <param name="maxBufferPerTransfer">Maximum file size per transfer (files larger than this buffer will be split).</param>
 	/// <param name="maxTotalFileSize">Maximum size of the total size (including all splits if larger than maximum buffer).</param>
 	/// <param name="maxNumberPendingConnections">Maximum number of pending connections to keep waiting while one is busy.</param>
-	public static void StartServer(ref Socket serverListeningSocketToUse, Form formToHookSocketClosingIntoFormClosingEvent = null, IPAddress ipAddress = null, int listeningPort = defaultListeningPort, string FolderToSaveIn = defaultFolderToSaveIn, int maxBufferPerTransfer = defaultMaxBufferPerTransfer, int maxTotalFileSize = defaultMaxTotalFileSize, int maxNumberPendingConnections = defaultMaxNumberPendingConnections)
+	public static void StartServer(ref Socket serverListeningSocketToUse, Form formToHookSocketClosingIntoFormClosingEvent = null, int listeningPort = defaultListeningPort, string FolderToSaveIn = defaultFolderToSaveIn, int maxBufferPerTransfer = defaultMaxBufferPerTransfer, int maxTotalFileSize = defaultMaxTotalFileSize, int maxNumberPendingConnections = defaultMaxNumberPendingConnections)
 	{
 		serverListeningSocketToUse = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 		serverListeningSocketToUse.NoDelay = true;
@@ -111,7 +111,7 @@ public class NetworkInterop
 
 		string data = null;
 
-		serverListeningSocketToUse.Bind(ipAddress == null ? NetworkInterop.GetLocalIPEndPoint(listeningPort) : new IPEndPoint(ipAddress, listeningPort));
+		serverListeningSocketToUse.Bind(NetworkInterop.GetLocalIPEndPoint(listeningPort));
 		serverListeningSocketToUse.Listen(maxNumberPendingConnections);
 
 		if (textFeedback != null)

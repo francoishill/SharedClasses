@@ -11,10 +11,25 @@ public class NetworkInterop
 {
 	public static IPAddress GetIPAddressFromString(string ipAddressString)
 	{
-		IPAddress returnIPAddress;
-		if (!IPAddress.TryParse(ipAddressString, out returnIPAddress)){
+		bool resolveDndMode = false;
+		foreach (char chr in ipAddressString)
+			if (!char.IsNumber(chr) && chr != '.')
+				resolveDndMode = true;
+		IPAddress returnIPAddress = null;
+
+		if (!resolveDndMode && !IPAddress.TryParse(ipAddressString, out returnIPAddress)){
 			UserMessages.ShowErrorMessage("Invalid IP address: " + (ipAddressString ?? ""));
 			return null;
+		}
+		if (resolveDndMode)
+		{
+			IPHostEntry iphostEntry = Dns.GetHostEntry(ipAddressString);
+			if (iphostEntry == null || iphostEntry.AddressList.Length == 0)
+			{
+				UserMessages.ShowErrorMessage("Could not resolve DNS from " + ipAddressString);
+				return null;
+			}
+			else returnIPAddress = iphostEntry.AddressList[0];
 		}
 		return returnIPAddress;
 	}

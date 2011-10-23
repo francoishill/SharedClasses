@@ -70,7 +70,7 @@ public class AutoCompleteInterop
 	{
 		Console.WriteLine("Updating position for: " + richTextbox.Name);
 		Point popupPosition = richTextbox.GetPositionFromCharIndex(richTextbox.SelectionStart);
-		popupPosition.X -= (int)(richTextbox.CreateGraphics().MeasureString(richTextbox.Text[richTextbox.SelectionStart - 1].ToString(), richTextbox.Font).Width / 2);
+		if (richTextbox.TextLength > 0) popupPosition.X -= (int)(richTextbox.CreateGraphics().MeasureString(richTextbox.Text[richTextbox.SelectionStart - 1].ToString(), richTextbox.Font).Width / 2);
 		popupPosition.Y += (int)(richTextbox.Font.GetHeight()) + 3;
 		if (richTextboxListWithAutocompleteEnabled.ContainsKey(richTextbox))
 			richTextboxListWithAutocompleteEnabled[richTextbox].Location = richTextbox.PointToScreen(popupPosition);
@@ -102,11 +102,13 @@ public class AutoCompleteInterop
 				{
 					foreach (RichTextBox rb in parentFormListOfRichTextboxes.Keys)
 					{
-						Console.WriteLine("Checking for " + rb.Name);
+						//Console.WriteLine("Checking for " + rb.Name);
 						if (parentFormListOfRichTextboxes[rb] == snder as Form)
 						{
-							Kry die reg dit werk nie
-							UpdatePositionOfPopupWindow(rb);
+							richTextboxListWithAutocompleteEnabled[rb].Hide();
+							//parentFormListOfRichTextboxes[rb].Hide();
+							//bool Krydieregditwerknie;
+							//UpdatePositionOfPopupWindow(rb);
 							//break;
 						}
 					}
@@ -389,7 +391,7 @@ public class AutoCompleteInterop
 			this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
 			this.Text = "Form2";
 			this.TopMost = true;
-			this.TransparencyKey = System.Drawing.SystemColors.Control;
+			//this.TransparencyKey = System.Drawing.SystemColors.Control;
 			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form2_FormClosing);
 			this.Shown += new System.EventHandler(this.Form2_Shown);
 			this.ResumeLayout(false);

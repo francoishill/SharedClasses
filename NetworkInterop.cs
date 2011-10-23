@@ -72,9 +72,6 @@ public class NetworkInterop
 		}
 	}
 
-	public static event ProgressChangedEventHandler progressChanged;
-	public static event TextFeedbackEventHandler textFeedback;
-
 	private const string defaultFolderToSaveIn = @"c:\tempReceived";//@"C:\Francois\other\Test\CS_TestListeningServerReceivedFiles";
 	private const int defaultListeningPort = 11000;
 	private const int defaultMaxNumberPendingConnections = 100;
@@ -83,9 +80,6 @@ public class NetworkInterop
 	//public static int maxTransferBuffer = 1024 * 1024 * 10;
 
 	private static Dictionary<Form, Socket> dictionaryWithFormAndSocketsToCloseUponFormClosing = new Dictionary<Form, Socket>();
-	/*
-	 
-	 */
 	/// <summary>
 	/// Starts a Tcp server on specified settings. Can also attach event hooks to:
 	/// NetworkInterop.textFeedback, and NetworkInterop.progressChanged. Just remember
@@ -98,7 +92,17 @@ public class NetworkInterop
 	/// <param name="maxBufferPerTransfer">Maximum file size per transfer (files larger than this buffer will be split).</param>
 	/// <param name="maxTotalFileSize">Maximum size of the total size (including all splits if larger than maximum buffer).</param>
 	/// <param name="maxNumberPendingConnections">Maximum number of pending connections to keep waiting while one is busy.</param>
-	public static void StartServer(ref Socket serverListeningSocketToUse, Form formToHookSocketClosingIntoFormClosingEvent = null, int listeningPort = defaultListeningPort, string FolderToSaveIn = defaultFolderToSaveIn, int maxBufferPerTransfer = defaultMaxBufferPerTransfer, int maxTotalFileSize = defaultMaxTotalFileSize, int maxNumberPendingConnections = defaultMaxNumberPendingConnections)
+	public static void StartServer(
+		ref Socket serverListeningSocketToUse,
+		Form formToHookSocketClosingIntoFormClosingEvent = null,
+		int listeningPort = defaultListeningPort,
+		string FolderToSaveIn = defaultFolderToSaveIn,
+		int maxBufferPerTransfer = defaultMaxBufferPerTransfer,
+		int maxTotalFileSize = defaultMaxTotalFileSize,
+		int maxNumberPendingConnections = defaultMaxNumberPendingConnections,
+		TextFeedbackEventHandler TextFeedbackEvent = null,
+		ProgressChangedEventHandler ProgressChangedEvent = null
+		)
 	{
 		serverListeningSocketToUse = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 		serverListeningSocketToUse.NoDelay = true;
@@ -129,8 +133,8 @@ public class NetworkInterop
 		serverListeningSocketToUse.Bind(NetworkInterop.GetLocalIPEndPoint(listeningPort));
 		serverListeningSocketToUse.Listen(maxNumberPendingConnections);
 
-		if (textFeedback != null)
-			textFeedback(null, new TextFeedbackEventArgs("Server started, waiting for clients..."));
+		if (TextFeedbackEvent != null)
+			TextFeedbackEvent(null, new TextFeedbackEventArgs("Server started, waiting for clients..."));
 
 		// Start listening for connections.
 		while (true)
@@ -199,8 +203,8 @@ public class NetworkInterop
 				}
 
 				if (maxProgress > 0 && totalbytelength >= 0 && totalbytelength <= maxProgress)
-					if (progressChanged != null)
-						progressChanged(null, new ProgressChangedEventArgs(totalbytelength, maxProgress));
+					if (ProgressChangedEvent != null)
+						ProgressChangedEvent(null, new ProgressChangedEventArgs(totalbytelength, maxProgress));
 
 				if (data.IndexOf("<EOF>") > -1)
 				{
@@ -249,8 +253,8 @@ public class NetworkInterop
 					firstFilename = firstFilename.Substring(0, firstFilename.LastIndexOf(".")) + ".0";
 					NetworkInterop.MergeFiles(firstFilename);
 					System.Diagnostics.Process.Start("explorer", "/select," + finalFilename);
-					if (progressChanged != null)
-						progressChanged(null, new ProgressChangedEventArgs(0, 100));
+					if (ProgressChangedEvent != null)
+						ProgressChangedEvent(null, new ProgressChangedEventArgs(0, 100));
 				}
 
 				originalFileName = null;
@@ -279,7 +283,13 @@ public class NetworkInterop
 		}
 	}
 
-	public static void TransferFile(string filePath, ref Socket senderSocketToUse, IPAddress ipAddress = null, int listeningPort = defaultListeningPort, int maxBufferPerTransfer = defaultMaxBufferPerTransfer)
+	public static void TransferFile(
+		string filePath,
+		ref Socket senderSocketToUse,
+		IPAddress ipAddress = null,
+		int listeningPort = defaultListeningPort,
+		int maxBufferPerTransfer = defaultMaxBufferPerTransfer,
+		TextFeedbackEventHandler TextFeedbackEvent = null)
 	{
 		byte[] byData;
 		if (!File.Exists(filePath))
@@ -293,8 +303,8 @@ public class NetworkInterop
 			{
 				if (ConnectToServer(ref senderSocketToUse, ipAddress, listeningPort))
 				{
-					if (textFeedback != null)
-						textFeedback(null, new TextFeedbackEventArgs("Connected to server, transferring file segment " + (counter + 1) + "..."));
+					if (TextFeedbackEvent != null)
+						TextFeedbackEvent(null, new TextFeedbackEventArgs("Connected to server, transferring file segment " + (counter + 1) + "..."));
 					string fileAddonExtension = ((counter + 1) * maxBufferPerTransfer) >= AllFileDataBytes.Length
 							? "." + counter + ".final"
 							: "." + counter;

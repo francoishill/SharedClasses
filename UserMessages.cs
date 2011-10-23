@@ -1,23 +1,32 @@
 using System.Windows.Forms;
+using System;
 public class UserMessages
 {
 	/*All methods to show messages that is of type boolean (except Confirm) will return true
 	Reason being is that it makes it easy to show a message in a method which would should exit when the message is shown*/
-	private static bool ShowMsg(IWin32Window Owner, string Message, string Title, MessageBoxIcon icon, bool AlwaysOnTop)
+	private static bool ShowMsg(IWin32Window owner, string Message, string Title, MessageBoxIcon icon, bool AlwaysOnTop)
 	{
-		if (Owner == null && Form.ActiveForm != null) Owner = Form.ActiveForm;
+		if (owner == null && Form.ActiveForm != null) owner = Form.ActiveForm;
 		bool useTempForm = false;
 		//Form tempForm = null;
 		Form topmostForm = null;
-		if (Owner == null)
+		if (owner == null)
 		{
 			useTempForm = true;
 			topmostForm = GetTopmostForm();// new Form();
-			Owner = topmostForm;
+			owner = topmostForm;
 		}
-		((Form)Owner).TopMost = AlwaysOnTop;
-		MessageBox.Show(Owner, Message, Title, MessageBoxButtons.OK, icon);
-		if (useTempForm && topmostForm != null && !topmostForm.IsDisposed) topmostForm.Dispose();
+
+		Action showConfirmAction = delegate
+		{
+			((Form)owner).TopMost = AlwaysOnTop;
+			MessageBox.Show(owner, Message, Title, MessageBoxButtons.OK, icon);
+			if (useTempForm && topmostForm != null && !topmostForm.IsDisposed) topmostForm.Dispose();
+		};
+
+		if (((Form)owner).InvokeRequired)
+			((Form)owner).Invoke(showConfirmAction, new object[] { });
+		else showConfirmAction();
 		return true;
 	}
 
@@ -61,9 +70,18 @@ public class UserMessages
 			topmostForm = GetTopmostForm();
 			owner = topmostForm;
 		}
-		((Form)owner).TopMost = AlwaysOnTop;
-		bool result = MessageBox.Show(owner, Message, Title, MessageBoxButtons.YesNo, MessageBoxIcon.Question, DefaultYesButton ? MessageBoxDefaultButton.Button1 : MessageBoxDefaultButton.Button2) == DialogResult.Yes;
-		if (useTempForm && topmostForm != null && !topmostForm.IsDisposed) topmostForm.Dispose();
+
+		bool result = false;
+		Action showConfirmAction = delegate
+		{
+			((Form)owner).TopMost = AlwaysOnTop;
+			result = MessageBox.Show(owner, Message, Title, MessageBoxButtons.YesNo, MessageBoxIcon.Question, DefaultYesButton ? MessageBoxDefaultButton.Button1 : MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+			if (useTempForm && topmostForm != null && !topmostForm.IsDisposed) topmostForm.Dispose();
+		};
+
+		if (((Form)owner).InvokeRequired)
+			((Form)owner).Invoke(showConfirmAction, new object[] { });
+		else showConfirmAction();
 		return result;
 	}
 

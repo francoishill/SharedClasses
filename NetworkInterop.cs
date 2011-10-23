@@ -86,15 +86,15 @@ public class NetworkInterop
 	/// to use ThreadingInterop.UpdateGuiFromThread if server was created on separate thread.
 	/// </summary>
 	/// <param name="serverListeningSocketToUse">The socket only has to be assigned with a NULL.</param>
-	/// <param name="formToHookSocketClosingIntoFormClosingEvent">The form (usually main form) to hook unto its closing event to close the server socket.</param>
+	/// <param name="formToHookSocketClosingIntoFormDisposedEvent">The form (usually main form) to hook unto its closing event to close the server socket.</param>
 	/// <param name="listeningPort">The port for the server to listen on.</param>
 	/// <param name="FolderToSaveIn">The folder to use when receiving files.</param>
 	/// <param name="maxBufferPerTransfer">Maximum file size per transfer (files larger than this buffer will be split).</param>
 	/// <param name="maxTotalFileSize">Maximum size of the total size (including all splits if larger than maximum buffer).</param>
 	/// <param name="maxNumberPendingConnections">Maximum number of pending connections to keep waiting while one is busy.</param>
 	public static void StartServer(
-		ref Socket serverListeningSocketToUse,
-		Form formToHookSocketClosingIntoFormClosingEvent = null,
+		out Socket serverListeningSocketToUse,
+		Form formToHookSocketClosingIntoFormDisposedEvent = null,
 		int listeningPort = defaultListeningPort,
 		string FolderToSaveIn = defaultFolderToSaveIn,
 		int maxBufferPerTransfer = defaultMaxBufferPerTransfer,
@@ -109,12 +109,12 @@ public class NetworkInterop
 		serverListeningSocketToUse.Ttl = 112;
 		serverListeningSocketToUse.ReceiveBufferSize = maxBufferPerTransfer;
 
-		if (formToHookSocketClosingIntoFormClosingEvent != null)
+		if (formToHookSocketClosingIntoFormDisposedEvent != null)
 		{
-			if (!dictionaryWithFormAndSocketsToCloseUponFormClosing.ContainsKey(formToHookSocketClosingIntoFormClosingEvent))
-				dictionaryWithFormAndSocketsToCloseUponFormClosing.Add(formToHookSocketClosingIntoFormClosingEvent, serverListeningSocketToUse);
+			if (!dictionaryWithFormAndSocketsToCloseUponFormClosing.ContainsKey(formToHookSocketClosingIntoFormDisposedEvent))
+				dictionaryWithFormAndSocketsToCloseUponFormClosing.Add(formToHookSocketClosingIntoFormDisposedEvent, serverListeningSocketToUse);
 
-			formToHookSocketClosingIntoFormClosingEvent.FormClosing += (snder, evtargs) =>
+			formToHookSocketClosingIntoFormDisposedEvent.Disposed += (snder, evtargs) =>
 			{
 				ThreadingInterop.ForceExitAllTreads = true;
 				if (dictionaryWithFormAndSocketsToCloseUponFormClosing.ContainsKey(snder as Form))
@@ -135,6 +135,9 @@ public class NetworkInterop
 
 		if (TextFeedbackEvent != null)
 			TextFeedbackEvent(null, new TextFeedbackEventArgs("Server started, waiting for clients..."));
+
+		continue with this conecpt (due to a large file being split)
+		Dictionary<string, bool?> listofGuidAndIsComplete = new Dictionary<string, bool?>();
 
 		// Start listening for connections.
 		while (true)
@@ -169,12 +172,14 @@ public class NetworkInterop
 
 			if (handler == null) continue;
 
+			string first26Characters = "";
+
 			Application.DoEvents();
 			data = null;
 			string startdata = "";
 
 			int maxProgress = 0;
-			Console.WriteLine("Data transfer started...");
+			//Console.WriteLine("Data transfer started...");
 			// An incoming connection needs to be processed.
 			//SetProcessWorkingSetSize(System.Diagnostics.Process.GetCurrentProcess().Handle, 0, 1000 * 1024 * 1024);
 			int totalbytelength = 0;
@@ -187,8 +192,18 @@ public class NetworkInterop
 				//progressBar1.Value = progressBar1.Maximum * totalbytelength / maxProgress;
 				currentbytes = new byte[currbytelength];
 				int bytesRec = handler.Receive(currentbytes);
-				Console.WriteLine("Total bytes transferred: " + totalbytelength);
+				//Console.WriteLine("Total bytes transferred: " + totalbytelength);
 				currentbytes.CopyTo(allbytes, totalbytelength - currbytelength);
+
+				if (first26Characters.Length < 26)
+				{
+						for (int i = 0; i < currbytelength; i++)
+						{
+							if (first26Characters.Length < 26)
+								first26Characters += Encoding.ASCII.GetString(currentbytes, i, 1);
+						}
+				}
+
 				data += Encoding.ASCII.GetString(currentbytes);
 
 				if (startdata.Length < 10000) startdata += data;
@@ -220,7 +235,7 @@ public class NetworkInterop
 
 			Console.WriteLine("Data transfer complete.");
 
-			// Show the data on the console.
+			// Show the data on the console
 			if (startdata.StartsWith("totalsize://"))
 			{
 				if (!Directory.Exists(FolderToSaveIn)) Directory.CreateDirectory(FolderToSaveIn);
@@ -233,9 +248,9 @@ public class NetworkInterop
 					filebytes[i - totalSizeString.Length - filestringlength] = allbytes[i];
 
 				string newFileName = FolderToSaveIn + @"\" + Path.GetFileName(originalFileName);
-				Console.WriteLine("Original filename: " + originalFileName);
-				Console.WriteLine("New filename: " + newFileName);
-				Console.WriteLine("Writing file...");
+				//Console.WriteLine("Original filename: " + originalFileName);
+				//Console.WriteLine("New filename: " + newFileName);
+				//Console.WriteLine("Writing file...");
 				File.WriteAllBytes(newFileName, filebytes);
 
 				GC.Collect();
@@ -251,8 +266,8 @@ public class NetworkInterop
 					string firstFilename = FolderToSaveIn + @"\" + Path.GetFileName(originalFileName).Substring(0, Path.GetFileName(originalFileName).Length - 6);
 					string finalFilename = firstFilename.Substring(0, firstFilename.LastIndexOf("."));
 					firstFilename = firstFilename.Substring(0, firstFilename.LastIndexOf(".")) + ".0";
-					NetworkInterop.MergeFiles(firstFilename);
-					System.Diagnostics.Process.Start("explorer", "/select," + finalFilename);
+					MergeFiles(firstFilename);
+					System.Diagnostics.Process.Start("explorer", "/select, \"" + finalFilename + "\"");
 					if (ProgressChangedEvent != null)
 						ProgressChangedEvent(null, new ProgressChangedEventArgs(0, 100));
 				}
@@ -271,6 +286,7 @@ public class NetworkInterop
 			allbytes = null;
 			data = null;
 			startdata = null;
+			first26Characters = null;
 
 			handler.Shutdown(SocketShutdown.Both);
 			handler.Disconnect(false);
@@ -285,12 +301,13 @@ public class NetworkInterop
 
 	public static void TransferFile(
 		string filePath,
-		ref Socket senderSocketToUse,
+		out Socket senderSocketToUse,
 		IPAddress ipAddress = null,
 		int listeningPort = defaultListeningPort,
 		int maxBufferPerTransfer = defaultMaxBufferPerTransfer,
 		TextFeedbackEventHandler TextFeedbackEvent = null)
 	{
+		senderSocketToUse = null;
 		byte[] byData;
 		if (!File.Exists(filePath))
 			UserMessages.ShowWarningMessage("File does not exist and cannot be transferred: " + filePath);
@@ -301,7 +318,7 @@ public class NetworkInterop
 
 			while (counter * maxBufferPerTransfer < AllFileDataBytes.Length)
 			{
-				if (ConnectToServer(ref senderSocketToUse, ipAddress, listeningPort))
+				if (ConnectToServer(out senderSocketToUse, ipAddress, listeningPort))
 				{
 					if (TextFeedbackEvent != null)
 						TextFeedbackEvent(null, new TextFeedbackEventArgs("Connected to server, transferring file segment " + (counter + 1) + "..."));
@@ -374,7 +391,7 @@ public class NetworkInterop
 		return tmpstr;
 	}
 
-	public static bool ConnectToServer(ref Socket socketToInitialize, IPAddress ipAddress = null, int listeningPort = defaultListeningPort, int maxBufferPerTransfer = defaultMaxBufferPerTransfer)
+	public static bool ConnectToServer(out Socket socketToInitialize, IPAddress ipAddress = null, int listeningPort = defaultListeningPort, int maxBufferPerTransfer = defaultMaxBufferPerTransfer)
 	{
 		try
 		{
@@ -390,6 +407,7 @@ public class NetworkInterop
 		catch (SocketException se)
 		{
 			MessageBox.Show("SocketException Connect()" + se.Message + Environment.NewLine + se.TargetSite);
+			socketToInitialize = null;
 			return false;
 		}
 	}

@@ -55,7 +55,7 @@ public class ApplicationRecoveryAndRestart
 	/// </summary>
 	/// <param name="parameter">Unused.</param>
 	/// <returns>Unused.</returns>
-	public static int PerformRecovery(object parameter)
+	private static int PerformRecovery(object parameter)
 	{
 		try
 		{

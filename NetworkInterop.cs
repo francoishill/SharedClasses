@@ -173,21 +173,13 @@ public class NetworkInterop
 					if (totalBytesProcessed < lengthOfFirstConstantBuffer)
 					{
 						if (totalBytesProcessed + actualReceivedLength <= lengthOfFirstConstantBuffer)
-						{
 							receivedBytes.CopyTo(firstConstantBytesForGuidInfoandFilesize, totalBytesProcessed);
-						}
 						else
 						{
 							for (long i = totalBytesProcessed; i < lengthOfFirstConstantBuffer; i++)
-							{
 								firstConstantBytesForGuidInfoandFilesize[i] = receivedBytes[i - totalBytesProcessed];
-							}
 							if (fileStreamIn == null) fileStreamIn = new FileStream(defaultFolderToSaveIn + "\\filestream.tmp", FileMode.Create);
 							fileStreamIn.Write(receivedBytes, lengthOfFirstConstantBuffer, (int)(totalBytesProcessed + actualReceivedLength - lengthOfFirstConstantBuffer));
-							//for (long i = lengthOfFirstConstantBuffer; i < totalBytesProcessed + actualReceivedLength; i++)
-							//{
-							//	fileStreamIn
-							//}
 						}
 					}
 					else
@@ -198,25 +190,12 @@ public class NetworkInterop
 
 					totalBytesProcessed += actualReceivedLength;
 
-					//for (int i = 0; i < actualReceivedLength; i++)
-					//{
-					//	if (totalBytesReceived < lengthOfFirstConstantBuffer)
-					//		firstConstantBytesForGuidInfoandFilesize[totalBytesReceived] = receivedBytes[i];
-					//	else
-					//	{
-					//		if (fileStreamIn == null) fileStreamIn = new FileStream(defaultFolderToSaveIn + "\\filestream.tmp", FileMode.Create);
-					//		fileStreamIn.WriteByte(receivedBytes[i]);
-
-					//		if (totalBytesReceived % 100 == 0)
-					//			if (totalFileSizeToRead != -1 && totalBytesReceived - lengthOfFirstConstantBuffer > 0)
-					//				if (ProgressChangedEvent != null)
-					//					ProgressChangedEvent(null, new ProgressChangedEventArgs(
-					//						(int)(totalBytesReceived - lengthOfFirstConstantBuffer),
-					//						(int)totalFileSizeToRead));
-					//	}
-
-					//	totalBytesReceived++;
-					//}
+					//if (totalBytesProcessed % 100 == 0)
+						if (totalFileSizeToRead != -1 && totalBytesProcessed - lengthOfFirstConstantBuffer > 0)
+							if (ProgressChangedEvent != null)
+								ProgressChangedEvent(null, new ProgressChangedEventArgs(
+									(int)(totalBytesProcessed - lengthOfFirstConstantBuffer),
+									(int)totalFileSizeToRead));
 				}
 				if (totalBytesProcessed >= lengthOfFirstConstantBuffer && totalFileSizeToRead == -1)
 				{
@@ -237,6 +216,8 @@ public class NetworkInterop
 					break;
 			}
 			fileStreamIn.Close();
+			if (ProgressChangedEvent != null)
+				ProgressChangedEvent(null, new ProgressChangedEventArgs(0, 100));
 		}
 	}
 
@@ -460,13 +441,34 @@ public class NetworkInterop
 		}
 	}
 
+	private static void WriteGuidSectionToStream(ref NetworkStream nwStream)
+	{
+		Guid guid36 = Guid.NewGuid();
+		nwStream.Write((byte[])guid36.ToByteArray().Clone(), 0, 16);
+		guid36 = Guid.Empty;
+	}
+
+	private static void WriteInfoSectionToStream(ref NetworkStream nwStream)
+	{
+		nwStream.Write(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 0, 10);
+	}
+
+	private static void WriteFileSizeToStream(ref NetworkStream nwStream, string filePath)
+	{
+		string fileSizeString = (new FileInfo(filePath)).Length.ToString();
+		while (fileSizeString.Length < 16) fileSizeString = "0" + fileSizeString;
+		nwStream.Write(Encoding.ASCII.GetBytes(fileSizeString), 0, 16);
+		fileSizeString = null;
+	}
+
 	public static void TransferFile_FileStream(
 		string filePath,
 		out Socket senderSocketToUse,
 		IPAddress ipAddress = null,
 		int listeningPort = defaultListeningPort,
 		int maxBufferPerTransfer = defaultMaxBufferPerTransfer,
-		TextFeedbackEventHandler TextFeedbackEvent = null)
+		TextFeedbackEventHandler TextFeedbackEvent = null,
+		ProgressChangedEventHandler ProgressChangedEvent = null)
 	{
 		senderSocketToUse = null;
 		if (!File.Exists(filePath))
@@ -475,53 +477,40 @@ public class NetworkInterop
 		{
 			if (ConnectToServer(out senderSocketToUse, ipAddress, listeningPort))
 			{
-				NetworkStream ns = new NetworkStream(senderSocketToUse);
+				NetworkStream networkStream = new NetworkStream(senderSocketToUse);
 				FileStream fileToWrite = new FileStream(filePath, FileMode.Open);
 
-				Guid guid36 = Guid.NewGuid();
-				ns.Write(guid36.ToByteArray(), 0, 16);
-				//guid36 = Guid.Empty;
+				WriteGuidSectionToStream(ref networkStream);
+				WriteInfoSectionToStream(ref networkStream);
+				WriteFileSizeToStream(ref networkStream, filePath);
 
-				ns.Write(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 0, 10);
-
-				string fileSizeString = (new FileInfo(filePath)).Length.ToString();
-				while (fileSizeString.Length < 16) fileSizeString = "0" + fileSizeString;
-				ns.Write(Encoding.ASCII.GetBytes(fileSizeString), 0, 16);
-				fileSizeString = null;
+				long totalFileSizeToTransfer = (new FileInfo(filePath)).Length;
+				if (ProgressChangedEvent != null)
+					ProgressChangedEvent(null, new ProgressChangedEventArgs(0, (int)totalFileSizeToTransfer));
 
 				int maxBytesToRead = 10240;
-				//int i;
 				int numberReadBytes;
+				long totalBytesWritten = 0;
 				do
 				{
 					byte[] bytesRead = new byte[maxBytesToRead];
 					numberReadBytes = fileToWrite.Read(bytesRead, 0, maxBytesToRead);
-					//i = fileToWrite.ReadByte();
-					//if (i != -1)
 					if (numberReadBytes > 0)
-					{
-						//ns.WriteByte((byte)i);
-						ns.Write(bytesRead, 0, numberReadBytes);
-					}
+						networkStream.Write(bytesRead, 0, numberReadBytes);
+					totalBytesWritten += numberReadBytes;
+					if (ProgressChangedEvent != null)
+						ProgressChangedEvent(null, new ProgressChangedEventArgs((int)totalBytesWritten, (int)totalFileSizeToTransfer));
 				}
-				while (numberReadBytes > 0);//(i != -1);
+				while (numberReadBytes > 0);
+
+				if (ProgressChangedEvent != null)
+					ProgressChangedEvent(null, new ProgressChangedEventArgs(0, 100));
 
 				fileToWrite.Close();
 				fileToWrite.Dispose(); fileToWrite = null;
-				ns.Close();
-				ns.Dispose(); ns = null;
+				networkStream.Close();
+				networkStream.Dispose(); networkStream = null;
 			}
-
-			//FileStream fileStream = new FileStream(filePath, FileMode.Open);
-			//FileStream fileOut = new FileStream(defaultFolderToSaveIn + "\\tmpfile123.tmp", FileMode.Create);
-			//int i;
-			//do
-			//{
-			//  i = fileStream.ReadByte();
-			//  if (i != -1) fileOut.WriteByte((byte)i);
-			//} while (i != -1);
-			//fileStream.Close();
-			//fileOut.Close();
 		}
 	}
 

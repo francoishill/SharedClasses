@@ -130,6 +130,7 @@ public class NetworkInterop
 
 		string data = null;
 
+		check out function string.IsNullOrEmpty
 		serverListeningSocketToUse.Bind(NetworkInterop.GetLocalIPEndPoint(listeningPort));
 		serverListeningSocketToUse.Listen(maxNumberPendingConnections);
 

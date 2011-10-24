@@ -41,7 +41,7 @@ public class ThreadingInterop
 	{
 		if (controlToUpdate.InvokeRequired)
 			controlToUpdate.Invoke(action, new object[] { });
-		else action.Invoke();
+		else action();
 	}
 
 	delegate void AutocompleteCallback(ComboBox txtBox, String text);

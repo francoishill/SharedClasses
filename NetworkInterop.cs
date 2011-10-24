@@ -17,7 +17,8 @@ public class NetworkInterop
 				resolveDndMode = true;
 		IPAddress returnIPAddress = null;
 
-		if (!resolveDndMode && !IPAddress.TryParse(ipAddressString, out returnIPAddress)){
+		if (!resolveDndMode && !IPAddress.TryParse(ipAddressString, out returnIPAddress))
+		{
 			UserMessages.ShowErrorMessage("Invalid IP address: " + (ipAddressString ?? ""));
 			return null;
 		}
@@ -78,6 +79,166 @@ public class NetworkInterop
 	private const int defaultMaxBufferPerTransfer = 1024 * 1024 * 10;
 	private const int defaultMaxTotalFileSize = 1024 * 1024 * 1000;//10;
 	//public static int maxTransferBuffer = 1024 * 1024 * 10;
+	private const int lengthOfGuid = 16;
+	private const int lengthOfInfo = 10;
+	private const int lengthOfFilesize = 16;
+	private static int lengthOfFirstConstantBuffer { get { return lengthOfGuid + lengthOfInfo + lengthOfFilesize; } }
+
+	public static void StartServer_FileStream(
+		out Socket serverListeningSocketToUse,
+		Form formToHookSocketClosingIntoFormDisposedEvent = null,
+		int listeningPort = defaultListeningPort,
+		string FolderToSaveIn = defaultFolderToSaveIn,
+		int maxBufferPerTransfer = defaultMaxBufferPerTransfer,
+		int maxTotalFileSize = defaultMaxTotalFileSize,
+		int maxNumberPendingConnections = defaultMaxNumberPendingConnections,
+		TextFeedbackEventHandler TextFeedbackEvent = null,
+		ProgressChangedEventHandler ProgressChangedEvent = null
+		)
+	{
+		serverListeningSocketToUse = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+		serverListeningSocketToUse.NoDelay = true;
+		serverListeningSocketToUse.Ttl = 112;
+		serverListeningSocketToUse.ReceiveBufferSize = maxBufferPerTransfer;
+
+		if (formToHookSocketClosingIntoFormDisposedEvent != null)
+		{
+			if (!dictionaryWithFormAndSocketsToCloseUponFormClosing.ContainsKey(formToHookSocketClosingIntoFormDisposedEvent))
+				dictionaryWithFormAndSocketsToCloseUponFormClosing.Add(formToHookSocketClosingIntoFormDisposedEvent, serverListeningSocketToUse);
+
+			formToHookSocketClosingIntoFormDisposedEvent.Disposed += (snder, evtargs) =>
+			{
+				ThreadingInterop.ForceExitAllTreads = true;
+				if (dictionaryWithFormAndSocketsToCloseUponFormClosing.ContainsKey(snder as Form))
+				{
+					if (dictionaryWithFormAndSocketsToCloseUponFormClosing[snder as Form] != null)
+					{
+						dictionaryWithFormAndSocketsToCloseUponFormClosing[snder as Form].Blocking = false;
+						dictionaryWithFormAndSocketsToCloseUponFormClosing[snder as Form].Close();
+					}
+				}
+			};
+		}
+
+		serverListeningSocketToUse.Bind(NetworkInterop.GetLocalIPEndPoint(listeningPort));
+		serverListeningSocketToUse.Listen(maxNumberPendingConnections);
+
+		if (TextFeedbackEvent != null) TextFeedbackEvent(null, new TextFeedbackEventArgs("Server started, waiting for clients..."));
+
+		while (true)
+		{
+			//Application.DoEvents();
+			//AppendRichTextBox("Waiting for a connection...");
+			// Program is suspended while waiting for an incoming connection.
+			Socket handler = null;
+			try
+			{
+				handler = serverListeningSocketToUse.Accept();
+			}
+			catch (SocketException sexc)
+			{
+				if (sexc.Message.ToLower().Contains("WSACancelBlockingCall".ToLower()))
+				{
+					/*
+					 This is normal behavior when interrupting a blocking socket
+					 (i.e. waiting for clients). WSACancelBlockingCall is called and a SocketException
+					 is thrown (see my post above).
+					 Just catch this exception and use it to exit the thread
+					 ('break' in the infinite while loop).
+					 http://www.switchonthecode.com/tutorials/csharp-tutorial-simple-threaded-tcp-server
+					 */
+					break;
+				}
+				else
+				{
+					UserMessages.ShowErrorMessage("SocketException occurred: " + sexc.Message);
+				}
+			}
+
+			if (handler == null) continue;
+
+			long totalBytesProcessed = 0;
+			byte[] firstConstantBytesForGuidInfoandFilesize = new byte[lengthOfFirstConstantBuffer];
+			long totalFileSizeToRead = -1;
+			FileStream fileStreamIn = null;
+			while (true)
+			{
+				int availableBytes = handler.Available;
+				if (availableBytes > 0)
+				{
+					Console.WriteLine(availableBytes.ToString());
+					byte[] receivedBytes = new byte[availableBytes];
+					int actualReceivedLength = handler.Receive(receivedBytes);
+
+					if (totalBytesProcessed < lengthOfFirstConstantBuffer)
+					{
+						if (totalBytesProcessed + actualReceivedLength <= lengthOfFirstConstantBuffer)
+						{
+							receivedBytes.CopyTo(firstConstantBytesForGuidInfoandFilesize, totalBytesProcessed);
+						}
+						else
+						{
+							for (long i = totalBytesProcessed; i < lengthOfFirstConstantBuffer; i++)
+							{
+								firstConstantBytesForGuidInfoandFilesize[i] = receivedBytes[i - totalBytesProcessed];
+							}
+							if (fileStreamIn == null) fileStreamIn = new FileStream(defaultFolderToSaveIn + "\\filestream.tmp", FileMode.Create);
+							fileStreamIn.Write(receivedBytes, lengthOfFirstConstantBuffer, (int)(totalBytesProcessed + actualReceivedLength - lengthOfFirstConstantBuffer));
+							//for (long i = lengthOfFirstConstantBuffer; i < totalBytesProcessed + actualReceivedLength; i++)
+							//{
+							//	fileStreamIn
+							//}
+						}
+					}
+					else
+					{
+						if (fileStreamIn == null) fileStreamIn = new FileStream(defaultFolderToSaveIn + "\\filestream.tmp", FileMode.Create);
+						fileStreamIn.Write(receivedBytes, 0, actualReceivedLength);
+					}
+
+					totalBytesProcessed += actualReceivedLength;
+
+					//for (int i = 0; i < actualReceivedLength; i++)
+					//{
+					//	if (totalBytesReceived < lengthOfFirstConstantBuffer)
+					//		firstConstantBytesForGuidInfoandFilesize[totalBytesReceived] = receivedBytes[i];
+					//	else
+					//	{
+					//		if (fileStreamIn == null) fileStreamIn = new FileStream(defaultFolderToSaveIn + "\\filestream.tmp", FileMode.Create);
+					//		fileStreamIn.WriteByte(receivedBytes[i]);
+
+					//		if (totalBytesReceived % 100 == 0)
+					//			if (totalFileSizeToRead != -1 && totalBytesReceived - lengthOfFirstConstantBuffer > 0)
+					//				if (ProgressChangedEvent != null)
+					//					ProgressChangedEvent(null, new ProgressChangedEventArgs(
+					//						(int)(totalBytesReceived - lengthOfFirstConstantBuffer),
+					//						(int)totalFileSizeToRead));
+					//	}
+
+					//	totalBytesReceived++;
+					//}
+				}
+				if (totalBytesProcessed >= lengthOfFirstConstantBuffer && totalFileSizeToRead == -1)
+				{
+					string totalFileSizeToReadString = Encoding.ASCII.GetString(firstConstantBytesForGuidInfoandFilesize, lengthOfGuid + lengthOfInfo, lengthOfFilesize);
+					if (!long.TryParse(totalFileSizeToReadString, out totalFileSizeToRead))
+					{
+						totalFileSizeToRead = -1;
+						UserMessages.ShowWarningMessage("Coult not get file size from string = " + totalFileSizeToReadString);
+					}
+					else
+					{
+						if (ProgressChangedEvent != null)
+							ProgressChangedEvent(null, new ProgressChangedEventArgs(0, (int)totalFileSizeToRead));
+					}
+				}
+
+				if (totalFileSizeToRead != -1 && totalBytesProcessed >= (lengthOfFirstConstantBuffer + totalFileSizeToRead))
+					break;
+			}
+			fileStreamIn.Close();
+		}
+	}
 
 	private static Dictionary<Form, Socket> dictionaryWithFormAndSocketsToCloseUponFormClosing = new Dictionary<Form, Socket>();
 	/// <summary>
@@ -130,14 +291,13 @@ public class NetworkInterop
 
 		string data = null;
 
-		check out function string.IsNullOrEmpty
+		bool checkout;//function string.IsNullOrEmpty
 		serverListeningSocketToUse.Bind(NetworkInterop.GetLocalIPEndPoint(listeningPort));
 		serverListeningSocketToUse.Listen(maxNumberPendingConnections);
 
-		if (TextFeedbackEvent != null)
-			TextFeedbackEvent(null, new TextFeedbackEventArgs("Server started, waiting for clients..."));
+		if (TextFeedbackEvent != null) TextFeedbackEvent(null, new TextFeedbackEventArgs("Server started, waiting for clients..."));
 
-		continue with this conecpt (due to a large file being split)
+		bool continuewith;//this conecpt (due to a large file being split)
 		Dictionary<string, bool?> listofGuidAndIsComplete = new Dictionary<string, bool?>();
 
 		// Start listening for connections.
@@ -198,11 +358,11 @@ public class NetworkInterop
 
 				if (first26Characters.Length < 26)
 				{
-						for (int i = 0; i < currbytelength; i++)
-						{
-							if (first26Characters.Length < 26)
-								first26Characters += Encoding.ASCII.GetString(currentbytes, i, 1);
-						}
+					for (int i = 0; i < currbytelength; i++)
+					{
+						if (first26Characters.Length < 26)
+							first26Characters += Encoding.ASCII.GetString(currentbytes, i, 1);
+					}
 				}
 
 				data += Encoding.ASCII.GetString(currentbytes);
@@ -297,6 +457,71 @@ public class NetworkInterop
 			GC.Collect();
 			GC.WaitForPendingFinalizers();
 			Application.DoEvents();
+		}
+	}
+
+	public static void TransferFile_FileStream(
+		string filePath,
+		out Socket senderSocketToUse,
+		IPAddress ipAddress = null,
+		int listeningPort = defaultListeningPort,
+		int maxBufferPerTransfer = defaultMaxBufferPerTransfer,
+		TextFeedbackEventHandler TextFeedbackEvent = null)
+	{
+		senderSocketToUse = null;
+		if (!File.Exists(filePath))
+			UserMessages.ShowWarningMessage("File does not exist and cannot be transferred: " + filePath);
+		else
+		{
+			if (ConnectToServer(out senderSocketToUse, ipAddress, listeningPort))
+			{
+				NetworkStream ns = new NetworkStream(senderSocketToUse);
+				FileStream fileToWrite = new FileStream(filePath, FileMode.Open);
+
+				Guid guid36 = Guid.NewGuid();
+				ns.Write(guid36.ToByteArray(), 0, 16);
+				//guid36 = Guid.Empty;
+
+				ns.Write(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 0, 10);
+
+				string fileSizeString = (new FileInfo(filePath)).Length.ToString();
+				while (fileSizeString.Length < 16) fileSizeString = "0" + fileSizeString;
+				ns.Write(Encoding.ASCII.GetBytes(fileSizeString), 0, 16);
+				fileSizeString = null;
+
+				int maxBytesToRead = 10240;
+				//int i;
+				int numberReadBytes;
+				do
+				{
+					byte[] bytesRead = new byte[maxBytesToRead];
+					numberReadBytes = fileToWrite.Read(bytesRead, 0, maxBytesToRead);
+					//i = fileToWrite.ReadByte();
+					//if (i != -1)
+					if (numberReadBytes > 0)
+					{
+						//ns.WriteByte((byte)i);
+						ns.Write(bytesRead, 0, numberReadBytes);
+					}
+				}
+				while (numberReadBytes > 0);//(i != -1);
+
+				fileToWrite.Close();
+				fileToWrite.Dispose(); fileToWrite = null;
+				ns.Close();
+				ns.Dispose(); ns = null;
+			}
+
+			//FileStream fileStream = new FileStream(filePath, FileMode.Open);
+			//FileStream fileOut = new FileStream(defaultFolderToSaveIn + "\\tmpfile123.tmp", FileMode.Create);
+			//int i;
+			//do
+			//{
+			//  i = fileStream.ReadByte();
+			//  if (i != -1) fileOut.WriteByte((byte)i);
+			//} while (i != -1);
+			//fileStream.Close();
+			//fileOut.Close();
 		}
 	}
 
@@ -407,7 +632,7 @@ public class NetworkInterop
 		}
 		catch (SocketException se)
 		{
-			MessageBox.Show("SocketException Connect()" + se.Message + Environment.NewLine + se.TargetSite);
+			MessageBox.Show("ConnectToServer experienced SocketException:" + Environment.NewLine + se.Message + Environment.NewLine + se.TargetSite);
 			socketToInitialize = null;
 			return false;
 		}

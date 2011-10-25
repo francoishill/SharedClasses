@@ -113,8 +113,12 @@ public class NetworkInterop
 				{
 					if (dictionaryWithFormAndSocketsToCloseUponFormClosing[snder as Form] != null)
 					{
-						dictionaryWithFormAndSocketsToCloseUponFormClosing[snder as Form].Blocking = false;
-						dictionaryWithFormAndSocketsToCloseUponFormClosing[snder as Form].Close();
+						try
+						{
+							dictionaryWithFormAndSocketsToCloseUponFormClosing[snder as Form].Blocking = false;
+							dictionaryWithFormAndSocketsToCloseUponFormClosing[snder as Form].Close();
+						}
+						catch { }
 					}
 				}
 			};
@@ -170,7 +174,7 @@ public class NetworkInterop
 				if (availableBytes > 0)
 				{
 					//TODO: Figure out why needs to do this when transferring small file
-					if (totalBytesProcessed == 0) Thread.Sleep(100);
+					if (totalBytesProcessed == 0) Thread.Sleep(500);
 					Console.WriteLine(availableBytes.ToString());
 					byte[] receivedBytes = new byte[availableBytes];
 					int actualReceivedLength = handler.Receive(receivedBytes);
@@ -276,6 +280,9 @@ public class NetworkInterop
 				if (totalFileSizeToRead != -1 && totalInfoSizeToRead != -1 && totalBytesProcessed >= (lengthOfFirstConstantBuffer + totalFileSizeToRead))
 					break;
 			}
+
+			memoryStreamForInfo.Flush();
+			fileStreamIn.Flush();
 
 			if (fileStreamIn != null)
 			{

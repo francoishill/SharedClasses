@@ -169,6 +169,8 @@ public class NetworkInterop
 				int availableBytes = handler.Available;
 				if (availableBytes > 0)
 				{
+					//TODO: Figure out why needs to do this when transferring small file
+					if (totalBytesProcessed == 0) Thread.Sleep(100);
 					Console.WriteLine(availableBytes.ToString());
 					byte[] receivedBytes = new byte[availableBytes];
 					int actualReceivedLength = handler.Receive(receivedBytes);

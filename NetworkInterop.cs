@@ -286,7 +286,32 @@ public class NetworkInterop
 			memoryStreamForInfo.Position = 0;
 			InfoOfTransfer info = (InfoOfTransfer)SerializationInterop.DeserializeObject(memoryStreamForInfo, SerializationInterop.SerializationFormat.Binary, typeof(InfoOfTransfer), false);
 			if (info != null)
-				File.Move(defaultFolderToSaveIn + "\\filestream.tmp", defaultFolderToSaveIn + "\\" + Path.GetFileName(info.OriginalFilePath));
+			{
+				string fromPath = defaultFolderToSaveIn + "\\filestream.tmp";
+				string toPath = defaultFolderToSaveIn + "\\" + Path.GetFileName(info.OriginalFilePath);
+				if (File.Exists(fromPath))
+				{
+					bool FileDoesExist = false;
+					if (File.Exists(toPath))
+					{
+						try
+						{
+							FileDoesExist = true;
+							File.Delete(toPath);
+							FileDoesExist = false;
+						}
+						catch (Exception exc)
+						{
+							UserMessages.ShowWarningMessage("Unable to delete file " + toPath + Environment.NewLine + "Old file name remains: " + fromPath + Environment.NewLine + exc.Message);
+						}
+					}
+					if (!FileDoesExist) File.Move(fromPath, toPath);
+				}
+				else
+				{
+					UserMessages.ShowErrorMessage("Could not find written file: " + fromPath);
+				}
+			}
 
 			memoryStreamForInfo.Close();
 			memoryStreamForInfo.Dispose(); memoryStreamForInfo = null;

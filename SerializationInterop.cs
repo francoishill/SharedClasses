@@ -24,6 +24,7 @@ public class SerializationInterop
 	{
 		try
 		{
+			streamToDeserializeFrom.Position = 0;
 			if (serializationFormat == SerializationFormat.Binary) return new BinaryFormatter().Deserialize(streamToDeserializeFrom);
 			else if (serializationFormat == SerializationFormat.Xml) return new XmlSerializer(typeOfObject).Deserialize(streamToDeserializeFrom);
 			return null;

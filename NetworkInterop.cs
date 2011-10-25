@@ -80,9 +80,9 @@ public class NetworkInterop
 	private const int defaultMaxTotalFileSize = 1024 * 1024 * 1000;//10;
 	//public static int maxTransferBuffer = 1024 * 1024 * 10;
 	private const int lengthOfGuid = 16;
-	private const int lengthOfInfo = 10;
+	private const int lengthOfInfoSize = 10;
 	private const int lengthOfFilesize = 16;
-	private static int lengthOfFirstConstantBuffer { get { return lengthOfGuid + lengthOfInfo + lengthOfFilesize; } }
+	private static int lengthOfFirstConstantBuffer { get { return lengthOfGuid + lengthOfInfoSize + lengthOfFilesize; } }
 
 	public static void StartServer_FileStream(
 		out Socket serverListeningSocketToUse,
@@ -160,7 +160,10 @@ public class NetworkInterop
 			long totalBytesProcessed = 0;
 			byte[] firstConstantBytesForGuidInfoandFilesize = new byte[lengthOfFirstConstantBuffer];
 			long totalFileSizeToRead = -1;
+			long totalInfoSizeToRead = -1;
+			if (!Directory.Exists(defaultFolderToSaveIn)) Directory.CreateDirectory(defaultFolderToSaveIn);
 			FileStream fileStreamIn = null;
+			MemoryStream memoryStreamForInfo = new MemoryStream();
 			while (true)
 			{
 				int availableBytes = handler.Available;
@@ -178,44 +181,113 @@ public class NetworkInterop
 						{
 							for (long i = totalBytesProcessed; i < lengthOfFirstConstantBuffer; i++)
 								firstConstantBytesForGuidInfoandFilesize[i] = receivedBytes[i - totalBytesProcessed];
-							if (fileStreamIn == null) fileStreamIn = new FileStream(defaultFolderToSaveIn + "\\filestream.tmp", FileMode.Create);
-							fileStreamIn.Write(receivedBytes, lengthOfFirstConstantBuffer, (int)(totalBytesProcessed + actualReceivedLength - lengthOfFirstConstantBuffer));
+						}
+					}
+
+					if (totalBytesProcessed + actualReceivedLength >= lengthOfFirstConstantBuffer && (totalFileSizeToRead == -1 || totalInfoSizeToRead == -1))
+					{
+						string totalInfoSizeToReadString = Encoding.ASCII.GetString(firstConstantBytesForGuidInfoandFilesize, lengthOfGuid, lengthOfInfoSize);
+						if (!long.TryParse(totalInfoSizeToReadString, out totalInfoSizeToRead))
+						{
+							totalInfoSizeToRead = -1;
+							UserMessages.ShowWarningMessage("Coult not get info size from string = " + totalInfoSizeToReadString);
+						}
+						else
+						{
+							if (ProgressChangedEvent != null)
+								ProgressChangedEvent(null, new ProgressChangedEventArgs(0, (int)((totalFileSizeToRead != -1 ? totalFileSizeToRead : 0) + (totalInfoSizeToRead != -1 ? totalInfoSizeToRead : 0))));
+						}
+
+						string totalFileSizeToReadString = Encoding.ASCII.GetString(firstConstantBytesForGuidInfoandFilesize, lengthOfGuid + lengthOfInfoSize, lengthOfFilesize);
+						if (!long.TryParse(totalFileSizeToReadString, out totalFileSizeToRead))
+						{
+							totalFileSizeToRead = -1;
+							UserMessages.ShowWarningMessage("Coult not get file size from string = " + totalFileSizeToReadString);
+						}
+						else
+						{
+							if (ProgressChangedEvent != null)
+								ProgressChangedEvent(null, new ProgressChangedEventArgs(0, (int)((totalFileSizeToRead != -1 ? totalFileSizeToRead : 0) + (totalInfoSizeToRead != -1 ? totalInfoSizeToRead : 0))));
+						}
+					}
+
+					if (totalBytesProcessed < lengthOfFirstConstantBuffer)
+					{
+						//if (totalBytesProcessed + actualReceivedLength <= lengthOfFirstConstantBuffer)
+						//	receivedBytes.CopyTo(firstConstantBytesForGuidInfoandFilesize, totalBytesProcessed);
+						//else
+						if (totalBytesProcessed + actualReceivedLength > lengthOfFirstConstantBuffer)
+						{
+							//for (long i = totalBytesProcessed; i < lengthOfFirstConstantBuffer; i++)
+							//	firstConstantBytesForGuidInfoandFilesize[i] = receivedBytes[i - totalBytesProcessed];
+
+							long memoryStreamStartBytes = lengthOfFirstConstantBuffer - totalBytesProcessed;
+							long memoryStreamNumberBytesToRead = (int)(totalBytesProcessed + actualReceivedLength - lengthOfFirstConstantBuffer);
+							if (memoryStreamNumberBytesToRead > totalInfoSizeToRead) memoryStreamNumberBytesToRead = totalInfoSizeToRead;
+							
+							memoryStreamForInfo.Write(receivedBytes, (int)memoryStreamStartBytes, (int)memoryStreamNumberBytesToRead);
+							
+							long fileStreamStartBytes = lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed;
+							long fileStreamNumberBytesToRead = (int)(totalBytesProcessed + actualReceivedLength - lengthOfFirstConstantBuffer - totalInfoSizeToRead);
+
+							if (fileStreamNumberBytesToRead > 0)
+							{
+								if (fileStreamIn == null) fileStreamIn = new FileStream(defaultFolderToSaveIn + "\\filestream.tmp", FileMode.Create);
+								fileStreamIn.Write(receivedBytes, (int)fileStreamStartBytes, (int)fileStreamNumberBytesToRead);
+							}
 						}
 					}
 					else
 					{
-						if (fileStreamIn == null) fileStreamIn = new FileStream(defaultFolderToSaveIn + "\\filestream.tmp", FileMode.Create);
-						fileStreamIn.Write(receivedBytes, 0, actualReceivedLength);
+						if (totalBytesProcessed > lengthOfFirstConstantBuffer + totalInfoSizeToRead)
+						{
+							if (fileStreamIn == null) fileStreamIn = new FileStream(defaultFolderToSaveIn + "\\filestream.tmp", FileMode.Create);
+							fileStreamIn.Write(receivedBytes, 0, actualReceivedLength);
+						}
+						else
+						{
+							long memoryStreamStartBytes = 0;
+							long memoryStreamNumberBytesToRead = (int)(lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed);
+							if (memoryStreamNumberBytesToRead > totalInfoSizeToRead) memoryStreamNumberBytesToRead = totalInfoSizeToRead;
+							memoryStreamForInfo.Write(receivedBytes, (int)memoryStreamStartBytes, (int)memoryStreamNumberBytesToRead);
+							
+							long fileStreamStartBytes = lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed;
+							long fileStreamNumberBytesToRead = (int)(totalBytesProcessed + actualReceivedLength - lengthOfFirstConstantBuffer - totalInfoSizeToRead);
+							if (fileStreamNumberBytesToRead > 0)
+							{
+								if (fileStreamIn == null) fileStreamIn = new FileStream(defaultFolderToSaveIn + "\\filestream.tmp", FileMode.Create);
+								fileStreamIn.Write(receivedBytes, (int)fileStreamStartBytes, (int)fileStreamNumberBytesToRead);
+							}
+						}
 					}
 
 					totalBytesProcessed += actualReceivedLength;
 
 					//if (totalBytesProcessed % 100 == 0)
-						if (totalFileSizeToRead != -1 && totalBytesProcessed - lengthOfFirstConstantBuffer > 0)
+						if (totalFileSizeToRead != -1 && totalInfoSizeToRead != -1 && totalBytesProcessed - lengthOfFirstConstantBuffer > 0)
 							if (ProgressChangedEvent != null)
 								ProgressChangedEvent(null, new ProgressChangedEventArgs(
 									(int)(totalBytesProcessed - lengthOfFirstConstantBuffer),
-									(int)totalFileSizeToRead));
-				}
-				if (totalBytesProcessed >= lengthOfFirstConstantBuffer && totalFileSizeToRead == -1)
-				{
-					string totalFileSizeToReadString = Encoding.ASCII.GetString(firstConstantBytesForGuidInfoandFilesize, lengthOfGuid + lengthOfInfo, lengthOfFilesize);
-					if (!long.TryParse(totalFileSizeToReadString, out totalFileSizeToRead))
-					{
-						totalFileSizeToRead = -1;
-						UserMessages.ShowWarningMessage("Coult not get file size from string = " + totalFileSizeToReadString);
-					}
-					else
-					{
-						if (ProgressChangedEvent != null)
-							ProgressChangedEvent(null, new ProgressChangedEventArgs(0, (int)totalFileSizeToRead));
-					}
+									(int)(totalFileSizeToRead + totalInfoSizeToRead)));
 				}
 
-				if (totalFileSizeToRead != -1 && totalBytesProcessed >= (lengthOfFirstConstantBuffer + totalFileSizeToRead))
+				if (totalFileSizeToRead != -1 && totalInfoSizeToRead != -1 && totalBytesProcessed >= (lengthOfFirstConstantBuffer + totalFileSizeToRead))
 					break;
 			}
-			fileStreamIn.Close();
+
+			if (fileStreamIn != null)
+			{
+				fileStreamIn.Close();
+				fileStreamIn.Dispose(); fileStreamIn = null;
+			}
+
+			memoryStreamForInfo.Position = 0;
+			InfoOfTransfer info = (InfoOfTransfer)SerializationInterop.DeserializeObject(memoryStreamForInfo, SerializationInterop.SerializationFormat.Binary, typeof(InfoOfTransfer), false);
+			if (info != null)
+				File.Move(defaultFolderToSaveIn + "\\filestream.tmp", defaultFolderToSaveIn + "\\" + Path.GetFileName(info.OriginalFilePath));
+
+			memoryStreamForInfo.Close();
+			memoryStreamForInfo.Dispose(); memoryStreamForInfo = null;
 			if (ProgressChangedEvent != null)
 				ProgressChangedEvent(null, new ProgressChangedEventArgs(0, 100));
 		}
@@ -448,16 +520,38 @@ public class NetworkInterop
 		guid36 = Guid.Empty;
 	}
 
-	private static void WriteInfoSectionToStream(ref NetworkStream nwStream)
+	[Serializable]
+	public class InfoOfTransfer
 	{
-		nwStream.Write(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 0, 10);
+		public string OriginalFilePath;
+		public InfoOfTransfer(string OriginalFilePathIn)
+		{
+			OriginalFilePath = OriginalFilePathIn;
+		}
+	}
+	private static byte[] GetInfoSectionBytes(InfoOfTransfer infoOfTransfer)
+	{
+		MemoryStream memoryStream = new MemoryStream();
+		SerializationInterop.SerializeObject(infoOfTransfer, memoryStream, SerializationInterop.SerializationFormat.Binary, false);
+		memoryStream.Position = 0;
+		long lngth = memoryStream.Length;
+		byte[] bytesOfInfo = new byte[lngth];
+		memoryStream.Read(bytesOfInfo, 0, (int)lngth);
+		return bytesOfInfo;
+	}
+	private static void WriteInfoSectionSizeToStream(ref NetworkStream nwStream, int infoLength)
+	{
+		string infoLengthString = infoLength.ToString();
+		while (infoLengthString.Length < lengthOfInfoSize) infoLengthString = "0" + infoLengthString;
+		nwStream.Write(Encoding.ASCII.GetBytes(infoLengthString), 0, lengthOfInfoSize);
+		infoLengthString = null;
 	}
 
 	private static void WriteFileSizeToStream(ref NetworkStream nwStream, string filePath)
 	{
 		string fileSizeString = (new FileInfo(filePath)).Length.ToString();
-		while (fileSizeString.Length < 16) fileSizeString = "0" + fileSizeString;
-		nwStream.Write(Encoding.ASCII.GetBytes(fileSizeString), 0, 16);
+		while (fileSizeString.Length < lengthOfFilesize) fileSizeString = "0" + fileSizeString;
+		nwStream.Write(Encoding.ASCII.GetBytes(fileSizeString), 0, lengthOfFilesize);
 		fileSizeString = null;
 	}
 
@@ -480,9 +574,14 @@ public class NetworkInterop
 				NetworkStream networkStream = new NetworkStream(senderSocketToUse);
 				FileStream fileToWrite = new FileStream(filePath, FileMode.Open);
 
+				byte[] bytesOfInfo = GetInfoSectionBytes(new InfoOfTransfer(filePath));
+				int infoSize = bytesOfInfo.Length;
+
 				WriteGuidSectionToStream(ref networkStream);
-				WriteInfoSectionToStream(ref networkStream);
+				WriteInfoSectionSizeToStream(ref networkStream, infoSize);
 				WriteFileSizeToStream(ref networkStream, filePath);
+
+				networkStream.Write(bytesOfInfo, 0, infoSize);
 
 				long totalFileSizeToTransfer = (new FileInfo(filePath)).Length;
 				if (ProgressChangedEvent != null)

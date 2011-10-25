@@ -380,6 +380,7 @@ public class NetworkInterop
 			if (handler == null) continue;
 			DateTime timeTransferStarted = DateTime.Now;
 
+			//TODO: receiving speed decreases over time quite hectically
 			long totalBytesProcessed = 0;
 			byte[] firstConstantBytesForGuidInfoandFilesize = new byte[lengthOfFirstConstantBuffer];
 			Guid receivedGuid = Guid.Empty;

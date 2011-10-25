@@ -147,7 +147,7 @@ public class NetworkInterop
 			return false;
 		}
 		AvailableBytes = socketToCheck.Available;
-		return true;
+		return AvailableBytes > 0 ? true : false;
 	}
 
 	private static bool IsreceivingFinished(long totalFileSizeToRead, long totalInfoSizeToRead, long totalBytesProcessed, int actualReceivedLength)

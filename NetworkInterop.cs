@@ -761,6 +761,10 @@ public class NetworkInterop
 
 				CloseAndDisposeFileStream(ref fileStreamIn);
 				InfoOfTransferToClient info = (InfoOfTransferToClient)SerializationInterop.DeserializeObject(memoryStreamForInfo, SerializationInterop.SerializationFormat.Binary, typeof(InfoOfTransferToClient), false);
+				RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEvent,
+					"Successfully transferred (" + info.SuccessfullyReceived + ") file = " + filePath
+					+ Environment.NewLine + "In " + info.DurationOfTransfer.TotalSeconds + " seconds"
+					+ Environment.NewLine + "At " + info.AverageBytesPerSecond + " B/s");
 				//MessageBox.Show(info.AverageBytesPerSecond + ", " + info.DurationOfTransfer.TotalSeconds + ", " + info.SuccessfullyReceived);
 				//RenameFileBasedOnInfoOfTransfer((InfoOfTransfer)SerializationInterop.DeserializeObject(memoryStreamForInfo, SerializationInterop.SerializationFormat.Binary, typeof(InfoOfTransfer), false));
 				if (File.Exists(defaultFilePathForSavingForClient))

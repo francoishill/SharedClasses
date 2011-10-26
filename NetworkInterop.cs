@@ -150,14 +150,14 @@ public class NetworkInterop
 		return AvailableBytes > 0 ? true : false;
 	}
 
-	private static void FinishedReceivingRespondToClient(ref Socket handler, Guid receivedGuid, DateTime timeTransferStarted, double totalBytesTransferred)
+	private static void SendResponseToClient(bool SuccessfullyCompletedTransfer, ref Socket handler, Guid receivedGuid, DateTime timeTransferStarted, double totalBytesTransferred)
 	{
 		NetworkStream ns = new NetworkStream(handler);
 
 		double averageBytesPerSecond = totalBytesTransferred / (new TimeSpan(DateTime.Now.Ticks - timeTransferStarted.Ticks).TotalSeconds);
 		byte[] bytesOfInfo = GetSerializedBytesOfObject(
 			new InfoOfTransferToClient(
-				true,
+				SuccessfullyCompletedTransfer,
 				new TimeSpan(DateTime.Now.Ticks - timeTransferStarted.Ticks),
 				averageBytesPerSecond));
 		int infoSize = bytesOfInfo.Length;
@@ -230,7 +230,8 @@ public class NetworkInterop
 			{
 				long memoryStreamStartBytes = lengthOfFirstConstantBuffer - totalBytesProcessed;
 				long memoryStreamNumberBytesToRead = (int)(totalBytesProcessed + actualReceivedLength - lengthOfFirstConstantBuffer);
-				if (memoryStreamNumberBytesToRead > totalInfoSizeToRead) memoryStreamNumberBytesToRead = totalInfoSizeToRead;
+				if (memoryStreamNumberBytesToRead > lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed)
+					memoryStreamNumberBytesToRead = lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed;
 
 				memoryStreamForInfo.Write(receivedBytes, (int)memoryStreamStartBytes, (int)memoryStreamNumberBytesToRead);
 
@@ -239,7 +240,8 @@ public class NetworkInterop
 
 				if (fileStreamNumberBytesToRead > 0)
 				{
-					fileStreamIn.Write(receivedBytes, (int)fileStreamStartBytes, (int)fileStreamNumberBytesToRead);
+					if (fileStreamIn != null)//Allow for null if trying to NOT write out the file
+						fileStreamIn.Write(receivedBytes, (int)fileStreamStartBytes, (int)fileStreamNumberBytesToRead);
 				}
 			}
 		}
@@ -247,7 +249,8 @@ public class NetworkInterop
 		{
 			if (totalBytesProcessed > lengthOfFirstConstantBuffer + totalInfoSizeToRead)
 			{
-				fileStreamIn.Write(receivedBytes, 0, actualReceivedLength);
+				if (fileStreamIn != null)//Allow for null if trying to NOT write out the file
+					fileStreamIn.Write(receivedBytes, 0, actualReceivedLength);
 			}
 			else
 			{
@@ -258,15 +261,17 @@ public class NetworkInterop
 					? lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed
 					: actualReceivedLength);
 				//(int)(lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed);
-				//if (memoryStreamNumberBytesToRead > totalInfoSizeToRead) memoryStreamNumberBytesToRead = totalInfoSizeToRead;
+				if (memoryStreamNumberBytesToRead > lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed)
+					memoryStreamNumberBytesToRead = lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed;
 				memoryStreamForInfo.Write(receivedBytes, (int)memoryStreamStartBytes, (int)memoryStreamNumberBytesToRead);
 
 				long fileStreamStartBytes = lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed;
 				long fileStreamNumberBytesToRead = (int)(totalBytesProcessed + actualReceivedLength - lengthOfFirstConstantBuffer - totalInfoSizeToRead);
 				if (fileStreamNumberBytesToRead > 0)
 				{
-					//if (fileStreamIn == null) fileStreamIn = new FileStream(defaultFolderToSaveIn + "\\filestream.tmp", FileMode.Create);
-					fileStreamIn.Write(receivedBytes, (int)fileStreamStartBytes, (int)fileStreamNumberBytesToRead);
+					if (fileStreamIn != null)//Allow for null if trying to NOT write out the file
+						//if (fileStreamIn == null) fileStreamIn = new FileStream(defaultFolderToSaveIn + "\\filestream.tmp", FileMode.Create);
+						fileStreamIn.Write(receivedBytes, (int)fileStreamStartBytes, (int)fileStreamNumberBytesToRead);
 				}
 			}
 		}
@@ -386,6 +391,9 @@ public class NetworkInterop
 			{
 				if (!GetBytesAvailable(ref handler, out availableBytes)) continue;
 				Console.WriteLine("availableBytes " + availableBytes.ToString());
+				//TODO: Fix this
+				string tryingToSendDataToClientCrashesIt;//Assuming it has to do with client needs to be reset if bytes received as defined in infolength
+				//SendResponseToClient(false, ref handler, receivedGuid, timeTransferStarted, totalBytesProcessed);
 
 				byte[] receivedBytes = new byte[availableBytes];
 				int actualReceivedLength = handler.Receive(receivedBytes);
@@ -402,7 +410,7 @@ public class NetworkInterop
 
 				if (IsAlldataCompletelyTransferred(totalBytesProcessed, totalFileSizeToRead, totalInfoSizeToRead))
 				{
-					FinishedReceivingRespondToClient(ref handler, receivedGuid, timeTransferStarted, totalBytesProcessed);
+					SendResponseToClient(true, ref handler, receivedGuid, timeTransferStarted, totalBytesProcessed);
 					break;
 				}
 			}
@@ -725,6 +733,8 @@ public class NetworkInterop
 				}
 				while (numberReadBytes > 0);
 
+			RestartReceivingLoop:
+				//TODO: For memory management all these objects (timeTransferStarted, receivedGuid, etc) must still be destroyd later
 				DateTime timeTransferStarted = DateTime.Now;
 				long totalBytesProcessed = 0;
 				byte[] firstConstantBytesForGuidInfoandFilesize = new byte[lengthOfFirstConstantBuffer];
@@ -733,10 +743,11 @@ public class NetworkInterop
 				long totalInfoSizeToRead = -1;
 				int availableBytes;
 				if (!Directory.Exists(defaultFolderToSaveIn)) Directory.CreateDirectory(defaultFolderToSaveIn);
-				FileStream fileStreamIn = new FileStream(defaultFilePathForSavingForClient, FileMode.Create);
-				MemoryStream memoryStreamForInfo = new MemoryStream();
 				while (true)
 				{
+					FileStream fileStreamIn = null;// new FileStream(defaultFilePathForSavingForClient, FileMode.Create);
+					MemoryStream memoryStreamForInfo = new MemoryStream();
+
 					if (!GetBytesAvailable(ref senderSocketToUse, out availableBytes)) continue;
 
 					byte[] receivedBytes = new byte[availableBytes];
@@ -756,31 +767,40 @@ public class NetworkInterop
 					FireProgressChangedEventForTransfer(ref ProgressChangedEvent, totalBytesProcessed, totalFileSizeToRead, totalInfoSizeToRead, timeTransferStarted);
 
 					if (IsAlldataCompletelyTransferred(totalBytesProcessed, totalFileSizeToRead, totalInfoSizeToRead))
-						break;
-				}
-
-				CloseAndDisposeFileStream(ref fileStreamIn);
-				InfoOfTransferToClient info = (InfoOfTransferToClient)SerializationInterop.DeserializeObject(memoryStreamForInfo, SerializationInterop.SerializationFormat.Binary, typeof(InfoOfTransferToClient), false);
-				RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEvent,
-					"Successfully transferred (" + info.SuccessfullyReceived + ") file = " + filePath
-					+ Environment.NewLine + "In " + info.DurationOfTransfer.TotalSeconds + " seconds"
-					+ Environment.NewLine + "At " + info.AverageBytesPerSecond + " B/s");
-				//MessageBox.Show(info.AverageBytesPerSecond + ", " + info.DurationOfTransfer.TotalSeconds + ", " + info.SuccessfullyReceived);
-				//RenameFileBasedOnInfoOfTransfer((InfoOfTransfer)SerializationInterop.DeserializeObject(memoryStreamForInfo, SerializationInterop.SerializationFormat.Binary, typeof(InfoOfTransfer), false));
-				if (File.Exists(defaultFilePathForSavingForClient))
-				{
-					try
 					{
-						File.Delete(defaultFilePathForSavingForClient);
-					}
-					catch (Exception exc)
-					{
-						RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEvent, 
-							"Could not delete client file: " + defaultFilePathForSavingForClient +
-							Environment.NewLine + exc.Message);
+						//CloseAndDisposeFileStream(ref fileStreamIn);
+						InfoOfTransferToClient info = (InfoOfTransferToClient)SerializationInterop.DeserializeObject(memoryStreamForInfo, SerializationInterop.SerializationFormat.Binary, typeof(InfoOfTransferToClient), false);
+						//MessageBox.Show(info.AverageBytesPerSecond + ", " + info.DurationOfTransfer.TotalSeconds + ", " + info.SuccessfullyReceived);
+						//RenameFileBasedOnInfoOfTransfer((InfoOfTransfer)SerializationInterop.DeserializeObject(memoryStreamForInfo, SerializationInterop.SerializationFormat.Binary, typeof(InfoOfTransfer), false));
+						//if (File.Exists(defaultFilePathForSavingForClient))
+						//{
+						//	try
+						//	{
+						//		File.Delete(defaultFilePathForSavingForClient);
+						//	}
+						//	catch (Exception exc)
+						//	{
+						//		RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEvent,
+						//			"Could not delete client file: " + defaultFilePathForSavingForClient +
+						//			Environment.NewLine + exc.Message);
+						//	}
+						//}
+						CloseAndDisposeMemoryStream(ref memoryStreamForInfo);
+						if (info.SuccessfullyReceiveComplete)
+						{
+							RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEvent,
+							"Successfully transferred (" + info.SuccessfullyReceiveComplete + ") file = " + filePath
+							+ Environment.NewLine + "In " + info.DurationOfTransfer.TotalSeconds + " seconds"
+							+ Environment.NewLine + "At " + info.AverageBytesPerSecond + " B/s");
+							break;
+						}
+						else
+						{
+							//RaiseProgressChangedEvent_Ifnotnull(ref ProgressChangedEvent, info.
+							goto RestartReceivingLoop;
+						}
 					}
 				}
-				CloseAndDisposeMemoryStream(ref memoryStreamForInfo);
 
 				RaiseProgressChangedEvent_Ifnotnull(ref ProgressChangedEvent, 0, 100);
 
@@ -1064,12 +1084,12 @@ public class NetworkInterop
 	[Serializable]
 	public class InfoOfTransferToClient
 	{
-		public bool SuccessfullyReceived;
+		public bool SuccessfullyReceiveComplete;
 		public TimeSpan DurationOfTransfer;
 		public double AverageBytesPerSecond;
-		public InfoOfTransferToClient(bool SuccessfullyReceivedIn, TimeSpan DurationOfTransferIn, double AverageBytesPerSecondIn)
+		public InfoOfTransferToClient(bool SuccessfullyReceiveCompleteIn, TimeSpan DurationOfTransferIn, double AverageBytesPerSecondIn)
 		{
-			SuccessfullyReceived = SuccessfullyReceivedIn;
+			SuccessfullyReceiveComplete = SuccessfullyReceiveCompleteIn;
 			DurationOfTransfer = DurationOfTransferIn;
 			AverageBytesPerSecond = AverageBytesPerSecondIn;
 		}

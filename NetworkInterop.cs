@@ -150,14 +150,6 @@ public class NetworkInterop
 		return AvailableBytes > 0 ? true : false;
 	}
 
-	private static bool IsreceivingFinished(long totalFileSizeToRead, long totalInfoSizeToRead, long totalBytesProcessed, int actualReceivedLength)
-	{
-		return
-			totalFileSizeToRead != -1
-			&& totalInfoSizeToRead != -1
-			&& totalBytesProcessed + actualReceivedLength >= lengthOfFirstConstantBuffer + totalInfoSizeToRead + totalFileSizeToRead;
-	}
-
 	private static void FinishedReceivingRespondToClient(ref Socket handler, Guid receivedGuid, DateTime timeTransferStarted, double totalBytesTransferred)
 	{
 		NetworkStream ns = new NetworkStream(handler);
@@ -398,9 +390,6 @@ public class NetworkInterop
 				byte[] receivedBytes = new byte[availableBytes];
 				int actualReceivedLength = handler.Receive(receivedBytes);
 
-				if (IsreceivingFinished(totalFileSizeToRead, totalInfoSizeToRead, totalBytesProcessed, actualReceivedLength))
-					FinishedReceivingRespondToClient(ref handler, receivedGuid, timeTransferStarted, totalBytesProcessed);
-
 				EnsureFirstConstantBufferIsFullyPopulated(totalBytesProcessed, ref firstConstantBytesForGuidInfoandFilesize, ref receivedBytes, actualReceivedLength);
 
 				EnsureValuesForGuidAndTotalSizes(ProgressChangedEvent, totalBytesProcessed, firstConstantBytesForGuidInfoandFilesize, ref receivedGuid, ref totalFileSizeToRead, ref totalInfoSizeToRead, actualReceivedLength);
@@ -412,7 +401,10 @@ public class NetworkInterop
 				FireProgressChangedEventForTransfer(ref ProgressChangedEvent, totalBytesProcessed, totalFileSizeToRead, totalInfoSizeToRead, timeTransferStarted);
 
 				if (IsAlldataCompletelyTransferred(totalBytesProcessed, totalFileSizeToRead, totalInfoSizeToRead))
+				{
+					FinishedReceivingRespondToClient(ref handler, receivedGuid, timeTransferStarted, totalBytesProcessed);
 					break;
+				}
 			}
 
 			CloseAndDisposeFileStream(ref fileStreamIn);

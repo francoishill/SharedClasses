@@ -86,8 +86,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\NetworkInterop.cs">
+      <Link>NetworkInterop.cs</Link>
+    </Compile>
     <Compile Include="..\SerializationInterop.cs">
       <Link>SerializationInterop.cs</Link>
+    </Compile>
+    <Compile Include="..\ThreadingInterop.cs">
+      <Link>ThreadingInterop.cs</Link>
     </Compile>
     <Compile Include="..\UserMessages.cs">
       <Link>UserMessages.cs</Link>

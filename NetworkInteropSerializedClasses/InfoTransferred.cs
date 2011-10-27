@@ -19,15 +19,15 @@ public class InfoOfTransferToServer
 public class InfoOfTransferToClient
 {
 	public bool SuccessfullyReceiveComplete;
-	public TimeSpan DurationOfTransfer;
+	public double DurationOfTransferInSeconds;
 	public double AverageBytesPerSecond;
 	public long CurrentNumberofBytesTransferred;
 	public long TotalNumberofBytesToTransfer;
 	public InfoOfTransferToClient() { }
-	public InfoOfTransferToClient(bool SuccessfullyReceiveCompleteIn, TimeSpan DurationOfTransferIn, double AverageBytesPerSecondIn, long CurrentNumberofBytesTransferredIn, long TotalNumberofBytesToTransferIn)
+	public InfoOfTransferToClient(bool SuccessfullyReceiveCompleteIn, double DurationOfTransferInSecondsIn, double AverageBytesPerSecondIn, long CurrentNumberofBytesTransferredIn, long TotalNumberofBytesToTransferIn)
 	{
 		SuccessfullyReceiveComplete = SuccessfullyReceiveCompleteIn;
-		DurationOfTransfer = DurationOfTransferIn;
+		DurationOfTransferInSeconds = DurationOfTransferInSecondsIn;
 		AverageBytesPerSecond = AverageBytesPerSecondIn;
 		CurrentNumberofBytesTransferred = CurrentNumberofBytesTransferredIn;
 		TotalNumberofBytesToTransfer = TotalNumberofBytesToTransferIn;

@@ -164,7 +164,7 @@ public class NetworkInterop
 		byte[] bytesOfInfo = GetSerializedBytesOfObject(
 			new InfoOfTransferToClient(
 				SuccessfullyCompletedTransfer,
-				new TimeSpan(DateTime.Now.Ticks - timeTransferStarted.Ticks),
+				new TimeSpan(DateTime.Now.Ticks - timeTransferStarted.Ticks).TotalSeconds,
 				averageBytesPerSecond,
 				totalBytesTransferred,
 				totalSizeToRead));
@@ -808,7 +808,7 @@ public class NetworkInterop
 							{
 								RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEvent,
 								"Successfully transferred (" + info.SuccessfullyReceiveComplete + ") file = " + filePath
-								+ Environment.NewLine + "In " + info.DurationOfTransfer.TotalSeconds + " seconds"
+								+ Environment.NewLine + "In " + info.DurationOfTransferInSeconds + " seconds"
 								+ Environment.NewLine + "At " + info.AverageBytesPerSecond + " B/s");
 								break;
 							}

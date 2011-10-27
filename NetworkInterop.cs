@@ -161,12 +161,14 @@ public class NetworkInterop
 				new TimeSpan(DateTime.Now.Ticks - timeTransferStarted.Ticks),
 				averageBytesPerSecond));
 		int infoSize = bytesOfInfo.Length;
+		Console.WriteLine("Number bytes sent to client: " + infoSize);
 
 		WriteGuidSectionToStream(ref ns, receivedGuid);
 		WriteInfoSectionSizeToStream(ref ns, infoSize);
 		WriteFileSizeToStream(ref ns, 0);
 
 		ns.Write(bytesOfInfo, 0, infoSize);
+		ns.Flush();
 	}
 
 	private static void EnsureFirstConstantBufferIsFullyPopulated(long totalBytesProcessed, ref byte[] firstConstantBytesForGuidInfoandFilesize, ref byte[] receivedBytes, int actualReceivedLength)
@@ -391,12 +393,12 @@ public class NetworkInterop
 			{
 				if (!GetBytesAvailable(ref handler, out availableBytes)) continue;
 				Console.WriteLine("availableBytes " + availableBytes.ToString());
-				//TODO: Fix this
-				string tryingToSendDataToClientCrashesIt;//Assuming it has to do with client needs to be reset if bytes received as defined in infolength
-				//SendResponseToClient(false, ref handler, receivedGuid, timeTransferStarted, totalBytesProcessed);
 
 				byte[] receivedBytes = new byte[availableBytes];
 				int actualReceivedLength = handler.Receive(receivedBytes);
+				//TODO: Fix this
+				string tryingToSendDataToClientCrashesIt;//Assuming it has to do with client needs to be reset if bytes received as defined in infolength
+				SendResponseToClient(false, ref handler, receivedGuid, timeTransferStarted, totalBytesProcessed + actualReceivedLength);
 
 				EnsureFirstConstantBufferIsFullyPopulated(totalBytesProcessed, ref firstConstantBytesForGuidInfoandFilesize, ref receivedBytes, actualReceivedLength);
 
@@ -406,6 +408,7 @@ public class NetworkInterop
 
 				totalBytesProcessed += actualReceivedLength;
 
+				//Console.WriteLine("FireProgressChangedEventForTransfer: TBP=" + totalBytesProcessed + ", TFS=" + totalFileSizeToRead + ", TIS=" + totalInfoSizeToRead);
 				FireProgressChangedEventForTransfer(ref ProgressChangedEvent, totalBytesProcessed, totalFileSizeToRead, totalInfoSizeToRead, timeTransferStarted);
 
 				if (IsAlldataCompletelyTransferred(totalBytesProcessed, totalFileSizeToRead, totalInfoSizeToRead))
@@ -729,7 +732,7 @@ public class NetworkInterop
 					if (numberReadBytes > 0)
 						networkStream.Write(bytesRead, 0, numberReadBytes);
 					totalBytesWritten += numberReadBytes;
-					RaiseProgressChangedEvent_Ifnotnull(ref ProgressChangedEvent, (int)totalBytesWritten, (int)totalFileSizeToTransfer);
+					//RaiseProgressChangedEvent_Ifnotnull(ref ProgressChangedEvent, (int)totalBytesWritten, (int)totalFileSizeToTransfer);
 				}
 				while (numberReadBytes > 0);
 
@@ -750,6 +753,10 @@ public class NetworkInterop
 
 					if (!GetBytesAvailable(ref senderSocketToUse, out availableBytes)) continue;
 
+					if ((totalFileSizeToRead == -1 || totalInfoSizeToRead == -1) && totalBytesProcessed + availableBytes > lengthOfFirstConstantBuffer)
+						availableBytes = lengthOfFirstConstantBuffer - (int)totalBytesProcessed;
+					else if (totalFileSizeToRead != -1 && totalInfoSizeToRead != -1 && totalBytesProcessed + availableBytes > lengthOfFirstConstantBuffer + totalInfoSizeToRead + totalFileSizeToRead)
+						availableBytes = lengthOfFirstConstantBuffer + (int)totalInfoSizeToRead + (int)totalFileSizeToRead - (int)totalBytesProcessed;
 					byte[] receivedBytes = new byte[availableBytes];
 					int actualReceivedLength = senderSocketToUse.Receive(receivedBytes);
 

@@ -98,6 +98,11 @@ public class NetworkInterop
 		if (progressChangedEvent != null) progressChangedEvent(null, new ProgressChangedEventArgs(currentValue, maximumValue, bytesPerSecond));
 	}
 
+	private static void RaiseProgressChangedEvent_Ifnotnull(ref ProgressChangedEventHandler progressChangedEvent, long currentValue, long maximumValue, double bytesPerSecond = -1)
+	{
+		if (progressChangedEvent != null) progressChangedEvent(null, new ProgressChangedEventArgs((int)currentValue, (int)maximumValue, bytesPerSecond));
+	}
+
 	private static void HookIntoFormDisposedEventAndCloseSocket(Socket serverListeningSocketToUse, Form formToHookSocketClosingIntoFormDisposedEvent)
 	{
 		if (!dictionaryWithFormAndSocketsToCloseUponFormClosing.ContainsKey(formToHookSocketClosingIntoFormDisposedEvent))
@@ -150,7 +155,7 @@ public class NetworkInterop
 		return AvailableBytes > 0 ? true : false;
 	}
 
-	private static void SendResponseToClient(bool SuccessfullyCompletedTransfer, ref Socket handler, Guid receivedGuid, DateTime timeTransferStarted, double totalBytesTransferred)
+	private static void SendResponseToClient(bool SuccessfullyCompletedTransfer, ref Socket handler, Guid receivedGuid, DateTime timeTransferStarted, long totalBytesTransferred, long totalSizeToRead)
 	{
 		NetworkStream ns = new NetworkStream(handler);
 
@@ -159,7 +164,9 @@ public class NetworkInterop
 			new InfoOfTransferToClient(
 				SuccessfullyCompletedTransfer,
 				new TimeSpan(DateTime.Now.Ticks - timeTransferStarted.Ticks),
-				averageBytesPerSecond));
+				averageBytesPerSecond,
+				totalBytesTransferred,
+				totalSizeToRead));
 		int infoSize = bytesOfInfo.Length;
 		Console.WriteLine("Number bytes sent to client: " + infoSize);
 
@@ -392,15 +399,16 @@ public class NetworkInterop
 			while (true)
 			{
 				if (!GetBytesAvailable(ref handler, out availableBytes)) continue;
-				Console.WriteLine("availableBytes " + availableBytes.ToString());
+				//Console.WriteLine("availableBytes " + availableBytes.ToString());
 
 				byte[] receivedBytes = new byte[availableBytes];
 				int actualReceivedLength = handler.Receive(receivedBytes);
-				//TODO: Fix this
-				string tryingToSendDataToClientCrashesIt;//Assuming it has to do with client needs to be reset if bytes received as defined in infolength
-				SendResponseToClient(false, ref handler, receivedGuid, timeTransferStarted, totalBytesProcessed + actualReceivedLength);
 
 				EnsureFirstConstantBufferIsFullyPopulated(totalBytesProcessed, ref firstConstantBytesForGuidInfoandFilesize, ref receivedBytes, actualReceivedLength);
+				//DONE TODO: Fix this
+				//string tryingToSendDataToClientCrashesIt;//Assuming it has to do with client needs to be reset if bytes received as defined in infolength
+				if (totalBytesProcessed >= lengthOfFirstConstantBuffer && totalFileSizeToRead != -1 && totalInfoSizeToRead != -1)
+					SendResponseToClient(false, ref handler, receivedGuid, timeTransferStarted, totalBytesProcessed + actualReceivedLength, lengthOfFirstConstantBuffer + totalFileSizeToRead + totalInfoSizeToRead);
 
 				EnsureValuesForGuidAndTotalSizes(ProgressChangedEvent, totalBytesProcessed, firstConstantBytesForGuidInfoandFilesize, ref receivedGuid, ref totalFileSizeToRead, ref totalInfoSizeToRead, actualReceivedLength);
 
@@ -413,7 +421,7 @@ public class NetworkInterop
 
 				if (IsAlldataCompletelyTransferred(totalBytesProcessed, totalFileSizeToRead, totalInfoSizeToRead))
 				{
-					SendResponseToClient(true, ref handler, receivedGuid, timeTransferStarted, totalBytesProcessed);
+					SendResponseToClient(true, ref handler, receivedGuid, timeTransferStarted, totalBytesProcessed, lengthOfFirstConstantBuffer + totalFileSizeToRead + totalInfoSizeToRead);
 					break;
 				}
 			}
@@ -771,7 +779,7 @@ public class NetworkInterop
 
 					totalBytesProcessed += actualReceivedLength;
 
-					FireProgressChangedEventForTransfer(ref ProgressChangedEvent, totalBytesProcessed, totalFileSizeToRead, totalInfoSizeToRead, timeTransferStarted);
+					//FireProgressChangedEventForTransfer(ref ProgressChangedEvent, totalBytesProcessed, totalFileSizeToRead, totalInfoSizeToRead, timeTransferStarted);
 
 					if (IsAlldataCompletelyTransferred(totalBytesProcessed, totalFileSizeToRead, totalInfoSizeToRead))
 					{
@@ -803,7 +811,7 @@ public class NetworkInterop
 						}
 						else
 						{
-							//RaiseProgressChangedEvent_Ifnotnull(ref ProgressChangedEvent, info.
+							RaiseProgressChangedEvent_Ifnotnull(ref ProgressChangedEvent, info.CurrentNumberofBytesTransferred, info.TotalNumberofBytesToTransfer, info.AverageBytesPerSecond);
 							goto RestartReceivingLoop;
 						}
 					}
@@ -1094,11 +1102,15 @@ public class NetworkInterop
 		public bool SuccessfullyReceiveComplete;
 		public TimeSpan DurationOfTransfer;
 		public double AverageBytesPerSecond;
-		public InfoOfTransferToClient(bool SuccessfullyReceiveCompleteIn, TimeSpan DurationOfTransferIn, double AverageBytesPerSecondIn)
+		public long CurrentNumberofBytesTransferred;
+		public long TotalNumberofBytesToTransfer;
+		public InfoOfTransferToClient(bool SuccessfullyReceiveCompleteIn, TimeSpan DurationOfTransferIn, double AverageBytesPerSecondIn, long CurrentNumberofBytesTransferredIn, long TotalNumberofBytesToTransferIn)
 		{
 			SuccessfullyReceiveComplete = SuccessfullyReceiveCompleteIn;
 			DurationOfTransfer = DurationOfTransferIn;
 			AverageBytesPerSecond = AverageBytesPerSecondIn;
+			CurrentNumberofBytesTransferred = CurrentNumberofBytesTransferredIn;
+			TotalNumberofBytesToTransfer = TotalNumberofBytesToTransferIn;
 		}
 	}
 }

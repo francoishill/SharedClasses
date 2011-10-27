@@ -305,7 +305,7 @@ public class NetworkInterop
 
 	private static void RenameFileBasedOnInfoOfTransfer(InfoOfTransferToServer info, ref TextFeedbackEventHandler TextFeedbackEvent)
 	{
-		if (info.IsNull()) return;
+		if (info == null) return;
 		string fromPath = defaultFilePathForSavingForServer;
 		string toPath = defaultFolderToSaveIn + "\\" + Path.GetFileName(info.OriginalFilePath);
 		if (File.Exists(fromPath))
@@ -786,7 +786,7 @@ public class NetworkInterop
 					{
 						//CloseAndDisposeFileStream(ref fileStreamIn);
 						InfoOfTransferToClient info = (InfoOfTransferToClient)SerializationInterop.DeserializeObject(memoryStreamForInfo, defaultSerializationFormat, typeof(InfoOfTransferToClient), false);
-						if (!info.IsNull())
+						if (info != null)
 						{
 							//MessageBox.Show(info.AverageBytesPerSecond + ", " + info.DurationOfTransfer.TotalSeconds + ", " + info.SuccessfullyReceived);
 							//RenameFileBasedOnInfoOfTransfer((InfoOfTransfer)SerializationInterop.DeserializeObject(memoryStreamForInfo, defaultSerializationFormat, typeof(InfoOfTransfer), false));

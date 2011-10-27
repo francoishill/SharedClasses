@@ -35,7 +35,7 @@ public class SerializationInterop
 				}
 				catch (Exception exc)
 				{
-					UserMessages.ShowWarningMessage("Cannot deserialize object to type " + typeOfObject.GetType().ToString() + Environment.NewLine + exc.Message);
+					//UserMessages.ShowWarningMessage("Cannot deserialize object to type " + typeOfObject.GetType().ToString() + Environment.NewLine + exc.Message);
 				}
 			}
 			else if (serializationFormat == SerializationFormat.Xml)

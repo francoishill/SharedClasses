@@ -87,6 +87,7 @@ public class NetworkInterop
 	private const int lengthOfInfoSize = 10;
 	private const int lengthOfFilesize = 16;
 	private static int lengthOfFirstConstantBuffer { get { return lengthOfGuid + lengthOfInfoSize + lengthOfFilesize; } }
+	private const SerializationInterop.SerializationFormat defaultSerializationFormat = SerializationInterop.SerializationFormat.Binary;
 
 	private static void RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEventHandler textFeedbackEvent, string textMessage)
 	{
@@ -192,7 +193,7 @@ public class NetworkInterop
 		}
 	}
 
-	private static void EnsureValuesForGuidAndTotalSizes(ProgressChangedEventHandler ProgressChangedEvent, long totalBytesProcessed, byte[] firstConstantBytesForGuidInfoandFilesize, ref Guid receivedGuid, ref long totalFileSizeToRead, ref long totalInfoSizeToRead, int actualReceivedLength)
+	private static void EnsureValuesForGuidAndTotalSizes(ProgressChangedEventHandler ProgressChangedEvent, long totalBytesProcessed, byte[] firstConstantBytesForGuidInfoandFilesize, ref Guid receivedGuid, ref long totalFileSizeToRead, ref long totalInfoSizeToRead, int actualReceivedLength, bool UpdateProgress = true)
 	{
 		if (totalBytesProcessed + actualReceivedLength >= lengthOfFirstConstantBuffer && (totalFileSizeToRead == -1 || totalInfoSizeToRead == -1 || receivedGuid == Guid.Empty))
 		{
@@ -208,7 +209,7 @@ public class NetworkInterop
 			}
 			else
 			{
-				if (ProgressChangedEvent != null)
+				if (UpdateProgress && ProgressChangedEvent != null)
 					ProgressChangedEvent(null, new ProgressChangedEventArgs(0, (int)((totalFileSizeToRead != -1 ? totalFileSizeToRead : 0) + (totalInfoSizeToRead != -1 ? totalInfoSizeToRead : 0))));
 			}
 
@@ -220,7 +221,7 @@ public class NetworkInterop
 			}
 			else
 			{
-				if (ProgressChangedEvent != null)
+				if (UpdateProgress && ProgressChangedEvent != null)
 					ProgressChangedEvent(null, new ProgressChangedEventArgs(0, (int)((totalFileSizeToRead != -1 ? totalFileSizeToRead : 0) + (totalInfoSizeToRead != -1 ? totalInfoSizeToRead : 0))));
 			}
 		}
@@ -428,7 +429,7 @@ public class NetworkInterop
 
 			CloseAndDisposeFileStream(ref fileStreamIn);
 
-			RenameFileBasedOnInfoOfTransfer((InfoOfTransferToServer)SerializationInterop.DeserializeObject(memoryStreamForInfo, SerializationInterop.SerializationFormat.Binary, typeof(InfoOfTransferToServer), false), ref TextFeedbackEvent);
+			RenameFileBasedOnInfoOfTransfer((InfoOfTransferToServer)SerializationInterop.DeserializeObject(memoryStreamForInfo, defaultSerializationFormat, typeof(InfoOfTransferToServer), false), ref TextFeedbackEvent);
 
 			CloseAndDisposeMemoryStream(ref memoryStreamForInfo);
 
@@ -678,7 +679,7 @@ public class NetworkInterop
 	private static byte[] GetSerializedBytesOfObject(Object obj)
 	{
 		MemoryStream memoryStream = new MemoryStream();
-		SerializationInterop.SerializeObject(obj, memoryStream, SerializationInterop.SerializationFormat.Binary, false);
+		SerializationInterop.SerializeObject(obj, memoryStream, defaultSerializationFormat, false);
 		memoryStream.Position = 0;
 		long lngth = memoryStream.Length;
 		byte[] bytesOfInfo = new byte[lngth];
@@ -773,7 +774,7 @@ public class NetworkInterop
 
 					EnsureFirstConstantBufferIsFullyPopulated(totalBytesProcessed, ref firstConstantBytesForGuidInfoandFilesize, ref receivedBytes, actualReceivedLength);
 
-					EnsureValuesForGuidAndTotalSizes(ProgressChangedEvent, totalBytesProcessed, firstConstantBytesForGuidInfoandFilesize, ref receivedGuid, ref totalFileSizeToRead, ref totalInfoSizeToRead, actualReceivedLength);
+					EnsureValuesForGuidAndTotalSizes(ProgressChangedEvent, totalBytesProcessed, firstConstantBytesForGuidInfoandFilesize, ref receivedGuid, ref totalFileSizeToRead, ref totalInfoSizeToRead, actualReceivedLength, false);
 
 					WriteBytesToFilestreamAndOrMemorystream(totalBytesProcessed, totalInfoSizeToRead, ref fileStreamIn, ref memoryStreamForInfo, ref receivedBytes, actualReceivedLength);
 
@@ -784,35 +785,38 @@ public class NetworkInterop
 					if (IsAlldataCompletelyTransferred(totalBytesProcessed, totalFileSizeToRead, totalInfoSizeToRead))
 					{
 						//CloseAndDisposeFileStream(ref fileStreamIn);
-						InfoOfTransferToClient info = (InfoOfTransferToClient)SerializationInterop.DeserializeObject(memoryStreamForInfo, SerializationInterop.SerializationFormat.Binary, typeof(InfoOfTransferToClient), false);
-						//MessageBox.Show(info.AverageBytesPerSecond + ", " + info.DurationOfTransfer.TotalSeconds + ", " + info.SuccessfullyReceived);
-						//RenameFileBasedOnInfoOfTransfer((InfoOfTransfer)SerializationInterop.DeserializeObject(memoryStreamForInfo, SerializationInterop.SerializationFormat.Binary, typeof(InfoOfTransfer), false));
-						//if (File.Exists(defaultFilePathForSavingForClient))
-						//{
-						//	try
-						//	{
-						//		File.Delete(defaultFilePathForSavingForClient);
-						//	}
-						//	catch (Exception exc)
-						//	{
-						//		RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEvent,
-						//			"Could not delete client file: " + defaultFilePathForSavingForClient +
-						//			Environment.NewLine + exc.Message);
-						//	}
-						//}
-						CloseAndDisposeMemoryStream(ref memoryStreamForInfo);
-						if (info.SuccessfullyReceiveComplete)
+						InfoOfTransferToClient info = (InfoOfTransferToClient)SerializationInterop.DeserializeObject(memoryStreamForInfo, defaultSerializationFormat, typeof(InfoOfTransferToClient), false);
+						if (info != null)
 						{
-							RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEvent,
-							"Successfully transferred (" + info.SuccessfullyReceiveComplete + ") file = " + filePath
-							+ Environment.NewLine + "In " + info.DurationOfTransfer.TotalSeconds + " seconds"
-							+ Environment.NewLine + "At " + info.AverageBytesPerSecond + " B/s");
-							break;
-						}
-						else
-						{
-							RaiseProgressChangedEvent_Ifnotnull(ref ProgressChangedEvent, info.CurrentNumberofBytesTransferred, info.TotalNumberofBytesToTransfer, info.AverageBytesPerSecond);
-							goto RestartReceivingLoop;
+							//MessageBox.Show(info.AverageBytesPerSecond + ", " + info.DurationOfTransfer.TotalSeconds + ", " + info.SuccessfullyReceived);
+							//RenameFileBasedOnInfoOfTransfer((InfoOfTransfer)SerializationInterop.DeserializeObject(memoryStreamForInfo, defaultSerializationFormat, typeof(InfoOfTransfer), false));
+							//if (File.Exists(defaultFilePathForSavingForClient))
+							//{
+							//	try
+							//	{
+							//		File.Delete(defaultFilePathForSavingForClient);
+							//	}
+							//	catch (Exception exc)
+							//	{
+							//		RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEvent,
+							//			"Could not delete client file: " + defaultFilePathForSavingForClient +
+							//			Environment.NewLine + exc.Message);
+							//	}
+							//}
+							CloseAndDisposeMemoryStream(ref memoryStreamForInfo);
+							if (info.SuccessfullyReceiveComplete)
+							{
+								RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEvent,
+								"Successfully transferred (" + info.SuccessfullyReceiveComplete + ") file = " + filePath
+								+ Environment.NewLine + "In " + info.DurationOfTransfer.TotalSeconds + " seconds"
+								+ Environment.NewLine + "At " + info.AverageBytesPerSecond + " B/s");
+								break;
+							}
+							else
+							{
+								RaiseProgressChangedEvent_Ifnotnull(ref ProgressChangedEvent, info.CurrentNumberofBytesTransferred, info.TotalNumberofBytesToTransfer, info.AverageBytesPerSecond);
+								goto RestartReceivingLoop;
+							}
 						}
 					}
 				}
@@ -1085,32 +1089,4 @@ public class NetworkInterop
 												 connections);
 		}
 	}*/
-
-	[Serializable]
-	public class InfoOfTransferToServer
-	{
-		public string OriginalFilePath;
-		public InfoOfTransferToServer(string OriginalFilePathIn)
-		{
-			OriginalFilePath = OriginalFilePathIn;
-		}
-	}
-
-	[Serializable]
-	public class InfoOfTransferToClient
-	{
-		public bool SuccessfullyReceiveComplete;
-		public TimeSpan DurationOfTransfer;
-		public double AverageBytesPerSecond;
-		public long CurrentNumberofBytesTransferred;
-		public long TotalNumberofBytesToTransfer;
-		public InfoOfTransferToClient(bool SuccessfullyReceiveCompleteIn, TimeSpan DurationOfTransferIn, double AverageBytesPerSecondIn, long CurrentNumberofBytesTransferredIn, long TotalNumberofBytesToTransferIn)
-		{
-			SuccessfullyReceiveComplete = SuccessfullyReceiveCompleteIn;
-			DurationOfTransfer = DurationOfTransferIn;
-			AverageBytesPerSecond = AverageBytesPerSecondIn;
-			CurrentNumberofBytesTransferred = CurrentNumberofBytesTransferredIn;
-			TotalNumberofBytesToTransfer = TotalNumberofBytesToTransferIn;
-		}
-	}
 }

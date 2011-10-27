@@ -74,8 +74,11 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -83,6 +86,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\SerializationInterop.cs">
+      <Link>SerializationInterop.cs</Link>
+    </Compile>
+    <Compile Include="..\UserMessages.cs">
+      <Link>UserMessages.cs</Link>
+    </Compile>
     <Compile Include="InfoTransferred.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

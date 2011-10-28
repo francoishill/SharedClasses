@@ -47,15 +47,18 @@ public partial class CustomBalloonTipwpf : Window
 		{
 			(snder as CustomBalloonTipwpf).Close();
 
-			if (OnClickCallbackOnSeparateThread)
-				ThreadingInterop.PerformVoidFunctionSeperateThread(() => { OnClickCallback.Invoke((snder as CustomBalloonTipwpf).KeyForForm); });
-			else
-				OnClickCallback.Invoke((snder as CustomBalloonTipwpf).KeyForForm);
+			if (OnClickCallback != null)
+			{
+				if (OnClickCallbackOnSeparateThread)
+					ThreadingInterop.PerformVoidFunctionSeperateThread(() => { OnClickCallback.Invoke((snder as CustomBalloonTipwpf).KeyForForm); });
+				else
+					OnClickCallback.Invoke((snder as CustomBalloonTipwpf).KeyForForm);
+			}
 		};
 	}
 
 	public static List<CustomBalloonTipwpf> VisibleBalloonTipForms = new List<CustomBalloonTipwpf>();
-	public static void ShowCustomBalloonTip(string Title, string Message, int Duration, IconTypes iconType, SimpleDelegateWithSender OnClickCallback, string keyForForm = null, bool CallbackOnSeparateThread = false, double Scaling = 1)
+	public static void ShowCustomBalloonTip(string Title, string Message, int Duration, IconTypes iconType, SimpleDelegateWithSender OnClickCallback = null, string keyForForm = null, bool CallbackOnSeparateThread = false, double Scaling = 1)
 	{
 		//TODO: Also think about moving all these notifications into usercontrols in one MAIN window
 		CustomBalloonTipwpf cbt = new CustomBalloonTipwpf(Title, Message, Duration, iconType, OnClickCallback, CallbackOnSeparateThread);
@@ -81,27 +84,29 @@ public partial class CustomBalloonTipwpf : Window
 					CustomBalloonTipwpf tmpForm = VisibleBalloonTipForms[i];
 					//ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 					//{
-						//int StartPoint = VisibleBalloonTipForms[i].Top;
-						double EndPoint = tmpForm.Top - cbtHeight;
-						while (tmpForm.Top > EndPoint)
-						{
-							//System.Threading.Thread.Sleep(10);
-							//ThreadingInterop.UpdateGuiFromThread(tmpForm, () =>
-							//{
-								if (tmpForm.Top - 5 > EndPoint) tmpForm.Top -= 5;
-								else tmpForm.Top = EndPoint;
-							//});
+					//int StartPoint = VisibleBalloonTipForms[i].Top;
+					double EndPoint = tmpForm.Top - cbtHeight;
+					if (EndPoint < 0) EndPoint = 0;
+					while (tmpForm.Top > EndPoint)
+					{
+						//System.Threading.Thread.Sleep(10);
+						//ThreadingInterop.UpdateGuiFromThread(tmpForm, () =>
+						//{
+						if (tmpForm.Top - 5 > EndPoint) tmpForm.Top -= 5;
+						else tmpForm.Top = EndPoint;
+						//});
+						System.Windows.Forms.Application.DoEvents();
 
-							//Action SlideUpAction = (Action)(() =>
-							//{
-							//  if (tmpForm.Top - 5 > EndPoint) tmpForm.Top -= 5;
-							//  else tmpForm.Top = EndPoint;
-							//});
-							//if (tmpForm.InvokeRequired)
-							//  tmpForm.Invoke(SlideUpAction, new object[] { });
-							//else SlideUpAction.Invoke();
-							//VisibleBalloonTipForms[i].Top -= 5;
-						}
+						//Action SlideUpAction = (Action)(() =>
+						//{
+						//  if (tmpForm.Top - 5 > EndPoint) tmpForm.Top -= 5;
+						//  else tmpForm.Top = EndPoint;
+						//});
+						//if (tmpForm.InvokeRequired)
+						//  tmpForm.Invoke(SlideUpAction, new object[] { });
+						//else SlideUpAction.Invoke();
+						//VisibleBalloonTipForms[i].Top -= 5;
+					}
 					//}, false);
 					//VisibleBalloonTipForms[i].Top -= cbt.Height;
 				}

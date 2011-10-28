@@ -808,8 +808,8 @@ public class NetworkInterop
 							{
 								RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEvent,
 								"Successfully transferred (" + info.SuccessfullyReceiveComplete + ") file = " + filePath
-								+ Environment.NewLine + "In " + info.DurationOfTransferInSeconds + " seconds"
-								+ Environment.NewLine + "At " + info.AverageBytesPerSecond + " B/s");
+								+ Environment.NewLine + "In " + info.DurationOfTransferInSeconds.ToString("0.0#") + " seconds"
+								+ Environment.NewLine + "At " + (info.AverageBytesPerSecond / 1024).ToString("0,0.00") + "kB/s");
 								break;
 							}
 							else

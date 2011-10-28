@@ -28,7 +28,7 @@ public class ThreadingInterop
 
 		System.Threading.Thread th = new System.Threading.Thread(() =>
 		{
-			method();
+			method.Invoke();
 		});
 		th.Name = ThreadName;
 		th.Start();

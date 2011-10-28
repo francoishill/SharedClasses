@@ -429,7 +429,7 @@ public class NetworkInterop
 
 			CloseAndDisposeFileStream(ref fileStreamIn);
 
-			RenameFileBasedOnInfoOfTransfer((InfoOfTransferToServer)SerializationInterop.DeserializeObject(memoryStreamForInfo, defaultSerializationFormat, typeof(InfoOfTransferToServer), false), ref TextFeedbackEvent);
+			RenameFileBasedOnInfoOfTransfer((InfoOfTransferToServer)SerializationInterop.DeserializeCustom(memoryStreamForInfo, new InfoOfTransferToServer(), false), ref TextFeedbackEvent);
 
 			CloseAndDisposeMemoryStream(ref memoryStreamForInfo);
 
@@ -679,7 +679,7 @@ public class NetworkInterop
 	private static byte[] GetSerializedBytesOfObject(Object obj)
 	{
 		MemoryStream memoryStream = new MemoryStream();
-		SerializationInterop.SerializeObject(obj, memoryStream, defaultSerializationFormat, false);
+		SerializationInterop.SerializeCustom(obj, memoryStream, false);
 		memoryStream.Position = 0;
 		long lngth = memoryStream.Length;
 		byte[] bytesOfInfo = new byte[lngth];
@@ -785,7 +785,7 @@ public class NetworkInterop
 					if (IsAlldataCompletelyTransferred(totalBytesProcessed, totalFileSizeToRead, totalInfoSizeToRead))
 					{
 						//CloseAndDisposeFileStream(ref fileStreamIn);
-						InfoOfTransferToClient info = (InfoOfTransferToClient)SerializationInterop.DeserializeObject(memoryStreamForInfo, defaultSerializationFormat, typeof(InfoOfTransferToClient), false);
+						InfoOfTransferToClient info = (InfoOfTransferToClient)SerializationInterop.DeserializeCustom(memoryStreamForInfo, new InfoOfTransferToClient(), false);
 						if (info != null)
 						{
 							//MessageBox.Show(info.AverageBytesPerSecond + ", " + info.DurationOfTransfer.TotalSeconds + ", " + info.SuccessfullyReceived);

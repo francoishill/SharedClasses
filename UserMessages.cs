@@ -1,5 +1,6 @@
-using System.Windows.Forms;
 using System;
+using System.Windows.Forms;
+
 public class UserMessages
 {
 	/*All methods to show messages that is of type boolean (except Confirm) will return true
@@ -19,9 +20,11 @@ public class UserMessages
 
 		Action showConfirmAction = delegate
 		{
+			bool ownerOriginalTopmostState = ((Form)owner).TopMost; 
 			((Form)owner).TopMost = AlwaysOnTop;
 			MessageBox.Show(owner, Message, Title, MessageBoxButtons.OK, icon);
 			if (useTempForm && topmostForm != null && !topmostForm.IsDisposed) topmostForm.Dispose();
+			((Form)owner).TopMost = ownerOriginalTopmostState;
 		};
 
 		if (((Form)owner).InvokeRequired)
@@ -74,9 +77,11 @@ public class UserMessages
 		bool result = false;
 		Action showConfirmAction = delegate
 		{
+			bool ownerOriginalTopmostState = ((Form)owner).TopMost; 
 			((Form)owner).TopMost = AlwaysOnTop;
 			result = MessageBox.Show(owner, Message, Title, MessageBoxButtons.YesNo, MessageBoxIcon.Question, DefaultYesButton ? MessageBoxDefaultButton.Button1 : MessageBoxDefaultButton.Button2) == DialogResult.Yes;
 			if (useTempForm && topmostForm != null && !topmostForm.IsDisposed) topmostForm.Dispose();
+			((Form)owner).TopMost = ownerOriginalTopmostState;
 		};
 
 		if (((Form)owner).InvokeRequired)

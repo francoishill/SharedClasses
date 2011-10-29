@@ -9,6 +9,7 @@ using System.Xml;
 using System.Xml.Serialization;
 public class SerializationInterop
 {
+	//TODO: Check uit and use the code snippet indexer
 	/// <summary>
 	/// Xml or Binary format (xml generally uses 10x more bytes but it also stores the name of each field with the value, binary only stores the value).
 	/// </summary>

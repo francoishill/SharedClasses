@@ -240,10 +240,13 @@ public class NetworkInterop
 			{
 				long memoryStreamStartBytes = lengthOfFirstConstantBuffer - totalBytesProcessed;
 				long memoryStreamNumberBytesToRead = (int)(totalBytesProcessed + actualReceivedLength - lengthOfFirstConstantBuffer);
-				if (memoryStreamNumberBytesToRead > lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed)
-					memoryStreamNumberBytesToRead = lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed;
+				if (memoryStreamNumberBytesToRead > totalInfoSizeToRead)
+					memoryStreamNumberBytesToRead = totalInfoSizeToRead;
 
+				//byte[] bytesForMemoryStream = new byte[memoryStreamNumberBytesToRead];
+				//Array.Copy(receivedBytes, memoryStreamStartBytes, bytesForMemoryStream, 0, memoryStreamNumberBytesToRead);
 				memoryStreamForInfo.Write(receivedBytes, (int)memoryStreamStartBytes, (int)memoryStreamNumberBytesToRead);
+				//memoryStreamForInfo.Write(bytesForMemoryStream, 0, bytesForMemoryStream.Length);
 
 				long fileStreamStartBytes = lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed;
 				long fileStreamNumberBytesToRead = (int)(totalBytesProcessed + actualReceivedLength - lengthOfFirstConstantBuffer - totalInfoSizeToRead);
@@ -429,7 +432,7 @@ public class NetworkInterop
 
 			CloseAndDisposeFileStream(ref fileStreamIn);
 
-			RenameFileBasedOnInfoOfTransfer((InfoOfTransferToServer)SerializationInterop.DeserializeCustom(memoryStreamForInfo, new InfoOfTransferToServer(), false), ref TextFeedbackEvent);
+			RenameFileBasedOnInfoOfTransfer((InfoOfTransferToServer)SerializationInterop.DeserializeCustomObjectFromStream(memoryStreamForInfo, new InfoOfTransferToServer(), false), ref TextFeedbackEvent);
 
 			CloseAndDisposeMemoryStream(ref memoryStreamForInfo);
 
@@ -679,7 +682,7 @@ public class NetworkInterop
 	private static byte[] GetSerializedBytesOfObject(Object obj)
 	{
 		MemoryStream memoryStream = new MemoryStream();
-		SerializationInterop.SerializeCustom(obj, memoryStream, false);
+		SerializationInterop.SerializeCustomObjectToStream(obj, memoryStream, false);
 		memoryStream.Position = 0;
 		long lngth = memoryStream.Length;
 		byte[] bytesOfInfo = new byte[lngth];
@@ -731,17 +734,14 @@ public class NetworkInterop
 				long totalFileSizeToTransfer = (new FileInfo(filePath)).Length;
 				RaiseProgressChangedEvent_Ifnotnull(ref ProgressChangedEvent, 0, (int)totalFileSizeToTransfer);
 
-				int maxBytesToReadfromFile = 10240;
+				int maxBytesToReadfromFile = 16;
 				int numberReadBytes;
-				long totalBytesWritten = 0;
 				do
 				{
 					byte[] bytesRead = new byte[maxBytesToReadfromFile];
 					numberReadBytes = fileToWrite.Read(bytesRead, 0, maxBytesToReadfromFile);
 					if (numberReadBytes > 0)
 						networkStream.Write(bytesRead, 0, numberReadBytes);
-					totalBytesWritten += numberReadBytes;
-					//RaiseProgressChangedEvent_Ifnotnull(ref ProgressChangedEvent, (int)totalBytesWritten, (int)totalFileSizeToTransfer);
 				}
 				while (numberReadBytes > 0);
 
@@ -785,7 +785,7 @@ public class NetworkInterop
 					if (IsAlldataCompletelyTransferred(totalBytesProcessed, totalFileSizeToRead, totalInfoSizeToRead))
 					{
 						//CloseAndDisposeFileStream(ref fileStreamIn);
-						InfoOfTransferToClient info = (InfoOfTransferToClient)SerializationInterop.DeserializeCustom(memoryStreamForInfo, new InfoOfTransferToClient(), false);
+						InfoOfTransferToClient info = (InfoOfTransferToClient)SerializationInterop.DeserializeCustomObjectFromStream(memoryStreamForInfo, new InfoOfTransferToClient(), false);
 						if (info != null)
 						{
 							//MessageBox.Show(info.AverageBytesPerSecond + ", " + info.DurationOfTransfer.TotalSeconds + ", " + info.SuccessfullyReceived);

@@ -15,58 +15,70 @@ public class SerializationInterop
 	/// </summary>
 	public enum SerializationFormat { Binary, Xml };
 
-	//public static void SerializeObject(object objToSerialize, Stream streamToSerializeTo, SerializationFormat serializationFormat, bool CloseStream = true)
+	//private enum ExistanceInClass { Field, Property, None }
+	//private static ExistanceInClass DoesFieldOrPropertyExist(object obj, string fieldOrPropertyName)
 	//{
-	//	if (serializationFormat == SerializationFormat.Binary) new BinaryFormatter().Serialize(streamToSerializeTo, objToSerialize);
-	//	else if (serializationFormat == SerializationFormat.Xml) new XmlSerializer(objToSerialize.GetType()).Serialize(streamToSerializeTo, objToSerialize);
-	//	if (CloseStream) streamToSerializeTo.Close();
+	//	MemberInfo mi = obj.GetType().GetMembers();
+	//	if (mi.MemberType == MemberTypes.
 	//}
 
-	//public static void SerializeObject_Tofile(object objToSerialize, string filePath, SerializationFormat serializationFormat, bool CloseStream = true)
+	//private static bool SetFieldOrPropertyOfObject(object obj, string fieldOrPropertyName, dynamic valueToConvertToType, Type typeToConvertTo)
 	//{
-	//	Stream fileWriteStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
-	//	SerializeObject(objToSerialize, fileWriteStream, serializationFormat, CloseStream);
-	//}
+	//	FieldInfo fieldInfo = obj.GetType().GetField(fieldOrPropertyName);
+	//	PropertyInfo propertyInfo = obj.GetType().GetProperty(fieldOrPropertyName);
+	//	if (fieldInfo == null && propertyInfo == null)
+	//		return false;
 
-	//public static object DeserializeObject(Stream streamToDeserializeFrom, SerializationFormat serializationFormat, Type typeOfObject, bool CloseStream = true)
-	//{
-	//	try
+	//	dynamic tmpValue = null;
+	//	if (typeToConvertTo == typeof(string)) tmpValue = valueToConvertToType.ToString();
+	//	else if (typeToConvertTo == typeof(int)) tmpValue = Convert.ToInt32(valueToConvertToType);
+	//	else if (typeToConvertTo == typeof(long)) tmpValue = Convert.ToInt64(valueToConvertToType);
+	//	else if (typeToConvertTo == typeof(bool)) tmpValue = Convert.ToBoolean(valueToConvertToType);
+	//	else if (typeToConvertTo == typeof(double)) tmpValue = Convert.ToDouble(valueToConvertToType);
+	//	else if (typeToConvertTo == typeof(List<string>))
 	//	{
-	//		streamToDeserializeFrom.Position = 0;
-	//		if (serializationFormat == SerializationFormat.Binary)
-	//		{
-	//			try
-	//			{
-	//				object returningObject = new BinaryFormatter().Deserialize(streamToDeserializeFrom);
-	//				return returningObject;
-	//			}
-	//			catch (Exception exc)
-	//			{
-	//				UserMessages.ShowWarningMessage("Cannot deserialize object to type " + typeOfObject.GetType().ToString() + Environment.NewLine + exc.Message);
-	//			}
-	//		}
-	//		else if (serializationFormat == SerializationFormat.Xml)
-	//		{
-	//			try
-	//			{
-	//				object returningObject = new XmlSerializer(typeOfObject).Deserialize(streamToDeserializeFrom);
-	//				return returningObject;
-	//			}
-	//			catch (Exception exc)
-	//			{
-	//				UserMessages.ShowWarningMessage("Cannot deserialize object to type " + typeOfObject.GetType().ToString() + Environment.NewLine + exc.Message);
-	//			}
-	//		}
-	//		return null;
+	//		List<string> tmpList = new List<string>();
+	//		foreach (string s in valueToConvertToType.Split('|')) tmpList.Add(s);
+	//		if (tmpList.Count == 0 || tmpList[0].Trim().Length == 0) tmpList = new List<string>();
+	//		tmpValue = tmpList;
 	//	}
-	//	finally { if (CloseStream) streamToDeserializeFrom.Close(); }
+	//	if (tmpValue != null)
+	//	{
+	//		if (fieldInfo != null) fieldInfo.SetValue(obj, tmpValue);
+	//		else if (propertyInfo != null) propertyInfo.SetValue(obj, tmpValue, null);
+	//		return true;
+	//	}
+	//	else return false;
 	//}
 
-	//public static object DeserializeObject_Fromfile(string filePath, SerializationFormat serializationFormat, Type typeOfObject, bool CloseStream = true)
-	//{
-	//	Stream fileReadStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-	//	return DeserializeObject(fileReadStream, serializationFormat, typeOfObject, CloseStream);
-	//}
+	private static bool SetMemberValue(ref object obj, ref MemberInfo memberInfo, ref object val)
+	{
+		if (memberInfo.MemberType == MemberTypes.Field)
+			((FieldInfo)memberInfo).SetValue(obj, val);
+		else if (memberInfo.MemberType == MemberTypes.Property)
+			((PropertyInfo)memberInfo).SetValue(obj, val, null);
+		else return false;
+		return true;//Only returns true if member was field/property
+	}
+
+	private static object ReadTypeFromBinaryReader(Type typeToRead, ref BinaryReader binaryReader)
+	{
+		if (typeToRead == typeof(string)) return binaryReader.ReadString();
+		else if (typeToRead == typeof(int)) return binaryReader.ReadInt32();
+		else if (typeToRead == typeof(long)) return binaryReader.ReadInt64();
+		else if (typeToRead == typeof(bool)) return binaryReader.ReadBoolean();
+		else if (typeToRead == typeof(double)) return binaryReader.ReadDouble();
+		else return null;
+	}
+
+	private static object GetObjectValueFromMemberInfo(ref object obj, MemberInfo memberInfo)
+	{
+		if (memberInfo.MemberType == MemberTypes.Field)
+			return ((FieldInfo)memberInfo).GetValue(obj);
+		else if (memberInfo.MemberType == MemberTypes.Property)
+			return ((PropertyInfo)memberInfo).GetValue(obj, null);
+		else return null;
+	}
 
 	/// <summary>
 	/// Deserialize an object from a stream.
@@ -76,93 +88,119 @@ public class SerializationInterop
 	/// <param name="CloseStream">Whether to close the stream when finished reading.</param>
 	/// <param name="serializationFormat">Xml or Binary format (xml generally uses 10x more bytes but it also stores the name of each field with the value, binary only stores the value).</param>
 	/// <returns>Returns the populated object.</returns>
-	public static object DeserializeCustom(Stream streamToDeserialize, object emptyObject, bool CloseStream = true, SerializationFormat serializationFormat = SerializationFormat.Binary)
+	public static object DeserializeCustomObjectFromStream(Stream streamToDeserialize, object emptyObject, bool CloseStream = true, SerializationFormat serializationFormat = SerializationFormat.Binary)
 	{
 		try
 		{
 			Dictionary<string, object> tmpHashTable = new Dictionary<string, object>();
-			//bool isSelected = false;
-			//TreeNode tmpNode = new TreeNode("tmp");
 			streamToDeserialize.Position = 0;
 			XmlTextReader textReader = serializationFormat == SerializationFormat.Xml ? new XmlTextReader(streamToDeserialize) : null;
-			BinaryReader binaryReader = serializationFormat == SerializationFormat.Binary ? new BinaryReader(streamToDeserialize) : null;
+			BinaryReader binaryReader = serializationFormat == SerializationFormat.Binary ? new BinaryReader(streamToDeserialize, Encoding.ASCII) : null;
 
+			List<string> tmpHashTableKeys = new List<string>();
 			if (serializationFormat == SerializationFormat.Xml)
 			{
 				textReader.Read();
-				while (textReader.NodeType != XmlNodeType.EndElement)// || textReader.Name != "SubNode")
+				while (textReader.NodeType != XmlNodeType.EndElement)
 				{
 					if (textReader.Name == emptyObject.GetType().Name)
 					{
 						textReader.Read();
 						continue;
 					}
-					//if (textReader.Name == "SubNode" && textReader.NodeType == XmlNodeType.Element)tmpNode.Nodes.Add(ReadSubNode(textReader));//, NSISclassMenu, SectionGroupMenu, SectionMenu, ShortcutMenu, FileTextblockMenu, FileLineMenu));
-					//else if (textReader.NodeType == XmlNodeType.Element && textReader.Name != "SubNode")
-					//{
 					string name = textReader.Name;
 					if (!textReader.IsEmptyElement) textReader.Read();
 					string value = textReader.Value;
 
 					tmpHashTable.Add(name.Trim(), value.Trim());
-					//}
 					textReader.Read();
 					if (textReader.NodeType == XmlNodeType.EndElement) textReader.Read();
 				}
+				foreach (string key in tmpHashTable.Keys)
+					tmpHashTableKeys.Add(key);
 			}
-			foreach (FieldInfo info in emptyObject.GetType().GetFields())
-				if (info.IsPublic)
-				{
-					Console.WriteLine("Reading " + info.Name + ", type = " + info.FieldType);
-					if (info.FieldType == typeof(string))
-						info.SetValue(emptyObject, serializationFormat == SerializationFormat.Xml ? tmpHashTable[info.Name] : binaryReader.ReadString());
-					else if (info.FieldType == typeof(int))
-						info.SetValue(emptyObject, Convert.ToInt32(serializationFormat == SerializationFormat.Xml ? tmpHashTable[info.Name] : binaryReader.ReadInt32()));
-					else if (info.FieldType == typeof(long))
-						info.SetValue(emptyObject, Convert.ToInt64(serializationFormat == SerializationFormat.Xml ? tmpHashTable[info.Name] : binaryReader.ReadInt64()));
-					else if (info.FieldType == typeof(bool))
-						info.SetValue(emptyObject, Convert.ToBoolean(serializationFormat == SerializationFormat.Xml ? tmpHashTable[info.Name] : binaryReader.ReadBoolean()));
-					else if (info.FieldType == typeof(double))
-						info.SetValue(emptyObject, Convert.ToDouble(serializationFormat == SerializationFormat.Xml ? tmpHashTable[info.Name] : binaryReader.ReadDouble()));
-					else if (info.FieldType == typeof(List<string>))
-					{
-						List<string> tmpList = new List<string>();
-						string pipeConcatenatedList = serializationFormat == SerializationFormat.Xml ? tmpHashTable[info.Name].ToString() : binaryReader.ReadString();
-						foreach (string s in pipeConcatenatedList.Split('|'))
-							tmpList.Add(s);
-						if (tmpList.Count == 0 || tmpList[0].Trim().Length == 0)
-							tmpList = new List<string>();
-						info.SetValue(emptyObject, tmpList);
-					}
-					//else if (info.FieldType == typeof(NSISclass.Compressor))
-					//{
-					//	string tmpCompressionmodeString = tmpHashTable[info.Name].ToString().Split(',')[0];
-					//	Boolean EnumFound = false;
-					//	foreach (NSISclass.Compressor.CompressionModeEnum compressionmode in Enum.GetValues(typeof(NSISclass.Compressor.CompressionModeEnum)))
-					//		if (tmpCompressionmodeString == compressionmode.ToString())
-					//		{
-					//			EnumFound = true;
-					//			info.SetValue(tmpNode.Tag, new NSISclass.Compressor(compressionmode, Convert.ToBoolean(tmpHashTable[info.Name].ToString().Split(',')[1]), Convert.ToBoolean(tmpHashTable[info.Name].ToString().Split(',')[2])));
-					//		}
-					//	if (!EnumFound) MessageBox.Show("Could not obtain Compressionmode from string = '" + tmpCompressionmodeString + "'", "Unknown Compressionmode enum", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-					//}
-					//else if (info.FieldType == typeof(NSISclass.LicensePageDetails))
-					//{
-					//	string tmpAcceptwithString = tmpHashTable[info.Name].ToString().Split(',')[2];
-					//	Boolean EnumFound = false;
-					//	foreach (NSISclass.LicensePageDetails.AcceptWith acceptwith in Enum.GetValues(typeof(NSISclass.LicensePageDetails.AcceptWith)))
-					//		if (tmpAcceptwithString == acceptwith.ToString())
-					//		{
-					//			EnumFound = true;
-					//			info.SetValue(tmpNode.Tag, new NSISclass.LicensePageDetails(Convert.ToBoolean(tmpHashTable[info.Name].ToString().Split(',')[0]), tmpHashTable[info.Name].ToString().Split(',')[1], acceptwith));
-					//		}
-					//	if (!EnumFound) MessageBox.Show("Could not obtain Acceptwith from string = '" + tmpAcceptwithString + "'", "Unknown Acceptwith enum", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-					//}
-					else
-						UserMessages.ShowWarningMessage("The following type cannot be converted to a string (no function yet for it): " + info.FieldType.ToString(), "Invalid type");
-				}
 
-			//return returnObject;
+			//if (binaryReader.PeekChar() == -1) return emptyObject;
+			//string fieldOrPropertyName = binaryReader.ReadString();			
+			//SetFieldOrPropertyOfObject(emptyObject, fieldOrPropertyName, 
+
+			int tmpCounterForXmlReader = 0;
+			while (true)
+			{
+				if (serializationFormat == SerializationFormat.Binary && (binaryReader.PeekChar() == -1 || binaryReader.BaseStream.Length == binaryReader.BaseStream.Position))
+					break;
+				if (serializationFormat == SerializationFormat.Xml && tmpCounterForXmlReader >= tmpHashTable.Count)
+					break;
+				//MemberInfo[] memberInfos = emptyObject.GetType().GetMembers();
+				
+				string memberNameToSearch =
+					serializationFormat == SerializationFormat.Xml
+					? tmpHashTableKeys[tmpCounterForXmlReader]
+					: binaryReader.ReadString();
+				MemberInfo[] possibleMemberInfos = emptyObject.GetType().GetMember(memberNameToSearch);
+				if (possibleMemberInfos == null || possibleMemberInfos.Length == 0) return emptyObject;
+				if (possibleMemberInfos.Length > 1)
+					UserMessages.ShowWarningMessage("Ambiguity found, multiple members found with name " + memberNameToSearch);
+				MemberInfo memberInfo = possibleMemberInfos[0];
+				//foreach (MemberInfo memberInfo in memberInfos)
+				if (memberInfo.MemberType == MemberTypes.Field || memberInfo.MemberType == MemberTypes.Property)
+				{
+					Type memberType = memberInfo.MemberType == MemberTypes.Field ? ((FieldInfo)memberInfo).FieldType : ((PropertyInfo)memberInfo).PropertyType;
+					Console.WriteLine("Reading member " + memberInfo.Name + ", type = " + memberType);
+					object valueToSet = 
+						serializationFormat == SerializationFormat.Xml
+							? tmpHashTable[memberInfo.Name]
+							: ReadTypeFromBinaryReader(memberType, ref binaryReader);
+					if (valueToSet == null)
+						continue;
+					SetMemberValue(ref emptyObject, ref memberInfo, ref valueToSet);
+					//SetMemberValue(emptyObject, memberInfo, 
+					//if (memberType == typeof(string))
+					//	memberInfo.se
+				}
+				tmpCounterForXmlReader++;
+			}
+
+			//foreach (FieldInfo fieldInfo in emptyObject.GetType().GetFields())
+			//{
+			//	if (fieldInfo.IsPublic)
+			//	{
+			//		Console.WriteLine("Reading field " + fieldInfo.Name + ", type = " + fieldInfo.FieldType);
+			//		if (fieldInfo.FieldType == typeof(string))
+			//			fieldInfo.SetValue(emptyObject, serializationFormat == SerializationFormat.Xml ? tmpHashTable[fieldInfo.Name] : binaryReader.ReadString());
+			//		else if (fieldInfo.FieldType == typeof(int))
+			//			fieldInfo.SetValue(emptyObject, Convert.ToInt32(serializationFormat == SerializationFormat.Xml ? tmpHashTable[fieldInfo.Name] : binaryReader.ReadInt32()));
+			//		else if (fieldInfo.FieldType == typeof(long))
+			//			fieldInfo.SetValue(emptyObject, Convert.ToInt64(serializationFormat == SerializationFormat.Xml ? tmpHashTable[fieldInfo.Name] : binaryReader.ReadInt64()));
+			//		else if (fieldInfo.FieldType == typeof(bool))
+			//			fieldInfo.SetValue(emptyObject, Convert.ToBoolean(serializationFormat == SerializationFormat.Xml ? tmpHashTable[fieldInfo.Name] : binaryReader.ReadBoolean()));
+			//		else if (fieldInfo.FieldType == typeof(double))
+			//			fieldInfo.SetValue(emptyObject, Convert.ToDouble(serializationFormat == SerializationFormat.Xml ? tmpHashTable[fieldInfo.Name] : binaryReader.ReadDouble()));
+			//		else
+			//			UserMessages.ShowWarningMessage("The following FIELD type cannot be converted to a string (no function yet for it): " + fieldInfo.FieldType.ToString(), "Invalid type");
+			//	}
+			//}
+
+			//foreach (PropertyInfo propertyInfo in emptyObject.GetType().GetProperties())
+			//{
+			//	if (propertyInfo.CanWrite)
+			//	{
+			//		Console.WriteLine("Reading property " + propertyInfo.Name + ", type = " + propertyInfo.PropertyType);
+			//		if (propertyInfo.PropertyType == typeof(string))
+			//			propertyInfo.SetValue(emptyObject, serializationFormat == SerializationFormat.Xml ? tmpHashTable[propertyInfo.Name] : binaryReader.ReadString(), null);
+			//		else if (propertyInfo.PropertyType == typeof(int))
+			//			propertyInfo.SetValue(emptyObject, Convert.ToInt32(serializationFormat == SerializationFormat.Xml ? tmpHashTable[propertyInfo.Name] : binaryReader.ReadInt32()), null);
+			//		else if (propertyInfo.PropertyType == typeof(long))
+			//			propertyInfo.SetValue(emptyObject, Convert.ToInt64(serializationFormat == SerializationFormat.Xml ? tmpHashTable[propertyInfo.Name] : binaryReader.ReadInt64()), null);
+			//		else if (propertyInfo.PropertyType == typeof(bool))
+			//			propertyInfo.SetValue(emptyObject, Convert.ToBoolean(serializationFormat == SerializationFormat.Xml ? tmpHashTable[propertyInfo.Name] : binaryReader.ReadBoolean()), null);
+			//		else if (propertyInfo.PropertyType == typeof(double))
+			//			propertyInfo.SetValue(emptyObject, Convert.ToDouble(serializationFormat == SerializationFormat.Xml ? tmpHashTable[propertyInfo.Name] : binaryReader.ReadDouble()), null);
+			//		else
+			//			UserMessages.ShowWarningMessage("The PROPERTY following type cannot be converted to a string (no function yet for it): " + propertyInfo.PropertyType.ToString(), "Invalid type");
+			//	}
+			//}
+
 			return emptyObject;
 		}
 		finally
@@ -171,17 +209,6 @@ public class SerializationInterop
 		}
 	}
 
-	//private static void WriteStringToStream(ref Stream stream, string str)
-	//{
-	//	byte[] bytesToWrite = Encoding.ASCII.GetBytes(str);
-	//	stream.Write(bytesToWrite, 0, bytesToWrite.Length);
-	//}
-
-	//private static string GetXmlValuePairString(string key, string value)
-	//{
-	//	return "<" + key + ">" + 
-	//}
-
 	/// <summary>
 	/// Serialize a object into a stream.
 	/// </summary>
@@ -189,133 +216,150 @@ public class SerializationInterop
 	/// <param name="streamToSerializeTo">The stream to write to.</param>
 	/// <param name="CloseStream">Whether to close the stream at end of writing.</param>
 	/// <param name="serializationFormat">Xml or Binary format (xml generally uses 10x more bytes but it also stores the name of each field with the value, binary only stores the value).</param>
-	public static void SerializeCustom(Object objectToSerialize, Stream streamToSerializeTo, bool CloseStream = true, SerializationFormat serializationFormat = SerializationFormat.Binary)//, Hashtable HashTableIn)
+	public static void SerializeCustomObjectToStream(Object objectToSerialize, Stream streamToSerializeTo, bool CloseStream = true, SerializationFormat serializationFormat = SerializationFormat.Binary)//, Hashtable HashTableIn)
 	{
-		//TODO: Maybe later look at also serializing/deserializing public properties, and not the fields only
+		//DONE TODO: Maybe later look at also serializing/deserializing public properties, and not the fields only
 		try
 		{
-			BinaryWriter binaryWriter = serializationFormat == SerializationFormat.Binary ? new BinaryWriter(streamToSerializeTo) : null;
+			BinaryWriter binaryWriter = serializationFormat == SerializationFormat.Binary ? new BinaryWriter(streamToSerializeTo, Encoding.ASCII) : null;
 			XmlTextWriter xmlTextWriter = serializationFormat == SerializationFormat.Xml ? new XmlTextWriter(streamToSerializeTo, Encoding.ASCII) : null;// streamToSerializeTo, Encoding.ASCII);
 
-			//Dictionary<string, object> tmpHashTable = new Dictionary<string, object>();
 			string tmpClassName = objectToSerialize.GetType().ToString();
 			tmpClassName = tmpClassName.Split('+')[tmpClassName.Split('+').Length - 1];
-			//tmpClassName = tmpClassName.Split('.')[tmpClassName.Split('.').Length - 1];
-			//tmpClassName = tmpClassName.Split('+')[tmpClassName.Split('+').Length - 1];
-			//tmpHashTable.Add("ClassName", tmpClassName);
-			//xmlTextWriter.WriteStartDocument();
-			//xmlTextWriter.WriteStartElement("Root");
-			//xmlTextWriter.WriteElementString("ClassName", tmpClassName);
-			if (serializationFormat == SerializationFormat.Xml) xmlTextWriter.WriteStartElement(tmpClassName);
-			//binaryWriter.Write(tmpClassName);
-			//tmpHashTable.Add("Text", node.Text);
-			foreach (FieldInfo info in objectToSerialize.GetType().GetFields())
-				if (info.IsPublic)
+			if (serializationFormat == SerializationFormat.Xml)
+				xmlTextWriter.WriteStartElement(tmpClassName);
+
+			foreach (MemberInfo memberInfo in objectToSerialize.GetType().GetMembers())
+			{
+				if (memberInfo.MemberType == MemberTypes.Field || memberInfo.MemberType == MemberTypes.Property)
 				{
-					Console.WriteLine("Writing " + info.Name + ", type = " + info.FieldType);
-					if (
-							info.FieldType == typeof(string) ||
-							info.FieldType == typeof(bool) ||
-							info.FieldType == typeof(int) ||
-							info.FieldType == typeof(double) ||
-							info.FieldType == typeof(long)
-						)
-					if (info.FieldType == typeof(string))
+					Type memberType = memberInfo.MemberType == MemberTypes.Field ? ((FieldInfo)memberInfo).FieldType : ((PropertyInfo)memberInfo).PropertyType;
+					Console.WriteLine("Writing member " + memberInfo.Name + ", type = " + memberType);					
+					if (serializationFormat == SerializationFormat.Xml)
+						xmlTextWriter.WriteElementString(memberInfo.Name, GetObjectValueFromMemberInfo(ref objectToSerialize, memberInfo).ToString());
+					else if (serializationFormat == SerializationFormat.Binary)
 					{
-						if (serializationFormat == SerializationFormat.Xml) xmlTextWriter.WriteElementString(info.Name, info.GetValue(objectToSerialize).ToString());
-						else binaryWriter.Write((string)info.GetValue(objectToSerialize));
+						binaryWriter.Write((string)memberInfo.Name);
+						binaryWriter.Write((dynamic)GetObjectValueFromMemberInfo(ref objectToSerialize, memberInfo));
 					}
-					else if (info.FieldType == typeof(bool))
-					{
-						if (serializationFormat == SerializationFormat.Xml) xmlTextWriter.WriteElementString(info.Name, info.GetValue(objectToSerialize).ToString());
-						else binaryWriter.Write((bool)info.GetValue(objectToSerialize));
-					}
-					else if (info.FieldType == typeof(int))
-					{
-						if (serializationFormat == SerializationFormat.Xml) xmlTextWriter.WriteElementString(info.Name, info.GetValue(objectToSerialize).ToString());
-						else binaryWriter.Write((int)info.GetValue(objectToSerialize));
-					}
-					else if (info.FieldType == typeof(long))
-					{
-						if (serializationFormat == SerializationFormat.Xml) xmlTextWriter.WriteElementString(info.Name, info.GetValue(objectToSerialize).ToString());
-						else binaryWriter.Write((long)info.GetValue(objectToSerialize));
-					}
-					else if (info.FieldType == typeof(double))
-					{
-						if (serializationFormat == SerializationFormat.Xml) xmlTextWriter.WriteElementString(info.Name, info.GetValue(objectToSerialize).ToString());
-						else binaryWriter.Write((double)info.GetValue(objectToSerialize));
-					}
-					else if (info.FieldType == typeof(List<string>))
-					{
-						string tmpStr = "";
-						foreach (string s in (List<string>)info.GetValue(objectToSerialize))
-							tmpStr += (tmpStr.Length > 0 ? "|" : "") + s;
-						if (serializationFormat == SerializationFormat.Xml) xmlTextWriter.WriteElementString(info.Name, tmpStr);
-						else binaryWriter.Write(tmpStr);
-						//tmpHashTable.Add(info.Name, tmpStr);
-					}
-					//else if (info.FieldType == typeof(NSISclass.Compressor))
-					//	tmpHashTable.Add(info.Name, ((NSISclass.Compressor)info.GetValue(node.Tag)).CompressionMode + "," + ((NSISclass.Compressor)info.GetValue(node.Tag)).Final + "," + ((NSISclass.Compressor)info.GetValue(node.Tag)).Solid);
-					//else if (info.FieldType == typeof(NSISclass.LicensePageDetails))
-					//	tmpHashTable.Add(info.Name, ((NSISclass.LicensePageDetails)info.GetValue(node.Tag)).ShowLicensePage + "," + ((NSISclass.LicensePageDetails)info.GetValue(node.Tag)).LicenseFilePath + "," + ((NSISclass.LicensePageDetails)info.GetValue(node.Tag)).acceptWith);
-					else
-						UserMessages.ShowWarningMessage("The following type cannot be converted to a string (no function yet for it): " + info.FieldType.ToString(), "Invalid type");
 				}
+			}
+
+			//foreach (FieldInfo fieldInfo in objectToSerialize.GetType().GetFields())
+			//{
+			//	if (fieldInfo.IsPublic)
+			//	{
+			//		Console.WriteLine("Writing field " + fieldInfo.Name + ", type = " + fieldInfo.FieldType);
+			//		if (serializationFormat == SerializationFormat.Binary)
+			//			binaryWriter.Write((string)fieldInfo.Name);
+			//		//if (
+			//		//		fieldInfo.FieldType == typeof(string) ||
+			//		//		fieldInfo.FieldType == typeof(bool) ||
+			//		//		fieldInfo.FieldType == typeof(int) ||
+			//		//		fieldInfo.FieldType == typeof(double) ||
+			//		//		fieldInfo.FieldType == typeof(long)
+			//		//	)
+			//		if (fieldInfo.FieldType == typeof(string))
+			//		{
+			//			if (serializationFormat == SerializationFormat.Xml) xmlTextWriter.WriteElementString(fieldInfo.Name, fieldInfo.GetValue(objectToSerialize).ToString());
+			//			else binaryWriter.Write((string)fieldInfo.GetValue(objectToSerialize));
+			//		}
+			//		else if (fieldInfo.FieldType == typeof(bool))
+			//		{
+			//			if (serializationFormat == SerializationFormat.Xml) xmlTextWriter.WriteElementString(fieldInfo.Name, fieldInfo.GetValue(objectToSerialize).ToString());
+			//			else binaryWriter.Write((bool)fieldInfo.GetValue(objectToSerialize));
+			//		}
+			//		else if (fieldInfo.FieldType == typeof(int))
+			//		{
+			//			if (serializationFormat == SerializationFormat.Xml) xmlTextWriter.WriteElementString(fieldInfo.Name, fieldInfo.GetValue(objectToSerialize).ToString());
+			//			else binaryWriter.Write((int)fieldInfo.GetValue(objectToSerialize));
+			//		}
+			//		else if (fieldInfo.FieldType == typeof(long))
+			//		{
+			//			if (serializationFormat == SerializationFormat.Xml) xmlTextWriter.WriteElementString(fieldInfo.Name, fieldInfo.GetValue(objectToSerialize).ToString());
+			//			else binaryWriter.Write((long)fieldInfo.GetValue(objectToSerialize));
+			//		}
+			//		else if (fieldInfo.FieldType == typeof(double))
+			//		{
+			//			if (serializationFormat == SerializationFormat.Xml) xmlTextWriter.WriteElementString(fieldInfo.Name, fieldInfo.GetValue(objectToSerialize).ToString());
+			//			else binaryWriter.Write((double)fieldInfo.GetValue(objectToSerialize));
+			//		}
+			//		else if (fieldInfo.FieldType == typeof(List<string>))
+			//		{
+			//			string tmpStr = "";
+			//			foreach (string s in (List<string>)fieldInfo.GetValue(objectToSerialize))
+			//				tmpStr += (tmpStr.Length > 0 ? "|" : "") + s;
+			//			if (serializationFormat == SerializationFormat.Xml) xmlTextWriter.WriteElementString(fieldInfo.Name, tmpStr);
+			//			else binaryWriter.Write(tmpStr);
+			//		}
+			//		else
+			//			UserMessages.ShowWarningMessage("The following FIELD type cannot be converted to a string (no function yet for it): " + fieldInfo.FieldType.ToString(), "Invalid type");
+			//	}
+			//}
+
+			//foreach (PropertyInfo propertyInfo in objectToSerialize.GetType().GetProperties())
+			//{
+			//	if (propertyInfo.CanWrite)
+			//	{
+			//		Console.WriteLine("Writing property " + propertyInfo.Name + ", type = " + propertyInfo.PropertyType);
+			//		//if (
+			//		//		propertyInfo.PropertyType == typeof(string) ||
+			//		//		propertyInfo.PropertyType == typeof(bool) ||
+			//		//		propertyInfo.PropertyType == typeof(int) ||
+			//		//		propertyInfo.PropertyType == typeof(double) ||
+			//		//		propertyInfo.PropertyType == typeof(long)
+			//		//	)
+			//		if (propertyInfo.PropertyType == typeof(string))
+			//		{
+			//			if (serializationFormat == SerializationFormat.Xml) xmlTextWriter.WriteElementString(propertyInfo.Name, propertyInfo.GetValue(objectToSerialize, null).ToString());
+			//			else binaryWriter.Write((string)propertyInfo.GetValue(objectToSerialize, null));
+			//		}
+			//		else if (propertyInfo.PropertyType == typeof(bool))
+			//		{
+			//			if (serializationFormat == SerializationFormat.Xml) xmlTextWriter.WriteElementString(propertyInfo.Name, propertyInfo.GetValue(objectToSerialize, null).ToString());
+			//			else binaryWriter.Write((bool)propertyInfo.GetValue(objectToSerialize, null));
+			//		}
+			//		else if (propertyInfo.PropertyType == typeof(int))
+			//		{
+			//			if (serializationFormat == SerializationFormat.Xml) xmlTextWriter.WriteElementString(propertyInfo.Name, propertyInfo.GetValue(objectToSerialize, null).ToString());
+			//			else binaryWriter.Write((int)propertyInfo.GetValue(objectToSerialize, null));
+			//		}
+			//		else if (propertyInfo.PropertyType == typeof(long))
+			//		{
+			//			if (serializationFormat == SerializationFormat.Xml) xmlTextWriter.WriteElementString(propertyInfo.Name, propertyInfo.GetValue(objectToSerialize, null).ToString());
+			//			else binaryWriter.Write((long)propertyInfo.GetValue(objectToSerialize, null));
+			//		}
+			//		else if (propertyInfo.PropertyType == typeof(double))
+			//		{
+			//			if (serializationFormat == SerializationFormat.Xml) xmlTextWriter.WriteElementString(propertyInfo.Name, propertyInfo.GetValue(objectToSerialize, null).ToString());
+			//			else binaryWriter.Write((double)propertyInfo.GetValue(objectToSerialize, null));
+			//		}
+			//		else if (propertyInfo.PropertyType == typeof(List<string>))
+			//		{
+			//			string tmpStr = "";
+			//			foreach (string s in (List<string>)propertyInfo.GetValue(objectToSerialize, null))
+			//				tmpStr += (tmpStr.Length > 0 ? "|" : "") + s;
+			//			if (serializationFormat == SerializationFormat.Xml) xmlTextWriter.WriteElementString(propertyInfo.Name, tmpStr);
+			//			else binaryWriter.Write(tmpStr);
+			//		}
+			//		else
+			//			UserMessages.ShowWarningMessage("The following FIELD type cannot be converted to a string (no function yet for it): " + propertyInfo.PropertyType.ToString(), "Invalid type");
+			//	}
+			//}
 
 			if (serializationFormat == SerializationFormat.Xml)
 			{
 				xmlTextWriter.WriteEndElement();
-				//xmlTextWriter.WriteEndDocument();		
 				xmlTextWriter.Flush();
 			}
 			else
 			{
 				binaryWriter.Flush();
 			}			
-			//xmlTextWriter.Close();
-			//return tmpHashTable;
 		}
 		finally
 		{
 			if (CloseStream) streamToSerializeTo.Close();
 		}
 	}
-
-	//sealed class AllowAllAssemblyVersionsDeserializationBinder : System.Runtime.Serialization.SerializationBinder
-	//{
-	//	public override Type BindToType(string assemblyName, string typeName)
-	//	{
-	//		Type typeToDeserialize = null;
-
-	//		String currentAssembly = Assembly.GetExecutingAssembly().FullName;
-
-	//		// In this case we are always using the current assembly
-	//		assemblyName = currentAssembly;
-
-	//		// Get the type using the typeName and assemblyName
-	//		typeToDeserialize = Type.GetType(String.Format("{0}, {1}",
-	//				typeName, assemblyName));
-
-	//		return typeToDeserialize;
-	//	}
-	//}
-
-	//public static MyRequestObject Deserialize(byte[] b)
-	//{
-	//	MyRequestObject mro = null;
-	//	System.Runtime.Serialization.Formatters.Binary.BinaryFormatter formatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
-	//	System.IO.MemoryStream ms = new System.IO.MemoryStream(b);
-
-	//	// To prevent errors serializing between version number differences (e.g. Version 1 serializes, and Version 2 deserializes)
-	//	formatter.Binder = new AllowAllVersionsDeserializationBinder();
-
-	//	// Allow the exceptions to bubble up
-	//	// System.ArgumentNullException
-	//	// System.Runtime.Serialization.SerializationException
-	//	// System.Security.SecurityException
-	//	mro = (MyRequestObject)formatter.Deserialize(ms);
-	//	ms.Close();
-	//	return mro;
-	//}
-
 }

@@ -95,7 +95,7 @@ public class SerializationInterop
 			Dictionary<string, object> tmpHashTable = new Dictionary<string, object>();
 			streamToDeserialize.Position = 0;
 			XmlTextReader textReader = serializationFormat == SerializationFormat.Xml ? new XmlTextReader(streamToDeserialize) : null;
-			BinaryReader binaryReader = serializationFormat == SerializationFormat.Binary ? new BinaryReader(streamToDeserialize, Encoding.ASCII) : null;
+			BinaryReader binaryReader = serializationFormat == SerializationFormat.Binary ? new BinaryReader(streamToDeserialize) : null;
 
 			List<string> tmpHashTableKeys = new List<string>();
 			if (serializationFormat == SerializationFormat.Xml)
@@ -129,6 +129,9 @@ public class SerializationInterop
 			{
 				if (serializationFormat == SerializationFormat.Binary && (binaryReader.PeekChar() == -1 || binaryReader.BaseStream.Length == binaryReader.BaseStream.Position))
 					break;
+				if (serializationFormat == SerializationFormat.Binary && binaryReader.BaseStream.Length - binaryReader.BaseStream.Position - 1 < binaryReader.PeekChar())
+					continue;
+
 				if (serializationFormat == SerializationFormat.Xml && tmpCounterForXmlReader >= tmpHashTable.Count)
 					break;
 				//MemberInfo[] memberInfos = emptyObject.GetType().GetMembers();
@@ -221,7 +224,7 @@ public class SerializationInterop
 		//DONE TODO: Maybe later look at also serializing/deserializing public properties, and not the fields only
 		try
 		{
-			BinaryWriter binaryWriter = serializationFormat == SerializationFormat.Binary ? new BinaryWriter(streamToSerializeTo, Encoding.ASCII) : null;
+			BinaryWriter binaryWriter = serializationFormat == SerializationFormat.Binary ? new BinaryWriter(streamToSerializeTo) : null;
 			XmlTextWriter xmlTextWriter = serializationFormat == SerializationFormat.Xml ? new XmlTextWriter(streamToSerializeTo, Encoding.ASCII) : null;// streamToSerializeTo, Encoding.ASCII);
 
 			string tmpClassName = objectToSerialize.GetType().ToString();

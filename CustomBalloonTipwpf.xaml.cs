@@ -23,6 +23,7 @@ public partial class CustomBalloonTipwpf : Window
 	public enum IconTypes { Error, Information, Question, Shield, Warning, None };
 	public CustomBalloonTipwpf(string Title, string Message, int Duration, IconTypes iconType, SimpleDelegateWithSender OnClickCallback, bool OnClickCallbackOnSeparateThread = true)
 	{
+		//TODO: Start moving notifications over from separate windows to one window and separate user controls.
 		InitializeComponent();
 
 		this.label_Title.Content = Title;

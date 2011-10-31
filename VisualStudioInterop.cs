@@ -8,6 +8,8 @@ using System.Windows.Forms;
 
 public class VisualStudioInterop
 {
+	//TODO: Make it easy to add todo item to a specific c# file if visual studio is not open
+	//Maybe for instance popup with a prompt window and the user chooses the file and then types the description of the todo item.
 	private static bool FindMsbuildPath4(out string msbuildpathOrerror)
 	{
 		msbuildpathOrerror = "";

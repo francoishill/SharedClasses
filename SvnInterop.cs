@@ -79,4 +79,56 @@ public class SvnInterop
 			Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Exception on running svn: " + exc.Message);
 		}
 	}
+
+	public static void CheckStatusAllVisualStudio2010Projects()
+	{
+		string svnPath = @"c:\program files\TortoiseSVN\bin\svn.exe";
+		if (!File.Exists(svnPath))
+		{
+			MessageBox.Show("Svn excecutable not found: " + svnPath);
+			return;
+		}
+		string baseFolder = @"C:\Users\francois\Documents\Visual Studio 2010\Projects";//\SharedClasses";
+
+		foreach (string folderOfWorkingCopy in Directory.GetDirectories(baseFolder))
+		{
+			//ProcessStartInfo startInfo = new ProcessStartInfo(svnPath, "status --show-updates \"" + folderOfWorkingCopy + "\"");
+			ProcessStartInfo startInfo = new ProcessStartInfo(svnPath, "status \"" + folderOfWorkingCopy + "\"");
+			startInfo.CreateNoWindow = true;
+			startInfo.UseShellExecute = false;
+			startInfo.RedirectStandardOutput = true;
+			startInfo.RedirectStandardError = true;
+
+			Process proc = new Process();
+			proc.StartInfo = startInfo;
+
+			proc.OutputDataReceived += (snder, evtargs) =>
+			{
+				if (evtargs.Data != null && evtargs.Data.Trim().Length > 0)
+				{
+					Console.WriteLine("Output: " + evtargs.Data);
+					//if (this.InvokeRequired)
+					//	this.Invoke((Action)delegate { listBox1.Items.Add("Output: " + evtargs.Data); });
+					//else listBox1.Items.Add("Output: " + evtargs.Data);
+				}
+			};
+			proc.ErrorDataReceived += (snder, evtargs) =>
+			{
+				if (evtargs.Data != null && evtargs.Data.Trim().Length > 0
+					&& !evtargs.Data.ToLower().Contains("not a working copy"))
+				{
+					Console.WriteLine("Error: " + evtargs.Data);
+					//if (this.InvokeRequired)
+					//	this.Invoke((Action)delegate { listBox1.Items.Add("Error: " + evtargs.Data); });
+					//else listBox1.Items.Add("Error: " + evtargs.Data);
+				}
+			};
+
+			proc.Start();
+			proc.BeginErrorReadLine();
+			proc.BeginOutputReadLine();
+
+			//proc.WaitForExit();
+		}
+	}
 }

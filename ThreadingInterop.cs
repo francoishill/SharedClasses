@@ -15,10 +15,11 @@ public class ThreadingInterop
 	{
 		if (!AlreadyAttachedToApplicationExitEvent)
 		{
-			Application.OpenForms[0].FormClosing += delegate
-			{
-				ForceExitAllTreads = true;
-			};
+			if (Application.OpenForms.Count > 0)
+				Application.OpenForms[0].FormClosing += delegate
+				{
+					ForceExitAllTreads = true;
+				};
 			//Application.ApplicationExit += delegate
 			//{
 			//  ForceExitAllTreads = true;

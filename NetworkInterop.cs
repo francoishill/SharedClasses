@@ -156,26 +156,37 @@ public class NetworkInterop
 		return AvailableBytes > 0 ? true : false;
 	}
 
-	private static void SendResponseToClient(bool SuccessfullyCompletedTransfer, ref Socket handler, Guid receivedGuid, DateTime timeTransferStarted, long totalBytesTransferred, long totalSizeToRead)
+	private static void SendResponseToClient(ref Socket handler, Guid receivedGuid, InfoOfTransferToClient infoToTransferToClient)
 	{
+		//string filePath = @"C:\Francois\other\Test\OCR\Capture.PNG";
+		//FileStream fileToRead = new FileStream(filePath, FileMode.Open);
 		NetworkStream ns = new NetworkStream(handler);
 
-		double averageBytesPerSecond = totalBytesTransferred / (new TimeSpan(DateTime.Now.Ticks - timeTransferStarted.Ticks).TotalSeconds);
-		byte[] bytesOfInfo = GetSerializedBytesOfObject(
-			new InfoOfTransferToClient(
-				SuccessfullyCompletedTransfer,
-				new TimeSpan(DateTime.Now.Ticks - timeTransferStarted.Ticks).TotalSeconds,
-				averageBytesPerSecond,
-				totalBytesTransferred,
-				totalSizeToRead));
+		byte[] bytesOfInfo = GetSerializedBytesOfObject(infoToTransferToClient);
 		int infoSize = bytesOfInfo.Length;
 		Console.WriteLine("Number bytes sent to client: " + infoSize);
 
 		WriteGuidSectionToStream(ref ns, receivedGuid);
 		WriteInfoSectionSizeToStream(ref ns, infoSize);
 		WriteFileSizeToStream(ref ns, 0);
+		//WriteFileSizeToStream(ref ns, filePath);
 
 		ns.Write(bytesOfInfo, 0, infoSize);
+
+		//long totalFileSizeToTransfer = (new FileInfo(filePath)).Length;
+		////RaiseProgressChangedEvent_Ifnotnull(ref ProgressChangedEvent, 0, (int)totalFileSizeToTransfer);
+
+		//int maxBytesToReadfromFile = 10240;
+		//int numberReadBytes;
+		//do
+		//{
+		//	byte[] bytesRead = new byte[maxBytesToReadfromFile];
+		//	numberReadBytes = fileToRead.Read(bytesRead, 0, maxBytesToReadfromFile);
+		//	if (numberReadBytes > 0)
+		//		ns.Write(bytesRead, 0, numberReadBytes);
+		//}
+		//while (numberReadBytes > 0);
+
 		ns.Flush();
 	}
 
@@ -428,6 +439,7 @@ public class NetworkInterop
 			long totalInfoSizeToRead = -1;
 			int availableBytes;
 			if (!Directory.Exists(defaultFolderToSaveIn)) Directory.CreateDirectory(defaultFolderToSaveIn);
+			string localFileName = null;
 			FileStream fileStreamIn = null;//new FileStream(defaultFilePathForSavingForServer, FileMode.Create);
 			MemoryStream memoryStreamForInfo = new MemoryStream();
 			while (true)
@@ -442,15 +454,26 @@ public class NetworkInterop
 				//DONE TODO: Fix this
 				//string tryingToSendDataToClientCrashesIt;//Assuming it has to do with client needs to be reset if bytes received as defined in infolength
 				if (totalBytesProcessed >= lengthOfFirstConstantBuffer && totalFileSizeToRead != -1 && totalInfoSizeToRead != -1)
-					SendResponseToClient(false, ref handler, receivedGuid, timeTransferStarted, totalBytesProcessed + actualReceivedLength, lengthOfFirstConstantBuffer + totalFileSizeToRead + totalInfoSizeToRead);
+				{
+					double totalSecondCurrently = new TimeSpan(DateTime.Now.Ticks - timeTransferStarted.Ticks).TotalSeconds;
+					double averabeBytesPerSecond = totalBytesProcessed / totalSecondCurrently;
+					InfoOfTransferToClient infoToTransferToClient_Inprogress = new InfoOfTransferToClient(
+						false,
+						totalSecondCurrently,
+						averabeBytesPerSecond,
+						totalBytesProcessed,
+						lengthOfFirstConstantBuffer + totalInfoSizeToRead + totalFileSizeToRead);
+					SendResponseToClient(ref handler, receivedGuid, infoToTransferToClient_Inprogress);
+				}
 
 				EnsureValuesForGuidAndTotalSizes(ProgressChangedEvent, totalBytesProcessed, firstConstantBytesForGuidInfoandFilesize, ref receivedGuid, ref totalFileSizeToRead, ref totalInfoSizeToRead, actualReceivedLength);
 
 				WriteBytesToMemorystream(totalBytesProcessed, totalInfoSizeToRead, ref memoryStreamForInfo, ref receivedBytes, actualReceivedLength);
 
-				if (totalInfoSizeToRead != -1 && totalBytesProcessed + actualReceivedLength >= lengthOfFirstConstantBuffer + totalInfoSizeToRead)
+				if (totalInfoSizeToRead != -1 && totalFileSizeToRead > 0 && totalBytesProcessed + actualReceivedLength >= lengthOfFirstConstantBuffer + totalInfoSizeToRead)
 				{
-					string localFileName = ObtainOriginalFilenameFromInfoOfTransferToServer((InfoOfTransferToServer)SerializationInterop.DeserializeCustomObjectFromStream(memoryStreamForInfo, new InfoOfTransferToServer(), false), ref TextFeedbackEvent);
+					if (localFileName == null)
+						localFileName = ObtainOriginalFilenameFromInfoOfTransferToServer((InfoOfTransferToServer)SerializationInterop.DeserializeCustomObjectFromStream(memoryStreamForInfo, new InfoOfTransferToServer(), false), ref TextFeedbackEvent);
 					if (localFileName != null)
 						WriteBytesToFilestream(totalBytesProcessed, totalInfoSizeToRead, ref fileStreamIn, ref receivedBytes, actualReceivedLength, localFileName);
 				}
@@ -462,7 +485,21 @@ public class NetworkInterop
 
 				if (IsAlldataCompletelyTransferred(totalBytesProcessed, totalFileSizeToRead, totalInfoSizeToRead))
 				{
-					SendResponseToClient(true, ref handler, receivedGuid, timeTransferStarted, totalBytesProcessed, lengthOfFirstConstantBuffer + totalFileSizeToRead + totalInfoSizeToRead);
+					double totalSeconds = new TimeSpan(DateTime.Now.Ticks - timeTransferStarted.Ticks).TotalSeconds;
+					double averageBytesPerSecond = totalBytesProcessed / totalSeconds;
+					InfoOfTransferToClient infoToTransferToClient_Completed = new InfoOfTransferToClient(
+							true,
+							totalSeconds,
+							averageBytesPerSecond,
+							totalBytesProcessed,
+							lengthOfFirstConstantBuffer + totalFileSizeToRead + totalInfoSizeToRead);
+
+					RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEvent, "Successfully received file = " + localFileName
+						+ Environment.NewLine + "size of " + (infoToTransferToClient_Completed.TotalNumberofBytesToTransfer / 1024).ToString("0,0.00") + "kB"
+						+ Environment.NewLine + "in " + infoToTransferToClient_Completed.DurationOfTransferInSeconds.ToString("0.0#") + " seconds"
+						+ Environment.NewLine + "at " + (infoToTransferToClient_Completed.AverageBytesPerSecond / 1024).ToString("0,0.00") + "kB/s");
+					SendResponseToClient(ref handler, receivedGuid, infoToTransferToClient_Completed);
+
 					break;
 				}
 			}
@@ -474,228 +511,20 @@ public class NetworkInterop
 			CloseAndDisposeMemoryStream(ref memoryStreamForInfo);
 
 			RaiseProgressChangedEvent_Ifnotnull(ref ProgressChangedEvent, 0, 100);
+
+			totalBytesProcessed = 0;
+			firstConstantBytesForGuidInfoandFilesize = null;
+			receivedGuid = Guid.Empty;
+			totalFileSizeToRead = 0;
+			totalInfoSizeToRead = 0;
+			availableBytes = 0;
+			localFileName = null;
+			fileStreamIn = null;//new FileStream(defaultFilePathForSavingForServer, FileMode.Create);
+			memoryStreamForInfo = null;
 		}
 	}
 
 	private static Dictionary<Form, Socket> dictionaryWithFormAndSocketsToCloseUponFormClosing = new Dictionary<Form, Socket>();
-	/// <summary>
-	/// Starts a Tcp server on specified settings. Can also attach event hooks to:
-	/// NetworkInterop.textFeedback, and NetworkInterop.progressChanged. Just remember
-	/// to use ThreadingInterop.UpdateGuiFromThread if server was created on separate thread.
-	/// </summary>
-	/// <param name="serverListeningSocketToUse">The socket only has to be assigned with a NULL.</param>
-	/// <param name="formToHookSocketClosingIntoFormDisposedEvent">The form (usually main form) to hook unto its closing event to close the server socket.</param>
-	/// <param name="listeningPort">The port for the server to listen on.</param>
-	/// <param name="FolderToSaveIn">The folder to use when receiving files.</param>
-	/// <param name="maxBufferPerTransfer">Maximum file size per transfer (files larger than this buffer will be split).</param>
-	/// <param name="maxTotalFileSize">Maximum size of the total size (including all splits if larger than maximum buffer).</param>
-	/// <param name="maxNumberPendingConnections">Maximum number of pending connections to keep waiting while one is busy.</param>
-	public static void StartServer(
-		out Socket serverListeningSocketToUse,
-		Form formToHookSocketClosingIntoFormDisposedEvent = null,
-		int listeningPort = defaultListeningPort,
-		string FolderToSaveIn = defaultFolderToSaveIn,
-		int maxBufferPerTransfer = defaultMaxBufferPerTransfer,
-		int maxTotalFileSize = defaultMaxTotalFileSize,
-		int maxNumberPendingConnections = defaultMaxNumberPendingConnections,
-		TextFeedbackEventHandler TextFeedbackEvent = null,
-		ProgressChangedEventHandler ProgressChangedEvent = null
-		)
-	{
-		serverListeningSocketToUse = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-		serverListeningSocketToUse.NoDelay = true;
-		serverListeningSocketToUse.Ttl = 112;
-		serverListeningSocketToUse.ReceiveBufferSize = maxBufferPerTransfer;
-
-		if (formToHookSocketClosingIntoFormDisposedEvent != null)
-		{
-			if (!dictionaryWithFormAndSocketsToCloseUponFormClosing.ContainsKey(formToHookSocketClosingIntoFormDisposedEvent))
-				dictionaryWithFormAndSocketsToCloseUponFormClosing.Add(formToHookSocketClosingIntoFormDisposedEvent, serverListeningSocketToUse);
-
-			formToHookSocketClosingIntoFormDisposedEvent.Disposed += (snder, evtargs) =>
-			{
-				ThreadingInterop.ForceExitAllTreads = true;
-				if (dictionaryWithFormAndSocketsToCloseUponFormClosing.ContainsKey(snder as Form))
-				{
-					if (dictionaryWithFormAndSocketsToCloseUponFormClosing[snder as Form] != null)
-					{
-						dictionaryWithFormAndSocketsToCloseUponFormClosing[snder as Form].Blocking = false;
-						dictionaryWithFormAndSocketsToCloseUponFormClosing[snder as Form].Close();
-					}
-				}
-			};
-		}
-
-		string data = null;
-
-		bool checkout;//function string.IsNullOrEmpty
-		serverListeningSocketToUse.Bind(NetworkInterop.GetLocalIPEndPoint(listeningPort));
-		serverListeningSocketToUse.Listen(maxNumberPendingConnections);
-
-		if (TextFeedbackEvent != null) TextFeedbackEvent(null, new TextFeedbackEventArgs("Server started, waiting for clients..."));
-
-		bool continuewith;//this conecpt (due to a large file being split)
-		Dictionary<string, bool?> listofGuidAndIsComplete = new Dictionary<string, bool?>();
-
-		// Start listening for connections.
-		while (true)
-		{
-			//Application.DoEvents();
-			//AppendRichTextBox("Waiting for a connection...");
-			// Program is suspended while waiting for an incoming connection.
-			Socket handler = null;
-			try
-			{
-				handler = serverListeningSocketToUse.Accept();
-			}
-			catch (SocketException sexc)
-			{
-				if (sexc.Message.ToLower().Contains("WSACancelBlockingCall".ToLower()))
-				{
-					/*
-					 This is normal behavior when interrupting a blocking socket
-					 (i.e. waiting for clients). WSACancelBlockingCall is called and a SocketException
-					 is thrown (see my post above).
-					 Just catch this exception and use it to exit the thread
-					 ('break' in the infinite while loop).
-					 http://www.switchonthecode.com/tutorials/csharp-tutorial-simple-threaded-tcp-server
-					 */
-					break;
-				}
-				else
-				{
-					UserMessages.ShowErrorMessage("SocketException occurred: " + sexc.Message);
-				}
-			}
-
-			if (handler == null) continue;
-
-			string first26Characters = "";
-
-			Application.DoEvents();
-			data = null;
-			string startdata = "";
-
-			int maxProgress = 0;
-			//Console.WriteLine("Data transfer started...");
-			// An incoming connection needs to be processed.
-			//SetProcessWorkingSetSize(System.Diagnostics.Process.GetCurrentProcess().Handle, 0, 1000 * 1024 * 1024);
-			int totalbytelength = 0;
-			byte[] allbytes = new byte[maxTotalFileSize];
-			while (true)
-			{
-				byte[] currentbytes;
-				int currbytelength = handler.Available;
-				totalbytelength += currbytelength;
-				//progressBar1.Value = progressBar1.Maximum * totalbytelength / maxProgress;
-				currentbytes = new byte[currbytelength];
-				int bytesRec = handler.Receive(currentbytes);
-				//Console.WriteLine("Total bytes transferred: " + totalbytelength);
-				currentbytes.CopyTo(allbytes, totalbytelength - currbytelength);
-
-				if (first26Characters.Length < 26)
-				{
-					for (int i = 0; i < currbytelength; i++)
-					{
-						if (first26Characters.Length < 26)
-							first26Characters += Encoding.ASCII.GetString(currentbytes, i, 1);
-					}
-				}
-
-				data += Encoding.ASCII.GetString(currentbytes);
-
-				if (startdata.Length < 10000) startdata += data;
-				if (startdata.StartsWith("totalsize://"))
-				{
-					string totalSizeString = startdata.Substring(0, "totalsize://0000000000000000//:endoftotalsize".Length);
-					long Totalsize;
-					if (long.TryParse(totalSizeString.Substring(12, 16), out Totalsize))
-						if (maxProgress != Totalsize) maxProgress = (int)Totalsize;
-					totalSizeString = null;
-					Totalsize = 0;
-				}
-
-				if (maxProgress > 0 && totalbytelength >= 0 && totalbytelength <= maxProgress)
-					if (ProgressChangedEvent != null)
-						ProgressChangedEvent(null, new ProgressChangedEventArgs(totalbytelength, maxProgress));
-
-				if (data.IndexOf("<EOF>") > -1)
-				{
-					break;
-				}
-				if (data.Length > 10) data = data.Substring(data.Length - 10);
-
-				currbytelength = 0;
-				currentbytes = null;
-				GC.Collect();
-				GC.WaitForPendingFinalizers();
-			}
-
-			Console.WriteLine("Data transfer complete.");
-
-			// Show the data on the console
-			if (startdata.StartsWith("totalsize://"))
-			{
-				if (!Directory.Exists(FolderToSaveIn)) Directory.CreateDirectory(FolderToSaveIn);
-				string totalSizeString = startdata.Substring(0, "totalsize://0000000000000000//:endoftotalsize".Length);
-				string originalFileName = startdata.Substring(totalSizeString.Length + "file://".Length, startdata.IndexOf("//:endoffile") - totalSizeString.Length - "file://".Length);
-				int filestringlength = "file://".Length + originalFileName.Length + "//:endoffile".Length;
-
-				byte[] filebytes = new byte[totalbytelength - totalSizeString.Length - filestringlength - 5];
-				for (int i = totalSizeString.Length + filestringlength; i < totalbytelength - 5; i++)
-					filebytes[i - totalSizeString.Length - filestringlength] = allbytes[i];
-
-				string newFileName = FolderToSaveIn + @"\" + Path.GetFileName(originalFileName);
-				//Console.WriteLine("Original filename: " + originalFileName);
-				//Console.WriteLine("New filename: " + newFileName);
-				//Console.WriteLine("Writing file...");
-				File.WriteAllBytes(newFileName, filebytes);
-
-				GC.Collect();
-				GC.WaitForPendingFinalizers();
-				filestringlength = 0;
-				totalSizeString = null;
-				newFileName = null;
-				filebytes = null;
-				newFileName = null;
-
-				if (originalFileName.ToUpper().EndsWith(".final".ToUpper()))
-				{
-					string firstFilename = FolderToSaveIn + @"\" + Path.GetFileName(originalFileName).Substring(0, Path.GetFileName(originalFileName).Length - 6);
-					string finalFilename = firstFilename.Substring(0, firstFilename.LastIndexOf("."));
-					firstFilename = firstFilename.Substring(0, firstFilename.LastIndexOf(".")) + ".0";
-					MergeFiles(firstFilename);
-					System.Diagnostics.Process.Start("explorer", "/select, \"" + finalFilename + "\"");
-					if (ProgressChangedEvent != null)
-						ProgressChangedEvent(null, new ProgressChangedEventArgs(0, 100));
-				}
-
-				originalFileName = null;
-				GC.Collect();
-				GC.WaitForPendingFinalizers();
-			}
-			else
-			{
-				Console.WriteLine(data.Replace("<EOF>", ""));
-			}
-
-			totalbytelength = 0;
-			maxProgress = 0;
-			allbytes = null;
-			data = null;
-			startdata = null;
-			first26Characters = null;
-
-			handler.Shutdown(SocketShutdown.Both);
-			handler.Disconnect(false);
-			handler.Close();
-			handler.Dispose();
-
-			GC.Collect();
-			GC.WaitForPendingFinalizers();
-			Application.DoEvents();
-		}
-	}
 
 	private static void WriteGuidSectionToStream(ref NetworkStream nwStream, Guid guidIn)
 	{
@@ -771,7 +600,7 @@ public class NetworkInterop
 				long totalFileSizeToTransfer = (new FileInfo(filePath)).Length;
 				RaiseProgressChangedEvent_Ifnotnull(ref ProgressChangedEvent, 0, (int)totalFileSizeToTransfer);
 
-				int maxBytesToReadfromFile = 16;
+				int maxBytesToReadfromFile = 10240;//16;
 				int numberReadBytes;
 				do
 				{
@@ -794,7 +623,7 @@ public class NetworkInterop
 				if (!Directory.Exists(defaultFolderToSaveIn)) Directory.CreateDirectory(defaultFolderToSaveIn);
 				while (true)
 				{
-					FileStream fileStreamIn = null;// new FileStream(defaultFilePathForSavingForClient, FileMode.Create);
+					//FileStream fileStreamIn = null;// new FileStream(defaultFilePathForSavingForClient, FileMode.Create);
 					MemoryStream memoryStreamForInfo = new MemoryStream();
 
 					if (!GetBytesAvailable(ref senderSocketToUse, out availableBytes)) continue;
@@ -855,9 +684,9 @@ public class NetworkInterop
 							{
 								RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEvent,
 								"Successfully transferred file = " + filePath
-								+ Environment.NewLine + "Size of " + (info.TotalNumberofBytesToTransfer / 1024).ToString("0,0.00") + "kB"
-								+ Environment.NewLine + "In " + info.DurationOfTransferInSeconds.ToString("0.0#") + " seconds"
-								+ Environment.NewLine + "At " + (info.AverageBytesPerSecond / 1024).ToString("0,0.00") + "kB/s");
+								+ Environment.NewLine + "size of " + (info.TotalNumberofBytesToTransfer / 1024).ToString("0,0.00") + "kB"
+								+ Environment.NewLine + "in " + info.DurationOfTransferInSeconds.ToString("0.0#") + " seconds"
+								+ Environment.NewLine + "at " + (info.AverageBytesPerSecond / 1024).ToString("0,0.00") + "kB/s");
 								break;
 							}
 							else
@@ -882,77 +711,6 @@ public class NetworkInterop
 				totalInfoSizeToRead = 0;
 				availableBytes = 0;
 			}
-		}
-	}
-
-	public static void TransferFile(
-		string filePath,
-		out Socket senderSocketToUse,
-		IPAddress ipAddress = null,
-		int listeningPort = defaultListeningPort,
-		int maxBufferPerTransfer = defaultMaxBufferPerTransfer,
-		TextFeedbackEventHandler TextFeedbackEvent = null)
-	{
-		senderSocketToUse = null;
-		byte[] byData;
-		if (!File.Exists(filePath))
-			UserMessages.ShowWarningMessage("File does not exist and cannot be transferred: " + filePath);
-		else
-		{
-			int counter = 0;
-			byte[] AllFileDataBytes = File.ReadAllBytes(filePath);
-
-			while (counter * maxBufferPerTransfer < AllFileDataBytes.Length)
-			{
-				if (ConnectToServer(out senderSocketToUse, ipAddress, listeningPort))
-				{
-					if (TextFeedbackEvent != null)
-						TextFeedbackEvent(null, new TextFeedbackEventArgs("Connected to server, transferring file segment " + (counter + 1) + "..."));
-					string fileAddonExtension = ((counter + 1) * maxBufferPerTransfer) >= AllFileDataBytes.Length
-							? "." + counter + ".final"
-							: "." + counter;
-					byte[] FileStartBytes = System.Text.Encoding.ASCII.GetBytes("file://" + filePath + fileAddonExtension + "//:endoffile");
-
-					long PieceSize = AllFileDataBytes.Length - (counter * maxBufferPerTransfer) < maxBufferPerTransfer
-							? AllFileDataBytes.Length - (counter * maxBufferPerTransfer)
-							: maxBufferPerTransfer;
-
-					byte[] FileDataPieceBytes = new byte[PieceSize];
-					for (int i = counter * maxBufferPerTransfer; i < (counter + 1) * maxBufferPerTransfer && i < AllFileDataBytes.Length; i++)
-						FileDataPieceBytes[i - counter * maxBufferPerTransfer] = AllFileDataBytes[i];
-
-					byte[] EOFbytes = System.Text.Encoding.ASCII.GetBytes("<EOF>");
-
-					int TotalByteCount = Encoding.ASCII.GetBytes("totalsize://0000000000000000//:endoftotalsize").Length
-						+ FileStartBytes.Length + FileDataPieceBytes.Length + EOFbytes.Length;
-
-					byte[] TotalByteCountBytes = Encoding.ASCII.GetBytes("totalsize://" + Get16lengthStringOfNumber(TotalByteCount) + "//:endoftotalsize");
-
-					byData = new byte[TotalByteCount];
-					TotalByteCountBytes.CopyTo(byData, 0);
-					FileStartBytes.CopyTo(byData, TotalByteCountBytes.Length);
-					FileDataPieceBytes.CopyTo(byData, TotalByteCountBytes.Length + FileStartBytes.Length);
-					EOFbytes.CopyTo(byData, TotalByteCountBytes.Length + FileStartBytes.Length + FileDataPieceBytes.Length);
-
-					senderSocketToUse.Send(byData);
-					PieceSize = 0;
-					TotalByteCount = 0;
-					fileAddonExtension = null;
-					FileStartBytes = null;
-					FileDataPieceBytes = null;
-					EOFbytes = null;
-					TotalByteCountBytes = null;
-
-					senderSocketToUse.Close();
-					senderSocketToUse.Dispose();
-					senderSocketToUse = null;
-
-					counter++;
-				}
-			}
-
-			counter = 0;
-			AllFileDataBytes = null;
 		}
 	}
 

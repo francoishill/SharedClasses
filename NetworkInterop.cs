@@ -232,7 +232,7 @@ public class NetworkInterop
 		return totalBytesProcessed + actualReceivedLength > lengthOfFirstConstantBuffer;
 	}
 
-	private static void WriteBytesToFilestreamAndOrMemorystream(long totalBytesProcessed, long totalInfoSizeToRead, ref FileStream fileStreamIn, ref MemoryStream memoryStreamForInfo, ref byte[] receivedBytes, int actualReceivedLength)
+	private static void WriteBytesToMemorystream(long totalBytesProcessed, long totalInfoSizeToRead, ref MemoryStream memoryStreamForInfo, ref byte[] receivedBytes, int actualReceivedLength)
 	{
 		if (totalBytesProcessed < lengthOfFirstConstantBuffer)
 		{
@@ -247,7 +247,39 @@ public class NetworkInterop
 				//Array.Copy(receivedBytes, memoryStreamStartBytes, bytesForMemoryStream, 0, memoryStreamNumberBytesToRead);
 				memoryStreamForInfo.Write(receivedBytes, (int)memoryStreamStartBytes, (int)memoryStreamNumberBytesToRead);
 				//memoryStreamForInfo.Write(bytesForMemoryStream, 0, bytesForMemoryStream.Length);
+			}
+		}
+		else
+		{
+			if (totalBytesProcessed <= lengthOfFirstConstantBuffer + totalInfoSizeToRead)
+			{
+				long memoryStreamStartBytes = 0;
+				long memoryStreamNumberBytesToRead = 
+							(int)
+					(totalBytesProcessed + actualReceivedLength > lengthOfFirstConstantBuffer + totalInfoSizeToRead
+					? lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed
+					: actualReceivedLength);
+				//(int)(lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed);
+				if (memoryStreamNumberBytesToRead > lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed)
+					memoryStreamNumberBytesToRead = lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed;
+				memoryStreamForInfo.Write(receivedBytes, (int)memoryStreamStartBytes, (int)memoryStreamNumberBytesToRead);
+			}
+		}
+	}
 
+	private static void WriteBytesToFilestream(long totalBytesProcessed, long totalInfoSizeToRead, ref FileStream fileStreamIn, ref byte[] receivedBytes, int actualReceivedLength, string filePathIfFileStreamIsNull)
+	{
+		if (fileStreamIn == null)
+		{
+			if (File.Exists(filePathIfFileStreamIsNull))
+				File.Delete(filePathIfFileStreamIsNull);
+			fileStreamIn = new FileStream(filePathIfFileStreamIsNull, FileMode.CreateNew);
+		}
+
+		if (totalBytesProcessed < lengthOfFirstConstantBuffer)
+		{
+			if (totalBytesProcessed + actualReceivedLength > lengthOfFirstConstantBuffer)
+			{
 				long fileStreamStartBytes = lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed;
 				long fileStreamNumberBytesToRead = (int)(totalBytesProcessed + actualReceivedLength - lengthOfFirstConstantBuffer - totalInfoSizeToRead);
 
@@ -267,17 +299,6 @@ public class NetworkInterop
 			}
 			else
 			{
-				long memoryStreamStartBytes = 0;
-				long memoryStreamNumberBytesToRead = 
-							(int)
-					(totalBytesProcessed + actualReceivedLength > lengthOfFirstConstantBuffer + totalInfoSizeToRead
-					? lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed
-					: actualReceivedLength);
-				//(int)(lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed);
-				if (memoryStreamNumberBytesToRead > lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed)
-					memoryStreamNumberBytesToRead = lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed;
-				memoryStreamForInfo.Write(receivedBytes, (int)memoryStreamStartBytes, (int)memoryStreamNumberBytesToRead);
-
 				long fileStreamStartBytes = lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed;
 				long fileStreamNumberBytesToRead = (int)(totalBytesProcessed + actualReceivedLength - lengthOfFirstConstantBuffer - totalInfoSizeToRead);
 				if (fileStreamNumberBytesToRead > 0)
@@ -306,35 +327,44 @@ public class NetworkInterop
 		return totalFileSizeToRead != -1 && totalInfoSizeToRead != -1 && totalBytesProcessed >= (lengthOfFirstConstantBuffer + totalFileSizeToRead + totalInfoSizeToRead);
 	}
 
-	private static void RenameFileBasedOnInfoOfTransfer(InfoOfTransferToServer info, ref TextFeedbackEventHandler TextFeedbackEvent)
+	private static string ObtainOriginalFilenameFromInfoOfTransferToServer(InfoOfTransferToServer info, ref TextFeedbackEventHandler TextFeedbackEvent)
 	{
-		if (info == null) return;
-		string fromPath = defaultFilePathForSavingForServer;
-		string toPath = defaultFolderToSaveIn + "\\" + Path.GetFileName(info.OriginalFilePath);
-		if (File.Exists(fromPath))
-		{
-			bool FileDoesExist = false;
-			if (File.Exists(toPath))
-			{
-				try
-				{
-					FileDoesExist = true;
-					File.Delete(toPath);
-					FileDoesExist = false;
-				}
-				catch (Exception exc)
-				{
-					RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEvent, "Unable to delete file " + toPath + Environment.NewLine + "Old file name remains: " + fromPath + Environment.NewLine + exc.Message);
-					//UserMessages.ShowWarningMessage("Unable to delete file " + toPath + Environment.NewLine + "Old file name remains: " + fromPath + Environment.NewLine + exc.Message);
-				}
-			}
-			if (!FileDoesExist) File.Move(fromPath, toPath);
-		}
-		else
-		{
-			UserMessages.ShowErrorMessage("Could not find written file: " + fromPath);
-		}
+		if (info == null && UserMessages.ShowWarningMessage("Cannot obtain filename from NULL InfoOfTransferToServer object"))
+			return null;
+		string fileNameToReturn = defaultFolderToSaveIn + "\\" + Path.GetFileName(info.OriginalFilePath);
+		//if (File.Exists(fileNameToReturn)) File.Delete(fileNameToReturn);
+		return fileNameToReturn;
 	}
+
+	//private static void RenameFileBasedOnInfoOfTransfer(InfoOfTransferToServer info, ref TextFeedbackEventHandler TextFeedbackEvent)
+	//{
+	//	if (info == null) return;
+	//	string fromPath = defaultFilePathForSavingForServer;
+	//	string toPath = defaultFolderToSaveIn + "\\" + Path.GetFileName(info.OriginalFilePath);
+	//	if (File.Exists(fromPath))
+	//	{
+	//		bool FileDoesExist = false;
+	//		if (File.Exists(toPath))
+	//		{
+	//			try
+	//			{
+	//				FileDoesExist = true;
+	//				File.Delete(toPath);
+	//				FileDoesExist = false;
+	//			}
+	//			catch (Exception exc)
+	//			{
+	//				RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEvent, "Unable to delete file " + toPath + Environment.NewLine + "Old file name remains: " + fromPath + Environment.NewLine + exc.Message);
+	//				//UserMessages.ShowWarningMessage("Unable to delete file " + toPath + Environment.NewLine + "Old file name remains: " + fromPath + Environment.NewLine + exc.Message);
+	//			}
+	//		}
+	//		if (!FileDoesExist) File.Move(fromPath, toPath);
+	//	}
+	//	else
+	//	{
+	//		UserMessages.ShowErrorMessage("Could not find written file: " + fromPath);
+	//	}
+	//}
 
 	private static void CloseAndDisposeFileStream(ref FileStream filestream)
 	{
@@ -398,7 +428,7 @@ public class NetworkInterop
 			long totalInfoSizeToRead = -1;
 			int availableBytes;
 			if (!Directory.Exists(defaultFolderToSaveIn)) Directory.CreateDirectory(defaultFolderToSaveIn);
-			FileStream fileStreamIn = new FileStream(defaultFilePathForSavingForServer, FileMode.Create);
+			FileStream fileStreamIn = null;//new FileStream(defaultFilePathForSavingForServer, FileMode.Create);
 			MemoryStream memoryStreamForInfo = new MemoryStream();
 			while (true)
 			{
@@ -416,7 +446,14 @@ public class NetworkInterop
 
 				EnsureValuesForGuidAndTotalSizes(ProgressChangedEvent, totalBytesProcessed, firstConstantBytesForGuidInfoandFilesize, ref receivedGuid, ref totalFileSizeToRead, ref totalInfoSizeToRead, actualReceivedLength);
 
-				WriteBytesToFilestreamAndOrMemorystream(totalBytesProcessed, totalInfoSizeToRead, ref fileStreamIn, ref memoryStreamForInfo, ref receivedBytes, actualReceivedLength);
+				WriteBytesToMemorystream(totalBytesProcessed, totalInfoSizeToRead, ref memoryStreamForInfo, ref receivedBytes, actualReceivedLength);
+
+				if (totalInfoSizeToRead != -1 && totalBytesProcessed + actualReceivedLength >= lengthOfFirstConstantBuffer + totalInfoSizeToRead)
+				{
+					string localFileName = ObtainOriginalFilenameFromInfoOfTransferToServer((InfoOfTransferToServer)SerializationInterop.DeserializeCustomObjectFromStream(memoryStreamForInfo, new InfoOfTransferToServer(), false), ref TextFeedbackEvent);
+					if (localFileName != null)
+						WriteBytesToFilestream(totalBytesProcessed, totalInfoSizeToRead, ref fileStreamIn, ref receivedBytes, actualReceivedLength, localFileName);
+				}
 
 				totalBytesProcessed += actualReceivedLength;
 
@@ -432,7 +469,7 @@ public class NetworkInterop
 
 			CloseAndDisposeFileStream(ref fileStreamIn);
 
-			RenameFileBasedOnInfoOfTransfer((InfoOfTransferToServer)SerializationInterop.DeserializeCustomObjectFromStream(memoryStreamForInfo, new InfoOfTransferToServer(), false), ref TextFeedbackEvent);
+			//RenameFileBasedOnInfoOfTransfer((InfoOfTransferToServer)SerializationInterop.DeserializeCustomObjectFromStream(memoryStreamForInfo, new InfoOfTransferToServer(), false), ref TextFeedbackEvent);
 
 			CloseAndDisposeMemoryStream(ref memoryStreamForInfo);
 
@@ -776,7 +813,17 @@ public class NetworkInterop
 
 					EnsureValuesForGuidAndTotalSizes(ProgressChangedEvent, totalBytesProcessed, firstConstantBytesForGuidInfoandFilesize, ref receivedGuid, ref totalFileSizeToRead, ref totalInfoSizeToRead, actualReceivedLength, false);
 
-					WriteBytesToFilestreamAndOrMemorystream(totalBytesProcessed, totalInfoSizeToRead, ref fileStreamIn, ref memoryStreamForInfo, ref receivedBytes, actualReceivedLength);
+					WriteBytesToMemorystream(totalBytesProcessed, totalInfoSizeToRead, ref memoryStreamForInfo, ref receivedBytes, actualReceivedLength);
+
+					if (totalInfoSizeToRead != -1 && totalBytesProcessed + actualReceivedLength >= lengthOfFirstConstantBuffer + totalInfoSizeToRead)
+					{
+						if (totalFileSizeToRead > 0)
+							UserMessages.ShowWarningMessage("Function not incorporated yet to transfer file back to client.");
+						//string localFileName = ObtainOriginalFilenameFromInfoOfTransferToServer((InfoOfTransferToServer)SerializationInterop.DeserializeCustomObjectFromStream(memoryStreamForInfo, new InfoOfTransferToServer(), false), ref TextFeedbackEvent);
+						//if (localFileName != null)
+						//	WriteBytesToFilestream(totalBytesProcessed, totalInfoSizeToRead, ref fileStreamIn, ref receivedBytes, actualReceivedLength, localFileName);
+					}
+					//WriteBytesToFilestream(totalBytesProcessed, totalInfoSizeToRead, ref fileStreamIn, ref receivedBytes, actualReceivedLength);
 
 					totalBytesProcessed += actualReceivedLength;
 

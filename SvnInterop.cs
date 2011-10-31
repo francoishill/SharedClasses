@@ -70,7 +70,7 @@ public class SvnInterop
 					svnproc.BeginOutputReadLine();
 					svnproc.BeginErrorReadLine();
 
-					svnproc.WaitForExit();
+					//svnproc.WaitForExit();
 				});
 			}
 		}

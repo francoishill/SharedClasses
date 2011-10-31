@@ -313,13 +313,6 @@ public class SerializationInterop
 					Console.WriteLine("Writing property " + propertyInfo.Name + ", type = " + propertyInfo.PropertyType);
 					if (serializationFormat == SerializationFormat.Xml) xmlTextWriter.WriteElementString(propertyInfo.Name, propertyInfo.GetValue(objectToSerialize, null).ToString());
 					else binaryWriter.Write((dynamic)propertyInfo.GetValue(objectToSerialize, null));
-					//if (
-					//		propertyInfo.PropertyType == typeof(string) ||
-					//		propertyInfo.PropertyType == typeof(bool) ||
-					//		propertyInfo.PropertyType == typeof(int) ||
-					//		propertyInfo.PropertyType == typeof(double) ||
-					//		propertyInfo.PropertyType == typeof(long)
-					//	)
 					//if (propertyInfo.PropertyType == typeof(string))
 					//{
 					//	if (serializationFormat == SerializationFormat.Xml) xmlTextWriter.WriteElementString(propertyInfo.Name, propertyInfo.GetValue(objectToSerialize, null).ToString());

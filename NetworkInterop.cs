@@ -807,7 +807,8 @@ public class NetworkInterop
 							if (info.SuccessfullyReceiveComplete)
 							{
 								RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEvent,
-								"Successfully transferred (" + info.SuccessfullyReceiveComplete + ") file = " + filePath
+								"Successfully transferred file = " + filePath
+								+ Environment.NewLine + "Size of " + (info.TotalNumberofBytesToTransfer / 1024).ToString("0,0.00") + "kB"
 								+ Environment.NewLine + "In " + info.DurationOfTransferInSeconds.ToString("0.0#") + " seconds"
 								+ Environment.NewLine + "At " + (info.AverageBytesPerSecond / 1024).ToString("0,0.00") + "kB/s");
 								break;

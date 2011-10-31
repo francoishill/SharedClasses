@@ -824,10 +824,16 @@ public class NetworkInterop
 
 				RaiseProgressChangedEvent_Ifnotnull(ref ProgressChangedEvent, 0, 100);
 
-				fileToWrite.Close();
-				fileToWrite.Dispose(); fileToWrite = null;
-				networkStream.Close();
-				networkStream.Dispose(); networkStream = null;
+				CloseAndDisposeFileStream(ref fileToWrite);
+				CloseAndDisposeNetworkStream(ref networkStream);
+
+				//MemoryManagement.FreeObjects(totalBytesProcessed, firstConstantBytesForGuidInfoandFilesize);
+				totalBytesProcessed = 0;
+				firstConstantBytesForGuidInfoandFilesize = null;
+				receivedGuid = Guid.Empty;
+				totalFileSizeToRead = 0;
+				totalInfoSizeToRead = 0;
+				availableBytes = 0;
 			}
 		}
 	}

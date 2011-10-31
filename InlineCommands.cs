@@ -359,6 +359,19 @@ public class InlineCommands
 					},
 			CommandDetails.PerformCommandTypeEnum.Svnstatus);
 
+		AddToCommandList("svnstatuslocal",
+			"svnstatuslocal all",
+			new List<CommandDetails.CommandArgumentClass>()
+				{
+					new CommandDetails.CommandArgumentClass("FolderName", false, CommandDetails.TypeArg.Text,
+						new Dictionary<string, string>()
+						{
+							{ "all", null }
+						},
+						CommandDetails.PathAutocompleteEnum.Both)
+				},
+			CommandDetails.PerformCommandTypeEnum.SvnstatusLocal);
+
 		AddToCommandList("publishvs",
 			"publishvs QuickAccess",
 			new List<CommandDetails.CommandArgumentClass>()
@@ -420,6 +433,7 @@ public class InlineCommands
 			Svncommit,
 			Svnupdate,
 			Svnstatus,
+			SvnstatusLocal,
 			PublishVs,
 			Undefined
 		};
@@ -485,7 +499,7 @@ public class InlineCommands
 		public void PerformCommand(string fullCommandText, ComboBox textboxtoClearOnSuccess, TextBox messagesTextbox)
 		{
 			string TextboxTextIn = fullCommandText;//textboxtoClearOnSuccess.Text;
-			string argStr = TextboxTextIn.Substring(TextboxTextIn.IndexOf(' ') + 1);
+			string argStr = TextboxTextIn.Contains(' ') ? TextboxTextIn.Substring(TextboxTextIn.IndexOf(' ') + 1) : "";
 
 			switch (PerformCommandType)
 			{
@@ -599,6 +613,7 @@ public class InlineCommands
 				case PerformCommandTypeEnum.Svncommit:
 				case PerformCommandTypeEnum.Svnupdate:
 				case PerformCommandTypeEnum.Svnstatus:
+				case PerformCommandTypeEnum.SvnstatusLocal:
 					string svnargs = argStr;// textBox1.Text.ToLower().Substring(10);
 					//if (svncommitargs.Contains(' '))
 					//{
@@ -610,7 +625,8 @@ public class InlineCommands
 								PerformCommandType == PerformCommandTypeEnum.Svncommit ? SvnInterop.SvnCommand.Commit
 						: PerformCommandType == PerformCommandTypeEnum.Svnupdate ? SvnInterop.SvnCommand.Update
 						: PerformCommandType == PerformCommandTypeEnum.Svnstatus ? SvnInterop.SvnCommand.Status
-						: SvnInterop.SvnCommand.Status;
+						: PerformCommandType == PerformCommandTypeEnum.SvnstatusLocal ? SvnInterop.SvnCommand.StatusLocal
+						: SvnInterop.SvnCommand.StatusLocal;
 
 					string[] splittedArgsOnlyForUpdateAndStatus = svnargs.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
 					if (svnCommand == SvnInterop.SvnCommand.Commit) splittedArgsOnlyForUpdateAndStatus = new string[] { svnargs };

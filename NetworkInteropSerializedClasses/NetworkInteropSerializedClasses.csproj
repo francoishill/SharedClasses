@@ -87,6 +87,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\MemoryManagement.cs">
+      <Link>MemoryManagement.cs</Link>
+    </Compile>
     <Compile Include="..\NetworkInterop.cs">
       <Link>NetworkInterop.cs</Link>
     </Compile>

@@ -8,7 +8,7 @@ using System.Windows.Forms;
 
 public class SvnInterop
 {
-	public enum SvnCommand { Commit, Update, Status };
+	public enum SvnCommand { Commit, Update, Status, StatusLocal };
 
 	public static void PerformSvn(TextBox messagesTextbox, string svnargs, SvnCommand svnCommand)
 	{
@@ -22,55 +22,85 @@ public class SvnInterop
 		}
 		try
 		{
+			string VS2010projectsFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects";
+
 			string projDir =
 					Directory.Exists(projnameOrDir) ? projnameOrDir :
-				Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects\" + projnameOrDir;//"";
+				VS2010projectsFolder + @"\" + projnameOrDir;//"";
 			string svnpath = @"C:\Program Files\TortoiseSVN\bin\svn.exe";// "svn";
 
+			List<string> listOfDirectoriesToCheckLocalStatusses = null;
+			if (svnargs != null && svnargs.ToLower() == "all")
+			{
+				listOfDirectoriesToCheckLocalStatusses = new List<string>();
+				foreach (string workingDir in Directory.GetDirectories(VS2010projectsFolder))
+					listOfDirectoriesToCheckLocalStatusses.Add(workingDir);
+			}
+
 			if (!File.Exists(svnpath)) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Error: svn.exe does not exists: " + svnpath);
-			else if (!Directory.Exists(projDir)) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Error: folder not found: " + projDir);
+			else if (!Directory.Exists(projDir) && listOfDirectoriesToCheckLocalStatusses == null) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Error: folder not found: " + projDir);
 			else
 			{
 				ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 				{
-					string processArguments =
+					if (listOfDirectoriesToCheckLocalStatusses == null)
+					{
+						listOfDirectoriesToCheckLocalStatusses = new List<string>();
+						listOfDirectoriesToCheckLocalStatusses.Add(projDir);
+					}
+
+					bool pleaseWaitAlreadyDisplayed = false;
+
+					foreach (string tmpFolder in listOfDirectoriesToCheckLocalStatusses)
+					{
+						string processArguments =
 											svnCommand ==
-						SvnCommand.Commit ? "commit -m\"" + logmessage + "\" \"" + projDir + "\""
-						: svnCommand == SvnCommand.Update ? "update \"" + projDir + "\""
-						: svnCommand == SvnCommand.Status ? "status --show-updates \"" + projDir + "\""
-						: "";
+							SvnCommand.Commit ? "commit -m\"" + logmessage + "\" \"" + tmpFolder + "\""
+							: svnCommand == SvnCommand.Update ? "update \"" + tmpFolder + "\""
+							: svnCommand == SvnCommand.Status ? "status --show-updates \"" + tmpFolder + "\""
+							: svnCommand == SvnCommand.StatusLocal ? "status \"" + tmpFolder + "\""
+							: "";
 
-					ProcessStartInfo start = new ProcessStartInfo(svnpath, processArguments);//"commit -m\"" + logmessage + "\" \"" + projDir + "\"");
-					start.UseShellExecute = false;
-					start.CreateNoWindow = true;
-					start.RedirectStandardOutput = true;
-					start.RedirectStandardError = true;
-					System.Diagnostics.Process svnproc = new Process();
-					svnproc.OutputDataReceived += delegate(object sendingProcess, DataReceivedEventArgs outLine)
-					{
-						if (outLine.Data != null && outLine.Data.Trim().Length > 0) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Svn output: " + outLine.Data);
-						//else appendLogTextbox("Svn output empty");
-					};
-					svnproc.ErrorDataReceived += delegate(object sendingProcess, DataReceivedEventArgs outLine)
-					{
-						if (outLine.Data != null && outLine.Data.Trim().Length > 0) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Svn error: " + outLine.Data);
-						//else appendLogTextbox("Svn error empty");
-					};
-					svnproc.StartInfo = start;
+						ProcessStartInfo start = new ProcessStartInfo(svnpath, processArguments);//"commit -m\"" + logmessage + "\" \"" + projDir + "\"");
+						start.UseShellExecute = false;
+						start.CreateNoWindow = true;
+						start.RedirectStandardOutput = true;
+						start.RedirectStandardError = true;
+						System.Diagnostics.Process svnproc = new Process();
+						svnproc.OutputDataReceived += delegate(object sendingProcess, DataReceivedEventArgs outLine)
+						{
+							if (outLine.Data != null && outLine.Data.Trim().Length > 0)
+								Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Svn output: " + outLine.Data);
+							//else appendLogTextbox("Svn output empty");
+						};
+						svnproc.ErrorDataReceived += delegate(object sendingProcess, DataReceivedEventArgs outLine)
+						{
+							if (outLine.Data != null && outLine.Data.Trim().Length > 0
+								&& !outLine.Data.ToLower().Contains("not a working copy"))
+								Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Svn error: " + outLine.Data);
+							//else appendLogTextbox("Svn error empty");
+						};
+						svnproc.StartInfo = start;
 
-					string performingPleasewaitMsg = 
+						string performingPleasewaitMsg = 
 							svnCommand == SvnCommand.Commit ? "Performing svn commit, please wait..."
-						: svnCommand == SvnCommand.Update ? "Performing svn update, please wait..."
-						: svnCommand == SvnCommand.Status ? "Check status of svn (local and server), please wait..."
-						: "";
-					if (svnproc.Start())
-						Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, performingPleasewaitMsg);
-					else Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Error: Could not start SVN process.");
+							: svnCommand == SvnCommand.Update ? "Performing svn update, please wait..."
+							: svnCommand == SvnCommand.Status ? "Check status of svn (local and server), please wait..."
+							: svnCommand == SvnCommand.StatusLocal ? "Check status of svn (local), please wait..."
+							: "";
+						if (!svnproc.Start())
+							Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Error: Could not start SVN process.");
+						else if (!pleaseWaitAlreadyDisplayed)
+						{
+							pleaseWaitAlreadyDisplayed = true;
+							Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, performingPleasewaitMsg);
+						}
 
-					svnproc.BeginOutputReadLine();
-					svnproc.BeginErrorReadLine();
+						svnproc.BeginOutputReadLine();
+						svnproc.BeginErrorReadLine();
 
-					//svnproc.WaitForExit();
+						//svnproc.WaitForExit();
+					}
 				});
 			}
 		}

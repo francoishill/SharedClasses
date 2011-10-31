@@ -225,6 +225,25 @@ public class VisualStudioInterop
 				}
 
 				//TODO: Must make provision if pc (to do building and compiling of NSIS scripts), does not have the DotNetChecker.dll plugin for NSIS
+				string dotnetCheckerDllPath = @"C:\Program Files (x86)\NSIS\Plugins\DotNetChecker.dll";
+				if (!File.Exists(dotnetCheckerDllPath))
+				{
+					System.Reflection.Assembly objAssembly = System.Reflection.Assembly.GetExecutingAssembly();
+					string[] myResources = objAssembly.GetManifestResourceNames();
+					foreach (string reso in myResources)
+						if (reso.ToLower().EndsWith("dotnetchecker.dll"))
+						{
+							Stream stream = objAssembly.GetManifestResourceStream(reso);
+							int length = (int)stream.Length;
+							byte[] bytesOfDotnetCheckerDLL = new byte[length];
+							stream.Read(bytesOfDotnetCheckerDLL, 0, length);
+							stream.Close();
+							FileStream fileStream = new FileStream(dotnetCheckerDllPath, FileMode.Create);
+							fileStream.Write(bytesOfDotnetCheckerDLL, 0, length);
+							fileStream.Close();
+						}
+				}
+
 				string MakeNsisFilePath = @"C:\Program Files (x86)\NSIS\makensis.exe";
 				if (!File.Exists(MakeNsisFilePath)) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Could not find MakeNsis.exe: " + MakeNsisFilePath);
 				else

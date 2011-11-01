@@ -10,7 +10,7 @@ public class AutoCompleteInterop
 		return Array.Find(stringArray, s => s.ToLower().Equals(stringToSearchFor.ToLower())) != null;
 	}
 
-	public static string[] GetWordlistOfFileContents(string fileContents)
+	public static string[] GetWordlistOfFileContents(string fileContents, List<char> listOfAllowedWordCharacters = null)
 	{
 		string textToProcess = fileContents;
 		textToProcess = textToProcess.Replace('\t', ' ');
@@ -24,7 +24,7 @@ public class AutoCompleteInterop
 		{
 			string wordContainingOnlyLettersAndNumbers = "";
 			foreach (char chr in word)
-				if (char.IsLetterOrDigit(chr))
+				if (char.IsLetterOrDigit(chr) || (listOfAllowedWordCharacters != null && listOfAllowedWordCharacters.Contains(chr)))
 					wordContainingOnlyLettersAndNumbers += chr;
 			if (!StringArrayContains_CaseInsensitive(wordsWithDuplicatesRemoved.ToArray(), wordContainingOnlyLettersAndNumbers))
 				wordsWithDuplicatesRemoved.Add(wordContainingOnlyLettersAndNumbers);

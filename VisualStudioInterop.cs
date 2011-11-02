@@ -5,9 +5,14 @@ using System.Text;
 using System.Diagnostics;
 using System.IO;
 using System.Windows.Forms;
+using System.Net;
+using System.Web;
 
 public class VisualStudioInterop
 {
+	private const string defaultRootUriForVsPublishing = "ftp://fjh.dyndns.org/francois/websites/firepuma/ownapplications";
+	private const string defaultRootUriAFTERvspublishing = "http://fjh.dyndns.org/ownapplications";
+
 	//TODO: Make it easy to add todo item to a specific c# file if visual studio is not open
 	//Maybe for instance popup with a prompt window and the user chooses the file and then types the description of the todo item.
 	private static bool FindMsbuildPath4(out string msbuildpathOrerror)
@@ -169,7 +174,8 @@ public class VisualStudioInterop
 		return s;
 	}
 
-	public static void PerformPublish(TextBox messagesTextbox, string projName, bool AutomaticallyUpdateRevision = false)
+	//TODO: Start building own publishing platform (FTP, the html page, etc)
+	public static string PerformPublish(TextBox messagesTextbox, string projName, bool AutomaticallyUpdateRevision = false, bool OpenFolderAndSetupFileAfterSuccessfullNSIS = true)
 	{
 		string projDir =
 					Directory.Exists(projName) ? projName :
@@ -196,8 +202,11 @@ public class VisualStudioInterop
 				ProjectConfiguration.Release,
 				PlatformTarget.x86,//.x64,
 				AutomaticallyUpdateRevision);
-			if (newversionstring == null) return;
+			if (newversionstring == null) return null;
 
+			string nsisFileName = WindowsInterop.LocalAppDataPath + @"\FJH\NSISinstaller\NSISexports\" + projName + "_" + newversionstring + ".nsi";
+			string resultSetupFileName = Path.GetDirectoryName(nsisFileName) + "\\" + NsisInterop.GetSetupNameForProduct(InsertSpacesBeforeCamelCase(projName), newversionstring);
+			bool successfullyCreatedNSISfile = false;
 			ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 			{
 				if (!Directory.Exists(WindowsInterop.LocalAppDataPath + @"\FJH\NSISinstaller\NSISexports")) Directory.CreateDirectory(WindowsInterop.LocalAppDataPath + @"\FJH\NSISinstaller\NSISexports");
@@ -205,7 +214,6 @@ public class VisualStudioInterop
 				{
 					sw2.Write(NsisInterop.DotNetChecker_NSH_file);
 				}
-				string nsisFileName = WindowsInterop.LocalAppDataPath + @"\FJH\NSISinstaller\NSISexports\" + projName + "_" + newversionstring + ".nsi";
 				using (StreamWriter sw1 = new StreamWriter(nsisFileName))
 				{
 					//TODO: This is awesome, after installing with NSIS you can type appname in RUN and it will open
@@ -244,18 +252,48 @@ public class VisualStudioInterop
 						}
 				}
 
+				
 				string MakeNsisFilePath = @"C:\Program Files (x86)\NSIS\makensis.exe";
 				if (!File.Exists(MakeNsisFilePath)) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Could not find MakeNsis.exe: " + MakeNsisFilePath);
 				else
 				{
+					if (File.Exists(resultSetupFileName))
+						File.Delete(resultSetupFileName);
 					Process nsisCompileProc = Process.Start(MakeNsisFilePath, "\"" + nsisFileName + "\"");
 					nsisCompileProc.WaitForExit();
 
-					string resultSetupFileName = Path.GetDirectoryName(nsisFileName) + "\\" + NsisInterop.GetSetupNameForProduct(InsertSpacesBeforeCamelCase(projName), newversionstring);
-					if (File.Exists(resultSetupFileName)) Process.Start("explorer", "/select, \"" + resultSetupFileName + "\"");
+					if (File.Exists(resultSetupFileName))
+					{
+						if (OpenFolderAndSetupFileAfterSuccessfullNSIS)
+						{
+							Process.Start("explorer", "/select, \"" + resultSetupFileName + "\"");
+							Process.Start(resultSetupFileName);
+						}
+						successfullyCreatedNSISfile = true;
+					}
 					else Process.Start("explorer", "/select, \"" + Path.GetDirectoryName(nsisFileName) + "\"");
 				}
 			});
+			if (successfullyCreatedNSISfile)
+				return resultSetupFileName;
+		}
+		return null;
+	}
+
+	public static void PerformPublishOnline(TextBox messagesTextbox, string projName, bool AutomaticallyUpdateRevision = false)
+	{
+		string publishedSetupPath = PerformPublish(messagesTextbox, projName, AutomaticallyUpdateRevision, false);
+		if (publishedSetupPath != null)
+		{
+			string validatedUrlsectionForProjname = HttpUtility.UrlPathEncode(projName).ToLower();
+
+			NetworkInterop.FtpUploadFile(
+				messagesTextbox,
+				defaultRootUriForVsPublishing + "/" + validatedUrlsectionForProjname,
+				NetworkInterop.ftpUsername,
+				NetworkInterop.ftpPassword,
+				publishedSetupPath,
+				defaultRootUriAFTERvspublishing + "/" + validatedUrlsectionForProjname);
 		}
 	}
 }

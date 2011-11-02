@@ -6,6 +6,7 @@ using System.Threading;
 using System.Windows.Forms;
 using System.IO;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 public class NetworkInterop
 {
@@ -74,6 +75,9 @@ public class NetworkInterop
 			FeedbackText = FeedbackTextIn;
 		}
 	}
+
+	public const string ftpUsername = "francois";
+	public const string ftpPassword = "bokbokkie";
 
 	private const string defaultFolderToSaveIn = @"c:\tempReceived";//@"C:\Francois\other\Test\CS_TestListeningServerReceivedFiles";
 	private const string defaultFilePathForSavingForServer = defaultFolderToSaveIn + "\\filereceivedserver.tmp";
@@ -824,6 +828,100 @@ public class NetworkInterop
 			counter++;
 		}
 		//MessageBox.Show(this, "File assebled successfully");
+	}
+
+	public static void FtpUploadFile(TextBox messageTextbox, string ftpRootUri, string userName, string password, string localFilename, string urlWhenSuccessullyUploaded = null)
+	{
+		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+		{
+			using (System.Net.WebClient client = new System.Net.WebClient())
+			{
+				try
+				{
+					string fileNameOnServer = new FileInfo(localFilename).Name;
+					Console.WriteLine("fileNameOnServer" + fileNameOnServer);
+					string dirOnFtpServer = ftpRootUri + "/" + fileNameOnServer;
+					//FtpCreateDirectory(ftpRootUri);
+					bool DirexistCanContinue = false;
+					if (!FtpDirectoryExists(ftpRootUri, ftpUsername, ftpPassword))
+					{
+						if (CreateFTPDirectory(ftpRootUri, ftpUsername, ftpPassword))
+							DirexistCanContinue = true;
+					}
+					else DirexistCanContinue = true;
+
+					if (DirexistCanContinue)
+					{
+						client.Credentials = new System.Net.NetworkCredential(userName, password);
+						client.UploadFile(dirOnFtpServer, "STOR", localFilename);
+						Logging.appendLogTextbox_OfPassedTextbox(messageTextbox, "Successfully uploaded " + fileNameOnServer);
+						Process.Start(urlWhenSuccessullyUploaded);
+					}
+					else UserMessages.ShowErrorMessage("Could not upload file (could not find/create directory online: " + ftpRootUri);
+				}
+				catch (Exception exc)
+				{
+					MessageBox.Show("Exception in transfer: " + exc.Message);
+				}
+			}
+		},
+		false,
+		"FtpUploadThread");
+	}
+
+	public static bool FtpDirectoryExists(string directoryPath, string ftpUser, string ftpPassword)
+	{
+		bool IsExists = true;
+		try
+		{
+			FtpWebRequest request = (FtpWebRequest)WebRequest.Create(directoryPath);
+			request.Credentials = new NetworkCredential(ftpUser, ftpPassword);
+			request.Method = WebRequestMethods.Ftp.ListDirectory;
+
+			FtpWebResponse response = (FtpWebResponse)request.GetResponse();
+		}
+		catch (WebException ex)
+		{
+			Console.WriteLine("WebException on FtpDirectoryExists" + ex.Message);
+			IsExists = false;
+		}
+		return IsExists;
+	}
+
+	public static bool CreateFTPDirectory(string directory, string ftpUser, string ftpPassword)
+	{
+
+		try
+		{
+			//create the directory
+			FtpWebRequest requestDir = (FtpWebRequest)FtpWebRequest.Create(new Uri(directory));
+			requestDir.Method = WebRequestMethods.Ftp.MakeDirectory;
+			requestDir.Credentials = new NetworkCredential(ftpUser, ftpPassword);
+			requestDir.UsePassive = true;
+			requestDir.UseBinary = true;
+			requestDir.KeepAlive = false;
+			FtpWebResponse response = (FtpWebResponse)requestDir.GetResponse();
+			Stream ftpStream = response.GetResponseStream();
+
+			ftpStream.Close();
+			response.Close();
+
+			return true;
+		}
+		catch (WebException ex)
+		{
+			FtpWebResponse response = (FtpWebResponse)ex.Response;
+			if (response.StatusCode == FtpStatusCode.ActionNotTakenFileUnavailable)
+			{
+				response.Close();
+				return true;
+			}
+			else
+			{
+				response.Close();
+				return false;
+			}
+		}
 	}
 
 	/*public static Socket CreateLocalServer(int portNumber, int maximumPendingConnections = 100)

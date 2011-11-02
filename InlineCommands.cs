@@ -385,6 +385,20 @@ public class InlineCommands
 							CommandDetails.PathAutocompleteEnum.Both)
 					},
 			CommandDetails.PerformCommandTypeEnum.PublishVs);
+
+		AddToCommandList("publishvsonline",
+			"publishvsonline QuickAccess",
+			new List<CommandDetails.CommandArgumentClass>()
+					{
+						new CommandDetails.CommandArgumentClass("VsProjectName", true, CommandDetails.TypeArg.Text,
+							new Dictionary<string,string>()
+							{
+								{ "QuickAccess", null },
+								{ "MonitorSystem", null }
+							},
+							CommandDetails.PathAutocompleteEnum.Both)
+					},
+			CommandDetails.PerformCommandTypeEnum.PublishVsOnline);
 	}
 
 	public static CommandDetails GetCommandDetailsFromTextboxText(string TextboxTextIn)
@@ -435,6 +449,7 @@ public class InlineCommands
 			Svnstatus,
 			SvnstatusLocal,
 			PublishVs,
+			PublishVsOnline,
 			Undefined
 		};
 		public const char ArgumentSeparator = ';';
@@ -647,6 +662,11 @@ public class InlineCommands
 				case PerformCommandTypeEnum.PublishVs:
 					foreach (string commaSplit in argStr.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
 						VisualStudioInterop.PerformPublish(messagesTextbox, commaSplit);//argStr);
+					break;
+
+				case PerformCommandTypeEnum.PublishVsOnline:
+					foreach (string commaSplit in argStr.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+						VisualStudioInterop.PerformPublishOnline(messagesTextbox, commaSplit, true);//argStr);
 					break;
 
 				case PerformCommandTypeEnum.Undefined:

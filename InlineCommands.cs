@@ -790,3 +790,106 @@ public class InlineCommands
 		}
 	}
 }
+
+public class TempNewCommandsManagerClass
+{
+	//TODO: May look at chrome after typing commandname, hit TAB to invoke that commands interface: http://thecodingbug.com/blog/2010/7/26/how-to-use-the-omnibox-api-in-google-chrome/
+	public interface ICommandWithHandler
+	{
+		string CommandName { get; }
+		string DisplayName { get; }
+		string Description { get; }
+		bool ValidateArguments(string argumentString);
+		bool PerformCommand(string argumentString);
+	}
+
+	//TODO: Check out "Code Definition Window" in the view menu of Visual Studio
+	public class RunCommand : ICommandWithHandler
+	{
+		public string CommandName { get { return "run"; } }
+		public string DisplayName { get { return "Run"; } }
+		public string Description { get { return "Run any file/folder"; } }
+
+		public bool ValidateArguments(string argumentString)
+		{
+			return true;
+		}
+
+		public bool PerformCommand(string argumentString)
+		{
+			try
+			{
+				System.Diagnostics.Process.Start(argumentString);
+				return true;
+			}
+			catch (Exception exc)
+			{
+				UserMessages.ShowWarningMessage("Cannot run: " + argumentString + Environment.NewLine + exc.Message);
+				return false;
+			}
+		}
+	}
+
+	public class GoogleSearchCommand : ICommandWithHandler
+	{
+		public string CommandName { get { return "google"; } }
+		public string DisplayName { get { return "Google Search"; } }
+		public string Description { get { return "Google search a word/phrase"; } }
+
+		public bool ValidateArguments(string argumentString)
+		{
+			return true;
+		}
+
+		public bool PerformCommand(string argumentString)
+		{
+			try
+			{
+				System.Diagnostics.Process.Start("http://www.google.co.za/search?q=" + argumentString);
+				return true;
+			}
+			catch (Exception exc)
+			{
+				UserMessages.ShowWarningMessage("Cannot google search: " + argumentString + Environment.NewLine + exc.Message);
+				return false;
+			}
+		}
+	}
+
+	public class ExploreCommand : ICommandWithHandler
+	{
+		public string CommandName { get { return "explore"; } }
+		public string DisplayName { get { return "Explore"; } }
+		public string Description { get { return "Explore a folder"; } }
+
+		public bool ValidateArguments(string argumentString)
+		{
+			return true;
+		}
+
+		public bool PerformCommand(string argumentString)
+		{
+			try
+			{
+				if (!Directory.Exists(argumentString)) throw new DirectoryNotFoundException("Directory not found: " + argumentString);
+				System.Diagnostics.Process.Start(argumentString);
+				//Process.Start("explorer", "/select, \"" + argumentString + "\"");
+				return true;
+			}
+			catch (Exception exc)
+			{
+				UserMessages.ShowWarningMessage("Cannot explore: " + argumentString + Environment.NewLine + exc.Message);
+				return false;
+			}
+		}
+	}
+
+
+	public static void PerformCommand(ICommandWithHandler command, string argumentString)
+	{
+		if (!command.ValidateArguments(argumentString) && UserMessages.ShowWarningMessage("Cannot validate arguments: " + argumentString))
+			return;
+		Console.WriteLine("Now performing: " + command.DisplayName + " (" + command.Description + ")");
+		command.PerformCommand(argumentString);
+	}
+}

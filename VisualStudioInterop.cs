@@ -38,7 +38,7 @@ public class VisualStudioInterop
 	private enum BuildType { Rebuild, Build };
 	private enum ProjectConfiguration { Debug, Release };
 	private enum PlatformTarget { x86, x64 };
-	private static string BuildVsProjectReturnNewversionString(string projectFilename, BuildType buildType, ProjectConfiguration configuration, PlatformTarget platformTarget, bool AutomaticallyUpdateRevision, TextFeedbackEventHandler textFeedbackEvent = null)
+	private static string BuildVsProjectReturnNewversionString(string projName, string projectFilename, BuildType buildType, ProjectConfiguration configuration, PlatformTarget platformTarget, bool AutomaticallyUpdateRevision, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
 		string msbuildpath;
 		if (!FindMsbuildPath4(out msbuildpath))
@@ -51,44 +51,49 @@ public class VisualStudioInterop
 		while (msbuildpath.EndsWith("\\")) msbuildpath = msbuildpath.Substring(0, msbuildpath.Length - 1);
 		msbuildpath += "\\msbuild.exe";
 
-		ProcessStartInfo startinfo = new ProcessStartInfo(msbuildpath,
-			"/t:" + buildType.ToString().ToLower() +
-			" /p:configuration=" + configuration.ToString().ToLower() +
-			" /p:AllowUnsafeBlocks=true" +
-			" /p:PlatformTarget=" + platformTarget.ToString() +
-			" \"" + projectFilename + "\"");
-
-		startinfo.UseShellExecute = false;
-		startinfo.CreateNoWindow = false;
-		startinfo.RedirectStandardOutput = true;
-		startinfo.RedirectStandardError = true;
-		System.Diagnostics.Process msbuildproc = new Process();
-		msbuildproc.OutputDataReceived += delegate(object sendingProcess, DataReceivedEventArgs outLine)
-		{
-			//if (outLine.Data != null && outLine.Data.Trim().Length > 0)
-			//  Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Msbuild output: " + outLine.Data);
-			//else appendLogTextbox("Svn output empty");
-		};
 		bool errorOccurred = false;
-		msbuildproc.ErrorDataReceived += delegate(object sendingProcess, DataReceivedEventArgs outLine)
+		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 		{
-			if (outLine.Data != null && outLine.Data.Trim().Length > 0)
+			ProcessStartInfo startinfo = new ProcessStartInfo(msbuildpath,
+				"/t:" + buildType.ToString().ToLower() +
+				" /p:configuration=" + configuration.ToString().ToLower() +
+				" /p:AllowUnsafeBlocks=true" +
+				" /p:PlatformTarget=" + platformTarget.ToString() +
+				" \"" + projectFilename + "\"");
+
+			startinfo.UseShellExecute = false;
+			startinfo.CreateNoWindow = false;
+			startinfo.RedirectStandardOutput = true;
+			startinfo.RedirectStandardError = true;
+			System.Diagnostics.Process msbuildproc = new Process();
+			msbuildproc.OutputDataReceived += delegate(object sendingProcess, DataReceivedEventArgs outLine)
 			{
-				errorOccurred = true;
-				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Msbuild error: " + outLine.Data);
-			}
-			//else appendLogTextbox("Svn error empty");
-		};
-		msbuildproc.StartInfo = startinfo;
+				//if (outLine.Data != null && outLine.Data.Trim().Length > 0)
+				//  Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Msbuild output: " + outLine.Data);
+				//else appendLogTextbox("Svn output empty");
+			};
+			msbuildproc.ErrorDataReceived += delegate(object sendingProcess, DataReceivedEventArgs outLine)
+			{
+				if (outLine.Data != null && outLine.Data.Trim().Length > 0)
+				{
+					errorOccurred = true;
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Msbuild error: " + outLine.Data);
+				}
+				//else appendLogTextbox("Svn error empty");
+			};
+			msbuildproc.StartInfo = startinfo;
 
-		if (msbuildproc.Start())
-			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Started building, please wait...");
-		else TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Error: Could not start SVN process.");
+			if (msbuildproc.Start())
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Started building for " + projName + ", please wait...");
+			else TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Error: Could not start SVN process.");
 
-		msbuildproc.BeginOutputReadLine();
-		msbuildproc.BeginErrorReadLine();
+			msbuildproc.BeginOutputReadLine();
+			msbuildproc.BeginErrorReadLine();
 
-		msbuildproc.WaitForExit();
+			msbuildproc.WaitForExit();
+		},
+		WaitUntilFinish: true,
+		ThreadName: "MsBuild Thread");
 
 		if (!errorOccurred)
 		{
@@ -175,8 +180,9 @@ public class VisualStudioInterop
 	}
 
 	//TODO: Start building own publishing platform (FTP, the html page, etc)
-	public static string PerformPublish(string projName, bool AutomaticallyUpdateRevision = false, bool OpenFolderAndSetupFileAfterSuccessfullNSIS = true, TextFeedbackEventHandler textFeedbackEvent = null)
+	public static string PerformPublish(string projName, out string versionString, bool AutomaticallyUpdateRevision = false, bool OpenFolderAndSetupFileAfterSuccessfullNSIS = true, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
+		versionString = "";
 		string projDir =
 					Directory.Exists(projName) ? projName :
 				Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects\" + projName;
@@ -195,13 +201,27 @@ public class VisualStudioInterop
 		if (!ProjFileFound) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Could not find project file (csproj) in dir " + projDir);
 		else
 		{
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Attempting to MsBuild project " + projName);
 			string newversionstring = BuildVsProjectReturnNewversionString(
+				projName,
 				csprojFileName,
 				BuildType.Rebuild,
 				ProjectConfiguration.Release,
 				PlatformTarget.x86,//.x64,
-				AutomaticallyUpdateRevision);
-			if (newversionstring == null) return null;
+				AutomaticallyUpdateRevision,
+				textFeedbackEvent);
+			if (newversionstring == null)
+			{
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Could not obtain version string for project " + projName);
+				return null;
+			}
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(
+				textFeedbackEvent,
+				AutomaticallyUpdateRevision
+				? "Updated revision of " + projName + " to " + newversionstring + ", attempting to publish..."
+				: "Using current revision of " + projName + " (" + newversionstring + "), attempting to publish...");
+			
+			versionString = newversionstring;
 
 			string nsisFileName = WindowsInterop.LocalAppDataPath + @"\FJH\NSISinstaller\NSISexports\" + projName + "_" + newversionstring + ".nsi";
 			string resultSetupFileName = Path.GetDirectoryName(nsisFileName) + "\\" + NsisInterop.GetSetupNameForProduct(InsertSpacesBeforeCamelCase(projName), newversionstring);
@@ -265,12 +285,14 @@ public class VisualStudioInterop
 					{
 						if (OpenFolderAndSetupFileAfterSuccessfullNSIS)
 						{
+							TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Publish success, opening folder and running setup file...");
 							Process.Start("explorer", "/select, \"" + resultSetupFileName + "\"");
 							Process.Start(resultSetupFileName);
 						}
 						successfullyCreatedNSISfile = true;
 					}
-					else Process.Start("explorer", "/select, \"" + Path.GetDirectoryName(nsisFileName) + "\"");
+					else TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Could not successfully create setup for " + projName);
+					//else Process.Start("explorer", "/select, \"" + Path.GetDirectoryName(nsisFileName) + "\"");
 				}
 			});
 			if (successfullyCreatedNSISfile)
@@ -279,18 +301,60 @@ public class VisualStudioInterop
 		return null;
 	}
 
+	private static string SurroundWithHtmlTag(string textToSurround, string tagName, string className = null)
+	{
+		return string.Format("<{0}{2}>{1}</{0}>", tagName, textToSurround, className == null ? "" : " class='" + className + "'");
+	}
+
+	public static string CreateHtmlPageReturnFilename(string projName, string projVersion)
+	{
+		string tempFilename = Path.GetTempPath() + "\\index.html";
+		using (StreamWriter sw = new StreamWriter(tempFilename, false))
+		{
+			sw.WriteLine("<html>");
+			sw.WriteLine("<head>");
+			sw.WriteLine("<style>");
+			sw.WriteLine(".heading { color: blue; }");
+			sw.WriteLine(".value { color: gray; }");
+			sw.WriteLine("</style>");
+			sw.WriteLine("</head>");
+			sw.WriteLine("<body>");
+			sw.WriteLine(SurroundWithHtmlTag("Project: ", "label", "heading"));
+			sw.WriteLine(SurroundWithHtmlTag(projName, "label", "value"));
+			sw.WriteLine("</br>");
+			sw.WriteLine(SurroundWithHtmlTag("Version: ", "label", "heading"));
+			sw.WriteLine(SurroundWithHtmlTag(projVersion, "label", "value"));
+			sw.WriteLine("</body>");
+			sw.WriteLine("</html>");
+		}
+		return tempFilename;
+	}
+
 	public static void PerformPublishOnline(string projName, bool AutomaticallyUpdateRevision = false, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
-		string publishedSetupPath = PerformPublish(projName, AutomaticallyUpdateRevision, false, textFeedbackEvent);
+		string versionString;
+		string publishedSetupPath = PerformPublish(projName, out versionString, AutomaticallyUpdateRevision, false, textFeedbackEvent);
 		if (publishedSetupPath != null)
 		{
 			string validatedUrlsectionForProjname = HttpUtility.UrlPathEncode(projName).ToLower();
 
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent,
+				"Attempting Ftp Uploading of Setup file for " + projName);
 			NetworkInterop.FtpUploadFile(
 				defaultRootUriForVsPublishing + "/" + validatedUrlsectionForProjname,
 				NetworkInterop.ftpUsername,
 				NetworkInterop.ftpPassword,
 				publishedSetupPath,
+				defaultRootUriAFTERvspublishing + "/" + validatedUrlsectionForProjname);
+
+			string htmlFilePath = CreateHtmlPageReturnFilename(projName, versionString);
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent,
+				"Attempting Ftp Uploading of Html file for " + projName);
+			NetworkInterop.FtpUploadFile(
+				defaultRootUriForVsPublishing + "/" + validatedUrlsectionForProjname,
+				NetworkInterop.ftpUsername,
+				NetworkInterop.ftpPassword,
+				htmlFilePath,
 				defaultRootUriAFTERvspublishing + "/" + validatedUrlsectionForProjname);
 		}
 	}

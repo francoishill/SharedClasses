@@ -665,13 +665,17 @@ public class InlineCommands
 					break;
 
 				case PerformCommandTypeEnum.PublishVs:
+					string tmpNoUseVersionStr;
 					foreach (string commaSplit in argStr.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
-						VisualStudioInterop.PerformPublish(commaSplit, textFeedbackEvent: textFeedbackEvent);//argStr);
+						VisualStudioInterop.PerformPublish(commaSplit, out tmpNoUseVersionStr, textFeedbackEvent: textFeedbackEvent);//argStr);
 					break;
 
 				case PerformCommandTypeEnum.PublishVsOnline:
 					foreach (string commaSplit in argStr.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
-						VisualStudioInterop.PerformPublishOnline(commaSplit, true, textFeedbackEvent);//argStr);
+						VisualStudioInterop.PerformPublishOnline(
+							commaSplit,
+							UserMessages.Confirm("Update the revision also?"),
+							textFeedbackEvent);//argStr);
 					break;
 
 				case PerformCommandTypeEnum.Undefined:

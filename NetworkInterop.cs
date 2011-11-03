@@ -832,8 +832,8 @@ public class NetworkInterop
 
 	public static void FtpUploadFile(string ftpRootUri, string userName, string password, string localFilename, string urlWhenSuccessullyUploaded = null, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
-		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
-		{
+		//ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+		//{
 			using (System.Net.WebClient client = new System.Net.WebClient())
 			{
 				try
@@ -843,9 +843,9 @@ public class NetworkInterop
 					string dirOnFtpServer = ftpRootUri + "/" + fileNameOnServer;
 					//FtpCreateDirectory(ftpRootUri);
 					bool DirexistCanContinue = false;
-					if (!FtpDirectoryExists(ftpRootUri, ftpUsername, ftpPassword))
+					if (!FtpDirectoryExists(ftpRootUri, userName, password))
 					{
-						if (CreateFTPDirectory(ftpRootUri, ftpUsername, ftpPassword))
+						if (CreateFTPDirectory(ftpRootUri, userName, password))
 							DirexistCanContinue = true;
 					}
 					else DirexistCanContinue = true;
@@ -864,9 +864,9 @@ public class NetworkInterop
 					MessageBox.Show("Exception in transfer: " + exc.Message);
 				}
 			}
-		},
-		false,
-		"FtpUploadThread");
+		//},
+		//false,
+		//"FtpUploadThread");
 	}
 
 	public static bool FtpDirectoryExists(string directoryPath, string ftpUser, string ftpPassword)

@@ -8,13 +8,14 @@ using System.Windows.Forms;
 
 public class MicrosoftOfficeInterop
 {
-	public static void CreateNewOutlookMessage(TextBox messagesTextbox, string To, string Subject, string Body)
+	public static void CreateNewOutlookMessage(string To, string Subject, string Body, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
 		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 		{
 			if (Process.GetProcessesByName("Outlook").Length == 0)
 			{
-				Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Starting Outlook, please wait...");
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Starting Outlook, please wait...");
+				//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Starting Outlook, please wait...");
 				Process p = System.Diagnostics.Process.Start("Outlook");
 			}
 

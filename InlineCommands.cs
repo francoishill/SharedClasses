@@ -511,7 +511,7 @@ public class InlineCommands
 			commandUsercontrol = commandUsercontrolIn;
 		}
 
-		public void PerformCommand(string fullCommandText, ComboBox textboxtoClearOnSuccess, TextBox messagesTextbox)
+		public void PerformCommand(string fullCommandText, ComboBox textboxtoClearOnSuccess, TextFeedbackEventHandler textFeedbackEvent = null)
 		{
 			string TextboxTextIn = fullCommandText;//textboxtoClearOnSuccess.Text;
 			string argStr = TextboxTextIn.Contains(' ') ? TextboxTextIn.Substring(TextboxTextIn.IndexOf(' ') + 1) : "";
@@ -536,14 +536,17 @@ public class InlineCommands
 							{
 								System.Diagnostics.Process.Start(exepath);
 							}
-							catch (Exception exc) { Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, exc.Message); }
+							catch (Exception exc)
+							{
+								TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, exc.Message);
+								//Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, exc.Message);
+							}
 						}
 					}
 					break;
 
 				case PerformCommandTypeEnum.AddTodoitemFirepuma:
 					PhpInterop.AddTodoItemFirepuma(
-						messagesTextbox,
 						PhpInterop.ServerAddress,
 						PhpInterop.doWorkAddress,
 						PhpInterop.Username,
@@ -557,15 +560,16 @@ public class InlineCommands
 					 DateTime.Now,
 					 0,
 					 false,
-					 Convert.ToInt32(argStr.Split(';')[1]));
+					 Convert.ToInt32(argStr.Split(';')[1]),
+					 textFeedbackEvent);
 					break;
 
 				case PerformCommandTypeEnum.CreateNewOutlookMessage:
 					MicrosoftOfficeInterop.CreateNewOutlookMessage(
-						messagesTextbox,
 								argStr.Split(';')[0],
 								argStr.Split(';')[1],
-								argStr.Split(';').Length >= 3 ? argStr.Split(';')[2] : "");
+								argStr.Split(';').Length >= 3 ? argStr.Split(';')[2] : "",
+								textFeedbackEvent);
 					break;
 
 				case PerformCommandTypeEnum.WebOpenUrl:
@@ -582,14 +586,15 @@ public class InlineCommands
 				case PerformCommandTypeEnum.KillProcess:
 					string processName = argStr;
 					Process[] processes = Process.GetProcessesByName(processName);
-					if (processes.Length > 1) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "More than one process found, cannot kill");
-					else if (processes.Length == 0) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Cannot find process with name " + processName);
+					if (processes.Length > 1) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "More than one process found, cannot kill");//Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "More than one process found, cannot kill");
+					else if (processes.Length == 0) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Cannot find process with name " + processName);//Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Cannot find process with name " + processName);
 					else
 					{
 						if (UserMessages.Confirm("Confirm to kill process '" + processes[0].ProcessName + "'"))
 						{
 							processes[0].Kill();
-							Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Process killed: " + processName);
+							TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Process killed: " + processName);
+							//Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Process killed: " + processName);
 						}
 					}
 					break;
@@ -598,13 +603,13 @@ public class InlineCommands
 					string filePath = @"C:\Francois\Other\Startup\work Startup.bat";
 					string comm = argStr;
 					//getall/getline 'xxx'/comment #/uncomment #
-					StartupbatInterop.PerformStartupbatCommand(messagesTextbox, filePath, comm);
+					StartupbatInterop.PerformStartupbatCommand(filePath, comm, textFeedbackEvent);
 					break;
 
 				case PerformCommandTypeEnum.Call:
 					if (commandArguments[0].TokenWithReplaceStringPair != null && commandArguments[0].TokenWithReplaceStringPair.ContainsKey(argStr))
-						Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, commandArguments[0].TokenWithReplaceStringPair[argStr] ?? argStr);
-					else Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Call command not recognized: " + argStr);
+						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, commandArguments[0].TokenWithReplaceStringPair[argStr] ?? argStr);
+					else TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Call command not recognized: " + argStr);
 					break;
 
 				case PerformCommandTypeEnum.Cmd:
@@ -616,12 +621,12 @@ public class InlineCommands
 						if (commandArguments[0].TokenWithReplaceStringPair != null && commandArguments[0].TokenWithReplaceStringPair.ContainsKey(cmdpathSplitted))
 							cmdpathSplitted = commandArguments[0].TokenWithReplaceStringPair[cmdpathSplitted] ?? cmdpathSplitted;
 
-						WindowsInterop.StartCommandPromptOrVScommandPrompt(messagesTextbox, cmdpathSplitted, PerformCommandType == PerformCommandTypeEnum.VsCmd);
+						WindowsInterop.StartCommandPromptOrVScommandPrompt(cmdpathSplitted, PerformCommandType == PerformCommandTypeEnum.VsCmd, textFeedbackEvent);
 					}
 					break;
 
 				case PerformCommandTypeEnum.Btw:
-					if (PhpInterop.AddBtwTextFirepuma(messagesTextbox, argStr))
+					if (PhpInterop.AddBtwTextFirepuma(argStr, textFeedbackEvent))
 						textboxtoClearOnSuccess.Text = "";
 					break;
 
@@ -652,7 +657,7 @@ public class InlineCommands
 						string svnlogmessage = tmpsplit.Contains(ArgumentSeparator) ? tmpsplit.Split(ArgumentSeparator)[1] : "";
 						if (commandArguments[0].TokenWithReplaceStringPair != null && commandArguments[0].TokenWithReplaceStringPair.ContainsKey(svnprojname))
 							tmpsplit = (commandArguments[0].TokenWithReplaceStringPair[svnprojname] ?? svnprojname) + (tmpsplit.Contains(ArgumentSeparator) ? ArgumentSeparator + svnlogmessage : "");
-						SvnInterop.PerformSvn(messagesTextbox, tmpsplit, svnCommand);
+						SvnInterop.PerformSvn(tmpsplit, svnCommand, textFeedbackEvent);
 					}
 					//}
 					//else appendLogTextbox_OfPassedTextbox(messagesTextbox, "Error: No semicolon. Command syntax is 'svncommit proj/othercommand projname;logmessage'");
@@ -661,12 +666,12 @@ public class InlineCommands
 
 				case PerformCommandTypeEnum.PublishVs:
 					foreach (string commaSplit in argStr.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
-						VisualStudioInterop.PerformPublish(messagesTextbox, commaSplit);//argStr);
+						VisualStudioInterop.PerformPublish(commaSplit, textFeedbackEvent: textFeedbackEvent);//argStr);
 					break;
 
 				case PerformCommandTypeEnum.PublishVsOnline:
 					foreach (string commaSplit in argStr.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
-						VisualStudioInterop.PerformPublishOnline(messagesTextbox, commaSplit, true);//argStr);
+						VisualStudioInterop.PerformPublishOnline(commaSplit, true, textFeedbackEvent);//argStr);
 					break;
 
 				case PerformCommandTypeEnum.Undefined:
@@ -793,38 +798,50 @@ public class InlineCommands
 
 public class TempNewCommandsManagerClass
 {
+	private static bool CanParseToInt(string str)
+	{
+		int tmpInt;
+		return int.TryParse(str, out tmpInt);
+	}
+
+	//TODO: Check out "Code Definition Window" in the view menu of Visual Studio
 	//TODO: May look at chrome after typing commandname, hit TAB to invoke that commands interface: http://thecodingbug.com/blog/2010/7/26/how-to-use-the-omnibox-api-in-google-chrome/
 	public interface ICommandWithHandler
 	{
 		string CommandName { get; }
 		string DisplayName { get; }
 		string Description { get; }
-		bool ValidateArguments(string argumentString);
-		bool PerformCommand(string argumentString);
+		bool ValidateArguments(out string errorMessage, params string[] arguments);
+		bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments);
 	}
 
-	//TODO: Check out "Code Definition Window" in the view menu of Visual Studio
 	public class RunCommand : ICommandWithHandler
 	{
 		public string CommandName { get { return "run"; } }
 		public string DisplayName { get { return "Run"; } }
 		public string Description { get { return "Run any file/folder"; } }
 
-		public bool ValidateArguments(string argumentString)
+		public bool ValidateArguments(out string errorMessage, params string[] arguments)
 		{
-			return true;
+			errorMessage = "";
+			if (arguments.Length != 1) errorMessage = "Exactly one argument required for Run command";
+			//else if (!(arguments[0] is string)) errorMessage = "First argument of run command must be of type string";
+			else if (string.IsNullOrEmpty(arguments[0])) errorMessage = "First argument of run command may not be null/empty";
+			else return true;
+			return false;
 		}
 
-		public bool PerformCommand(string argumentString)
+		public bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
 		{
+			if (!ValidateArguments(out errorMessage, arguments)) return false;
 			try
 			{
-				System.Diagnostics.Process.Start(argumentString);
+				System.Diagnostics.Process.Start(arguments[0]);
 				return true;
 			}
 			catch (Exception exc)
 			{
-				UserMessages.ShowWarningMessage("Cannot run: " + argumentString + Environment.NewLine + exc.Message);
+				UserMessages.ShowWarningMessage("Cannot run: " + arguments [0] + Environment.NewLine + exc.Message);
 				return false;
 			}
 		}
@@ -836,21 +853,27 @@ public class TempNewCommandsManagerClass
 		public string DisplayName { get { return "Google Search"; } }
 		public string Description { get { return "Google search a word/phrase"; } }
 
-		public bool ValidateArguments(string argumentString)
+		public bool ValidateArguments(out string errorMessage, params string[] arguments)
 		{
-			return true;
+			errorMessage = "";
+			if (arguments.Length != 1) errorMessage = "Exactly one argument required for Google search command";
+			//else if (!(arguments[0] is string)) errorMessage = "First argument of Google search command must be of type string";
+			else if (string.IsNullOrEmpty(arguments[0])) errorMessage = "1st argument of Google search command may not be null/empty";
+			else return true;
+			return false;
 		}
 
-		public bool PerformCommand(string argumentString)
+		public bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
 		{
+			if (!ValidateArguments(out errorMessage, arguments)) return false;
 			try
 			{
-				System.Diagnostics.Process.Start("http://www.google.co.za/search?q=" + argumentString);
+				System.Diagnostics.Process.Start("http://www.google.co.za/search?q=" + arguments[0]);
 				return true;
 			}
 			catch (Exception exc)
 			{
-				UserMessages.ShowWarningMessage("Cannot google search: " + argumentString + Environment.NewLine + exc.Message);
+				UserMessages.ShowWarningMessage("Cannot google search: " + arguments[0] + Environment.NewLine + exc.Message);
 				return false;
 			}
 		}
@@ -862,34 +885,95 @@ public class TempNewCommandsManagerClass
 		public string DisplayName { get { return "Explore"; } }
 		public string Description { get { return "Explore a folder"; } }
 
-		public bool ValidateArguments(string argumentString)
+		public bool ValidateArguments(out string errorMessage, params string[] arguments)
 		{
-			return true;
+			errorMessage = "";
+			if (arguments.Length != 1) errorMessage = "Exactly one argument required for Explore command";
+			//else if (!(arguments[0] is string)) errorMessage = "First argument of Explore command must be of type string";
+			else if (string.IsNullOrEmpty(arguments[0])) errorMessage = "1st argument of Explore command may not be null/empty";
+			else if (!Directory.Exists(arguments[0])) errorMessage = "First argument of Explore command must be existing directory";
+			else return true;
+			return false;
 		}
 
-		public bool PerformCommand(string argumentString)
+		public bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
 		{
+			if (!ValidateArguments(out errorMessage, arguments)) return false;
 			try
 			{
-				if (!Directory.Exists(argumentString)) throw new DirectoryNotFoundException("Directory not found: " + argumentString);
-				System.Diagnostics.Process.Start(argumentString);
+				if (!Directory.Exists(arguments[0])) throw new DirectoryNotFoundException("Directory not found: " + arguments[0]);
+				System.Diagnostics.Process.Start(arguments[0]);
 				//Process.Start("explorer", "/select, \"" + argumentString + "\"");
 				return true;
 			}
 			catch (Exception exc)
 			{
-				UserMessages.ShowWarningMessage("Cannot explore: " + argumentString + Environment.NewLine + exc.Message);
+				UserMessages.ShowWarningMessage("Cannot explore: " + arguments[0] + Environment.NewLine + exc.Message);
 				return false;
 			}
 		}
 	}
 
-
-	public static void PerformCommand(ICommandWithHandler command, string argumentString)
+	public class AddTodoitemFirepumaCommand : ICommandWithHandler
 	{
-		if (!command.ValidateArguments(argumentString) && UserMessages.ShowWarningMessage("Cannot validate arguments: " + argumentString))
+		public string CommandName { get { return "addtodo"; } }
+		public string DisplayName { get { return "Add todo"; } }
+		public string Description { get { return "Add todo item to firepuma"; } }
+
+		public bool ValidateArguments(out string errorMessage, params string[] arguments)
+		{
+			//minutes, autosnooze, name, desc
+			errorMessage = "";
+			if (arguments.Length < 3) errorMessage = "At least 3 arguments required for Add todo command (minutesfromnow, autosnooze, name, desc)";
+			else if (arguments.Length > 4) errorMessage = "More than 4 arguments not allowed for Add todo command (minutesfromnow, autosnooze, name, desc)";
+			else if (!CanParseToInt(arguments[0])) errorMessage = "First argument (minutesfromnow) of Add todo command must be of type int";
+			else if (!CanParseToInt(arguments[1])) errorMessage = "Second argument (autosnooze) of Add todo command must be of type int";
+			//else if (!(arguments[2] is string)) errorMessage = "Third argument (name) of Add todo command must be of type string";
+			//else if (arguments.Length == 4 && !(arguments[3] is string)) errorMessage = "Fourth argument (description) of Add todo command must be of type string";
+			else if (string.IsNullOrEmpty(arguments[2])) errorMessage = "Third argument (name) of Add todo command may not be null/empty";
+			else return true;
+			return false;
+		}
+
+		public bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+		{
+			if (!ValidateArguments(out errorMessage, arguments)) return false;
+			try
+			{
+				PhpInterop.AddTodoItemFirepuma(
+						PhpInterop.ServerAddress,
+						PhpInterop.doWorkAddress,
+						PhpInterop.Username,
+						PhpInterop.Password,
+					 "QuickAccess",
+					 "Quick todo",
+					 arguments[2],
+					 arguments.Length > 3 ? arguments[3] : "",
+					 false,
+					 DateTime.Now.AddMinutes(Convert.ToInt32(arguments[0])),
+					 DateTime.Now,
+					 0,
+					 false,
+					 Convert.ToInt32(arguments[1]),
+					 textFeedbackEvent);
+				return true;
+			}
+			catch (Exception exc)
+			{
+				UserMessages.ShowWarningMessage("Cannot add todo item: " + Environment.NewLine + exc.Message);
+				return false;
+			}
+		}
+	}
+
+	//TODO: This platform (using interface) is already working fine, should build on on it and add all commands
+	public static void PerformCommand(ICommandWithHandler command, TextFeedbackEventHandler textfeedbackEvent, params string[] arguments)
+	{
+		string errorMsg;
+		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackEvent, "Attempting to perform command: " + command.DisplayName + " (" + command.Description + ")");
+		if (!command.PerformCommand(out errorMsg, textfeedbackEvent, arguments)
+			&& UserMessages.ShowWarningMessage("Cannot perform command: " + errorMsg))
 			return;
-		Console.WriteLine("Now performing: " + command.DisplayName + " (" + command.Description + ")");
-		command.PerformCommand(argumentString);
+		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackEvent, "Successfully performed command: " + command.DisplayName + " (" + command.Description + ")");
 	}
 }

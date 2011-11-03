@@ -306,7 +306,7 @@ public partial class OverlayWindow : Window
 			{
 				System.Windows.Forms.ComboBox tmpCombobox = new System.Windows.Forms.ComboBox();
 				System.Windows.Forms.TextBox tmpTextbox = new System.Windows.Forms.TextBox();
-				InlineCommands.CommandList[commandNameLowercase].PerformCommand(commandNameLowercase + " " + filesDropped[0], tmpCombobox, tmpTextbox);
+				InlineCommands.CommandList[commandNameLowercase].PerformCommand(commandNameLowercase + " " + filesDropped[0], tmpCombobox);
 				tmpCombobox.Dispose();
 				tmpTextbox.Dispose();
 				tmpCombobox = null;

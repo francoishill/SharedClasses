@@ -10,7 +10,7 @@ public class SvnInterop
 {
 	public enum SvnCommand { Commit, Update, Status, StatusLocal };
 
-	public static void PerformSvn(TextBox messagesTextbox, string svnargs, SvnCommand svnCommand)
+	public static void PerformSvn(string svnargs, SvnCommand svnCommand, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
 		string projnameOrDir = svnargs.Split(';')[0];//projnameAndlogmessage.Split(';')[0];
 		string logmessage = null;
@@ -37,8 +37,8 @@ public class SvnInterop
 					listOfDirectoriesToCheckLocalStatusses.Add(workingDir);
 			}
 
-			if (!File.Exists(svnpath)) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Error: svn.exe does not exists: " + svnpath);
-			else if (!Directory.Exists(projDir) && listOfDirectoriesToCheckLocalStatusses == null) Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Error: folder not found: " + projDir);
+			if (!File.Exists(svnpath)) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Error: svn.exe does not exists: " + svnpath);
+			else if (!Directory.Exists(projDir) && listOfDirectoriesToCheckLocalStatusses == null) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Error: folder not found: " + projDir);
 			else
 			{
 				ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
@@ -70,14 +70,14 @@ public class SvnInterop
 						svnproc.OutputDataReceived += delegate(object sendingProcess, DataReceivedEventArgs outLine)
 						{
 							if (outLine.Data != null && outLine.Data.Trim().Length > 0)
-								Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Svn output: " + outLine.Data);
+								TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Svn output: " + outLine.Data);
 							//else appendLogTextbox("Svn output empty");
 						};
 						svnproc.ErrorDataReceived += delegate(object sendingProcess, DataReceivedEventArgs outLine)
 						{
 							if (outLine.Data != null && outLine.Data.Trim().Length > 0
 								&& !outLine.Data.ToLower().Contains("not a working copy"))
-								Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Svn error: " + outLine.Data);
+								TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Svn error: " + outLine.Data);
 							//else appendLogTextbox("Svn error empty");
 						};
 						svnproc.StartInfo = start;
@@ -89,11 +89,11 @@ public class SvnInterop
 							: svnCommand == SvnCommand.StatusLocal ? "Check status of svn (local), please wait..."
 							: "";
 						if (!svnproc.Start())
-							Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Error: Could not start SVN process.");
+							TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Error: Could not start SVN process.");
 						else if (!pleaseWaitAlreadyDisplayed)
 						{
 							pleaseWaitAlreadyDisplayed = true;
-							Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, performingPleasewaitMsg);
+							TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, performingPleasewaitMsg);
 						}
 
 						svnproc.BeginOutputReadLine();
@@ -106,7 +106,7 @@ public class SvnInterop
 		}
 		catch (Exception exc)
 		{
-			Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Exception on running svn: " + exc.Message);
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Exception on running svn: " + exc.Message);
 		}
 	}
 

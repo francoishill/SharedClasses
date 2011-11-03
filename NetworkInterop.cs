@@ -52,29 +52,29 @@ public class NetworkInterop
 		return new IPEndPoint(GetLocalIPaddress(), portNumber);
 	}
 
-	public delegate void ProgressChangedEventHandler(object sender, ProgressChangedEventArgs e);
-	public class ProgressChangedEventArgs : EventArgs
-	{
-		public int CurrentValue;
-		public int MaximumValue;
-		public double BytesPerSecond;
-		public ProgressChangedEventArgs(int CurrentValueIn, int MaximumValueIn, double BytesPerSecondIn = -1)
-		{
-			CurrentValue = CurrentValueIn;
-			MaximumValue = MaximumValueIn;
-			BytesPerSecond = BytesPerSecondIn;
-		}
-	}
+	//public delegate void ProgressChangedEventHandler(object sender, ProgressChangedEventArgs e);
+	//public class ProgressChangedEventArgs : EventArgs
+	//{
+	//	public int CurrentValue;
+	//	public int MaximumValue;
+	//	public double BytesPerSecond;
+	//	public ProgressChangedEventArgs(int CurrentValueIn, int MaximumValueIn, double BytesPerSecondIn = -1)
+	//	{
+	//		CurrentValue = CurrentValueIn;
+	//		MaximumValue = MaximumValueIn;
+	//		BytesPerSecond = BytesPerSecondIn;
+	//	}
+	//}
 
-	public delegate void TextFeedbackEventHandler(object sender, TextFeedbackEventArgs e);
-	public class TextFeedbackEventArgs : EventArgs
-	{
-		public string FeedbackText;
-		public TextFeedbackEventArgs(string FeedbackTextIn)
-		{
-			FeedbackText = FeedbackTextIn;
-		}
-	}
+	//public delegate void TextFeedbackEventHandler(object sender, TextFeedbackEventArgs e);
+	//public class TextFeedbackEventArgs : EventArgs
+	//{
+	//	public string FeedbackText;
+	//	public TextFeedbackEventArgs(string FeedbackTextIn)
+	//	{
+	//		FeedbackText = FeedbackTextIn;
+	//	}
+	//}
 
 	public const string ftpUsername = "francois";
 	public const string ftpPassword = "bokbokkie";
@@ -830,7 +830,7 @@ public class NetworkInterop
 		//MessageBox.Show(this, "File assebled successfully");
 	}
 
-	public static void FtpUploadFile(TextBox messageTextbox, string ftpRootUri, string userName, string password, string localFilename, string urlWhenSuccessullyUploaded = null)
+	public static void FtpUploadFile(string ftpRootUri, string userName, string password, string localFilename, string urlWhenSuccessullyUploaded = null, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
 		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 		{
@@ -854,7 +854,7 @@ public class NetworkInterop
 					{
 						client.Credentials = new System.Net.NetworkCredential(userName, password);
 						client.UploadFile(dirOnFtpServer, "STOR", localFilename);
-						Logging.appendLogTextbox_OfPassedTextbox(messageTextbox, "Successfully uploaded " + fileNameOnServer);
+						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Successfully uploaded " + fileNameOnServer);
 						Process.Start(urlWhenSuccessullyUploaded);
 					}
 					else UserMessages.ShowErrorMessage("Could not upload file (could not find/create directory online: " + ftpRootUri);

@@ -89,6 +89,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\EventHandlers.cs">
+      <Link>EventHandlers.cs</Link>
+    </Compile>
     <Compile Include="..\Logging.cs">
       <Link>Logging.cs</Link>
     </Compile>

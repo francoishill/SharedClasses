@@ -830,43 +830,56 @@ public class NetworkInterop
 		//MessageBox.Show(this, "File assebled successfully");
 	}
 
-	public static void FtpUploadFile(string ftpRootUri, string userName, string password, string localFilename, string urlWhenSuccessullyUploaded = null, TextFeedbackEventHandler textFeedbackEvent = null)
+	public static void FtpUploadFiles(string ftpRootUri, string userName, string password, string[] localFilenames, string urlWhenSuccessullyUploaded = null, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
-		//ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
-		//{
-			using (System.Net.WebClient client = new System.Net.WebClient())
+		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+		{
+			try
 			{
-				try
+				//FtpCreateDirectory(ftpRootUri);
+				bool DirexistCanContinue = false;
+				if (!FtpDirectoryExists(ftpRootUri, userName, password))
 				{
-					string fileNameOnServer = new FileInfo(localFilename).Name;
-					Console.WriteLine("fileNameOnServer" + fileNameOnServer);
-					string dirOnFtpServer = ftpRootUri + "/" + fileNameOnServer;
-					//FtpCreateDirectory(ftpRootUri);
-					bool DirexistCanContinue = false;
-					if (!FtpDirectoryExists(ftpRootUri, userName, password))
-					{
-						if (CreateFTPDirectory(ftpRootUri, userName, password))
-							DirexistCanContinue = true;
-					}
-					else DirexistCanContinue = true;
-
-					if (DirexistCanContinue)
+					if (CreateFTPDirectory(ftpRootUri, userName, password))
+						DirexistCanContinue = true;
+				}
+				else DirexistCanContinue = true;
+				if (DirexistCanContinue)
+				{
+					using (System.Net.WebClient client = new System.Net.WebClient())
 					{
 						client.Credentials = new System.Net.NetworkCredential(userName, password);
-						client.UploadFile(dirOnFtpServer, "STOR", localFilename);
-						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Successfully uploaded " + fileNameOnServer);
-						Process.Start(urlWhenSuccessullyUploaded);
+						//client.Headers.Add(HttpRequestHeader.UserAgent, "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)");
+						foreach (string localFilename in localFilenames)
+						{
+							string fileNameOnServer = new FileInfo(localFilename).Name;
+							Console.WriteLine("fileNameOnServer" + fileNameOnServer);
+							string dirOnFtpServer = ftpRootUri + "/" + fileNameOnServer;
+
+							client.UploadFile(dirOnFtpServer, "STOR", localFilename);
+							TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Successfully uploaded " + fileNameOnServer);
+						}
+						if (urlWhenSuccessullyUploaded != null) Process.Start(urlWhenSuccessullyUploaded);
+						client.Dispose();
+						GC.Collect();
+						GC.WaitForPendingFinalizers();
 					}
-					else UserMessages.ShowErrorMessage("Could not upload file (could not find/create directory online: " + ftpRootUri);
 				}
-				catch (Exception exc)
-				{
-					MessageBox.Show("Exception in transfer: " + exc.Message);
-				}
+				else UserMessages.ShowErrorMessage("Could not upload files (could not find/create directory online: " + ftpRootUri);
 			}
-		//},
-		//false,
-		//"FtpUploadThread");
+			catch (Exception exc)
+			{
+				if (exc.Message.ToLower().Contains("the operation has timed out"))
+				{
+					if (UserMessages.Confirm("Upload to ftp timed out, the System.Net.ServicePointManager.DefaultConnectionLimit has been reached, restart the application now?"))
+						//Application.Restart();
+						ApplicationRecoveryAndRestart.TestCrash(false);
+				}
+				MessageBox.Show("Exception in transfer: " + exc.Message);
+			}
+		},
+		true,//false,
+		"FtpUploadThread" + DateTime.Now.ToShortTimeString());
 	}
 
 	public static bool FtpDirectoryExists(string directoryPath, string ftpUser, string ftpPassword)

@@ -220,7 +220,7 @@ public class VisualStudioInterop
 				AutomaticallyUpdateRevision
 				? "Updated revision of " + projName + " to " + newversionstring + ", attempting to publish..."
 				: "Using current revision of " + projName + " (" + newversionstring + "), attempting to publish...");
-			
+
 			versionString = newversionstring;
 
 			string nsisFileName = WindowsInterop.LocalAppDataPath + @"\FJH\NSISinstaller\NSISexports\" + projName + "_" + newversionstring + ".nsi";
@@ -271,7 +271,7 @@ public class VisualStudioInterop
 						}
 				}
 
-				
+
 				string MakeNsisFilePath = @"C:\Program Files (x86)\NSIS\makensis.exe";
 				if (!File.Exists(MakeNsisFilePath)) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Could not find MakeNsis.exe: " + MakeNsisFilePath);
 				else
@@ -306,9 +306,9 @@ public class VisualStudioInterop
 		return string.Format("<{0}{2}>{1}</{0}>", tagName, textToSurround, className == null ? "" : " class='" + className + "'");
 	}
 
-	public static string CreateHtmlPageReturnFilename(string projName, string projVersion)
+	public static string CreateHtmlPageReturnFilename(string projName, string projVersion, string setupFilename)
 	{
-		string tempFilename = Path.GetTempPath() + "\\index.html";
+		string tempFilename = Path.GetTempPath() + "index.html";
 		using (StreamWriter sw = new StreamWriter(tempFilename, false))
 		{
 			sw.WriteLine("<html>");
@@ -316,6 +316,7 @@ public class VisualStudioInterop
 			sw.WriteLine("<style>");
 			sw.WriteLine(".heading { color: blue; }");
 			sw.WriteLine(".value { color: gray; }");
+			sw.WriteLine(".downloadlink { color: orange; }");
 			sw.WriteLine("</style>");
 			sw.WriteLine("</head>");
 			sw.WriteLine("<body>");
@@ -324,8 +325,12 @@ public class VisualStudioInterop
 			sw.WriteLine("</br>");
 			sw.WriteLine(SurroundWithHtmlTag("Version: ", "label", "heading"));
 			sw.WriteLine(SurroundWithHtmlTag(projVersion, "label", "value"));
+			sw.WriteLine("</br>");
+			sw.WriteLine("</br>");
+			sw.WriteLine(string.Format("<a href='{0}' class='downloadlink'>{1}</a>", Path.GetFileName(setupFilename), "Download"));
 			sw.WriteLine("</body>");
 			sw.WriteLine("</html>");
+			sw.Close();
 		}
 		return tempFilename;
 	}
@@ -338,24 +343,19 @@ public class VisualStudioInterop
 		{
 			string validatedUrlsectionForProjname = HttpUtility.UrlPathEncode(projName).ToLower();
 
+			//TODO: this (ServicePointManager.DefaultConnectionLimit) is actually very annoying, is there no other workaround?
+			ServicePointManager.DefaultConnectionLimit = 10000;
+			//System.Net.ServicePointManager.DefaultConnectionLimit = 1;
+			string htmlFilePath = CreateHtmlPageReturnFilename(projName, versionString, publishedSetupPath);
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent,
-				"Attempting Ftp Uploading of Setup file for " + projName);
-			NetworkInterop.FtpUploadFile(
+				"Attempting Ftp Uploading of Setup file and index file for " + projName);
+			NetworkInterop.FtpUploadFiles(
 				defaultRootUriForVsPublishing + "/" + validatedUrlsectionForProjname,
 				NetworkInterop.ftpUsername,
 				NetworkInterop.ftpPassword,
-				publishedSetupPath,
-				defaultRootUriAFTERvspublishing + "/" + validatedUrlsectionForProjname);
-
-			string htmlFilePath = CreateHtmlPageReturnFilename(projName, versionString);
-			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent,
-				"Attempting Ftp Uploading of Html file for " + projName);
-			NetworkInterop.FtpUploadFile(
-				defaultRootUriForVsPublishing + "/" + validatedUrlsectionForProjname,
-				NetworkInterop.ftpUsername,
-				NetworkInterop.ftpPassword,
-				htmlFilePath,
-				defaultRootUriAFTERvspublishing + "/" + validatedUrlsectionForProjname);
+				new string[] { publishedSetupPath, htmlFilePath },
+				defaultRootUriAFTERvspublishing + "/" + validatedUrlsectionForProjname,
+				textFeedbackEvent: textFeedbackEvent);
 		}
 	}
 }

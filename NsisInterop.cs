@@ -11,6 +11,7 @@ using System.Drawing;
 
 public class NsisInterop
 {
+	//TODO: Add functionality to close (maybe with messagebox to confirm) the process being installed if its open
 	public static string GetSetupNameForProduct(string PublishedName, string ProductVersion)
 	{
 		string SetupName = PublishedName;

@@ -10,8 +10,10 @@ using System.Web;
 
 public class VisualStudioInterop
 {
-	private const string defaultRootUriForVsPublishing = "ftp://fjh.dyndns.org/francois/websites/firepuma/ownapplications";
-	private const string defaultRootUriAFTERvspublishing = "http://fjh.dyndns.org/ownapplications";
+	//private const string defaultBaseUri = "fjh.dyndns.org/";
+	//private const string defaultBaseUri = "127.0.0.1";
+	//private const string defaultRootUriForVsPublishing = "ftp://" + defaultBaseUri + "/francois/websites/firepuma/ownapplications";
+	//private const string defaultRootUriAFTERvspublishing = "http://" + defaultBaseUri + "/ownapplications";
 
 	//TODO: Make it easy to add todo item to a specific c# file if visual studio is not open
 	//Maybe for instance popup with a prompt window and the user chooses the file and then types the description of the todo item.
@@ -314,9 +316,10 @@ public class VisualStudioInterop
 			sw.WriteLine("<html>");
 			sw.WriteLine("<head>");
 			sw.WriteLine("<style>");
-			sw.WriteLine(".heading { color: blue; }");
-			sw.WriteLine(".value { color: gray; }");
-			sw.WriteLine(".downloadlink { color: orange; }");
+			sw.WriteLine("body { font-size: 24px; }");
+			sw.WriteLine(".heading { color: blue; text-align: center; }");
+			sw.WriteLine(".value { color: gray; text-align: center; }");
+			sw.WriteLine(".downloadlink { color: orange; text-align: center; }");
 			sw.WriteLine("</style>");
 			sw.WriteLine("</head>");
 			sw.WriteLine("<body>");
@@ -350,11 +353,11 @@ public class VisualStudioInterop
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent,
 				"Attempting Ftp Uploading of Setup file and index file for " + projName);
 			NetworkInterop.FtpUploadFiles(
-				defaultRootUriForVsPublishing + "/" + validatedUrlsectionForProjname,
+				SharedClassesSettings.visualStudioInterop.GetCombinedUriForVsPublishing() + "/" + validatedUrlsectionForProjname,
 				NetworkInterop.ftpUsername,
 				NetworkInterop.ftpPassword,
 				new string[] { publishedSetupPath, htmlFilePath },
-				defaultRootUriAFTERvspublishing + "/" + validatedUrlsectionForProjname,
+				SharedClassesSettings.visualStudioInterop.GetCombinedUriForAFTERvspublishing() + "/" + validatedUrlsectionForProjname,
 				textFeedbackEvent: textFeedbackEvent);
 		}
 	}

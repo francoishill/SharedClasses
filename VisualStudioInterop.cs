@@ -337,7 +337,7 @@ public class VisualStudioInterop
 				string textOfFile = File.ReadAllText(tempFilename);
 				textOfFile = textOfFile.Replace("{ProjectName}", projectName);
 				textOfFile = textOfFile.Replace("{ProjectVersion}", projectVersion);
-				textOfFile = textOfFile.Replace("{SetupFilename}", setupFilename);
+				textOfFile = textOfFile.Replace("{SetupFilename}", Path.GetFileName(setupFilename));
 				//textOfFile = textOfFile.Replace("{DescriptionLiElements}", description);
 				textOfFile = textOfFile.Replace("{BugsFixedList}", bugsfixed);
 				textOfFile = textOfFile.Replace("{ImprovementList}", improvements);

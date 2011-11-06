@@ -253,7 +253,7 @@ public class VisualStudioInterop
 					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Successfully created NSIS file: " + nsisFileName);
 				}
 
-				//TODO: Must make provision if pc (to do building and compiling of NSIS scripts), does not have the DotNetChecker.dll plugin for NSIS
+				//DONE TODO: Must make provision if pc (to do building and compiling of NSIS scripts), does not have the DotNetChecker.dll plugin for NSIS
 				string dotnetCheckerDllPath = @"C:\Program Files (x86)\NSIS\Plugins\DotNetChecker.dll";
 				if (!File.Exists(dotnetCheckerDllPath))
 				{
@@ -270,6 +270,7 @@ public class VisualStudioInterop
 							FileStream fileStream = new FileStream(dotnetCheckerDllPath, FileMode.Create);
 							fileStream.Write(bytesOfDotnetCheckerDLL, 0, length);
 							fileStream.Close();
+							bytesOfDotnetCheckerDLL = null;
 						}
 				}
 
@@ -308,33 +309,56 @@ public class VisualStudioInterop
 		return string.Format("<{0}{2}>{1}</{0}>", tagName, textToSurround, className == null ? "" : " class='" + className + "'");
 	}
 
-	public static string CreateHtmlPageReturnFilename(string projName, string projVersion, string setupFilename)
+	public static string CreateHtmlPageReturnFilename(string projectName, string projectVersion, string setupFilename)
 	{
 		string tempFilename = Path.GetTempPath() + "index.html";
-		using (StreamWriter sw = new StreamWriter(tempFilename, false))
-		{
-			sw.WriteLine("<html>");
-			sw.WriteLine("<head>");
-			sw.WriteLine("<style>");
-			sw.WriteLine("body { font-size: 24px; }");
-			sw.WriteLine(".heading { color: blue; text-align: center; }");
-			sw.WriteLine(".value { color: gray; text-align: center; }");
-			sw.WriteLine(".downloadlink { color: orange; text-align: center; }");
-			sw.WriteLine("</style>");
-			sw.WriteLine("</head>");
-			sw.WriteLine("<body>");
-			sw.WriteLine(SurroundWithHtmlTag("Project: ", "label", "heading"));
-			sw.WriteLine(SurroundWithHtmlTag(projName, "label", "value"));
-			sw.WriteLine("</br>");
-			sw.WriteLine(SurroundWithHtmlTag("Version: ", "label", "heading"));
-			sw.WriteLine(SurroundWithHtmlTag(projVersion, "label", "value"));
-			sw.WriteLine("</br>");
-			sw.WriteLine("</br>");
-			sw.WriteLine(string.Format("<a href='{0}' class='downloadlink'>{1}</a>", Path.GetFileName(setupFilename), "Download"));
-			sw.WriteLine("</body>");
-			sw.WriteLine("</html>");
-			sw.Close();
-		}
+
+		System.Reflection.Assembly objAssembly = System.Reflection.Assembly.GetExecutingAssembly();
+		string[] myResources = objAssembly.GetManifestResourceNames();
+		foreach (string reso in myResources)
+			if (reso.ToLower().EndsWith("VisualStudioInterop (publish page).html".ToLower()))
+			{
+				Stream stream = objAssembly.GetManifestResourceStream(reso);
+				int length = (int)stream.Length;
+				byte[] bytesOfPublishHtmlTemplateDLL = new byte[length];
+				stream.Read(bytesOfPublishHtmlTemplateDLL, 0, length);
+				stream.Close();
+				FileStream fileStream = new FileStream(tempFilename, FileMode.Create);
+				fileStream.Write(bytesOfPublishHtmlTemplateDLL, 0, length);
+				fileStream.Close();
+				string textOfFile = File.ReadAllText(tempFilename);
+				textOfFile = textOfFile.Replace("{ProjectName}", projectName);
+				textOfFile = textOfFile.Replace("{ProjectVersion}", projectVersion);
+				textOfFile = textOfFile.Replace("{SetupFilename}", setupFilename);
+				File.WriteAllText(tempFilename, textOfFile);
+				bytesOfPublishHtmlTemplateDLL = null;
+			}
+		
+		//using (StreamWriter sw = new StreamWriter(tempFilename, false))
+		//{
+		//	sw.WriteLine("<html>");
+		//	sw.WriteLine("<head>");
+		//	sw.WriteLine("<style>");
+		//	sw.WriteLine("body { font-size: 24px; }");
+		//	sw.WriteLine(".heading { color: blue; text-align: center; }");
+		//	sw.WriteLine(".value { color: gray; text-align: center; }");
+		//	sw.WriteLine(".downloadlink { color: orange; text-align: center; }");
+		//	sw.WriteLine("</style>");
+		//	sw.WriteLine("</head>");
+		//	sw.WriteLine("<body>");
+		//	sw.WriteLine(SurroundWithHtmlTag("Project: ", "label", "heading"));
+		//	sw.WriteLine(SurroundWithHtmlTag(projName, "label", "value"));
+		//	sw.WriteLine("</br>");
+		//	sw.WriteLine(SurroundWithHtmlTag("Version: ", "label", "heading"));
+		//	sw.WriteLine(SurroundWithHtmlTag(projVersion, "label", "value"));
+		//	sw.WriteLine("</br>");
+		//	sw.WriteLine("</br>");
+		//	sw.WriteLine(string.Format("<a href='{0}' class='downloadlink'>{1}</a>", Path.GetFileName(setupFilename), "Download"));
+		//	sw.WriteLine("</body>");
+		//	sw.WriteLine("</html>");
+		//	sw.Close();
+		//}
+
 		return tempFilename;
 	}
 
@@ -354,8 +378,8 @@ public class VisualStudioInterop
 				"Attempting Ftp Uploading of Setup file and index file for " + projName);
 			NetworkInterop.FtpUploadFiles(
 				SharedClassesSettings.visualStudioInterop.GetCombinedUriForVsPublishing() + "/" + validatedUrlsectionForProjname,
-				NetworkInterop.ftpUsername,
-				NetworkInterop.ftpPassword,
+				SharedClassesSettings.visualStudioInterop.FtpUsername,//NetworkInterop.ftpUsername,
+				SharedClassesSettings.visualStudioInterop.FtpPassword,//NetworkInterop.ftpPassword,
 				new string[] { publishedSetupPath, htmlFilePath },
 				SharedClassesSettings.visualStudioInterop.GetCombinedUriForAFTERvspublishing() + "/" + validatedUrlsectionForProjname,
 				textFeedbackEvent: textFeedbackEvent);

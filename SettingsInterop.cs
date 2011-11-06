@@ -6,6 +6,8 @@ using System.Xml.XPath;
 
 public class SettingsInterop
 {
+	private const string SettingsFileExtension = ".fset";
+
 	/// <summary>
 	/// Always returned without leading backslash.
 	/// </summary>
@@ -36,16 +38,20 @@ public class SettingsInterop
 		if (EnsurePathExists && !Directory.Exists(folderOfFile)) Directory.CreateDirectory(folderOfFile);
 		return folderOfFile + "\\" + fileName;
 	}
-
-	public static void FlushSettings<T>(T settingsObject, string fileName, string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+	
+	public static void FlushSettings<T>(T settingsObject, string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
 	{
+		string fileName = typeof(T).Name.Split('+')[typeof(T).Name.Split('+').Length - 1];
+		fileName += SettingsFileExtension;
 		SerializeToFile<T>(
 			GetFullFilePathInLocalAppdata(fileName, ApplicationName, SubfolderNameInApplication, CompanyName, true),
 			settingsObject);
 	}
 
-	public static T GetSettings<T>(string fileName, string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+	public static T GetSettings<T>(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
 	{
+		string fileName = typeof(T).Name.Split('+')[typeof(T).Name.Split('+').Length - 1];
+		fileName += SettingsFileExtension;
 		return DeserializeFromFile<T>(
 			GetFullFilePathInLocalAppdata(fileName, ApplicationName, SubfolderNameInApplication, CompanyName));
 	}

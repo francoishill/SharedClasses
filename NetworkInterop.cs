@@ -76,9 +76,6 @@ public class NetworkInterop
 	//	}
 	//}
 
-	public const string ftpUsername = "francois";
-	public const string ftpPassword = "bokbokkie";
-
 	private const string defaultFolderToSaveIn = @"c:\tempReceived";//@"C:\Francois\other\Test\CS_TestListeningServerReceivedFiles";
 	private const string defaultFilePathForSavingForServer = defaultFolderToSaveIn + "\\filereceivedserver.tmp";
 	private const string defaultFilePathForSavingForClient = defaultFolderToSaveIn + "\\filereceivedclient.tmp";
@@ -131,7 +128,7 @@ public class NetworkInterop
 		};
 	}
 
-	private static void SetupSocketSettings(Socket serverListeningSocketToUse, int listeningPort, int maxBufferPerTransfer, int maxNumberPendingConnections)
+	private static void SetupServerSocketSettings(Socket serverListeningSocketToUse, int listeningPort, int maxBufferPerTransfer, int maxNumberPendingConnections)
 	{
 		serverListeningSocketToUse.NoDelay = true;
 		serverListeningSocketToUse.Ttl = 112;
@@ -418,7 +415,7 @@ public class NetworkInterop
 		if (formToHookSocketClosingIntoFormDisposedEvent != null)
 			HookIntoFormDisposedEventAndCloseSocket(serverListeningSocketToUse, formToHookSocketClosingIntoFormDisposedEvent);
 
-		SetupSocketSettings(serverListeningSocketToUse, listeningPort, maxBufferPerTransfer, maxNumberPendingConnections);
+		SetupServerSocketSettings(serverListeningSocketToUse, listeningPort, maxBufferPerTransfer, maxNumberPendingConnections);
 
 		RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEvent, "Server started, waiting for clients...");
 

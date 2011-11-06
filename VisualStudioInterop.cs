@@ -313,6 +313,8 @@ public class VisualStudioInterop
 	{
 		string tempFilename = Path.GetTempPath() + "index.html";
 
+		string description = "This is the description for " + projectName + ".";
+
 		System.Reflection.Assembly objAssembly = System.Reflection.Assembly.GetExecutingAssembly();
 		string[] myResources = objAssembly.GetManifestResourceNames();
 		foreach (string reso in myResources)
@@ -330,6 +332,7 @@ public class VisualStudioInterop
 				textOfFile = textOfFile.Replace("{ProjectName}", projectName);
 				textOfFile = textOfFile.Replace("{ProjectVersion}", projectVersion);
 				textOfFile = textOfFile.Replace("{SetupFilename}", setupFilename);
+				textOfFile = textOfFile.Replace("{Description}", description);
 				File.WriteAllText(tempFilename, textOfFile);
 				bytesOfPublishHtmlTemplateDLL = null;
 			}

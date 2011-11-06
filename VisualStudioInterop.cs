@@ -309,11 +309,17 @@ public class VisualStudioInterop
 		return string.Format("<{0}{2}>{1}</{0}>", tagName, textToSurround, className == null ? "" : " class='" + className + "'");
 	}
 
-	public static string CreateHtmlPageReturnFilename(string projectName, string projectVersion, string setupFilename)
+	public static string CreateHtmlPageReturnFilename(string projectName, string projectVersion, string setupFilename, List<string> BugsFixed = null, List<string> Imporvements = null, List<string> NewFeatures = null)
 	{
 		string tempFilename = Path.GetTempPath() + "index.html";
 
-		string description = "This is the description for " + projectName + ".";
+		//string description = "";// "This is the description for " + projectName + ".";
+		string bugsfixed = "";
+		string improvements = "";
+		string newfeatures = "";
+		if (BugsFixed != null) foreach (string bug in BugsFixed) bugsfixed += "<li>" + bug + "</li>";
+		if (Imporvements != null) foreach (string improvement in Imporvements) improvements += "<li>" + improvement + "</li>";
+		if (NewFeatures != null) foreach (string newfeature in NewFeatures) newfeatures += "<li>" + newfeature + "</li>";
 
 		System.Reflection.Assembly objAssembly = System.Reflection.Assembly.GetExecutingAssembly();
 		string[] myResources = objAssembly.GetManifestResourceNames();
@@ -332,7 +338,11 @@ public class VisualStudioInterop
 				textOfFile = textOfFile.Replace("{ProjectName}", projectName);
 				textOfFile = textOfFile.Replace("{ProjectVersion}", projectVersion);
 				textOfFile = textOfFile.Replace("{SetupFilename}", setupFilename);
-				textOfFile = textOfFile.Replace("{Description}", description);
+				//textOfFile = textOfFile.Replace("{DescriptionLiElements}", description);
+				textOfFile = textOfFile.Replace("{BugsFixedList}", bugsfixed);
+				textOfFile = textOfFile.Replace("{ImprovementList}", improvements);
+				textOfFile = textOfFile.Replace("{NewFeaturesList}", newfeatures);
+
 				File.WriteAllText(tempFilename, textOfFile);
 				bytesOfPublishHtmlTemplateDLL = null;
 			}
@@ -376,7 +386,12 @@ public class VisualStudioInterop
 			//TODO: this (ServicePointManager.DefaultConnectionLimit) is actually very annoying, is there no other workaround?
 			ServicePointManager.DefaultConnectionLimit = 10000;
 			//System.Net.ServicePointManager.DefaultConnectionLimit = 1;
-			string htmlFilePath = CreateHtmlPageReturnFilename(projName, versionString, publishedSetupPath);
+			bool ThereIsNoProperItemsForBugsFixedEtcInNextFunction;
+			string htmlFilePath = CreateHtmlPageReturnFilename(projName, versionString, publishedSetupPath,
+				new List<string>() { "Bug 1 fixed", "Bug 2 fixed" },
+				new List<string>() { "Improvement 1", "Improvement 2", "Improvement 3" },
+				new List<string>() { "New feature 1" });
+			
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent,
 				"Attempting Ftp Uploading of Setup file and index file for " + projName);
 			NetworkInterop.FtpUploadFiles(

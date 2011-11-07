@@ -7,10 +7,11 @@ using System.IO;
 using System.Windows.Forms;
 using System.Net;
 using System.Web;
+using CookComputing.XmlRpc;
 
 public class VisualStudioInterop
 {
-	//private const string defaultBaseUri = "fjh.dyndns.org/";
+//private const string defaultBaseUri = "fjh.dyndns.org/";
 	//private const string defaultBaseUri = "127.0.0.1";
 	//private const string defaultRootUriForVsPublishing = "ftp://" + defaultBaseUri + "/francois/websites/firepuma/ownapplications";
 	//private const string defaultRootUriAFTERvspublishing = "http://" + defaultBaseUri + "/ownapplications";
@@ -402,5 +403,63 @@ public class VisualStudioInterop
 				SharedClassesSettings.visualStudioInterop.GetCombinedUriForAFTERvspublishing() + "/" + validatedUrlsectionForProjname,
 				textFeedbackEvent: textFeedbackEvent);
 		}
+	}
+
+	//TODO: Continue with implementing this XmlRpc of Trac into the projects that uses Trac
+	IStateName tracMonitorSystem;
+	private void TestTracXmlRpc(TextFeedbackEventHandler textFeedbackEvent = null)
+	{
+		tracMonitorSystem = XmlRpcProxyGen.Create<IStateName>();
+		tracMonitorSystem.PreAuthenticate = true;
+		string password = UserMessages.Prompt("Please enter password for Trac username francoishill", DefaultResponse: "nopass");
+		if (password == "nopass") return;
+		tracMonitorSystem.Credentials = new System.Net.NetworkCredential("francoishill", password);
+
+		try
+		{
+			object[] IdTimecreatedTimechangedAttributes = tracMonitorSystem.TicketGet(3);
+			foreach (object obj in IdTimecreatedTimechangedAttributes)
+			{
+				if (!(obj is XmlRpcStruct))
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, obj.ToString());
+				else
+				{
+					foreach (object obj2 in (obj as XmlRpcStruct).Keys)
+						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "X: " + obj2.ToString() + " (" + (obj as XmlRpcStruct)[obj2].ToString() + ")");
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			MessageBox.Show("Error: " + ex.Message);
+		}
+	}
+
+	[XmlRpcUrl("https://francoishill.devguard.com/trac/monitorsystem/login/xmlrpc")]
+	public interface IStateName : IXmlRpcProxy
+	{
+		[XmlRpcMethod("wiki.getRPCVersionSupported")]
+		int GetRPCVersionSupported();
+
+		[XmlRpcMethod("system.listMethods")]
+		string[] ListMethods();
+
+		[XmlRpcMethod("wiki.getPage")]
+		string GetPage(string pagename, int version = 0);
+
+		[XmlRpcMethod("wiki.getAllPages")]
+		string[] GetAllPages();
+
+		[XmlRpcMethod("ticket.query")]
+		int[] Query(string qstr = "status!=closed");
+
+		[XmlRpcMethod("ticket.status.get")]
+		string TicketStatusGet(string name);
+
+		[XmlRpcMethod("ticket.get")]
+		object[] TicketGet(int id);
+
+		//[XmlRpcMethod("examples.getStateStruct")]
+		//string GetStateNames(StateStructRequest request);
 	}
 }

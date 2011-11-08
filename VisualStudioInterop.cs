@@ -376,7 +376,7 @@ public class VisualStudioInterop
 		return tempFilename;
 	}
 
-	public static void PerformPublishOnline(string projName, bool AutomaticallyUpdateRevision = false, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
+	public async static void PerformPublishOnline(string projName, bool AutomaticallyUpdateRevision = false, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
 	{
 		string versionString;
 		string publishedSetupPath = PerformPublish(projName, out versionString, AutomaticallyUpdateRevision, false, textFeedbackEvent);

@@ -376,7 +376,7 @@ public class VisualStudioInterop
 		return tempFilename;
 	}
 
-	public static void PerformPublishOnline(string projName, bool AutomaticallyUpdateRevision = false, TextFeedbackEventHandler textFeedbackEvent = null)
+	public static void PerformPublishOnline(string projName, bool AutomaticallyUpdateRevision = false, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
 	{
 		string versionString;
 		string publishedSetupPath = PerformPublish(projName, out versionString, AutomaticallyUpdateRevision, false, textFeedbackEvent);
@@ -401,15 +401,16 @@ public class VisualStudioInterop
 				SharedClassesSettings.visualStudioInterop.FtpPassword,//NetworkInterop.ftpPassword,
 				new string[] { publishedSetupPath, htmlFilePath },
 				SharedClassesSettings.visualStudioInterop.GetCombinedUriForAFTERvspublishing() + "/" + validatedUrlsectionForProjname,
-				textFeedbackEvent: textFeedbackEvent);
+				textFeedbackEvent: textFeedbackEvent,
+				progressChanged: progressChanged);
 		}
 	}
 
 	//TODO: Continue with implementing this XmlRpc of Trac into the projects that uses Trac
-	IStateName tracMonitorSystem;
+	ITracServerFunctions tracMonitorSystem;
 	private void TestTracXmlRpc(TextFeedbackEventHandler textFeedbackEvent = null)
 	{
-		tracMonitorSystem = XmlRpcProxyGen.Create<IStateName>();
+		tracMonitorSystem = XmlRpcProxyGen.Create<ITracServerFunctions>();
 		tracMonitorSystem.PreAuthenticate = true;
 		string password = UserMessages.Prompt("Please enter password for Trac username francoishill", DefaultResponse: "nopass");
 		if (password == "nopass") return;
@@ -436,7 +437,7 @@ public class VisualStudioInterop
 	}
 
 	[XmlRpcUrl("https://francoishill.devguard.com/trac/monitorsystem/login/xmlrpc")]
-	public interface IStateName : IXmlRpcProxy
+	public interface ITracServerFunctions : IXmlRpcProxy
 	{
 		[XmlRpcMethod("wiki.getRPCVersionSupported")]
 		int GetRPCVersionSupported();

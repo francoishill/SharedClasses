@@ -827,7 +827,7 @@ public class NetworkInterop
 		//MessageBox.Show(this, "File assebled successfully");
 	}
 
-	public static void FtpUploadFiles(string ftpRootUri, string userName, string password, string[] localFilenames, string urlWhenSuccessullyUploaded = null, TextFeedbackEventHandler textFeedbackEvent = null)
+	public static void FtpUploadFiles(string ftpRootUri, string userName, string password, string[] localFilenames, string urlWhenSuccessullyUploaded = null, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
 	{
 		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 		{
@@ -853,6 +853,14 @@ public class NetworkInterop
 							Console.WriteLine("fileNameOnServer" + fileNameOnServer);
 							string dirOnFtpServer = ftpRootUri + "/" + fileNameOnServer;
 
+							client.UploadProgressChanged += (snder, evtargs) =>
+							{
+								RaiseProgressChangedEvent_Ifnotnull(ref progressChanged,
+									evtargs.ProgressPercentage,
+									100);
+								RaiseTextFeedbackEvent_Ifnotnull(ref textFeedbackEvent,
+									string.Format("Uploaded {0} / {1}", evtargs.BytesSent, evtargs.TotalBytesToSend));
+							};
 							client.UploadFile(dirOnFtpServer, "STOR", localFilename);
 							TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Successfully uploaded " + fileNameOnServer);
 						}

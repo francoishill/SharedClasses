@@ -511,7 +511,7 @@ public class InlineCommands
 			commandUsercontrol = commandUsercontrolIn;
 		}
 
-		public void PerformCommand(string fullCommandText, ComboBox textboxtoClearOnSuccess, TextFeedbackEventHandler textFeedbackEvent = null)
+		public void PerformCommand(string fullCommandText, ComboBox textboxtoClearOnSuccess, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
 		{
 			string TextboxTextIn = fullCommandText;//textboxtoClearOnSuccess.Text;
 			string argStr = TextboxTextIn.Contains(' ') ? TextboxTextIn.Substring(TextboxTextIn.IndexOf(' ') + 1) : "";
@@ -675,7 +675,8 @@ public class InlineCommands
 						VisualStudioInterop.PerformPublishOnline(
 							commaSplit,
 							UserMessages.Confirm("Update the revision also?"),
-							textFeedbackEvent);//argStr);
+							textFeedbackEvent,
+							progressChanged);//argStr);
 					break;
 
 				case PerformCommandTypeEnum.Undefined:

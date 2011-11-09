@@ -828,7 +828,7 @@ public class NetworkInterop
 		//MessageBox.Show(this, "File assebled successfully");
 	}
 
-	public async static void FtpUploadFiles(string ftpRootUri, string userName, string password, string[] localFilenames, string urlWhenSuccessullyUploaded = null, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
+	public async static Task FtpUploadFiles(string ftpRootUri, string userName, string password, string[] localFilenames, string urlWhenSuccessullyUploaded = null, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
 	{
 		try
 		{

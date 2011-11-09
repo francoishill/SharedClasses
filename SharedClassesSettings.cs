@@ -9,6 +9,18 @@ public class SharedClassesSettings
 
 	public static VisualStudioInteropSettings visualStudioInterop;// { get; set; }
 	public static NetworkInteropSettings networkInteropSettings;// { get; set; }
+	public static TracXmlRpcInteropSettings tracXmlRpcInteropSettings;
+
+	public static void EnsureAllSharedClassesSettingsNotNullCreateDefault()
+	{
+		SetObjectDefaultIfNull<VisualStudioInteropSettings>(ref visualStudioInterop);
+		SetObjectDefaultIfNull<NetworkInteropSettings>(ref networkInteropSettings);
+		SetObjectDefaultIfNull<TracXmlRpcInteropSettings>(ref tracXmlRpcInteropSettings);
+
+		foreach (FieldInfo fi in typeof(SharedClassesSettings).GetFields(BindingFlags.Public | BindingFlags.Static))
+			if (fi.GetValue(null) == null)
+				UserMessages.ShowWarningMessage("SharedClassesSettings does not have value for field: " + fi.Name);
+	}
 
 	private static void SetObjectDefaultIfNull<T>(ref T Obj)
 	{
@@ -18,16 +30,6 @@ public class SharedClassesSettings
 			Obj = (T)typeof(T).GetConstructor(new Type[] { }).Invoke(new object[] { });
 			SettingsInterop.FlushSettings<T>(Obj, RootApplicationNameForSharedClasses);
 		}
-	}
-
-	public static void EnsureAllSharedClassesSettingsNotNullCreateDefault()
-	{
-		SetObjectDefaultIfNull<VisualStudioInteropSettings>(ref visualStudioInterop);
-		SetObjectDefaultIfNull<NetworkInteropSettings>(ref networkInteropSettings);
-
-		foreach (FieldInfo fi in typeof(SharedClassesSettings).GetFields(BindingFlags.Public | BindingFlags.Static))
-			if (fi.GetValue(null) == null)
-				UserMessages.ShowWarningMessage("SharedClassesSettings does not have value for field: " + fi.Name);
 	}
 }
 
@@ -90,5 +92,23 @@ public class NetworkInteropSettings
 		ServerSocket_SendBufferSize = 1024 * 1024 * 10;
 		ServerSocket_MaxNumberPendingConnections = 100;
 		ServerSocket_ListeningPort = 11000;
+	}
+}
+
+public class TracXmlRpcInteropSettings
+{
+	public string Username { get; set; }
+	public string Password { get; set; }
+
+	public TracXmlRpcInteropSettings()
+	{
+		Username = "francoishill";
+		Password = "bokbokkie";
+	}
+
+	public TracXmlRpcInteropSettings(string UsernameIn, string PasswordIn)
+	{
+		Username = UsernameIn;
+		Password = PasswordIn;
 	}
 }

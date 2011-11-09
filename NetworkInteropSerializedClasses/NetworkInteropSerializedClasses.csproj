@@ -104,6 +104,9 @@
     <Compile Include="..\EventHandlers.cs">
       <Link>EventHandlers.cs</Link>
     </Compile>
+    <Compile Include="..\FileSystemInterop.cs">
+      <Link>FileSystemInterop.cs</Link>
+    </Compile>
     <Compile Include="..\Logging.cs">
       <Link>Logging.cs</Link>
     </Compile>
@@ -116,8 +119,17 @@
     <Compile Include="..\SerializationInterop.cs">
       <Link>SerializationInterop.cs</Link>
     </Compile>
+    <Compile Include="..\SettingsInterop.cs">
+      <Link>SettingsInterop.cs</Link>
+    </Compile>
+    <Compile Include="..\SharedClassesSettings.cs">
+      <Link>SharedClassesSettings.cs</Link>
+    </Compile>
     <Compile Include="..\ThreadingInterop.cs">
       <Link>ThreadingInterop.cs</Link>
+    </Compile>
+    <Compile Include="..\TracXmlRpcInterop.cs">
+      <Link>TracXmlRpcInterop.cs</Link>
     </Compile>
     <Compile Include="..\UserMessages.cs">
       <Link>UserMessages.cs</Link>

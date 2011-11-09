@@ -810,7 +810,7 @@ public class TempNewCommandsManagerClass
 	}
 
 	//TODO: Check out "Code Definition Window" in the view menu of Visual Studio
-	//TODO: May look at chrome after typing commandname, hit TAB to invoke that commands interface: http://thecodingbug.com/blog/2010/7/26/how-to-use-the-omnibox-api-in-google-chrome/
+	//TODO: May look at google chrome after typing commandname, hit TAB to invoke that commands interface: http://thecodingbug.com/blog/2010/7/26/how-to-use-the-omnibox-api-in-google-chrome/
 	public interface ICommandWithHandler
 	{
 		string CommandName { get; }

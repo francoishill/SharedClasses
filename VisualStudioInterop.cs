@@ -407,60 +407,15 @@ public class VisualStudioInterop
 	}
 
 	//TODO: Continue with implementing this XmlRpc of Trac into the projects that uses Trac
-	ITracServerFunctions tracMonitorSystem;
-	private void TestTracXmlRpc(TextFeedbackEventHandler textFeedbackEvent = null)
+	public static void TestTracXmlRpc(TextFeedbackEventHandler textFeedbackEvent = null)
 	{
-		tracMonitorSystem = XmlRpcProxyGen.Create<ITracServerFunctions>();
-		tracMonitorSystem.PreAuthenticate = true;
-		string password = UserMessages.Prompt("Please enter password for Trac username francoishill", DefaultResponse: "nopass");
-		if (password == "nopass") return;
-		tracMonitorSystem.Credentials = new System.Net.NetworkCredential("francoishill", password);
+		//int[] ids = TracXmlRpcInterop.GetTicketIds();
+		//foreach (int id in ids) MessageBox.Show("Id = " + id.ToString());
 
-		try
-		{
-			object[] IdTimecreatedTimechangedAttributes = tracMonitorSystem.TicketGet(3);
-			foreach (object obj in IdTimecreatedTimechangedAttributes)
-			{
-				if (!(obj is XmlRpcStruct))
-					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, obj.ToString());
-				else
-				{
-					foreach (object obj2 in (obj as XmlRpcStruct).Keys)
-						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "X: " + obj2.ToString() + " (" + (obj as XmlRpcStruct)[obj2].ToString() + ")");
-				}
-			}
-		}
-		catch (Exception ex)
-		{
-			MessageBox.Show("Error: " + ex.Message);
-		}
-	}
+		//List<string> fieldLabels = TracXmlRpcInterop.GetFieldLables();
+		//foreach (string label in fieldLabels) MessageBox.Show("Field label = " + label);
 
-	[XmlRpcUrl("https://francoishill.devguard.com/trac/monitorsystem/login/xmlrpc")]
-	public interface ITracServerFunctions : IXmlRpcProxy
-	{
-		[XmlRpcMethod("wiki.getRPCVersionSupported")]
-		int GetRPCVersionSupported();
-
-		[XmlRpcMethod("system.listMethods")]
-		string[] ListMethods();
-
-		[XmlRpcMethod("wiki.getPage")]
-		string GetPage(string pagename, int version = 0);
-
-		[XmlRpcMethod("wiki.getAllPages")]
-		string[] GetAllPages();
-
-		[XmlRpcMethod("ticket.query")]
-		int[] Query(string qstr = "status!=closed");
-
-		[XmlRpcMethod("ticket.status.get")]
-		string TicketStatusGet(string name);
-
-		[XmlRpcMethod("ticket.get")]
-		object[] TicketGet(int id);
-
-		//[XmlRpcMethod("examples.getStateStruct")]
-		//string GetStateNames(StateStructRequest request);
+		//Dictionary<string, object> dict = TracXmlRpcInterop.GetFieldValuesOfTicket(3);
+		//foreach (string key in dict.Keys) MessageBox.Show("Field = " + key);
 	}
 }

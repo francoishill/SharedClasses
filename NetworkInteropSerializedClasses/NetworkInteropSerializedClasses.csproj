@@ -116,6 +116,13 @@
     <Compile Include="..\NetworkInterop.cs">
       <Link>NetworkInterop.cs</Link>
     </Compile>
+    <Compile Include="..\PickItemForm.cs">
+      <Link>PickItemForm.cs</Link>
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="..\PickItemForm.Designer.cs">
+      <Link>PickItemForm.Designer.cs</Link>
+    </Compile>
     <Compile Include="..\SerializationInterop.cs">
       <Link>SerializationInterop.cs</Link>
     </Compile>
@@ -144,6 +151,11 @@
     <None Include="SumAndDiff.exe.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\PickItemForm.resx">
+      <Link>PickItemForm.resx</Link>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

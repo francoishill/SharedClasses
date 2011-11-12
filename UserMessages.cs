@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Windows.Forms;
 
 public class UserMessages
@@ -93,6 +94,16 @@ public class UserMessages
 	public static string Prompt(string Message, string Title = "Prompt", string DefaultResponse = "")
 	{
 		return Microsoft.VisualBasic.Interaction.InputBox(Message, Title, DefaultResponse);
+	}
+
+	public static T PickItem<T>(Array itemArray, string Message, T defaultItem, IWin32Window owner = null)
+	{
+		return PickItemForm.PickItem<T>(itemArray, Message, defaultItem, owner);
+	}
+
+	public static T PickItem<T>(List<T> itemList, string Message, T defaultItem, IWin32Window owner = null)
+	{
+		return PickItemForm.PickItem<T>(itemList.ToArray(), Message, defaultItem, owner);
 	}
 
 	private static Form GetTopmostForm()

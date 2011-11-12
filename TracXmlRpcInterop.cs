@@ -5,10 +5,10 @@ using CookComputing.XmlRpc;
 
 public class TracXmlRpcInterop
 {
-	public const string MonitorSystemXmlRpcUrl = "https://francoishill.devguard.com/trac/monitorsystem/login/xmlrpc";
-	public const string QuickAccessXmlRpcUrl = "https://francoishill.devguard.com/trac/quickaccess/login/xmlrpc";
+	//public const string MonitorSystemXmlRpcUrl = "https://francoishill.devguard.com/trac/monitorsystem/login/xmlrpc";
+	//public const string QuickAccessXmlRpcUrl = "https://francoishill.devguard.com/trac/quickaccess/login/xmlrpc";
 
-	public static List<string> GetFieldLables(string xmlRpcUrl = MonitorSystemXmlRpcUrl, string Username = null, string Password = null)
+	public static List<string> GetFieldLables(string xmlRpcUrl, string Username = null, string Password = null)
 	{
 		SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
 		ITracServerFunctions tracMonitorSystem;
@@ -39,7 +39,7 @@ public class TracXmlRpcInterop
 		return returnList;
 	}
 
-	public static int[] GetTicketIds(string xmlRpcUrl = MonitorSystemXmlRpcUrl, string Username = null, string Password = null)
+	public static int[] GetTicketIds(string xmlRpcUrl, string Username = null, string Password = null)
 	{
 		SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
 		ITracServerFunctions tracMonitorSystem;
@@ -63,9 +63,9 @@ public class TracXmlRpcInterop
 		return new int[0];
 	}
 
-	public static Dictionary<string, object> GetFieldValuesOfTicket(int ticketId, string xmlRpcUrl = MonitorSystemXmlRpcUrl, string Username = null, string Password = null)
+	public static Dictionary<string, object> GetFieldValuesOfTicket(int ticketId, string xmlRpcUrl, string Username = null, string Password = null)
 	{
-		Dictionary<string, object> tmpDict = new Dictionary<string,object>(StringComparer.OrdinalIgnoreCase);
+		Dictionary<string, object> tmpDict = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
 		SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
 		ITracServerFunctions tracMonitorSystem;
@@ -97,7 +97,7 @@ public class TracXmlRpcInterop
 		return tmpDict;
 	}
 
-	public static List<ChangeLogStruct> ChangeLogs(int ticketId, string xmlRpcUrl = MonitorSystemXmlRpcUrl, string Username = null, string Password = null)
+	public static List<ChangeLogStruct> ChangeLogs(int ticketId, string xmlRpcUrl, string Username = null, string Password = null)
 	{
 		List<ChangeLogStruct> tmpList = new List<ChangeLogStruct>();
 

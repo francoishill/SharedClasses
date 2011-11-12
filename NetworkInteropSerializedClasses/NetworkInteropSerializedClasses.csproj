@@ -86,11 +86,17 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\..\Francois\other\DLLs\Windows API\Microsoft.WindowsAPICodePack.dll</HintPath>
     </Reference>
-    <Reference Include="System" />
+    <Reference Include="System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Web" />
-    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -100,6 +106,9 @@
   <ItemGroup>
     <Compile Include="..\ApplicationRecoveryAndRestart.cs">
       <Link>ApplicationRecoveryAndRestart.cs</Link>
+    </Compile>
+    <Compile Include="..\DynamicCodeInvoking.cs">
+      <Link>DynamicCodeInvoking.cs</Link>
     </Compile>
     <Compile Include="..\EventHandlers.cs">
       <Link>EventHandlers.cs</Link>
@@ -148,6 +157,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="DynamicCodeInvokingServerSettings.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="SumAndDiff.exe.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

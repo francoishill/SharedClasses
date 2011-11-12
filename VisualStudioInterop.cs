@@ -395,7 +395,7 @@ public class VisualStudioInterop
 			
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent,
 				"Attempting Ftp Uploading of Setup file and index file for " + projName);
-			NetworkInterop.FtpUploadFiles(
+			await NetworkInterop.FtpUploadFiles(
 				SharedClassesSettings.visualStudioInterop.GetCombinedUriForVsPublishing() + "/" + validatedUrlsectionForProjname,
 				SharedClassesSettings.visualStudioInterop.FtpUsername,//NetworkInterop.ftpUsername,
 				SharedClassesSettings.visualStudioInterop.FtpPassword,//NetworkInterop.ftpPassword,

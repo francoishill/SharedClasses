@@ -105,7 +105,7 @@ public class VisualStudioInteropSettings
 		get
 		{
 			if (ftpUsername == null)
-				ftpUsername = UserMessages.Prompt("Please enter ftp username for Visual Studio Upload", DefaultResponse: "");
+				ftpUsername = UserMessages.Prompt("Please enter ftp username for Visual Studio Upload", DefaultResponse: null);
 			return ftpUsername;
 		}
 		set { ftpUsername = value; }
@@ -116,7 +116,7 @@ public class VisualStudioInteropSettings
 		get
 		{
 			if (ftpPassword == null)
-				ftpPassword = UserMessages.Prompt("Please enter ftp password for Visual Studio Upload, username " + FtpUsername, DefaultResponse: "");
+				ftpPassword = UserMessages.Prompt("Please enter ftp password for Visual Studio Upload, username " + FtpUsername, DefaultResponse: null);
 			return ftpPassword;
 		}
 		set { ftpPassword = value; }
@@ -180,7 +180,7 @@ public class TracXmlRpcInteropSettings
 		get
 		{
 			if (username == null)
-				username = UserMessages.Prompt("Please enter ftp username for Trac XmlRpc", DefaultResponse: "");
+				username = UserMessages.Prompt("Please enter ftp username for Trac XmlRpc", DefaultResponse: null);
 			return username;
 		}
 		set { username = value; }
@@ -191,11 +191,25 @@ public class TracXmlRpcInteropSettings
 		get
 		{
 			if (password == null)
-				password = UserMessages.Prompt("Please enter ftp password for Trac XmlRpc, username " + Username, DefaultResponse: "");
+				password = UserMessages.Prompt("Please enter ftp password for Trac XmlRpc, username " + Username, DefaultResponse: null);
 			return password;
 		}
 		set { password = value; }
 	}
+	private string dynamicInvokationServerFullPath;
+
+	public string DynamicInvokationServerFullPath
+	{
+		get
+		{
+			//http://fjh.dyndns.org:5678/DynamicCodeInvoking.rem
+			if (dynamicInvokationServerFullPath == null)
+				dynamicInvokationServerFullPath = UserMessages.Prompt("Please enter the full url of the Dynamic Invokation Server", DefaultResponse: null);
+			return dynamicInvokationServerFullPath;
+		}
+		set { dynamicInvokationServerFullPath = value; }
+	}
+
 	private List<string> listedXmlRpcUrls;
 	public string ListedXmlRpcUrls
 	{

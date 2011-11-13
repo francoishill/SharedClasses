@@ -38,8 +38,9 @@ public class XmlRpcInterop
 
 	public static void TestFromClient_DynamicCodeInvokingServer()
 	{
+		SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
 		Iclientside_DynamicCodeInvokingServerClass proxy = XmlRpcProxyGen.Create<Iclientside_DynamicCodeInvokingServerClass>();
-
+		proxy.Url = SharedClassesSettings.tracXmlRpcInteropSettings.DynamicInvokationServerFullPath;
 		//string[] TypeStringArray;
 		//object[] ParameterList;
 		//DynamicCodeInvoking.GetParameterListAndTypesStringArray(out TypeStringArray, out ParameterList, "Hallo", "Temp title", true);
@@ -137,7 +138,7 @@ public class XmlRpcInterop
 	}
 
 	//Client side settings
-	[XmlRpcUrl("http://fjh.dyndns.org:5678/DynamicCodeInvoking.rem")]//")]fjh.dyndns.org:5678/DynamicCodeInvoking.rem")]
+	//[XmlRpcUrl("http://fjh.dyndns.org:5678/DynamicCodeInvoking.rem")]//")]fjh.dyndns.org:5678/DynamicCodeInvoking.rem")]
 	public interface Iclientside_DynamicCodeInvokingServerClass : IXmlRpcProxy
 	{
 		[XmlRpcMethod("RunCodeDynamically")]

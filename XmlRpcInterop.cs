@@ -19,6 +19,14 @@ public class XmlRpcInterop
 			ChannelServices.UnregisterChannel(chan);
 	}
 
+	private static ListDictionary CreateDefaultChannelProperties()
+	{
+		return new ListDictionary()
+		{
+			{ "port", SharedClassesSettings.tracXmlRpcInteropSettings.DynamicInvokationServer_PortNumber }//5678 }
+		};
+	}
+
 	private static IClientChannelSinkProvider CreateDefaultClientProviderChain()
 	{
 		IClientChannelSinkProvider chain = new XmlRpcClientFormatterSinkProvider();
@@ -37,38 +45,31 @@ public class XmlRpcInterop
 		return chain;
 	}
 
+	private static string GetDefaultRelativeUri()
+	{
+		string tmpUri = SharedClassesSettings.tracXmlRpcInteropSettings.DynamicInvokationServer_RelativePath;
+		while (tmpUri.StartsWith("/")) tmpUri = tmpUri.Substring(1);
+		return tmpUri;
+	}
+
 	public static void StartDynamicCodeInvokingServer_XmlRpc()
 	{
-		ListDictionary channelProperties = new ListDictionary()
-		{
-			{ "port", 5678 } 
-		};
-		HttpChannel httpChannel = new HttpChannel(channelProperties,
-																			CreateDefaultClientProviderChain(),
-																			CreateDefaultServerProviderChain());
+		HttpChannel httpChannel = new HttpChannel(
+			CreateDefaultChannelProperties(),
+			CreateDefaultClientProviderChain(),
+			CreateDefaultServerProviderChain());
 		ChannelServices.RegisterChannel(httpChannel, false);
 		RemotingConfiguration.RegisterWellKnownServiceType(
 			typeof(DynamicCodeInvokingServerClass),
-			"DynamicCodeInvoking.rem",
+			GetDefaultRelativeUri(),//"DynamicCodeInvoking/xmlrpc",
 			WellKnownObjectMode.Singleton);
 	}
-
-	/*public static void SampleServer()
-	{
-		RemotingConfiguration.Configure("SumAndDiff.exe.config", false);
-		// for CookComputing.XmlRpc
-		//RemotingConfiguration.Configure("SumAndDiff.exe.config"); 
-		RemotingConfiguration.RegisterWellKnownServiceType(
-			typeof(SampleServer_ClassWithFunctions),
-			"sumAndDiff.rem",
-			WellKnownObjectMode.Singleton);
-	}*/
 
 	public static void TestFromClient_DynamicCodeInvokingServer()
 	{
 		SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
 		Iclientside_DynamicCodeInvokingServerClass proxy = XmlRpcProxyGen.Create<Iclientside_DynamicCodeInvokingServerClass>();
-		proxy.Url = SharedClassesSettings.tracXmlRpcInteropSettings.DynamicInvokationServerFullPath;
+		proxy.Url = SharedClassesSettings.tracXmlRpcInteropSettings.GetCominedUrlForDynamicInvokationServer();
 		//string[] TypeStringArray;
 		//object[] ParameterList;
 		//DynamicCodeInvoking.GetParameterListAndTypesStringArray(out TypeStringArray, out ParameterList, "Hallo", "Temp title", true);
@@ -118,26 +119,6 @@ public class XmlRpcInterop
 			UserMessages.ShowErrorMessage("Return error string: " + resultObj.ErrorMessage);
 	}
 
-	/*public static void SampleClient()
-	{
-		ISampleServer_ClassWithFunctions proxy = XmlRpcProxyGen.Create<ISampleServer_ClassWithFunctions>();
-		SampleStruct ret = proxy.SumAndDifference(2, 3);
-		MessageBox.Show(ret.difference.ToString() + ", " + ret.sum);
-		//for version 1 of Xml-Rpc.Net: ISumAndDiff proxy = (ISumAndDiff)XmlRpcProxyGen.Create(typeof(ISumAndDiff));
-	}*/
-
-	/*public class SampleServer_ClassWithFunctions : MarshalByRefObject
-	{
-		[XmlRpcMethod("sumAndDifference")]
-		public SampleStruct SumAndDifference(int x, int y)
-		{
-			SampleStruct ret;
-			ret.sum = x + y;
-			ret.difference = x - y;
-			return ret;
-		}
-	}*/
-
 	public class DynamicCodeInvokingServerClass : MarshalByRefObject
 	{
 		/// <summary>
@@ -150,23 +131,8 @@ public class XmlRpcInterop
 		}
 	}
 
-	/*public struct SampleStruct
-	{
-		public int sum;
-		public int difference;
-	}
-
 	//Client side settings
-	[XmlRpcUrl("http://fjh.dyndns.org:5678/sumAndDiff.rem")]
-	//[XmlRpcUrl("http://www.cookcomputing.com/sumAndDiff.rem")]
-	public interface ISampleServer_ClassWithFunctions : IXmlRpcProxy
-	{
-		[XmlRpcMethod("sumAndDifference")]
-		SampleStruct SumAndDifference(int x, int y);
-	}*/
-
-	//Client side settings
-	//[XmlRpcUrl("http://fjh.dyndns.org:5678/DynamicCodeInvoking.rem")]//")]fjh.dyndns.org:5678/DynamicCodeInvoking.rem")]
+	//[XmlRpcUrl("http://fjh.dyndns.org:5678/DynamicCodeInvoking/xmlrpc")]
 	public interface Iclientside_DynamicCodeInvokingServerClass : IXmlRpcProxy
 	{
 		[XmlRpcMethod("RunCodeDynamically")]

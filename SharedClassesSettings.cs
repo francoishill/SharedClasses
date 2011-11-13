@@ -196,20 +196,51 @@ public class TracXmlRpcInteropSettings
 		}
 		set { password = value; }
 	}
-	private string dynamicInvokationServerFullPath;
 
-	public string DynamicInvokationServerFullPath
+	private string dynamicInvokationServer_BasePath;
+	public string DynamicInvokationServer_BasePath
 	{
 		get
 		{
-			//http://fjh.dyndns.org:5678/DynamicCodeInvoking.rem
-			if (dynamicInvokationServerFullPath == null)
-				dynamicInvokationServerFullPath = UserMessages.Prompt("Please enter the full url of the Dynamic Invokation Server", DefaultResponse: null);
-			return dynamicInvokationServerFullPath;
+			//http://fjh.dyndns.org:5678/DynamicCodeInvoking/xmlrpc
+			if (dynamicInvokationServer_BasePath == null)
+				dynamicInvokationServer_BasePath = UserMessages.Prompt("Please enter the Base url of the Dynamic Invokation Server", DefaultResponse: null);
+			return dynamicInvokationServer_BasePath;
 		}
-		set { dynamicInvokationServerFullPath = value; }
+		set { dynamicInvokationServer_BasePath = value; }
 	}
 
+	private string dynamicInvokationServer_RelativePath;
+	public string DynamicInvokationServer_RelativePath
+	{
+		get
+		{
+			//http://fjh.dyndns.org:5678/DynamicCodeInvoking/xmlrpc
+			if (dynamicInvokationServer_RelativePath == null)
+				dynamicInvokationServer_RelativePath = UserMessages.Prompt("Please enter the Relative url of the Dynamic Invokation Server", DefaultResponse: null);
+			return dynamicInvokationServer_RelativePath;
+		}
+		set { dynamicInvokationServer_RelativePath = value; }
+	}
+
+	private int? dynamicInvokationServer_PortNumber;
+	public int? DynamicInvokationServer_PortNumber
+	{
+		get
+		{
+			//http://fjh.dyndns.org:5678/DynamicCodeInvoking/xmlrpc
+			if (dynamicInvokationServer_PortNumber == null)
+			{
+				string tmpStr = UserMessages.Prompt("Please enter the Port number of the Dynamic Invokation Server", DefaultResponse: null);
+				if (tmpStr == null) return null;
+				int tmpInt;
+				if (!int.TryParse(tmpStr, out tmpInt)) return null;
+				dynamicInvokationServer_PortNumber = tmpInt;
+			}
+			return dynamicInvokationServer_PortNumber;
+		}
+		set { dynamicInvokationServer_PortNumber = value; }
+	}
 	private List<string> listedXmlRpcUrls;
 	public string ListedXmlRpcUrls
 	{
@@ -221,7 +252,6 @@ public class TracXmlRpcInteropSettings
 		}
 		set { listedXmlRpcUrls = value == null ? null : new List<string>(value.Split(new char[]{','}, StringSplitOptions.RemoveEmptyEntries)); }
 	}
-
 
 	public TracXmlRpcInteropSettings()
 	{
@@ -235,5 +265,10 @@ public class TracXmlRpcInteropSettings
 		Username = UsernameIn;
 		Password = PasswordIn;
 		listedXmlRpcUrls = ListedXmlRpcUrlsIn;
+	}
+
+	public string GetCominedUrlForDynamicInvokationServer()
+	{
+		return DynamicInvokationServer_BasePath + ":" + DynamicInvokationServer_PortNumber + DynamicInvokationServer_RelativePath;
 	}
 }

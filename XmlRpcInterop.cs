@@ -25,7 +25,7 @@ public class XmlRpcInterop
 			WellKnownObjectMode.Singleton);
 	}
 
-	public static void SampleServer()
+	/*public static void SampleServer()
 	{
 		RemotingConfiguration.Configure("SumAndDiff.exe.config", false);
 		// for CookComputing.XmlRpc
@@ -34,7 +34,7 @@ public class XmlRpcInterop
 			typeof(SampleServer_ClassWithFunctions),
 			"sumAndDiff.rem",
 			WellKnownObjectMode.Singleton);
-	}
+	}*/
 
 	public static void TestFromClient_DynamicCodeInvokingServer()
 	{
@@ -90,15 +90,15 @@ public class XmlRpcInterop
 			UserMessages.ShowErrorMessage("Return error string: " + resultObj.ErrorMessage);
 	}
 
-	public static void SampleClient()
+	/*public static void SampleClient()
 	{
 		ISampleServer_ClassWithFunctions proxy = XmlRpcProxyGen.Create<ISampleServer_ClassWithFunctions>();
 		SampleStruct ret = proxy.SumAndDifference(2, 3);
 		MessageBox.Show(ret.difference.ToString() + ", " + ret.sum);
 		//for version 1 of Xml-Rpc.Net: ISumAndDiff proxy = (ISumAndDiff)XmlRpcProxyGen.Create(typeof(ISumAndDiff));
-	}
+	}*/
 
-	public class SampleServer_ClassWithFunctions : MarshalByRefObject
+	/*public class SampleServer_ClassWithFunctions : MarshalByRefObject
 	{
 		[XmlRpcMethod("sumAndDifference")]
 		public SampleStruct SumAndDifference(int x, int y)
@@ -108,7 +108,7 @@ public class XmlRpcInterop
 			ret.difference = x - y;
 			return ret;
 		}
-	}
+	}*/
 
 	public class DynamicCodeInvokingServerClass : MarshalByRefObject
 	{
@@ -122,7 +122,7 @@ public class XmlRpcInterop
 		}
 	}
 
-	public struct SampleStruct
+	/*public struct SampleStruct
 	{
 		public int sum;
 		public int difference;
@@ -135,7 +135,7 @@ public class XmlRpcInterop
 	{
 		[XmlRpcMethod("sumAndDifference")]
 		SampleStruct SumAndDifference(int x, int y);
-	}
+	}*/
 
 	//Client side settings
 	//[XmlRpcUrl("http://fjh.dyndns.org:5678/DynamicCodeInvoking.rem")]//")]fjh.dyndns.org:5678/DynamicCodeInvoking.rem")]

@@ -108,6 +108,9 @@
     <Compile Include="..\ApplicationRecoveryAndRestart.cs">
       <Link>ApplicationRecoveryAndRestart.cs</Link>
     </Compile>
+    <Compile Include="..\DictionaryPropertyGridAdapter.cs">
+      <Link>DictionaryPropertyGridAdapter.cs</Link>
+    </Compile>
     <Compile Include="..\DynamicCodeInvoking.cs">
       <Link>DynamicCodeInvoking.cs</Link>
     </Compile>

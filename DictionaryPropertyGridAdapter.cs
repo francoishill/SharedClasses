@@ -1,0 +1,160 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+
+/// <summary>
+/// Usage as follows:
+/// IDictionary d = new Hashtable();
+/// d["Hello"] = "World";
+/// d["Meaning"] = 42;
+/// d["Shade"] = Color.ForestGreen;
+/// propertyGrid1.SelectedObject = new DictionaryPropertyGridAdapter(d);
+/// </summary>
+public class DictionaryPropertyGridAdapter : ICustomTypeDescriptor
+{
+	public Dictionary<string, PropertyNameAndType> _dictionary;
+
+	public DictionaryPropertyGridAdapter(IDictionary d)
+	{
+		if (!(d is Dictionary<string, PropertyNameAndType>))
+		{
+			throw new Exception("Cannot use other dictionary formats than Dictionary<string, PropertyNameAndType>");
+		}
+		_dictionary = d as Dictionary<string, PropertyNameAndType>;
+	}
+
+	public string GetComponentName()
+	{
+		return TypeDescriptor.GetComponentName(this, true);
+	}
+
+	public EventDescriptor GetDefaultEvent()
+	{
+		return TypeDescriptor.GetDefaultEvent(this, true);
+	}
+
+	public string GetClassName()
+	{
+		return TypeDescriptor.GetClassName(this, true);
+	}
+
+	public EventDescriptorCollection GetEvents(Attribute[] attributes)
+	{
+		return TypeDescriptor.GetEvents(this, attributes, true);
+	}
+
+	EventDescriptorCollection System.ComponentModel.ICustomTypeDescriptor.GetEvents()
+	{
+		return TypeDescriptor.GetEvents(this, true);
+	}
+
+	public TypeConverter GetConverter()
+	{
+		return TypeDescriptor.GetConverter(this, true);
+	}
+
+	public object GetPropertyOwner(PropertyDescriptor pd)
+	{
+		return _dictionary;
+	}
+
+	public AttributeCollection GetAttributes()
+	{
+		return TypeDescriptor.GetAttributes(this, true);
+	}
+
+	public object GetEditor(Type editorBaseType)
+	{
+		return TypeDescriptor.GetEditor(this, editorBaseType, true);
+	}
+
+	public PropertyDescriptor GetDefaultProperty()
+	{
+		return null;
+	}
+
+	PropertyDescriptorCollection
+			System.ComponentModel.ICustomTypeDescriptor.GetProperties()
+	{
+		return ((ICustomTypeDescriptor)this).GetProperties(new Attribute[0]);
+	}
+
+	public PropertyDescriptorCollection GetProperties(Attribute[] attributes)
+	{
+		ArrayList properties = new ArrayList();
+		foreach (DictionaryEntry e in _dictionary as IDictionary)
+		{
+			properties.Add(new DictionaryPropertyDescriptor(_dictionary, e.Key.ToString()));
+		}
+
+		PropertyDescriptor[] props =
+            (PropertyDescriptor[])properties.ToArray(typeof(PropertyDescriptor));
+
+		return new PropertyDescriptorCollection(props);
+	}
+}
+
+public class DictionaryPropertyDescriptor : PropertyDescriptor
+{
+	Dictionary<string, PropertyNameAndType> _dictionary;
+	string _key;
+
+	internal DictionaryPropertyDescriptor(Dictionary<string, PropertyNameAndType> d, string key)
+		: base(key.ToString(), null)
+	{
+		_dictionary = d;
+		_key = key;
+	}
+
+	public override Type PropertyType
+	{
+		get { return _dictionary[_key].type; }//.GetType(); }
+	}
+
+	public override void SetValue(object component, object value)
+	{
+		_dictionary[_key].Value = value;// as PropertyNameAndType;
+	}
+
+	public override object GetValue(object component)
+	{
+		return _dictionary[_key].Value;
+	}
+
+	public override bool IsReadOnly
+	{
+		get { return false; }
+	}
+
+	public override Type ComponentType
+	{
+		get { return null; }
+	}
+
+	public override bool CanResetValue(object component)
+	{
+		return false;
+	}
+
+	public override void ResetValue(object component)
+	{
+	}
+
+	public override bool ShouldSerializeValue(object component)
+	{
+		return false;
+	}
+}
+
+public class PropertyNameAndType
+{
+	public string Name;
+	public Type type;
+	public object Value;
+	public PropertyNameAndType(string NameIn, Type typeIn)
+	{
+		Name = NameIn;
+		type = typeIn;
+	}
+}

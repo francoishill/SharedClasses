@@ -10,8 +10,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SharedClasses</RootNamespace>
     <AssemblyName>SharedClasses</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
@@ -23,6 +24,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -32,6 +34,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ApplicationRecoveryAndRestart.cs" />
@@ -48,6 +51,17 @@
     <Compile Include="CustomBalloonTipwpf.xaml.cs">
       <DependentUpon>CustomBalloonTipwpf.xaml</DependentUpon>
     </Compile>
+    <Compile Include="DictionaryPropertyGridAdapter.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DynamicCodeInvoking.cs" />
+    <Compile Include="DynamicCodeInvokingUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="DynamicCodeInvokingUserControl.Designer.cs">
+      <DependentUpon>DynamicCodeInvokingUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="EventHandlers.cs" />
     <Compile Include="FileSystemInterop.cs" />
     <Compile Include="InlineCommands.cs" />
     <Compile Include="Logging.cs" />
@@ -55,6 +69,7 @@
     <Compile Include="MotionBlurEffect.cs" />
     <Compile Include="MouseHooks.cs" />
     <Compile Include="NetworkInterop.cs" />
+    <Compile Include="NetworkInteropSerializedClasses\InfoTransferred.cs" />
     <Compile Include="NsisInterop.cs" />
     <Compile Include="OverlayForm.cs">
       <SubType>Form</SubType>
@@ -73,7 +88,9 @@
       <DependentUpon>PickItemForm.cs</DependentUpon>
     </Compile>
     <Compile Include="QueueingActionsInterop.cs" />
+    <Compile Include="SerializationInterop.cs" />
     <Compile Include="SettingsInterop.cs" />
+    <Compile Include="SharedClassesSettings.cs" />
     <Compile Include="SnarlNetworkProtocol.cs" />
     <Compile Include="StartupbatInterop.cs" />
     <Compile Include="StylingInterop.cs" />
@@ -92,6 +109,9 @@
     <EmbeddedResource Include="CustomBalloonTip.resx">
       <DependentUpon>CustomBalloonTip.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="DynamicCodeInvokingUserControl.resx">
+      <DependentUpon>DynamicCodeInvokingUserControl.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="OverlayForm.resx">
       <DependentUpon>OverlayForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -100,6 +120,9 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="CookComputing.XmlRpcV2">
+      <HintPath>..\..\..\..\..\..\Francois\other\DLLs\XmlRpc\CookComputing.XmlRpcV2.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="Microsoft.WindowsAPICodePack, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -111,6 +134,7 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />
@@ -159,6 +183,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

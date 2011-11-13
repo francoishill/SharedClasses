@@ -1,6 +1,10 @@
 using System;
+using System.CodeDom;
+using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Reflection;
+using System.Windows.Forms;
 using CookComputing.XmlRpc;
 
 public class DynamicCodeInvoking
@@ -69,5 +73,97 @@ public class DynamicCodeInvoking
 				? obj.ToString()
 				: obj);
 		ParametersModified = tmpParameterList.ToArray();
+	}
+
+	private static List<Type> AllUniqueSimpleTypesInCurrentAssembly = null;
+	public static List<Type> GetAllUniqueSimpleTypesInCurrentAssembly
+	{
+		get
+		{
+			if (AllUniqueSimpleTypesInCurrentAssembly != null)
+				return AllUniqueSimpleTypesInCurrentAssembly;
+			AllUniqueSimpleTypesInCurrentAssembly = new List<Type>();
+			Assembly[] appAssemblies = System.AppDomain.CurrentDomain.GetAssemblies();
+			foreach (Assembly assembly in appAssemblies)
+				foreach (Type type in assembly.GetTypes())
+					AllUniqueSimpleTypesInCurrentAssembly.Add(type);
+			return AllUniqueSimpleTypesInCurrentAssembly;
+		}
+	}
+	public static Type GetTypeFromSimpleString(string SimpleTypeString, bool IgnoreCase = false)
+	{
+		Type TypeIAmLookingFor = null;
+		//List<Type> typeList = GetAllUniqueSimpleTypesInCurrentAssembly;
+		foreach (Type type in GetAllUniqueSimpleTypesInCurrentAssembly)
+			if (type.ToString().Equals(SimpleTypeString) || (IgnoreCase && type.ToString().ToLower().Equals(SimpleTypeString.ToLower())))
+				TypeIAmLookingFor = type;
+		return TypeIAmLookingFor;
+	}
+
+	private static List<string> AllUniqueSimpleTypeStringsInCurrentAssembly = null;
+	public static List<string> GetAllUniqueSimpleTypeStringsInCurrentAssembly
+	{
+		get
+		{
+			if (AllUniqueSimpleTypeStringsInCurrentAssembly != null) return AllUniqueSimpleTypeStringsInCurrentAssembly;
+			List<string> tmpList = new List<string>();
+			List<string> tmpDuplicateList = new List<string>();
+			//Assembly[] appAssemblies = System.AppDomain.CurrentDomain.GetAssemblies();
+			//foreach (Assembly assembly in appAssemblies)
+			//	foreach (Type type in assembly.GetTypes())
+			foreach (Type type in GetAllUniqueSimpleTypesInCurrentAssembly)
+					if (tmpList.Contains(type.ToString())) tmpDuplicateList.Add(type.ToString());
+					else tmpList.Add(type.ToString());
+			foreach (string dup in tmpDuplicateList)
+				tmpList.RemoveAll((s) => s == dup);
+			AllUniqueSimpleTypeStringsInCurrentAssembly = tmpList;
+			AllUniqueSimpleTypeStringsInCurrentAssembly.Sort();
+			return AllUniqueSimpleTypeStringsInCurrentAssembly;
+		}
+	}
+
+	public class MethodDetailsClass
+	{
+		private string DisplayString;
+		private MethodInfo _methodInfo;
+		private MethodInfo methodInfo
+		{
+			get { return _methodInfo; }
+			set
+			{
+				ParameterInfo[] parameterInfos = value.GetParameters();
+				string parametersString = "";
+				foreach (ParameterInfo pi in parameterInfos)
+					parametersString += (parametersString.Length > 0 ? ", " : "")
+						+ string.Join(" ", pi.ParameterType.Name, pi.Name);
+				DisplayString = value.Name + " (" + parametersString + ")";
+				_methodInfo = value;
+			}
+		}
+
+		private Dictionary<string, PropertyNameAndType> hashTableOfParameters = null;
+		public Dictionary<string, PropertyNameAndType> HashTableOfParameters
+		{
+			get
+			{
+				if (hashTableOfParameters != null)
+					return hashTableOfParameters;
+				hashTableOfParameters = new Dictionary<string, PropertyNameAndType>();
+				foreach (ParameterInfo parInfo in methodInfo.GetParameters()){
+					hashTableOfParameters.Add(parInfo.Name, new PropertyNameAndType(parInfo.Name, parInfo.ParameterType));//.DefaultValue);//GetDefault(.ParameterType));
+				}
+				return hashTableOfParameters;
+			}
+		}
+
+		public MethodDetailsClass(MethodInfo methodInfoIn)
+		{
+			methodInfo = methodInfoIn;
+		}
+
+		public override string ToString()
+		{
+			return DisplayString;
+		}
 	}
 }

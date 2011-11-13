@@ -10,6 +10,14 @@ using System.Runtime.Remoting.Channels.Tcp;
 using System.Windows.Forms;
 using CookComputing.XmlRpc;
 
+//Client side settings
+//[XmlRpcUrl("http://fjh.dyndns.org:5678/DynamicCodeInvoking/xmlrpc")]
+public interface Iclientside_DynamicCodeInvokingServerClass : IXmlRpcProxy
+{
+	[XmlRpcMethod("RunCodeDynamically")]
+	DynamicCodeInvoking.RunCodeReturnStruct RunCodeDynamically(string AssemblyQualifiedNameOfType, string[] commandParameterTypesfullnames, string methodName, params object[] parameterValues);
+}
+
 public class XmlRpcInterop
 {
 	public static void UnregisterAllRegisteredChannels()
@@ -129,13 +137,5 @@ public class XmlRpcInterop
 		{
 			return DynamicCodeInvoking.RunCodeFromStaticClass(AssemblyQualifiedNameOfType, commandParameterTypesfullnames, methodName, parameterValues);
 		}
-	}
-
-	//Client side settings
-	//[XmlRpcUrl("http://fjh.dyndns.org:5678/DynamicCodeInvoking/xmlrpc")]
-	public interface Iclientside_DynamicCodeInvokingServerClass : IXmlRpcProxy
-	{
-		[XmlRpcMethod("RunCodeDynamically")]
-		DynamicCodeInvoking.RunCodeReturnStruct RunCodeDynamically(string AssemblyQualifiedNameOfType, string[] commandParameterTypesfullnames, string methodName, params object[] parameterValues);
 	}
 }

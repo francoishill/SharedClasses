@@ -137,7 +137,7 @@ public class XmlRpcInterop
 	}
 
 	//Client side settings
-	[XmlRpcUrl("http://localhost:5678/DynamicCodeInvoking.rem")]//")]fjh.dyndns.org:5678/DynamicCodeInvoking.rem")]
+	[XmlRpcUrl("http://fjh.dyndns.org:5678/DynamicCodeInvoking.rem")]//")]fjh.dyndns.org:5678/DynamicCodeInvoking.rem")]
 	public interface Iclientside_DynamicCodeInvokingServerClass : IXmlRpcProxy
 	{
 		[XmlRpcMethod("RunCodeDynamically")]

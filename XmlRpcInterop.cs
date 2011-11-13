@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
+using System.Runtime.Remoting.Channels.Http;
+using System.Runtime.Remoting.Channels.Tcp;
 using System.Windows.Forms;
 using CookComputing.XmlRpc;
 
@@ -16,9 +19,34 @@ public class XmlRpcInterop
 			ChannelServices.UnregisterChannel(chan);
 	}
 
+	private static IClientChannelSinkProvider CreateDefaultClientProviderChain()
+	{
+		IClientChannelSinkProvider chain = new XmlRpcClientFormatterSinkProvider();
+		IClientChannelSinkProvider sink = chain;
+		sink.Next = new SoapClientFormatterSinkProvider();
+		sink = sink.Next;
+		return chain;
+	}
+
+	private static IServerChannelSinkProvider CreateDefaultServerProviderChain()
+	{
+		IServerChannelSinkProvider chain = new XmlRpcServerFormatterSinkProvider();
+		IServerChannelSinkProvider sink = chain;
+		sink.Next = new SoapServerFormatterSinkProvider();
+		sink = sink.Next;
+		return chain;
+	}
+
 	public static void StartDynamicCodeInvokingServer_XmlRpc()
 	{
-		RemotingConfiguration.Configure("DynamicCodeInvokingServerSettings.config", false);
+		ListDictionary channelProperties = new ListDictionary()
+		{
+			{ "port", 5678 } 
+		};
+		HttpChannel httpChannel = new HttpChannel(channelProperties,
+																			CreateDefaultClientProviderChain(),
+																			CreateDefaultServerProviderChain());
+		ChannelServices.RegisterChannel(httpChannel, false);
 		RemotingConfiguration.RegisterWellKnownServiceType(
 			typeof(DynamicCodeInvokingServerClass),
 			"DynamicCodeInvoking.rem",

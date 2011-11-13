@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Windows.Forms;
 
 public class UserMessages
 {
+	public static Icon iconForMessages;
+
 	/*All methods to show messages that is of type boolean (except Confirm) will return true
 	Reason being is that it makes it easy to show a message in a method which would should exit when the message is shown*/
 	private static bool ShowMsg(IWin32Window owner, string Message, string Title, MessageBoxIcon icon, bool AlwaysOnTop)
@@ -23,6 +26,7 @@ public class UserMessages
 		{
 			bool ownerOriginalTopmostState = ((Form)owner).TopMost; 
 			((Form)owner).TopMost = AlwaysOnTop;
+			if (iconForMessages != null) ((Form)owner).Icon = iconForMessages;
 			MessageBox.Show(owner, Message, Title, MessageBoxButtons.OK, icon);
 			if (useTempForm && topmostForm != null && !topmostForm.IsDisposed) topmostForm.Dispose();
 			((Form)owner).TopMost = ownerOriginalTopmostState;
@@ -34,31 +38,55 @@ public class UserMessages
 		return true;
 	}
 
-	public static bool ShowErrorMessage(string Message, string Title = "Error", IWin32Window owner = null, bool AlwaysOnTop = true)
+	public static bool ShowErrorMessage(string Message, string Title = "Error", bool AlwaysOnTop = true)
+	{
+		ShowErrorMessage(null, Message, Title, AlwaysOnTop);
+		return true;
+	}
+	public static bool ShowErrorMessage(IWin32Window owner, string Message, string Title = "Error", bool AlwaysOnTop = true)
 	{
 		ShowMsg(owner, Message, Title, MessageBoxIcon.Error, AlwaysOnTop);
 		return true;
 	}
 
-	public static bool ShowWarningMessage(string Message, string Title = "Warning", IWin32Window owner = null, bool AlwaysOnTop = true)
+	public static bool ShowWarningMessage(string Message, string Title = "Warning", bool AlwaysOnTop = true)
+	{
+		ShowWarningMessage(null, Message, Title, AlwaysOnTop);
+		return true;
+	}
+	public static bool ShowWarningMessage(IWin32Window owner, string Message, string Title = "Warning", bool AlwaysOnTop = true)
 	{
 		ShowMsg(owner, Message, Title, MessageBoxIcon.Warning, AlwaysOnTop);
 		return true;
 	}
 
-	public static bool ShowInfoMessage(string Message, string Title = "Warning", IWin32Window owner = null, bool AlwaysOnTop = true)
+	public static bool ShowInfoMessage(string Message, string Title = "Warning", bool AlwaysOnTop = true)
+	{
+		ShowInfoMessage(null, Message, Title, AlwaysOnTop);
+		return true;
+	}
+	public static bool ShowInfoMessage(IWin32Window owner, string Message, string Title = "Warning", bool AlwaysOnTop = true)
 	{
 		ShowMsg(owner, Message, Title, MessageBoxIcon.Information, AlwaysOnTop);
 		return true;
 	}
 
-	public static bool ShowMessage(string Message, string Title = "Warning", IWin32Window owner = null, bool AlwaysOnTop = true)
+	public static bool ShowMessage(string Message, string Title = "Warning", bool AlwaysOnTop = true)
+	{
+		ShowMessage(null, Message, Title, AlwaysOnTop);
+		return true;
+	}
+	public static bool ShowMessage(IWin32Window owner, string Message, string Title = "Warning",bool AlwaysOnTop = true)
 	{
 		ShowMsg(owner, Message, Title, MessageBoxIcon.None, AlwaysOnTop);
 		return true;
 	}
 
-	public static bool Confirm(string Message, string Title = "Confirm", bool DefaultYesButton = false, IWin32Window owner = null, bool AlwaysOnTop = true)
+	public static bool Confirm(string Message, string Title = "Confirm", bool DefaultYesButton = false, bool AlwaysOnTop = true)
+	{
+		return Confirm(null, Message, Title, DefaultYesButton, AlwaysOnTop);
+	}
+	public static bool Confirm(IWin32Window owner, string Message, string Title = "Confirm", bool DefaultYesButton = false, bool AlwaysOnTop = true)
 	{
 		//DialogResult result = MessageBox.Show(topmostForm, Message, Title, MessageBoxButtons.YesNo, MessageBoxIcon.Question, DefaultYesButton ? MessageBoxDefaultButton.Button1 : MessageBoxDefaultButton.Button2);
 		//topmostForm.Dispose(); // clean it up all the way
@@ -96,12 +124,20 @@ public class UserMessages
 		return Microsoft.VisualBasic.Interaction.InputBox(Message, Title, DefaultResponse);
 	}
 
-	public static T PickItem<T>(Array itemArray, string Message, T defaultItem, IWin32Window owner = null)
+	public static T PickItem<T>(Array itemArray, string Message, T defaultItem)
+	{
+		return PickItem<T>(null, itemArray, Message, defaultItem);
+	}
+	public static T PickItem<T>(IWin32Window owner, Array itemArray, string Message, T defaultItem)
 	{
 		return PickItemForm.PickItem<T>(itemArray, Message, defaultItem, owner);
 	}
 
-	public static T PickItem<T>(List<T> itemList, string Message, T defaultItem, IWin32Window owner = null)
+	public static T PickItem<T>(List<T> itemList, string Message, T defaultItem)
+	{
+		return PickItem<T>(null, itemList, Message, defaultItem);
+	}
+	public static T PickItem<T>(IWin32Window owner, List<T> itemList, string Message, T defaultItem)
 	{
 		return PickItemForm.PickItem<T>(itemList.ToArray(), Message, defaultItem, owner);
 	}

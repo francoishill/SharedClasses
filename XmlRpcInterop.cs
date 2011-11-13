@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Windows.Forms;
@@ -36,14 +39,54 @@ public class XmlRpcInterop
 	public static void TestFromClient_DynamicCodeInvokingServer()
 	{
 		Iclientside_DynamicCodeInvokingServerClass proxy = XmlRpcProxyGen.Create<Iclientside_DynamicCodeInvokingServerClass>();
-		string retError = proxy.RunCodeDynamically(
-			typeof(UserMessages).AssemblyQualifiedName,//typeof(MessageBox).AssemblyQualifiedName
-			new string[] { typeof(string).AssemblyQualifiedName, typeof(string).AssemblyQualifiedName, typeof(IWin32Window).AssemblyQualifiedName, typeof(bool).AssemblyQualifiedName },//new string[] { typeof(string).AssemblyQualifiedName }
-			"ShowMessage",//"Show",
-			"Hallo", "Temp title", null, true
+
+		//string[] TypeStringArray;
+		//object[] ParameterList;
+		//DynamicCodeInvoking.GetParameterListAndTypesStringArray(out TypeStringArray, out ParameterList, "Hallo", "Temp title", true);
+		//DynamicCodeInvoking.RunCodeReturnStruct resultObj = proxy.RunCodeDynamically(
+		//	typeof(UserMessages).AssemblyQualifiedName,//typeof(MessageBox).AssemblyQualifiedName
+		//	TypeStringArray,
+		//	"ShowMessage",//"Show",
+		//	ParameterList
+		//	);
+		//XmlRpcClientProtocol cp = new XmlRpcClientProtocol();
+		//cp.Invoke(mi: typeof(Directory).GetMethod("GetFiles"), Parameters: new object[] { @"c:\", "*", SearchOption.TopDirectoryOnly });
+		//return;
+		//cannot be mapped to an XML-RPC type
+
+		string[] TypeStringArray;
+		object[] ParameterList;
+		DynamicCodeInvoking.GetParameterListAndTypesStringArray(out TypeStringArray, out ParameterList, @"c:\", "*", SearchOption.TopDirectoryOnly);
+		DynamicCodeInvoking.RunCodeReturnStruct resultObj = proxy.RunCodeDynamically(
+			typeof(Directory).AssemblyQualifiedName,//typeof(MessageBox).AssemblyQualifiedName
+			TypeStringArray,
+			"GetFiles",//"Show",
+			ParameterList
 			);
-		if (string.IsNullOrWhiteSpace(retError)) UserMessages.ShowInfoMessage("Successfully performed command");
-		else UserMessages.ShowErrorMessage("Return error string: " + retError);
+
+		//string[] TypeStringArray;
+		//object[] ParameterList;
+		//DynamicCodeInvoking.GetParameterListAndTypesStringArray(out TypeStringArray, out ParameterList, @"c:\111");
+		//string retError = proxy.RunCodeDynamically(
+		//	typeof(Directory).AssemblyQualifiedName,//typeof(MessageBox).AssemblyQualifiedName
+		//	TypeStringArray,
+		//	"CreateDirectory",//"Show",
+		//	ParameterList
+		//	);
+		if (resultObj.Success)
+		{
+			string successMsg = "Successfully performed command: ";
+			if (resultObj.MethodInvokeResultingObject is string[])
+				foreach (string s in resultObj.MethodInvokeResultingObject as string[])
+					successMsg += Environment.NewLine + s;
+			else if (resultObj.MethodInvokeResultingObject is List<string>)
+				foreach (string s in resultObj.MethodInvokeResultingObject as List<string>)
+					successMsg += Environment.NewLine + s;
+			else successMsg += resultObj.ToString();
+			UserMessages.ShowInfoMessage(successMsg);
+		}
+		else
+			UserMessages.ShowErrorMessage("Return error string: " + resultObj.ErrorMessage);
 	}
 
 	public static void SampleClient()
@@ -72,7 +115,7 @@ public class XmlRpcInterop
 		/// Returns the error string
 		/// </summary>
 		[XmlRpcMethod("RunCodeDynamically")]
-		public string RunCodeDynamically(string AssemblyQualifiedNameOfType, string[] commandParameterTypesfullnames, string methodName, params object[] parameterValues)
+		public DynamicCodeInvoking.RunCodeReturnStruct RunCodeDynamically(string AssemblyQualifiedNameOfType, string[] commandParameterTypesfullnames, string methodName, params object[] parameterValues)
 		{
 			return DynamicCodeInvoking.RunCodeFromStaticClass(AssemblyQualifiedNameOfType, commandParameterTypesfullnames, methodName, parameterValues);
 		}
@@ -98,6 +141,6 @@ public class XmlRpcInterop
 	public interface Iclientside_DynamicCodeInvokingServerClass : IXmlRpcProxy
 	{
 		[XmlRpcMethod("RunCodeDynamically")]
-		string RunCodeDynamically(string AssemblyQualifiedNameOfType, string[] commandParameterTypesfullnames, string methodName, params object[] parameterValues);
+		DynamicCodeInvoking.RunCodeReturnStruct RunCodeDynamically(string AssemblyQualifiedNameOfType, string[] commandParameterTypesfullnames, string methodName, params object[] parameterValues);
 	}
 }

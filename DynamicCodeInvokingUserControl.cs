@@ -197,5 +197,21 @@ namespace SharedClasses
 		{
 			return (comboBox_SelectedMethodOverload.SelectedItem as MethodDetailsClass).MethodName;
 		}
+
+		public string GetBlockOfCode()
+		{
+			return richTextBox_CodeBlockToRun.Text;
+		}
+
+		DynamicCodeInvoking.Script script;
+		private void richTextBox1_KeyDown(object sender, KeyEventArgs e)
+		{
+			if (e.KeyCode == Keys.F5)
+			{
+				if (script == null) script = new DynamicCodeInvoking.Script();
+				script.Code = richTextBox_CodeBlockToRun.Text;
+				script.Run(null);
+			}
+		}
 	}
 }

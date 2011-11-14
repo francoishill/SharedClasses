@@ -1,7 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
+using System.Net;
 using System.Reflection;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
@@ -16,6 +18,8 @@ public interface Iclientside_DynamicCodeInvokingServerClass : IXmlRpcProxy
 {
 	[XmlRpcMethod("RunCodeDynamically")]
 	DynamicCodeInvoking.RunCodeReturnStruct RunCodeDynamically(string AssemblyQualifiedNameOfType, string[] commandParameterTypesfullnames, string methodName, params object[] parameterValues);
+	[XmlRpcMethod("RunBlockOfCode")]
+	DynamicCodeInvoking.RunCodeReturnStruct RunBlockOfCode(string block);
 }
 
 public class XmlRpcInterop
@@ -31,7 +35,7 @@ public class XmlRpcInterop
 	{
 		return new ListDictionary()
 		{
-			{ "port", SharedClassesSettings.tracXmlRpcInteropSettings.DynamicInvokationServer_PortNumber }//5678 }
+			{ "port", SharedClassesSettings.tracXmlRpcInteropSettings.DynamicInvokationServer_PortNumber },//5678 }
 		};
 	}
 
@@ -62,6 +66,9 @@ public class XmlRpcInterop
 
 	public static void StartDynamicCodeInvokingServer_XmlRpc()
 	{
+		//HttpServerChannel httpServerChannel = new HttpServerChannel(
+		//	CreateDefaultChannelProperties(),
+		//	CreateDefaultServerProviderChain();
 		HttpChannel httpChannel = new HttpChannel(
 			CreateDefaultChannelProperties(),
 			CreateDefaultClientProviderChain(),
@@ -73,59 +80,59 @@ public class XmlRpcInterop
 			WellKnownObjectMode.Singleton);
 	}
 
-	public static void TestFromClient_DynamicCodeInvokingServer()
-	{
-		SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
-		Iclientside_DynamicCodeInvokingServerClass proxy = XmlRpcProxyGen.Create<Iclientside_DynamicCodeInvokingServerClass>();
-		proxy.Url = SharedClassesSettings.tracXmlRpcInteropSettings.GetCominedUrlForDynamicInvokationServer();
-		//string[] TypeStringArray;
-		//object[] ParameterList;
-		//DynamicCodeInvoking.GetParameterListAndTypesStringArray(out TypeStringArray, out ParameterList, "Hallo", "Temp title", true);
-		//DynamicCodeInvoking.RunCodeReturnStruct resultObj = proxy.RunCodeDynamically(
-		//	typeof(UserMessages).AssemblyQualifiedName,//typeof(MessageBox).AssemblyQualifiedName
-		//	TypeStringArray,
-		//	"ShowMessage",//"Show",
-		//	ParameterList
-		//	);
-		//XmlRpcClientProtocol cp = new XmlRpcClientProtocol();
-		//cp.Invoke(mi: typeof(Directory).GetMethod("GetFiles"), Parameters: new object[] { @"c:\", "*", SearchOption.TopDirectoryOnly });
-		//return;
-		//cannot be mapped to an XML-RPC type
+	//public static void TestFromClient_DynamicCodeInvokingServer()
+	//{
+	//	SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
+	//	Iclientside_DynamicCodeInvokingServerClass proxy = XmlRpcProxyGen.Create<Iclientside_DynamicCodeInvokingServerClass>();
+	//	proxy.Url = SharedClassesSettings.tracXmlRpcInteropSettings.GetCominedUrlForDynamicInvokationServer();
+	//	//string[] TypeStringArray;
+	//	//object[] ParameterList;
+	//	//DynamicCodeInvoking.GetParameterListAndTypesStringArray(out TypeStringArray, out ParameterList, "Hallo", "Temp title", true);
+	//	//DynamicCodeInvoking.RunCodeReturnStruct resultObj = proxy.RunCodeDynamically(
+	//	//	typeof(UserMessages).AssemblyQualifiedName,//typeof(MessageBox).AssemblyQualifiedName
+	//	//	TypeStringArray,
+	//	//	"ShowMessage",//"Show",
+	//	//	ParameterList
+	//	//	);
+	//	//XmlRpcClientProtocol cp = new XmlRpcClientProtocol();
+	//	//cp.Invoke(mi: typeof(Directory).GetMethod("GetFiles"), Parameters: new object[] { @"c:\", "*", SearchOption.TopDirectoryOnly });
+	//	//return;
+	//	//cannot be mapped to an XML-RPC type
 
-		string[] TypeStringArray;
-		object[] ParameterList;
-		DynamicCodeInvoking.GetParameterListAndTypesStringArray(out TypeStringArray, out ParameterList, @"c:\", "*", SearchOption.TopDirectoryOnly);
-		DynamicCodeInvoking.RunCodeReturnStruct resultObj = proxy.RunCodeDynamically(
-			typeof(Directory).AssemblyQualifiedName,//typeof(MessageBox).AssemblyQualifiedName
-			TypeStringArray,
-			"GetFiles",//"Show",
-			ParameterList
-			);
+	//	string[] TypeStringArray;
+	//	object[] ParameterList;
+	//	DynamicCodeInvoking.GetParameterListAndTypesStringArray(out TypeStringArray, out ParameterList, @"c:\", "*", SearchOption.TopDirectoryOnly);
+	//	DynamicCodeInvoking.RunCodeReturnStruct resultObj = proxy.RunCodeDynamically(
+	//		typeof(Directory).AssemblyQualifiedName,//typeof(MessageBox).AssemblyQualifiedName
+	//		TypeStringArray,
+	//		"GetFiles",//"Show",
+	//		ParameterList
+	//		);
 
-		//string[] TypeStringArray;
-		//object[] ParameterList;
-		//DynamicCodeInvoking.GetParameterListAndTypesStringArray(out TypeStringArray, out ParameterList, @"c:\111");
-		//string retError = proxy.RunCodeDynamically(
-		//	typeof(Directory).AssemblyQualifiedName,//typeof(MessageBox).AssemblyQualifiedName
-		//	TypeStringArray,
-		//	"CreateDirectory",//"Show",
-		//	ParameterList
-		//	);
-		if (resultObj.Success)
-		{
-			string successMsg = "Successfully performed command: ";
-			if (resultObj.MethodInvokeResultingObject is string[])
-				foreach (string s in resultObj.MethodInvokeResultingObject as string[])
-					successMsg += Environment.NewLine + s;
-			else if (resultObj.MethodInvokeResultingObject is List<string>)
-				foreach (string s in resultObj.MethodInvokeResultingObject as List<string>)
-					successMsg += Environment.NewLine + s;
-			else successMsg += resultObj.ToString();
-			UserMessages.ShowInfoMessage(successMsg);
-		}
-		else
-			UserMessages.ShowErrorMessage("Return error string: " + resultObj.ErrorMessage);
-	}
+	//	//string[] TypeStringArray;
+	//	//object[] ParameterList;
+	//	//DynamicCodeInvoking.GetParameterListAndTypesStringArray(out TypeStringArray, out ParameterList, @"c:\111");
+	//	//string retError = proxy.RunCodeDynamically(
+	//	//	typeof(Directory).AssemblyQualifiedName,//typeof(MessageBox).AssemblyQualifiedName
+	//	//	TypeStringArray,
+	//	//	"CreateDirectory",//"Show",
+	//	//	ParameterList
+	//	//	);
+	//	if (resultObj.Success)
+	//	{
+	//		string successMsg = "Successfully performed command: ";
+	//		if (resultObj.MethodInvokeResultingObject is string[])
+	//			foreach (string s in resultObj.MethodInvokeResultingObject as string[])
+	//				successMsg += Environment.NewLine + s;
+	//		else if (resultObj.MethodInvokeResultingObject is List<string>)
+	//			foreach (string s in resultObj.MethodInvokeResultingObject as List<string>)
+	//				successMsg += Environment.NewLine + s;
+	//		else successMsg += resultObj.ToString();
+	//		UserMessages.ShowInfoMessage(successMsg);
+	//	}
+	//	else
+	//		UserMessages.ShowErrorMessage("Return error string: " + resultObj.ErrorMessage);
+	//}
 
 	public class DynamicCodeInvokingServerClass : MarshalByRefObject
 	{
@@ -136,6 +143,38 @@ public class XmlRpcInterop
 		public DynamicCodeInvoking.RunCodeReturnStruct RunCodeDynamically(string AssemblyQualifiedNameOfType, string[] commandParameterTypesfullnames, string methodName, params object[] parameterValues)
 		{
 			return DynamicCodeInvoking.RunCodeFromStaticClass(AssemblyQualifiedNameOfType, commandParameterTypesfullnames, methodName, parameterValues);
+		}
+		[XmlRpcMethod("RunBlockOfCode")]
+		public DynamicCodeInvoking.RunCodeReturnStruct RunBlockOfCode(string block)
+		{
+			return DynamicCodeInvoking.RunBlockOfCode(block);
+		}
+	}
+
+	public class Tracer : XmlRpcLogger
+	{
+		protected override void OnRequest(object sender,
+			XmlRpcRequestEventArgs e)
+		{
+			DumpStream(e.RequestStream);
+		}
+
+		protected override void OnResponse(object sender,
+			XmlRpcResponseEventArgs e)
+		{
+			DumpStream(e.ResponseStream);
+		}
+
+		private void DumpStream(Stream stm)
+		{
+			stm.Position = 0;
+			TextReader trdr = new StreamReader(stm);
+			String s = trdr.ReadLine();
+			while (s != null)
+			{
+				System.Diagnostics.Trace.WriteLine(s);
+				s = trdr.ReadLine();
+			}
 		}
 	}
 }

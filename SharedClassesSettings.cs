@@ -40,6 +40,7 @@ public class SharedClassesSettings
 	}
 }
 
+//TODO: Check out INotifyPropertyChanged (in System.ComponentModel)
 public class VisualStudioInteropSettings
 {
 	public enum UriProtocol { Http, Ftp }

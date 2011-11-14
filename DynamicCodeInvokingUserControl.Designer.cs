@@ -36,12 +36,19 @@
 			this.label_SelectedType = new System.Windows.Forms.Label();
 			this.comboBox_SelectedMethodOverload = new System.Windows.Forms.ComboBox();
 			this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+			this.splitContainer2 = new System.Windows.Forms.SplitContainer();
 			this.propertyGrid1 = new System.Windows.Forms.PropertyGrid();
+			this.label1 = new System.Windows.Forms.Label();
+			this.richTextBox_CodeBlockToRun = new System.Windows.Forms.RichTextBox();
 			this.treeView_SimpleTypesList = new System.Windows.Forms.TreeView();
 			((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
 			this.splitContainer1.Panel1.SuspendLayout();
 			this.splitContainer1.Panel2.SuspendLayout();
 			this.splitContainer1.SuspendLayout();
+			((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).BeginInit();
+			this.splitContainer2.Panel1.SuspendLayout();
+			this.splitContainer2.Panel2.SuspendLayout();
+			this.splitContainer2.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// button_PopulateSimpleTypesList
@@ -83,7 +90,7 @@
 			this.label_BusyFiltering.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.label_BusyFiltering.AutoSize = true;
 			this.label_BusyFiltering.ForeColor = System.Drawing.Color.Gray;
-			this.label_BusyFiltering.Location = new System.Drawing.Point(183, 329);
+			this.label_BusyFiltering.Location = new System.Drawing.Point(183, 341);
 			this.label_BusyFiltering.Name = "label_BusyFiltering";
 			this.label_BusyFiltering.Size = new System.Drawing.Size(134, 13);
 			this.label_BusyFiltering.TabIndex = 6;
@@ -118,7 +125,8 @@
 			this.comboBox_SelectedMethodOverload.FormattingEnabled = true;
 			this.comboBox_SelectedMethodOverload.Location = new System.Drawing.Point(3, 44);
 			this.comboBox_SelectedMethodOverload.Name = "comboBox_SelectedMethodOverload";
-			this.comboBox_SelectedMethodOverload.Size = new System.Drawing.Size(424, 21);
+			this.comboBox_SelectedMethodOverload.Size = new System.Drawing.Size(453, 21);
+			this.comboBox_SelectedMethodOverload.Sorted = true;
 			this.comboBox_SelectedMethodOverload.TabIndex = 10;
 			this.comboBox_SelectedMethodOverload.SelectedIndexChanged += new System.EventHandler(this.comboBox_SelectedMethodOverload_SelectedIndexChanged);
 			// 
@@ -131,7 +139,7 @@
 			// 
 			// splitContainer1.Panel1
 			// 
-			this.splitContainer1.Panel1.Controls.Add(this.propertyGrid1);
+			this.splitContainer1.Panel1.Controls.Add(this.splitContainer2);
 			this.splitContainer1.Panel1.Controls.Add(this.textBox_TypeName);
 			this.splitContainer1.Panel1.Controls.Add(this.label_SelectedType);
 			this.splitContainer1.Panel1.Controls.Add(this.comboBox_SelectedMethodOverload);
@@ -143,21 +151,62 @@
 			this.splitContainer1.Panel2.Controls.Add(this.checkBox_Instant);
 			this.splitContainer1.Panel2.Controls.Add(this.textBox_FilterSimpleTypesList);
 			this.splitContainer1.Panel2.Controls.Add(this.button_PopulateSimpleTypesList);
-			this.splitContainer1.Size = new System.Drawing.Size(754, 345);
-			this.splitContainer1.SplitterDistance = 430;
+			this.splitContainer1.Size = new System.Drawing.Size(783, 357);
+			this.splitContainer1.SplitterDistance = 459;
 			this.splitContainer1.TabIndex = 11;
+			// 
+			// splitContainer2
+			// 
+			this.splitContainer2.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.splitContainer2.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
+			this.splitContainer2.Location = new System.Drawing.Point(3, 71);
+			this.splitContainer2.Name = "splitContainer2";
+			// 
+			// splitContainer2.Panel1
+			// 
+			this.splitContainer2.Panel1.Controls.Add(this.propertyGrid1);
+			// 
+			// splitContainer2.Panel2
+			// 
+			this.splitContainer2.Panel2.Controls.Add(this.label1);
+			this.splitContainer2.Panel2.Controls.Add(this.richTextBox_CodeBlockToRun);
+			this.splitContainer2.Size = new System.Drawing.Size(453, 286);
+			this.splitContainer2.SplitterDistance = 239;
+			this.splitContainer2.TabIndex = 12;
 			// 
 			// propertyGrid1
 			// 
-			this.propertyGrid1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.propertyGrid1.Location = new System.Drawing.Point(3, 71);
+			this.propertyGrid1.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.propertyGrid1.Location = new System.Drawing.Point(0, 0);
 			this.propertyGrid1.Name = "propertyGrid1";
 			this.propertyGrid1.PropertySort = System.Windows.Forms.PropertySort.Alphabetical;
-			this.propertyGrid1.Size = new System.Drawing.Size(424, 271);
+			this.propertyGrid1.Size = new System.Drawing.Size(239, 286);
 			this.propertyGrid1.TabIndex = 11;
 			this.propertyGrid1.ToolbarVisible = false;
+			// 
+			// label1
+			// 
+			this.label1.AutoSize = true;
+			this.label1.ForeColor = System.Drawing.Color.Green;
+			this.label1.Location = new System.Drawing.Point(3, 3);
+			this.label1.Name = "label1";
+			this.label1.Size = new System.Drawing.Size(127, 13);
+			this.label1.TabIndex = 1;
+			this.label1.Text = "Block of code (F5 to run):";
+			// 
+			// richTextBox_CodeBlockToRun
+			// 
+			this.richTextBox_CodeBlockToRun.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.richTextBox_CodeBlockToRun.Location = new System.Drawing.Point(0, 19);
+			this.richTextBox_CodeBlockToRun.Name = "richTextBox_CodeBlockToRun";
+			this.richTextBox_CodeBlockToRun.Size = new System.Drawing.Size(210, 267);
+			this.richTextBox_CodeBlockToRun.TabIndex = 0;
+			this.richTextBox_CodeBlockToRun.Text = "";
+			this.richTextBox_CodeBlockToRun.KeyDown += new System.Windows.Forms.KeyEventHandler(this.richTextBox1_KeyDown);
 			// 
 			// treeView_SimpleTypesList
 			// 
@@ -170,7 +219,7 @@
 			this.treeView_SimpleTypesList.ShowLines = false;
 			this.treeView_SimpleTypesList.ShowPlusMinus = false;
 			this.treeView_SimpleTypesList.ShowRootLines = false;
-			this.treeView_SimpleTypesList.Size = new System.Drawing.Size(314, 294);
+			this.treeView_SimpleTypesList.Size = new System.Drawing.Size(314, 306);
 			this.treeView_SimpleTypesList.TabIndex = 7;
 			this.treeView_SimpleTypesList.ItemDrag += new System.Windows.Forms.ItemDragEventHandler(this.treeView_SimpleTypesList_ItemDrag);
 			// 
@@ -182,13 +231,18 @@
 			this.DoubleBuffered = true;
 			this.Name = "DynamicCodeInvokingUserControl";
 			this.Padding = new System.Windows.Forms.Padding(3);
-			this.Size = new System.Drawing.Size(760, 351);
+			this.Size = new System.Drawing.Size(789, 363);
 			this.splitContainer1.Panel1.ResumeLayout(false);
 			this.splitContainer1.Panel1.PerformLayout();
 			this.splitContainer1.Panel2.ResumeLayout(false);
 			this.splitContainer1.Panel2.PerformLayout();
 			((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
 			this.splitContainer1.ResumeLayout(false);
+			this.splitContainer2.Panel1.ResumeLayout(false);
+			this.splitContainer2.Panel2.ResumeLayout(false);
+			this.splitContainer2.Panel2.PerformLayout();
+			((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
+			this.splitContainer2.ResumeLayout(false);
 			this.ResumeLayout(false);
 
 		}
@@ -205,6 +259,9 @@
 		private System.Windows.Forms.SplitContainer splitContainer1;
 		private System.Windows.Forms.TreeView treeView_SimpleTypesList;
 		private System.Windows.Forms.PropertyGrid propertyGrid1;
+		private System.Windows.Forms.SplitContainer splitContainer2;
+		private System.Windows.Forms.RichTextBox richTextBox_CodeBlockToRun;
+		private System.Windows.Forms.Label label1;
 
 
 	}

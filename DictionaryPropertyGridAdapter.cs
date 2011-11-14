@@ -13,15 +13,15 @@ using System.ComponentModel;
 /// </summary>
 public class DictionaryPropertyGridAdapter : ICustomTypeDescriptor
 {
-	public Dictionary<string, PropertyNameAndType> _dictionary;
+	public Dictionary<string, ParameterNameAndType> _dictionary;
 
 	public DictionaryPropertyGridAdapter(IDictionary d)
 	{
-		if (!(d is Dictionary<string, PropertyNameAndType>))
+		if (!(d is Dictionary<string, ParameterNameAndType>))
 		{
 			throw new Exception("Cannot use other dictionary formats than Dictionary<string, PropertyNameAndType>");
 		}
-		_dictionary = d as Dictionary<string, PropertyNameAndType>;
+		_dictionary = d as Dictionary<string, ParameterNameAndType>;
 	}
 
 	public string GetComponentName()
@@ -97,10 +97,10 @@ public class DictionaryPropertyGridAdapter : ICustomTypeDescriptor
 
 public class DictionaryPropertyDescriptor : PropertyDescriptor
 {
-	Dictionary<string, PropertyNameAndType> _dictionary;
+	Dictionary<string, ParameterNameAndType> _dictionary;
 	string _key;
 
-	internal DictionaryPropertyDescriptor(Dictionary<string, PropertyNameAndType> d, string key)
+	internal DictionaryPropertyDescriptor(Dictionary<string, ParameterNameAndType> d, string key)
 		: base(key.ToString(), null)
 	{
 		_dictionary = d;
@@ -147,12 +147,12 @@ public class DictionaryPropertyDescriptor : PropertyDescriptor
 	}
 }
 
-public class PropertyNameAndType
+public class ParameterNameAndType
 {
 	public string Name;
 	public Type type;
 	public object Value;
-	public PropertyNameAndType(string NameIn, Type typeIn)
+	public ParameterNameAndType(string NameIn, Type typeIn)
 	{
 		Name = NameIn;
 		type = typeIn;

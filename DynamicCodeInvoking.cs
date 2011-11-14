@@ -141,16 +141,21 @@ public class DynamicCodeInvoking
 			}
 		}
 
-		private Dictionary<string, PropertyNameAndType> hashTableOfParameters = null;
-		public Dictionary<string, PropertyNameAndType> HashTableOfParameters
+		public string MethodName
+		{
+			get { return methodInfo.Name; }
+		}
+
+		private Dictionary<string, ParameterNameAndType> hashTableOfParameters = null;
+		public Dictionary<string, ParameterNameAndType> HashTableOfParameters
 		{
 			get
 			{
 				if (hashTableOfParameters != null)
 					return hashTableOfParameters;
-				hashTableOfParameters = new Dictionary<string, PropertyNameAndType>();
+				hashTableOfParameters = new Dictionary<string, ParameterNameAndType>();
 				foreach (ParameterInfo parInfo in methodInfo.GetParameters()){
-					hashTableOfParameters.Add(parInfo.Name, new PropertyNameAndType(parInfo.Name, parInfo.ParameterType));//.DefaultValue);//GetDefault(.ParameterType));
+					hashTableOfParameters.Add(parInfo.Name, new ParameterNameAndType(parInfo.Name, parInfo.ParameterType));//.DefaultValue);//GetDefault(.ParameterType));
 				}
 				return hashTableOfParameters;
 			}

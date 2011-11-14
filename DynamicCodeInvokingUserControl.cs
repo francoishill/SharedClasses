@@ -140,6 +140,7 @@ namespace SharedClasses
 				return;
 			}
 			label_SelectedType.Text = type.Name;
+			label_SelectedType.Tag = type;
 			MethodInfo[] methodInfos = type.GetMethods(
 				System.Reflection.BindingFlags.Public | BindingFlags.Static);
 			foreach (MethodInfo mi in methodInfos)
@@ -180,9 +181,21 @@ namespace SharedClasses
 			propertyGrid1.SelectedObject = new DictionaryPropertyGridAdapter(methodDetails.HashTableOfParameters);
 		}
 
-		public Dictionary<string, PropertyNameAndType> TestResultDictionary()
+		public Dictionary<string, ParameterNameAndType> GetSelectedDictionaryWithParameterNamesAndValues()
 		{
 			return (propertyGrid1.SelectedObject as DictionaryPropertyGridAdapter)._dictionary;
+		}
+
+		public Type GetSelectedMethodClassType()
+		{
+			if (label_SelectedType.Tag == null && UserMessages.ShowWarningMessage("No type dropped on label"))
+				return null;
+			return label_SelectedType.Tag as Type;
+		}
+
+		public string GetSelectedMethodName()
+		{
+			return (comboBox_SelectedMethodOverload.SelectedItem as MethodDetailsClass).MethodName;
 		}
 	}
 }

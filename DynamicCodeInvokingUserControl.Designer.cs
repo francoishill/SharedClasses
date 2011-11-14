@@ -172,6 +172,7 @@
 			this.treeView_SimpleTypesList.ShowRootLines = false;
 			this.treeView_SimpleTypesList.Size = new System.Drawing.Size(314, 294);
 			this.treeView_SimpleTypesList.TabIndex = 7;
+			this.treeView_SimpleTypesList.ItemDrag += new System.Windows.Forms.ItemDragEventHandler(this.treeView_SimpleTypesList_ItemDrag);
 			// 
 			// DynamicCodeInvokingUserControl
 			// 

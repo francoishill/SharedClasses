@@ -7,6 +7,7 @@ using System.IO;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
+using System.Reflection;
 
 public class CommandsManagerClass
 {
@@ -513,6 +514,17 @@ public class InlineCommands
 
 		public void PerformCommand(string fullCommandText, ComboBox textboxtoClearOnSuccess, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
 		{
+			PerformCommandStatic(
+				PerformCommandType,
+				commandArguments,
+				fullCommandText,
+				textboxtoClearOnSuccess,
+				textFeedbackEvent,
+				progressChanged);
+		}
+
+		public static void PerformCommandStatic(PerformCommandTypeEnum PerformCommandType, List<CommandArgumentClass> commandArguments, string fullCommandText, ComboBox textboxtoClearOnSuccess, TextFeedbackEventHandler textFeedbackEvent, ProgressChangedEventHandler progressChanged)
+		{
 			string TextboxTextIn = fullCommandText;//textboxtoClearOnSuccess.Text;
 			string argStr = TextboxTextIn.Contains(' ') ? TextboxTextIn.Substring(TextboxTextIn.IndexOf(' ') + 1) : "";
 
@@ -803,10 +815,47 @@ public class InlineCommands
 
 public class TempNewCommandsManagerClass
 {
+	private static List<ICommandWithHandler> listOfInitializedCommandInterfaces = null;
+	public static List<ICommandWithHandler> ListOfInitializedCommandInterfaces
+	{
+		get
+		{
+			if (listOfInitializedCommandInterfaces == null)
+			{
+				listOfInitializedCommandInterfaces = new List<ICommandWithHandler>();
+				Type[] types = typeof(TempNewCommandsManagerClass).GetNestedTypes(BindingFlags.Public);
+				foreach (Type type in types)
+					if (!type.IsInterface)
+						if (type.GetInterfaces().Contains(typeof(ICommandWithHandler)))
+							listOfInitializedCommandInterfaces.Add((ICommandWithHandler)type.GetConstructor(new Type[0]).Invoke(new object[0]));
+			}
+			return listOfInitializedCommandInterfaces;
+		}
+	}
+
 	private static bool CanParseToInt(string str)
 	{
 		int tmpInt;
 		return int.TryParse(str, out tmpInt);
+	}
+
+	/// <summary>
+	/// Checks whether the given Email-Parameter is a valid E-Mail address.
+	/// </summary>
+	/// <param name="email">Parameter-string that contains an E-Mail address.</param>
+	/// <returns>True, when Parameter-string is not null and 
+	/// contains a valid E-Mail address;
+	/// otherwise false.</returns>
+	public static bool IsEmail(string email)
+	{
+		if (email != null) return Regex.IsMatch(email,
+			@"^(([\w-]+\.)+[\w-]+|([a-zA-Z]{1}|[\w-]{2,}))@"
+		 + @"((([0-1]?[0-9]{1,2}|25[0-5]|2[0-4][0-9])\.([0-1]?
+				[0-9]{1,2}|25[0-5]|2[0-4][0-9])\."
+		 + @"([0-1]?[0-9]{1,2}|25[0-5]|2[0-4][0-9])\.([0-1]?
+				[0-9]{1,2}|25[0-5]|2[0-4][0-9])){1}|"
+		 + @"([a-zA-Z]+[\w-]+\.)+[a-zA-Z]{2,4})$");
+		else return false;
 	}
 
 	//TODO: Check out "Code Definition Window" in the view menu of Visual Studio
@@ -816,6 +865,7 @@ public class TempNewCommandsManagerClass
 		string CommandName { get; }
 		string DisplayName { get; }
 		string Description { get; }
+		string ArgumentsExample { get; }
 		bool ValidateArguments(out string errorMessage, params string[] arguments);
 		bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments);
 	}
@@ -825,28 +875,31 @@ public class TempNewCommandsManagerClass
 		public string CommandName { get { return "run"; } }
 		public string DisplayName { get { return "Run"; } }
 		public string Description { get { return "Run any file/folder"; } }
+		public string ArgumentsExample { get { return "outlook"; } }
 
 		public bool ValidateArguments(out string errorMessage, params string[] arguments)
 		{
 			errorMessage = "";
 			if (arguments.Length != 1) errorMessage = "Exactly one argument required for Run command";
 			//else if (!(arguments[0] is string)) errorMessage = "First argument of run command must be of type string";
-			else if (string.IsNullOrEmpty(arguments[0])) errorMessage = "First argument of run command may not be null/empty";
+			else if (string.IsNullOrWhiteSpace(arguments[0])) errorMessage = "First argument of run command may not be null/empty/whitespaces only";
 			else return true;
 			return false;
 		}
 
 		public bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
 		{
-			if (!ValidateArguments(out errorMessage, arguments)) return false;
+			//if (!ValidateArguments(out errorMessage, arguments)) return false;
 			try
 			{
 				System.Diagnostics.Process.Start(arguments[0]);
+				errorMessage = "";
 				return true;
 			}
 			catch (Exception exc)
 			{
-				UserMessages.ShowWarningMessage("Cannot run: " + arguments [0] + Environment.NewLine + exc.Message);
+				//UserMessages.ShowWarningMessage("Cannot run: " + arguments [0] + Environment.NewLine + exc.Message);
+				errorMessage = "Cannot run: " + arguments[0] + Environment.NewLine + exc.Message;
 				return false;
 			}
 		}
@@ -857,28 +910,31 @@ public class TempNewCommandsManagerClass
 		public string CommandName { get { return "google"; } }
 		public string DisplayName { get { return "Google Search"; } }
 		public string Description { get { return "Google search a word/phrase"; } }
+		public string ArgumentsExample { get { return "first man on the moon"; } }
 
 		public bool ValidateArguments(out string errorMessage, params string[] arguments)
 		{
 			errorMessage = "";
 			if (arguments.Length != 1) errorMessage = "Exactly one argument required for Google search command";
 			//else if (!(arguments[0] is string)) errorMessage = "First argument of Google search command must be of type string";
-			else if (string.IsNullOrEmpty(arguments[0])) errorMessage = "1st argument of Google search command may not be null/empty";
+			else if (string.IsNullOrWhiteSpace(arguments[0])) errorMessage = " argument of Google search command may not be null/empty/whitespaces only";
 			else return true;
 			return false;
 		}
 
 		public bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
 		{
-			if (!ValidateArguments(out errorMessage, arguments)) return false;
+			//if (!ValidateArguments(out errorMessage, arguments)) return false;
 			try
 			{
 				System.Diagnostics.Process.Start("http://www.google.co.za/search?q=" + arguments[0]);
+				errorMessage = "";
 				return true;
 			}
 			catch (Exception exc)
 			{
-				UserMessages.ShowWarningMessage("Cannot google search: " + arguments[0] + Environment.NewLine + exc.Message);
+				//UserMessages.ShowWarningMessage("Cannot google search: " + arguments[0] + Environment.NewLine + exc.Message);
+				errorMessage = "Cannot google search: " + arguments[0] + Environment.NewLine + exc.Message;
 				return false;
 			}
 		}
@@ -889,13 +945,14 @@ public class TempNewCommandsManagerClass
 		public string CommandName { get { return "explore"; } }
 		public string DisplayName { get { return "Explore"; } }
 		public string Description { get { return "Explore a folder"; } }
+		public string ArgumentsExample { get { return @"c:\windows"; } }
 
 		public bool ValidateArguments(out string errorMessage, params string[] arguments)
 		{
 			errorMessage = "";
 			if (arguments.Length != 1) errorMessage = "Exactly one argument required for Explore command";
 			//else if (!(arguments[0] is string)) errorMessage = "First argument of Explore command must be of type string";
-			else if (string.IsNullOrEmpty(arguments[0])) errorMessage = "1st argument of Explore command may not be null/empty";
+			else if (string.IsNullOrWhiteSpace(arguments[0])) errorMessage = "First argument of Explore command may not be null/empty/whitespaces only";
 			else if (!Directory.Exists(arguments[0])) errorMessage = "First argument of Explore command must be existing directory";
 			else return true;
 			return false;
@@ -903,17 +960,19 @@ public class TempNewCommandsManagerClass
 
 		public bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
 		{
-			if (!ValidateArguments(out errorMessage, arguments)) return false;
+			//if (!ValidateArguments(out errorMessage, arguments)) return false;
 			try
 			{
 				if (!Directory.Exists(arguments[0])) throw new DirectoryNotFoundException("Directory not found: " + arguments[0]);
 				System.Diagnostics.Process.Start(arguments[0]);
 				//Process.Start("explorer", "/select, \"" + argumentString + "\"");
+				errorMessage = "";
 				return true;
 			}
 			catch (Exception exc)
 			{
-				UserMessages.ShowWarningMessage("Cannot explore: " + arguments[0] + Environment.NewLine + exc.Message);
+				//UserMessages.ShowWarningMessage("Cannot explore: " + arguments[0] + Environment.NewLine + exc.Message);
+				errorMessage = "Cannot explore: " + arguments[0] + Environment.NewLine + exc.Message;
 				return false;
 			}
 		}
@@ -924,6 +983,7 @@ public class TempNewCommandsManagerClass
 		public string CommandName { get { return "addtodo"; } }
 		public string DisplayName { get { return "Add todo"; } }
 		public string Description { get { return "Add todo item to firepuma"; } }
+		public string ArgumentsExample { get { return "13;30;Reminder;Buy milk => (MinutesFromNow, Autosnooze, Name, Description)"; } }
 
 		public bool ValidateArguments(out string errorMessage, params string[] arguments)
 		{
@@ -935,14 +995,14 @@ public class TempNewCommandsManagerClass
 			else if (!CanParseToInt(arguments[1])) errorMessage = "Second argument (autosnooze) of Add todo command must be of type int";
 			//else if (!(arguments[2] is string)) errorMessage = "Third argument (name) of Add todo command must be of type string";
 			//else if (arguments.Length == 4 && !(arguments[3] is string)) errorMessage = "Fourth argument (description) of Add todo command must be of type string";
-			else if (string.IsNullOrEmpty(arguments[2])) errorMessage = "Third argument (name) of Add todo command may not be null/empty";
+			else if (string.IsNullOrWhiteSpace(arguments[2])) errorMessage = "Third argument (name) of Add todo command may not be null/empty/whitespaces only";
 			else return true;
 			return false;
 		}
 
 		public bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
 		{
-			if (!ValidateArguments(out errorMessage, arguments)) return false;
+			//if (!ValidateArguments(out errorMessage, arguments)) return false;
 			try
 			{
 				PhpInterop.AddTodoItemFirepuma(
@@ -961,11 +1021,88 @@ public class TempNewCommandsManagerClass
 					 false,
 					 Convert.ToInt32(arguments[1]),
 					 textFeedbackEvent);
+				errorMessage = "";
 				return true;
 			}
 			catch (Exception exc)
 			{
-				UserMessages.ShowWarningMessage("Cannot add todo item: " + Environment.NewLine + exc.Message);
+				//UserMessages.ShowWarningMessage("Cannot add todo item: " + Environment.NewLine + exc.Message);
+				errorMessage = "Cannot add todo item: " + Environment.NewLine + exc.Message;
+				return false;
+			}
+		}
+	}
+
+	public class MailCommand : ICommandWithHandler
+	{
+		public string CommandName { get { return "mail"; } }
+		public string DisplayName { get { return "Mail"; } }
+		public string Description { get { return "Send an email"; } }
+		public string ArgumentsExample { get { return "billgates@microsoft.com;My subject;Hi Bill.\nHow have you been?"; } }
+
+		public bool ValidateArguments(out string errorMessage, params string[] arguments)
+		{
+			errorMessage = "";
+			if (arguments.Length < 2) errorMessage = "At least 2 arguments required for Mail command (mail, subject, body)";
+			else if (arguments.Length > 3) errorMessage = "More than 3 arguments not allowed for Mail command (mail, subject, body)";
+			else if (!IsEmail(arguments[0])) errorMessage = "First argument (to) of Mail command must be a valid email address";
+			else if (string.IsNullOrWhiteSpace(arguments[1])) errorMessage = "Second argument (subject) of Mail command may not be null/empty/whitespaces only";
+			else return true;
+			return false;
+		}
+
+		public bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+		{
+			try
+			{
+				MicrosoftOfficeInterop.CreateNewOutlookMessage(
+					arguments[0],
+					arguments[1],
+					arguments.Length >= 3 ? arguments[2] : "",
+					textFeedbackEvent);
+				errorMessage = "";
+				return true;
+			}
+			catch (Exception exc)
+			{
+				errorMessage = "Cannot send mail: " + Environment.NewLine + exc.Message;
+				return false;
+			}
+		}
+	}
+
+	public class WebCommand : ICommandWithHandler
+	{
+		public string CommandName { get { return "web"; } }
+		public string DisplayName { get { return "Web"; } }
+		public string Description { get { return "Open a web URL"; } }
+		public string ArgumentsExample { get { return "google.com"; } }
+
+		public bool ValidateArguments(out string errorMessage, params string[] arguments)
+		{
+			errorMessage = "";
+			if (arguments.Length != 1) errorMessage = "Exactly one argument required for Web command";
+			else if (string.IsNullOrWhiteSpace(arguments[0])) errorMessage = "First argument of Web command may not be null/empty/whitespaces only";
+			else if (!arguments[0].Contains('.') && !arguments[0].ToLower().Contains("localhost")) errorMessage = "First argument of Web command must contain a '.' or be localhost.";
+			else return true;
+			return false;
+		}
+
+		public bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+		{
+			//if (!ValidateArguments(out errorMessage, arguments)) return false;
+			try
+			{
+				if (!arguments[0].StartsWith("http://") && !arguments[0].StartsWith("https://") && !arguments[0].StartsWith("www."))
+					arguments[0] = "http://" + arguments[0];
+				System.Diagnostics.Process.Start(arguments[0]);
+				errorMessage = "";
+				return true;
+			}
+			catch (Exception exc)
+			{
+				//UserMessages.ShowWarningMessage("Cannot google search: " + arguments[0] + Environment.NewLine + exc.Message);
+				errorMessage = "Cannot open web url: " + arguments[0] + Environment.NewLine + exc.Message;
 				return false;
 			}
 		}
@@ -976,9 +1113,17 @@ public class TempNewCommandsManagerClass
 	{
 		string errorMsg;
 		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackEvent, "Attempting to perform command: " + command.DisplayName + " (" + command.Description + ")");
+		if (!command.ValidateArguments(out errorMsg, arguments)
+			&& UserMessages.ShowWarningMessage("Invalid command arguments: " + errorMsg))
+			return;
 		if (!command.PerformCommand(out errorMsg, textfeedbackEvent, arguments)
 			&& UserMessages.ShowWarningMessage("Cannot perform command: " + errorMsg))
 			return;
 		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackEvent, "Successfully performed command: " + command.DisplayName + " (" + command.Description + ")");
+	}
+
+	public static void PerformCommandFromString(ICommandWithHandler command, TextFeedbackEventHandler textfeedbackEvent, string argumentsCombined)
+	{
+		PerformCommand(command, textfeedbackEvent, argumentsCombined.Split(';'));
 	}
 }

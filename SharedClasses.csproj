@@ -70,6 +70,9 @@
     <Compile Include="InlineCommandsUserControl.Designer.cs">
       <DependentUpon>InlineCommandsUserControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="InlineCommandsUserControlWPF.xaml.cs">
+      <DependentUpon>InlineCommandsUserControlWPF.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Logging.cs" />
     <Compile Include="MicrosoftOfficeInterop.cs" />
     <Compile Include="MotionBlurEffect.cs" />
@@ -189,6 +192,9 @@
     <Page Include="CustomBalloonTipwpf.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="InlineCommandsUserControlWPF.xaml">
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="OverlayWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

@@ -1,0 +1,20 @@
+﻿<Window xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
+        xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
+        xmlns:SharedClasses="clr-namespace:SharedClasses"
+        x:Class='InlineCommandsWindowWPF'
+        Title='InlineCommandsWindowWPF'
+        x:Name='InlineCommandsWindowWPF1'
+        Loaded="InlineCommandsWindowWPF1_Loaded"
+        Width="584.7">
+    <Window.Resources>
+        <ResourceDictionary>
+            
+        </ResourceDictionary>
+    </Window.Resources>
+    <Grid>
+        <SharedClasses:InlineCommandsUserControlWPF x:Name="inlineCommandsUserControlWPF1"
+                                                    HorizontalAlignment="Stretch"
+                                                    Margin="8,8,0,0"
+                                                    VerticalAlignment="Stretch" />
+    </Grid>
+</Window>

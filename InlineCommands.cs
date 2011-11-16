@@ -869,9 +869,15 @@ public class TempNewCommandsManagerClass
 		bool ValidateArguments(out string errorMessage, params string[] arguments);
 		bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments);
 	}
-
-	public class RunCommand : ICommandWithHandler
+	public abstract class OverrideToStringClass
 	{
+		public abstract override string ToString();
+	}
+
+	public class RunCommand : OverrideToStringClass, ICommandWithHandler
+	{
+		public override string ToString()	{	return CommandName;	}
+
 		public string CommandName { get { return "run"; } }
 		public string DisplayName { get { return "Run"; } }
 		public string Description { get { return "Run any file/folder"; } }
@@ -905,8 +911,10 @@ public class TempNewCommandsManagerClass
 		}
 	}
 
-	public class GoogleSearchCommand : ICommandWithHandler
+	public class GoogleSearchCommand : OverrideToStringClass, ICommandWithHandler
 	{
+		public override string ToString() { return CommandName; }
+
 		public string CommandName { get { return "google"; } }
 		public string DisplayName { get { return "Google Search"; } }
 		public string Description { get { return "Google search a word/phrase"; } }
@@ -940,8 +948,10 @@ public class TempNewCommandsManagerClass
 		}
 	}
 
-	public class ExploreCommand : ICommandWithHandler
+	public class ExploreCommand : OverrideToStringClass, ICommandWithHandler
 	{
+		public override string ToString() { return CommandName; }
+
 		public string CommandName { get { return "explore"; } }
 		public string DisplayName { get { return "Explore"; } }
 		public string Description { get { return "Explore a folder"; } }
@@ -978,8 +988,10 @@ public class TempNewCommandsManagerClass
 		}
 	}
 
-	public class AddTodoitemFirepumaCommand : ICommandWithHandler
+	public class AddTodoitemFirepumaCommand : OverrideToStringClass, ICommandWithHandler
 	{
+		public override string ToString() { return CommandName; }
+
 		public string CommandName { get { return "addtodo"; } }
 		public string DisplayName { get { return "Add todo"; } }
 		public string Description { get { return "Add todo item to firepuma"; } }
@@ -1033,8 +1045,10 @@ public class TempNewCommandsManagerClass
 		}
 	}
 
-	public class MailCommand : ICommandWithHandler
+	public class MailCommand : OverrideToStringClass, ICommandWithHandler
 	{
+		public override string ToString() { return CommandName; }
+
 		public string CommandName { get { return "mail"; } }
 		public string DisplayName { get { return "Mail"; } }
 		public string Description { get { return "Send an email"; } }
@@ -1071,8 +1085,10 @@ public class TempNewCommandsManagerClass
 		}
 	}
 
-	public class WebCommand : ICommandWithHandler
+	public class WebCommand : OverrideToStringClass, ICommandWithHandler
 	{
+		public override string ToString() { return CommandName; }
+
 		public string CommandName { get { return "web"; } }
 		public string DisplayName { get { return "Web"; } }
 		public string Description { get { return "Open a web URL"; } }

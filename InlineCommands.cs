@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using System.Reflection;
+using System.Globalization;
 
 public class CommandsManagerClass
 {
@@ -876,7 +877,7 @@ public class TempNewCommandsManagerClass
 
 	public class RunCommand : OverrideToStringClass, ICommandWithHandler
 	{
-		public override string ToString()	{	return CommandName;	}
+		public override string ToString() { return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(CommandName); }
 
 		public string CommandName { get { return "run"; } }
 		public string DisplayName { get { return "Run"; } }
@@ -913,7 +914,7 @@ public class TempNewCommandsManagerClass
 
 	public class GoogleSearchCommand : OverrideToStringClass, ICommandWithHandler
 	{
-		public override string ToString() { return CommandName; }
+		public override string ToString() { return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(CommandName); ; }
 
 		public string CommandName { get { return "google"; } }
 		public string DisplayName { get { return "Google Search"; } }
@@ -950,7 +951,7 @@ public class TempNewCommandsManagerClass
 
 	public class ExploreCommand : OverrideToStringClass, ICommandWithHandler
 	{
-		public override string ToString() { return CommandName; }
+		public override string ToString() { return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(CommandName); ; }
 
 		public string CommandName { get { return "explore"; } }
 		public string DisplayName { get { return "Explore"; } }
@@ -990,7 +991,7 @@ public class TempNewCommandsManagerClass
 
 	public class AddTodoitemFirepumaCommand : OverrideToStringClass, ICommandWithHandler
 	{
-		public override string ToString() { return CommandName; }
+		public override string ToString() { return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(CommandName); ; }
 
 		public string CommandName { get { return "addtodo"; } }
 		public string DisplayName { get { return "Add todo"; } }
@@ -1047,7 +1048,7 @@ public class TempNewCommandsManagerClass
 
 	public class MailCommand : OverrideToStringClass, ICommandWithHandler
 	{
-		public override string ToString() { return CommandName; }
+		public override string ToString() { return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(CommandName); ; }
 
 		public string CommandName { get { return "mail"; } }
 		public string DisplayName { get { return "Mail"; } }
@@ -1087,7 +1088,7 @@ public class TempNewCommandsManagerClass
 
 	public class WebCommand : OverrideToStringClass, ICommandWithHandler
 	{
-		public override string ToString() { return CommandName; }
+		public override string ToString() { return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(CommandName); ; }
 
 		public string CommandName { get { return "web"; } }
 		public string DisplayName { get { return "Web"; } }

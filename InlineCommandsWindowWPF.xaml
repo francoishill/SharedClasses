@@ -7,14 +7,12 @@
         Loaded="InlineCommandsWindowWPF1_Loaded"
         Width="584.7">
     <Window.Resources>
-        <ResourceDictionary>
-            
-        </ResourceDictionary>
+        <ResourceDictionary></ResourceDictionary>
     </Window.Resources>
     <Grid>
         <SharedClasses:InlineCommandsUserControlWPF x:Name="inlineCommandsUserControlWPF1"
                                                     HorizontalAlignment="Stretch"
-                                                    Margin="8,8,0,0"
+                                                    Margin="8"
                                                     VerticalAlignment="Stretch" />
     </Grid>
 </Window>

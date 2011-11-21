@@ -46,8 +46,12 @@ namespace SharedClasses
 			}
 
 			treeView_CommandList.Items.Clear();
-			foreach (ICommandWithHandler comm in TempNewCommandsManagerClass.ListOfInitializedCommandInterfaces)
+			List<ICommandWithHandler> tmplist = TempNewCommandsManagerClass.ListOfInitializedCommandInterfaces;
+			foreach (ICommandWithHandler comm in tmplist)
+			{
 				treeView_CommandList.Items.Add(comm);
+				//listView1.Items.Add(comm);
+			}
 		}
 
 		private void textBox_CommandLine_KeyUp(object sender, KeyEventArgs e)

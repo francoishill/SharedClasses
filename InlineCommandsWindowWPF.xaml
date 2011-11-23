@@ -10,10 +10,20 @@
     <Window.Resources>
         <ResourceDictionary></ResourceDictionary>
     </Window.Resources>
+    <Window.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#fff"
+                          Offset="0" />
+            <GradientStop Color="#eee"
+                          Offset="0.7" />
+            <GradientStop Color="#f0f0f0"
+                          Offset="1" />
+        </LinearGradientBrush>
+    </Window.Background>
     <Grid>
         <SharedClasses:InlineCommandsUserControlWPF x:Name="inlineCommandsUserControlWPF1"
                                                     HorizontalAlignment="Stretch"
-                                                    Margin="8"
+                                                    Margin="8,0"
                                                     VerticalAlignment="Stretch" />
     </Grid>
 </Window>

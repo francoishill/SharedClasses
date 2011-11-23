@@ -1126,21 +1126,22 @@ public class TempNewCommandsManagerClass
 	}
 
 	//TODO: This platform (using interface) is already working fine, should build on on it and add all commands
-	public static void PerformCommand(ICommandWithHandler command, TextFeedbackEventHandler textfeedbackEvent, params string[] arguments)
+	public static bool PerformCommand(ICommandWithHandler command, TextFeedbackEventHandler textfeedbackEvent, params string[] arguments)
 	{
 		string errorMsg;
 		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackEvent, "Attempting to perform command: " + command.DisplayName + " (" + command.Description + ")");
 		if (!command.ValidateArguments(out errorMsg, arguments)
 			&& UserMessages.ShowWarningMessage("Invalid command arguments: " + errorMsg))
-			return;
+			return false;
 		if (!command.PerformCommand(out errorMsg, textfeedbackEvent, arguments)
 			&& UserMessages.ShowWarningMessage("Cannot perform command: " + errorMsg))
-			return;
+			return false;
 		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackEvent, "Successfully performed command: " + command.DisplayName + " (" + command.Description + ")");
+		return true;
 	}
 
-	public static void PerformCommandFromString(ICommandWithHandler command, TextFeedbackEventHandler textfeedbackEvent, string argumentsCombined)
+	public static bool PerformCommandFromString(ICommandWithHandler command, TextFeedbackEventHandler textfeedbackEvent, string argumentsCombined)
 	{
-		PerformCommand(command, textfeedbackEvent, argumentsCombined.Split(';'));
+		return PerformCommand(command, textfeedbackEvent, argumentsCombined.Split(';'));
 	}
 }

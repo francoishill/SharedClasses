@@ -5,7 +5,8 @@
         Title='InlineCommandsWindowWPF'
         x:Name='InlineCommandsWindowWPF1'
         Loaded="InlineCommandsWindowWPF1_Loaded"
-        Width="584.7">
+        Width="584.7"
+        MinWidth="150">
     <Window.Resources>
         <ResourceDictionary></ResourceDictionary>
     </Window.Resources>

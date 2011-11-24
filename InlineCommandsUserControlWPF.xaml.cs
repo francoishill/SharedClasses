@@ -13,6 +13,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using dragonz.actb.core;
+using dragonz.actb.provider;
 using ICommandWithHandler = TempNewCommandsManagerClass.ICommandWithHandler;
 
 namespace SharedClasses
@@ -23,6 +25,8 @@ namespace SharedClasses
 	public partial class InlineCommandsUserControlWPF : UserControl
 	{
 		public TextFeedbackEventHandler textFeedbackEvent;
+		//AutoCompleteManager autcompleteManager;
+		//AutocompleteProvider autocompleteProvider;
 
 		public InlineCommandsUserControlWPF()
 		{
@@ -36,12 +40,8 @@ namespace SharedClasses
 			{
 				textFeedbackEvent += (snder, evtargs) =>
 				{
-					//ThreadingInterop.UpdateGuiFromThread(this, () =>
-					//{
 					textBox_Messages.Text += (textBox_Messages.Text.Length > 0 ? Environment.NewLine : "")
 						+ evtargs.FeedbackText;
-					//}
-					//);
 				};
 				textFeedbackEventInitialized = true;
 			}
@@ -50,30 +50,10 @@ namespace SharedClasses
 			treeView_CommandList.Items.Clear();
 			List<ICommandWithHandler> tmplist = TempNewCommandsManagerClass.ListOfInitializedCommandInterfaces;
 			foreach (ICommandWithHandler comm in tmplist)
-			{
 				treeView_CommandList.Items.Add(comm);
-				//listView1.Items.Add(comm);
-			}
 			HideEmbeddedButton();
 			textBox_CommandLine.Focus();
 		}
-
-		//private void textBox_CommandLine_KeyUp(object sender, KeyEventArgs e)
-		//{
-		//	if (e.Key == Key.Enter)
-		//	{
-		//		e.Handled = true;
-		//		if (treeView_CommandList.SelectedItem != null && treeView_CommandList.SelectedItem is ICommandWithHandler)
-		//		{
-		//			ICommandWithHandler comm = treeView_CommandList.SelectedItem as ICommandWithHandler;
-		//			if (TempNewCommandsManagerClass.PerformCommandFromString(
-		//				comm,
-		//				textFeedbackEvent,
-		//				textBox_CommandLine.Text))
-		//				textBox_CommandLine.Clear();
-		//		}
-		//	}
-		//}
 
 		private void treeView_CommandList_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
 		{
@@ -90,27 +70,18 @@ namespace SharedClasses
 				if (tmpBorder.Visibility != System.Windows.Visibility.Visible)
 					tmpBorder.Visibility = System.Windows.Visibility.Visible;
 
-				//ObservableCollection<string> predefinedList = command.GetPredefinedArgumentsList;
-				//if (predefinedList != null && predefinedList.Count > 0)
-				//{
-				//	TextBlock tmpTextBlock2 = (TextBlock)textBox_CommandLine.Template.FindName("EmbeddedButtonTextBlock2", textBox_CommandLine);
-				//	tmpTextBlock2.Text = predefinedList[0];
-				//	tmpTextBlock2.ToolTip = string.Join(Environment.NewLine, command.GetPredefinedArgumentsList);
-				//	Border tmpBorder2 = (Border)textBox_CommandLine.Template.FindName("EmbeddedButton2", textBox_CommandLine);
-				//	if (tmpBorder2.Visibility != System.Windows.Visibility.Visible)
-				//		tmpBorder2.Visibility = System.Windows.Visibility.Visible;
-				//}
-				//else
-				//{
-				//	Border tmpBorder2 = (Border)textBox_CommandLine.Template.FindName("EmbeddedButton2", textBox_CommandLine);
-				//	if (tmpBorder2.Visibility != System.Windows.Visibility.Collapsed)
-				//		tmpBorder2.Visibility = System.Windows.Visibility.Collapsed;
-				//}
-
 				textBox_CommandLine.Focus();
 				textBox_CommandLine.Text = "";
 
-				//listBox_AutoCompleteArguments.ItemsSource = command.GetPredefinedArgumentsList;
+				autoCompleteTextbox.ItemsSource = command.GetPredefinedArgumentsList;
+
+				//if (autcompleteManager == null)
+				//{
+				//	autcompleteManager = new AutoCompleteManager(textBox_CommandLine);
+				//	autocompleteProvider = new AutocompleteProvider();
+				//	autcompleteManager.DataProvider = autocompleteProvider;
+				//}
+				//autocompleteProvider.activeCommand = command;
 			}
 			else if (e.NewValue == null)
 			{
@@ -129,80 +100,9 @@ namespace SharedClasses
 					tmpBorder2.Visibility = System.Windows.Visibility.Collapsed;
 
 				textBox_CommandLine.Focus();
+				//autocompleteProvider.activeCommand = null;
 			}
 		}
-
-		//private void textBox_CommandLine_KeyDown(object sender, KeyEventArgs e)
-		//{
-		//	if (e.Key == Key.Enter)
-		//	{
-		//		e.Handled = true;
-		//		if (treeView_CommandList.SelectedItem != null && treeView_CommandList.SelectedItem is ICommandWithHandler)
-		//		{
-		//			ICommandWithHandler comm = treeView_CommandList.SelectedItem as ICommandWithHandler;
-		//			if (TempNewCommandsManagerClass.PerformCommandFromString(
-		//				comm,
-		//				textFeedbackEvent,
-		//				textBox_CommandLine.Text))
-		//				textBox_CommandLine.Clear();
-		//		}
-		//	}
-		//	if (e.Key == Key.Tab)
-		//	{
-		//		//List<ICommandWithHandler> tmplist = TempNewCommandsManagerClass.ListOfInitializedCommandInterfaces;
-		//		foreach (ICommandWithHandler comm in treeView_CommandList.Items)//tmplist)
-		//			if (textBox_CommandLine.Text.Equals(comm.CommandName, StringComparison.InvariantCultureIgnoreCase))
-		//			{
-		//				e.Handled = true;
-		//				//(treeView_CommandList.Items[treeView_CommandList.Items.IndexOf(comm)] as TreeViewItem).IsSelected = true;
-		//				//SetSelectedItem(treeView_CommandList, comm);
-		//				////treeView_CommandList.sel.SelectedItem = comm;
-		//				//textBox_CommandLine.Focus();
-		//				//textBox_CommandLine.Text = "";
-		//				//SetActiveCommand_NullForNone(comm);
-		//				SetSelectedItem(treeView_CommandList, comm);
-		//				break;
-		//			}
-		//	}
-		//	if (e.Key == Key.Escape)
-		//	{
-		//		//SetActiveCommand_NullForNone(null);
-		//		if (textBox_CommandLine.Text.Length > 0) textBox_CommandLine.Text = "";
-		//		else ClearSelection(treeView_CommandList);
-		//	}
-		//	if (e.Key == Key.Down)
-		//	{
-		//		if (treeView_CommandList.SelectedItem != null && treeView_CommandList.SelectedItem is ICommandWithHandler)
-		//		{
-		//			ICommandWithHandler comm = treeView_CommandList.SelectedItem as ICommandWithHandler;
-		//			ObservableCollection<string> predefinedList = comm.GetPredefinedArgumentsList;
-		//			TextBlock tmpTextBlock2 = (TextBlock)textBox_CommandLine.Template.FindName("EmbeddedButtonTextBlock2", textBox_CommandLine);
-		//			int NextIndex = predefinedList.IndexOf(tmpTextBlock2.Text) + 1;
-		//			if (NextIndex >= predefinedList.Count)
-		//				NextIndex = 0;
-		//			tmpTextBlock2.Text = predefinedList[NextIndex];
-		//		}
-		//	}
-		//}
-
-		//private void SetActiveCommand_NullForNone(ICommandWithHandler command)
-		//{
-		//	if (command != null) SetSelectedItem(treeView_CommandList, command);
-		//	else ClearSelection(treeView_CommandList);
-		//	//treeView_CommandList.sel.SelectedItem = comm;
-		//	//textBox_CommandLine.Focus();
-		//	//if (command != null) textBox_CommandLine.Text = "";
-
-		//	//TextBlock tmpTextBlock = (TextBlock)textBox_CommandLine.Template.FindName("EmbeddedButtonTextBlock", textBox_CommandLine);
-		//	//tmpTextBlock.Text = command != null ? command.CommandName : "";
-
-		//	//Border tmpBorder = (Border)textBox_CommandLine.Template.FindName("EmbeddedButton", textBox_CommandLine);
-		//	//tmpBorder.Tag = command;
-		//	//if (command != null && tmpBorder.Visibility != System.Windows.Visibility.Visible)
-		//	//	tmpBorder.Visibility = System.Windows.Visibility.Visible;
-		//	//else if (command == null && tmpBorder.Visibility != System.Windows.Visibility.Collapsed)
-		//	//	tmpBorder.Visibility = System.Windows.Visibility.Collapsed;
-		//}
 
 		private void HideEmbeddedButton()
 		{
@@ -227,25 +127,12 @@ namespace SharedClasses
 
 		static void ClearSelection(TreeView input)
 		{
-			// this should be some container that you put in
-			// possibly the actual treeviewitem, not sure on that though
 			var selected = input.SelectedItem;
 			if (selected == null)
 				return;
 
-			// in my case this works perfectly
 			TreeViewItem tvi = input.ItemContainerGenerator.ContainerFromItem(selected) as TreeViewItem;
-			if (tvi == null)
-			{
-				// it must be a child, heres a hack fix
-				// my nodes are inherited from TreeViewItemViewModel by Josh Smith
-				//var child = selected as ICommandWithHandler;
-				//if (child == null)
-				//	return;
-				//child.IsSelected = false;
-
-			}
-			else
+			if (tvi != null)
 				tvi.IsSelected = false;
 		}
 
@@ -255,14 +142,11 @@ namespace SharedClasses
 			return SetSelected(treeView, item);
 		}
 
-		static private bool SetSelected(ItemsControl parent,
+		private static bool SetSelected(ItemsControl parent,
 				object child)
 		{
-
 			if (parent == null || child == null)
-			{
 				return false;
-			}
 
 			TreeViewItem childNode = parent.ItemContainerGenerator
 					.ContainerFromItem(child) as TreeViewItem;
@@ -304,60 +188,41 @@ namespace SharedClasses
 			if (e.Key == Key.Enter)
 			{
 				e.Handled = true;
-				if (treeView_CommandList.SelectedItem != null && treeView_CommandList.SelectedItem is ICommandWithHandler)
+				ICommandWithHandler activeCommand;
+				if (GetActiveCommand(out activeCommand))
 				{
-					ICommandWithHandler comm = treeView_CommandList.SelectedItem as ICommandWithHandler;
 					Border tmpBorder2 = (Border)textBox_CommandLine.Template.FindName("EmbeddedButton2", textBox_CommandLine);
 					TextBlock tmpTextBlock2 = (TextBlock)textBox_CommandLine.Template.FindName("EmbeddedButtonTextBlock2", textBox_CommandLine);
-					//if (tmpBorder2.Visibility == System.Windows.Visibility.Collapsed)
-					//{
-						if (TempNewCommandsManagerClass.PerformCommandFromString(
-							comm,
-							textFeedbackEvent,
-							tmpBorder2.Visibility == System.Windows.Visibility.Collapsed
-							? textBox_CommandLine.Text
-							: tmpTextBlock2.Text))
-							textBox_CommandLine.Clear();
-					//}
-					//else
-					//{
-					//	//System.Windows.Forms.MessageBox.Show(tmpTextBlock2.Text);
-					//	TempNewCommandsManagerClass.PerformCommandFromString(
-					//		comm,
-					//		textFeedbackEvent,
-					//		tmpTextBlock2.Text);
-					//}
+					if (TempNewCommandsManagerClass.PerformCommandFromString(
+						activeCommand,
+						textFeedbackEvent,
+						tmpBorder2.Visibility == System.Windows.Visibility.Collapsed
+						? textBox_CommandLine.Text
+						: tmpTextBlock2.Text))
+						textBox_CommandLine.Text = "";//.Clear();
 				}
 			}
 			else if (e.Key == Key.Tab)
 			{
-				//List<ICommandWithHandler> tmplist = TempNewCommandsManagerClass.ListOfInitializedCommandInterfaces;
 				foreach (ICommandWithHandler comm in treeView_CommandList.Items)//tmplist)
 					if (textBox_CommandLine.Text.Equals(comm.CommandName, StringComparison.InvariantCultureIgnoreCase))
 					{
 						e.Handled = true;
-						//(treeView_CommandList.Items[treeView_CommandList.Items.IndexOf(comm)] as TreeViewItem).IsSelected = true;
-						//SetSelectedItem(treeView_CommandList, comm);
-						////treeView_CommandList.sel.SelectedItem = comm;
-						//textBox_CommandLine.Focus();
-						//textBox_CommandLine.Text = "";
-						//SetActiveCommand_NullForNone(comm);
 						SetSelectedItem(treeView_CommandList, comm);
 						break;
 					}
 			}
 			else if (e.Key == Key.Escape)
 			{
-				//SetActiveCommand_NullForNone(null);
 				if (textBox_CommandLine.Text.Length > 0) textBox_CommandLine.Text = "";
 				else ClearSelection(treeView_CommandList);
 			}
 			else if (e.Key == Key.Down)
 			{
-				if (treeView_CommandList.SelectedItem != null && treeView_CommandList.SelectedItem is ICommandWithHandler)
+				ICommandWithHandler activeCommand;
+				if (GetActiveCommand(out activeCommand))
 				{
-					ICommandWithHandler comm = treeView_CommandList.SelectedItem as ICommandWithHandler;
-					ObservableCollection<string> predefinedList = comm.GetPredefinedArgumentsList;
+					ObservableCollection<string> predefinedList = activeCommand.GetPredefinedArgumentsList;
 					if (predefinedList != null && predefinedList.Count > 0)
 					{
 						TextBlock tmpTextBlock2 = (TextBlock)textBox_CommandLine.Template.FindName("EmbeddedButtonTextBlock2", textBox_CommandLine);
@@ -374,10 +239,10 @@ namespace SharedClasses
 			}
 			else if (e.Key == Key.Up)
 			{
-				if (treeView_CommandList.SelectedItem != null && treeView_CommandList.SelectedItem is ICommandWithHandler)
+				ICommandWithHandler activeCommand;
+				if (GetActiveCommand(out activeCommand))
 				{
-					ICommandWithHandler comm = treeView_CommandList.SelectedItem as ICommandWithHandler;
-					ObservableCollection<string> predefinedList = comm.GetPredefinedArgumentsList;
+					ObservableCollection<string> predefinedList = activeCommand.GetPredefinedArgumentsList;
 					if (predefinedList != null && predefinedList.Count > 0)
 					{
 						TextBlock tmpTextBlock2 = (TextBlock)textBox_CommandLine.Template.FindName("EmbeddedButtonTextBlock2", textBox_CommandLine);
@@ -393,5 +258,34 @@ namespace SharedClasses
 				}
 			}
 		}
+
+		private bool GetActiveCommand(out ICommandWithHandler activeCommand)
+		{
+			if (treeView_CommandList.SelectedItem != null && treeView_CommandList.SelectedItem is ICommandWithHandler)
+			{
+				activeCommand = treeView_CommandList.SelectedItem as ICommandWithHandler;;
+				return true;
+			}
+			activeCommand = null;
+			return false;
+		}
+
+		private void textBox_CommandLine_TextChanged_1(object sender, RoutedEventArgs e)
+		{
+			string tmpCommandName;
+			if (CommandNameExistOfTextboxText(out tmpCommandName))
+				label_ArgumentsExample.Content = "Press TAB to initiate mode for " + tmpCommandName;
+		}
+
+		//private class AutocompleteProvider : IAutoCompleteDataProvider
+		//{
+		//	public ICommandWithHandler activeCommand;
+		//	public IEnumerable<string> GetItems(string textPattern)
+		//	{
+		//		if (activeCommand != null)
+		//		return activeCommand.GetPredefinedArgumentsList;
+		//		return new List<string>();
+		//	}
+		//}
 	}
 }

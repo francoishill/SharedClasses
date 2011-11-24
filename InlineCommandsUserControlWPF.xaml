@@ -1,12 +1,13 @@
-﻿<UserControl x:Class="SharedClasses.InlineCommandsUserControlWPF"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:theme="clr-namespace:Microsoft.Windows.Themes;assembly=PresentationFramework.Aero"
+             xmlns:System_Windows_Controls="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls.Input.Toolkit"
+             x:Class="SharedClasses.InlineCommandsUserControlWPF"
              mc:Ignorable="d"
              d:DesignHeight="300"
-             d:DesignWidth="300">
+             d:DesignWidth="600">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -41,7 +42,7 @@
                                                        Minimum="0.0"
                                                        Maximum="{TemplateBinding ScrollableHeight}"
                                                        ViewportSize="{TemplateBinding ViewportHeight}"
-                                                       Value="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=VerticalOffset, Mode=OneWay}"
+                                                       Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
                                                        Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
                                                        Cursor="Arrow"
                                                        AutomationProperties.AutomationId="VerticalScrollBar" />
@@ -51,7 +52,7 @@
                                                        Minimum="0.0"
                                                        Maximum="{TemplateBinding ScrollableWidth}"
                                                        ViewportSize="{TemplateBinding ViewportWidth}"
-                                                       Value="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=HorizontalOffset, Mode=OneWay}"
+                                                       Value="{Binding HorizontalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
                                                        Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}"
                                                        Cursor="Arrow"
                                                        AutomationProperties.AutomationId="HorizontalScrollBar" />
@@ -213,7 +214,7 @@
                                                 <RowDefinition MaxHeight="{DynamicResource {x:Static SystemParameters.VerticalScrollBarButtonHeightKey}}" />
                                                 <RowDefinition MaxHeight="{DynamicResource {x:Static SystemParameters.VerticalScrollBarButtonHeightKey}}" />
                                             </Grid.RowDefinitions>
-                                            <Track Name="PART_Track"
+                                            <Track x:Name="PART_Track"
                                                    IsEnabled="{TemplateBinding IsMouseOver}"
                                                    IsDirectionReversed="true">
                                                 <Track.DecreaseRepeatButton>
@@ -307,69 +308,6 @@
                                     <Condition Property="Orientation"
                                                Value="Vertical" />
                                 </MultiTrigger.Conditions>
-                                <MultiTrigger.Setters>
-                                    <!--<Setter Property="Width"
-                                            Value="30" />
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="{x:Type ScrollBar}">
-                                                <Border CornerRadius="4"
-                                                        Margin="2"
-                                                        Opacity="0.75"
-                                                        Background="{TemplateBinding Background}">
-                                                    <Grid SnapsToDevicePixels="true">
-                                                        <Grid.RowDefinitions>
-                                                            <RowDefinition Height="0.00001*" />
-                                                            <RowDefinition MaxHeight="{DynamicResource {x:Static SystemParameters.VerticalScrollBarButtonHeightKey}}" />
-                                                            <RowDefinition MaxHeight="{DynamicResource {x:Static SystemParameters.VerticalScrollBarButtonHeightKey}}" />
-                                                        </Grid.RowDefinitions>
-                                                        <Track Name="PART_Track"
-                                                               IsEnabled="{TemplateBinding IsMouseOver}"
-                                                               IsDirectionReversed="true">
-                                                            <Track.DecreaseRepeatButton>
-                                                                <RepeatButton Style="{StaticResource VerticalScrollBarPageButton}"
-                                                                              Command="{x:Static ScrollBar.PageUpCommand}" />
-                                                            </Track.DecreaseRepeatButton>
-                                                            <Track.IncreaseRepeatButton>
-                                                                <RepeatButton Style="{StaticResource VerticalScrollBarPageButton}"
-                                                                              Command="{x:Static ScrollBar.PageDownCommand}" />
-                                                            </Track.IncreaseRepeatButton>
-                                                            <Track.Thumb>
-                                                                <Thumb Style="{StaticResource ScrollBarThumb}"
-                                                                       theme:ScrollChrome.ScrollGlyph="VerticalGripper"
-                                                                       Margin="2" />
-                                                            </Track.Thumb>
-                                                        </Track>
-                                                        <RepeatButton Style="{StaticResource ScrollBarButton}"
-                                                                      Background="#FFFFFFFF"
-                                                                      Grid.Row="1"
-                                                                      IsEnabled="{TemplateBinding IsMouseOver}"
-                                                                      Command="{x:Static ScrollBar.LineUpCommand}"
-                                                                      theme:ScrollChrome.ScrollGlyph="UpArrow"
-                                                                      RenderTransformOrigin="0.5, 0.5">
-                                                            <RepeatButton.RenderTransform>
-                                                                <ScaleTransform ScaleX="1.5"
-                                                                                ScaleY="1.5" />
-                                                            </RepeatButton.RenderTransform>
-                                                        </RepeatButton>
-                                                        <RepeatButton Style="{StaticResource ScrollBarButton}"
-                                                                      Background="#FFFFFFFF"
-                                                                      Grid.Row="2"
-                                                                      IsEnabled="{TemplateBinding IsMouseOver}"
-                                                                      Command="{x:Static ScrollBar.LineDownCommand}"
-                                                                      theme:ScrollChrome.ScrollGlyph="DownArrow"
-                                                                      RenderTransformOrigin="0.5, 0.5">
-                                                            <RepeatButton.RenderTransform>
-                                                                <ScaleTransform ScaleX="1.5"
-                                                                                ScaleY="1.5" />
-                                                            </RepeatButton.RenderTransform>
-                                                        </RepeatButton>
-                                                    </Grid>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>-->
-                                </MultiTrigger.Setters>
                             </MultiTrigger>
                             <MultiTrigger>
                                 <MultiTrigger.Conditions>
@@ -378,56 +316,54 @@
                                     <Condition Property="IsMouseOver"
                                                Value="False" />
                                 </MultiTrigger.Conditions>
-                                <MultiTrigger.Setters>
-                                    <Setter Property="Width"
-                                            Value="Auto" />
-                                    <Setter Property="MinWidth"
-                                            Value="0" />
-                                    <Setter Property="Height"
-                                            Value="{DynamicResource {x:Static SystemParameters.HorizontalScrollBarHeightKey}}" />
-                                    <Setter Property="MinHeight"
-                                            Value="{DynamicResource {x:Static SystemParameters.HorizontalScrollBarHeightKey}}" />
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="{x:Type ScrollBar}">
-                                                <Border x:Name="Bg"
-                                                        CornerRadius="2"
-                                                        Margin="2"
-                                                        Opacity="0.75"
-                                                        Background="{TemplateBinding Background}"
-                                                        HorizontalAlignment="Right">
-                                                    <Grid SnapsToDevicePixels="true">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition MaxWidth="{DynamicResource {x:Static SystemParameters.HorizontalScrollBarButtonWidthKey}}" />
-                                                            <ColumnDefinition MaxWidth="{DynamicResource {x:Static SystemParameters.HorizontalScrollBarButtonWidthKey}}" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <RepeatButton Style="{StaticResource ScrollBarButton}"
-                                                                      Background="#FFCBCBCB"
-                                                                      IsEnabled="{TemplateBinding IsMouseOver}"
-                                                                      Command="{x:Static ScrollBar.LineLeftCommand}"
-                                                                      theme:ScrollChrome.ScrollGlyph="LeftArrow"
-                                                                      Margin="4,0" />
-                                                        <RepeatButton Style="{StaticResource ScrollBarButton}"
-                                                                      Background="#FFCBCBCB"
-                                                                      Grid.Column="1"
-                                                                      IsEnabled="{TemplateBinding IsMouseOver}"
-                                                                      Command="{x:Static ScrollBar.LineRightCommand}"
-                                                                      theme:ScrollChrome.ScrollGlyph="RightArrow"
-                                                                      Margin="4,0" />
-                                                    </Grid>
-                                                </Border>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsEnabled"
-                                                             Value="false">
-                                                        <Setter TargetName="Bg"
-                                                                Property="Visibility"
-                                                                Value="Hidden" />
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                </MultiTrigger.Setters>
+                                <Setter Property="Width"
+                                        Value="Auto" />
+                                <Setter Property="MinWidth"
+                                        Value="0" />
+                                <Setter Property="Height"
+                                        Value="{DynamicResource {x:Static SystemParameters.HorizontalScrollBarHeightKey}}" />
+                                <Setter Property="MinHeight"
+                                        Value="{DynamicResource {x:Static SystemParameters.HorizontalScrollBarHeightKey}}" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="{x:Type ScrollBar}">
+                                            <Border x:Name="Bg"
+                                                    CornerRadius="2"
+                                                    Margin="2"
+                                                    Opacity="0.75"
+                                                    Background="{TemplateBinding Background}"
+                                                    HorizontalAlignment="Right">
+                                                <Grid SnapsToDevicePixels="true">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition MaxWidth="{DynamicResource {x:Static SystemParameters.HorizontalScrollBarButtonWidthKey}}" />
+                                                        <ColumnDefinition MaxWidth="{DynamicResource {x:Static SystemParameters.HorizontalScrollBarButtonWidthKey}}" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <RepeatButton Style="{StaticResource ScrollBarButton}"
+                                                                  Background="#FFCBCBCB"
+                                                                  IsEnabled="{TemplateBinding IsMouseOver}"
+                                                                  Command="{x:Static ScrollBar.LineLeftCommand}"
+                                                                  theme:ScrollChrome.ScrollGlyph="LeftArrow"
+                                                                  Margin="4,0" />
+                                                    <RepeatButton Style="{StaticResource ScrollBarButton}"
+                                                                  Background="#FFCBCBCB"
+                                                                  Grid.Column="1"
+                                                                  IsEnabled="{TemplateBinding IsMouseOver}"
+                                                                  Command="{x:Static ScrollBar.LineRightCommand}"
+                                                                  theme:ScrollChrome.ScrollGlyph="RightArrow"
+                                                                  Margin="4,0" />
+                                                </Grid>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsEnabled"
+                                                         Value="false">
+                                                    <Setter TargetName="Bg"
+                                                            Property="Visibility"
+                                                            Value="Hidden" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
                             </MultiTrigger>
                             <MultiTrigger>
                                 <MultiTrigger.Conditions>
@@ -436,83 +372,83 @@
                                     <Condition Property="Orientation"
                                                Value="Horizontal" />
                                 </MultiTrigger.Conditions>
-                                <MultiTrigger.Setters>
-                                    <Setter Property="Width"
-                                            Value="Auto" />
-                                    <Setter Property="MinWidth"
-                                            Value="0" />
-                                    <Setter Property="Height"
-                                            Value="{DynamicResource {x:Static SystemParameters.HorizontalScrollBarHeightKey}}" />
-                                    <Setter Property="MinHeight"
-                                            Value="{DynamicResource {x:Static SystemParameters.HorizontalScrollBarHeightKey}}" />
-                                    <Setter Property="Height"
-                                            Value="30" />
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="{x:Type ScrollBar}">
-                                                <Border CornerRadius="4"
-                                                        Margin="2"
-                                                        Opacity="0.75"
-                                                        Background="{TemplateBinding Background}">
-                                                    <Grid SnapsToDevicePixels="true">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="0.00001*" />
-                                                            <ColumnDefinition MaxWidth="{DynamicResource {x:Static SystemParameters.HorizontalScrollBarButtonWidthKey}}" />
-                                                            <ColumnDefinition MaxWidth="{DynamicResource {x:Static SystemParameters.HorizontalScrollBarButtonWidthKey}}" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <Track Name="PART_Track"
-                                                               IsEnabled="{TemplateBinding IsMouseOver}">
-                                                            <Track.DecreaseRepeatButton>
-                                                                <RepeatButton Style="{StaticResource HorizontalScrollBarPageButton}"
-                                                                              Command="{x:Static ScrollBar.PageLeftCommand}" />
-                                                            </Track.DecreaseRepeatButton>
-                                                            <Track.IncreaseRepeatButton>
-                                                                <RepeatButton Style="{StaticResource HorizontalScrollBarPageButton}"
-                                                                              Command="{x:Static ScrollBar.PageRightCommand}" />
-                                                            </Track.IncreaseRepeatButton>
-                                                            <Track.Thumb>
-                                                                <Thumb x:Name="Thumb"
-                                                                       Style="{StaticResource ScrollBarThumb}"
-                                                                       theme:ScrollChrome.ScrollGlyph="HorizontalGripper"
-                                                                       Margin="2" />
-                                                            </Track.Thumb>
-                                                        </Track>
-                                                        <RepeatButton Style="{StaticResource ScrollBarButton}"
-                                                                      Background="#FFFFFFFF"
-                                                                      Grid.Column="1"
-                                                                      IsEnabled="{TemplateBinding IsMouseOver}"
-                                                                      Command="{x:Static ScrollBar.LineLeftCommand}"
-                                                                      theme:ScrollChrome.ScrollGlyph="LeftArrow"
-                                                                      RenderTransformOrigin="0.5, 0.5">
-                                                            <RepeatButton.RenderTransform>
-                                                                <ScaleTransform ScaleX="1.5"
-                                                                                ScaleY="1.5" />
-                                                            </RepeatButton.RenderTransform>
-                                                        </RepeatButton>
-                                                        <RepeatButton Style="{StaticResource ScrollBarButton}"
-                                                                      Background="#FFFFFFFF"
-                                                                      Grid.Column="2"
-                                                                      IsEnabled="{TemplateBinding IsMouseOver}"
-                                                                      Command="{x:Static ScrollBar.LineRightCommand}"
-                                                                      theme:ScrollChrome.ScrollGlyph="RightArrow"
-                                                                      RenderTransformOrigin="0.5, 0.5">
-                                                            <RepeatButton.RenderTransform>
-                                                                <ScaleTransform ScaleX="1.5"
-                                                                                ScaleY="1.5" />
-                                                            </RepeatButton.RenderTransform>
-                                                        </RepeatButton>
-                                                    </Grid>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                </MultiTrigger.Setters>
+                                <Setter Property="Width"
+                                        Value="Auto" />
+                                <Setter Property="MinWidth"
+                                        Value="0" />
+                                <Setter Property="Height"
+                                        Value="{DynamicResource {x:Static SystemParameters.HorizontalScrollBarHeightKey}}" />
+                                <Setter Property="MinHeight"
+                                        Value="{DynamicResource {x:Static SystemParameters.HorizontalScrollBarHeightKey}}" />
+                                <Setter Property="Height"
+                                        Value="30" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="{x:Type ScrollBar}">
+                                            <Border CornerRadius="4"
+                                                    Margin="2"
+                                                    Opacity="0.75"
+                                                    Background="{TemplateBinding Background}">
+                                                <Grid SnapsToDevicePixels="true">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="0.00001*" />
+                                                        <ColumnDefinition MaxWidth="{DynamicResource {x:Static SystemParameters.HorizontalScrollBarButtonWidthKey}}" />
+                                                        <ColumnDefinition MaxWidth="{DynamicResource {x:Static SystemParameters.HorizontalScrollBarButtonWidthKey}}" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Track x:Name="PART_Track"
+                                                           IsEnabled="{TemplateBinding IsMouseOver}">
+                                                        <Track.DecreaseRepeatButton>
+                                                            <RepeatButton Style="{StaticResource HorizontalScrollBarPageButton}"
+                                                                          Command="{x:Static ScrollBar.PageLeftCommand}" />
+                                                        </Track.DecreaseRepeatButton>
+                                                        <Track.IncreaseRepeatButton>
+                                                            <RepeatButton Style="{StaticResource HorizontalScrollBarPageButton}"
+                                                                          Command="{x:Static ScrollBar.PageRightCommand}" />
+                                                        </Track.IncreaseRepeatButton>
+                                                        <Track.Thumb>
+                                                            <Thumb x:Name="Thumb"
+                                                                   Style="{StaticResource ScrollBarThumb}"
+                                                                   theme:ScrollChrome.ScrollGlyph="HorizontalGripper"
+                                                                   Margin="2" />
+                                                        </Track.Thumb>
+                                                    </Track>
+                                                    <RepeatButton Style="{StaticResource ScrollBarButton}"
+                                                                  Background="#FFFFFFFF"
+                                                                  Grid.Column="1"
+                                                                  IsEnabled="{TemplateBinding IsMouseOver}"
+                                                                  Command="{x:Static ScrollBar.LineLeftCommand}"
+                                                                  theme:ScrollChrome.ScrollGlyph="LeftArrow"
+                                                                  RenderTransformOrigin="0.5, 0.5">
+                                                        <RepeatButton.RenderTransform>
+                                                            <ScaleTransform ScaleX="1.5"
+                                                                            ScaleY="1.5" />
+                                                        </RepeatButton.RenderTransform>
+                                                    </RepeatButton>
+                                                    <RepeatButton Style="{StaticResource ScrollBarButton}"
+                                                                  Background="#FFFFFFFF"
+                                                                  Grid.Column="2"
+                                                                  IsEnabled="{TemplateBinding IsMouseOver}"
+                                                                  Command="{x:Static ScrollBar.LineRightCommand}"
+                                                                  theme:ScrollChrome.ScrollGlyph="RightArrow"
+                                                                  RenderTransformOrigin="0.5, 0.5">
+                                                        <RepeatButton.RenderTransform>
+                                                            <ScaleTransform ScaleX="1.5"
+                                                                            ScaleY="1.5" />
+                                                        </RepeatButton.RenderTransform>
+                                                    </RepeatButton>
+                                                </Grid>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
                             </MultiTrigger>
                         </Style.Triggers>
                     </Style>
                 </ResourceDictionary>
                 <ResourceDictionary>
-                    <ControlTemplate x:Key="TextBoxBaseControlTemplate"
+                    <!--<ControlTemplate x:Key="TextBoxBaseControlTemplate"
+                                     TargetType="{x:Type System_Windows_Controls:AutoCompleteBox}">-->
+                        <ControlTemplate x:Key="TextBoxBaseControlTemplate"
                                      TargetType="{x:Type TextBoxBase}">
                         <Border Background="{TemplateBinding Background}"
                                 x:Name="Bd"
@@ -521,7 +457,7 @@
                                 CornerRadius="5"
                                 Padding="2">
                             <DockPanel>
-                                <Border Name="EmbeddedButton"
+                                <Border x:Name="EmbeddedButton"
                                         DockPanel.Dock="Left"
                                         BorderBrush="#ccc"
                                         BorderThickness="1"
@@ -539,10 +475,10 @@
                                                           Offset="1" />
                                         </LinearGradientBrush>
                                     </Border.Background>
-                                    <TextBlock Name="EmbeddedButtonTextBlock"
-                                               Foreground="#555">Testing</TextBlock>
+                                    <TextBlock x:Name="EmbeddedButtonTextBlock"
+                                               Foreground="#555"><Run Text="Testing" /></TextBlock>
                                 </Border>
-                                <Border Name="EmbeddedButton2"
+                                <Border x:Name="EmbeddedButton2"
                                         DockPanel.Dock="Right"
                                         BorderBrush="#ccc"
                                         BorderThickness="1"
@@ -561,9 +497,9 @@
                                                           Offset="1" />
                                         </LinearGradientBrush>
                                     </Border.Background>
-                                    <TextBlock Name="EmbeddedButtonTextBlock2"
+                                    <TextBlock x:Name="EmbeddedButtonTextBlock2"
                                                Foreground="#eee"
-                                               FontSize="12">Testing</TextBlock>
+                                               FontSize="12"><Run Text="Testing" /></TextBlock>
                                 </Border>
                                 <ScrollViewer x:Name="PART_ContentHost"
                                               DockPanel.Dock="Right" />
@@ -596,8 +532,8 @@
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                     <ControlTemplate x:Key="TreeviewControlTemplate"
-                                     TargetType="TreeView">
-                        <Border Name="Bd"
+                                     TargetType="{x:Type TreeView}">
+                        <Border x:Name="Bd"
                                 CornerRadius="5"
                                 Background="Transparent"
                                 BorderBrush="{TemplateBinding BorderBrush}"
@@ -763,8 +699,7 @@
                                     <VisualState x:Name="MouseOver">
                                         <Storyboard>
                                             <ColorAnimationUsingKeyFrames Storyboard.TargetName="Border"
-                                                                          Storyboard.TargetProperty="(Panel.Background).
-                (GradientBrush.GradientStops)[1].(GradientStop.Color)">
+                                                                          Storyboard.TargetProperty="(Panel.Background).                 (GradientBrush.GradientStops)[1].(GradientStop.Color)">
                                                 <EasingColorKeyFrame KeyTime="0"
                                                                      Value="{StaticResource ControlMouseOverColor}" />
                                             </ColorAnimationUsingKeyFrames>
@@ -773,8 +708,7 @@
                                     <VisualState x:Name="Pressed">
                                         <Storyboard>
                                             <ColorAnimationUsingKeyFrames Storyboard.TargetName="Border"
-                                                                          Storyboard.TargetProperty="(Panel.Background).
-                (GradientBrush.GradientStops)[1].(GradientStop.Color)">
+                                                                          Storyboard.TargetProperty="(Panel.Background).                 (GradientBrush.GradientStops)[1].(GradientStop.Color)">
                                                 <EasingColorKeyFrame KeyTime="0"
                                                                      Value="{StaticResource ControlPressedColor}" />
                                             </ColorAnimationUsingKeyFrames>
@@ -783,14 +717,12 @@
                                     <VisualState x:Name="Disabled">
                                         <Storyboard>
                                             <ColorAnimationUsingKeyFrames Storyboard.TargetName="Border"
-                                                                          Storyboard.TargetProperty="(Panel.Background).
-                (GradientBrush.GradientStops)[1].(GradientStop.Color)">
+                                                                          Storyboard.TargetProperty="(Panel.Background).                 (GradientBrush.GradientStops)[1].(GradientStop.Color)">
                                                 <EasingColorKeyFrame KeyTime="0"
                                                                      Value="{StaticResource DisabledControlDarkColor}" />
                                             </ColorAnimationUsingKeyFrames>
                                             <ColorAnimationUsingKeyFrames Storyboard.TargetName="Border"
-                                                                          Storyboard.TargetProperty="(Border.BorderBrush).
-                (GradientBrush.GradientStops)[1].(GradientStop.Color)">
+                                                                          Storyboard.TargetProperty="(Border.BorderBrush).                 (GradientBrush.GradientStops)[1].(GradientStop.Color)">
                                                 <EasingColorKeyFrame KeyTime="0"
                                                                      Value="{StaticResource DisabledBorderLightColor}" />
                                             </ColorAnimationUsingKeyFrames>
@@ -854,14 +786,12 @@
                                                 <VisualState x:Name="Disabled">
                                                     <Storyboard>
                                                         <ColorAnimationUsingKeyFrames Storyboard.TargetName="Border"
-                                                                                      Storyboard.TargetProperty="(Panel.Background).
-                      (GradientBrush.GradientStops)[1].(GradientStop.Color)">
+                                                                                      Storyboard.TargetProperty="(Panel.Background).                       (GradientBrush.GradientStops)[1].(GradientStop.Color)">
                                                             <EasingColorKeyFrame KeyTime="0"
                                                                                  Value="{StaticResource DisabledControlDarkColor}" />
                                                         </ColorAnimationUsingKeyFrames>
                                                         <ColorAnimationUsingKeyFrames Storyboard.TargetName="Border"
-                                                                                      Storyboard.TargetProperty="(Border.BorderBrush).
-                      (GradientBrush.GradientStops)[1].(GradientStop.Color)">
+                                                                                      Storyboard.TargetProperty="(Border.BorderBrush).                       (GradientBrush.GradientStops)[1].(GradientStop.Color)">
                                                             <EasingColorKeyFrame KeyTime="0"
                                                                                  Value="{StaticResource DisabledBorderLightColor}" />
                                                         </ColorAnimationUsingKeyFrames>
@@ -904,8 +834,7 @@
                                                 </Grid.ColumnDefinitions>
                                                 <ToggleButton OverridesDefaultStyle="True"
                                                               Template="{StaticResource ExpanderToggleButton}"
-                                                              IsChecked="{Binding IsExpanded, Mode=TwoWay, 
-                  RelativeSource={RelativeSource TemplatedParent}}">
+                                                              IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
                                                     <ToggleButton.Background>
                                                         <LinearGradientBrush EndPoint="0.5,1"
                                                                              StartPoint="0.5,0">
@@ -953,32 +882,58 @@
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
-    <StackPanel Orientation="Vertical"
-                HorizontalAlignment="Stretch">
-        <Label Name="label_ArgumentsExample"
+    <!--<DockPanel LastChildFill="True">-->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <Label x:Name="label_ArgumentsExample"
+               Grid.Row="0"
                Content="Label"
                HorizontalAlignment="Stretch"
                VerticalAlignment="Top"
                Foreground="Gray" />
-        <TextBox Name="textBox_CommandLine"
+        <!--<System_Windows_Controls:AutoCompleteBox x:Name="textBox_CommandLine"
+                                                 Grid.Row="1"
+                                                 FontSize="24"
+                                                 HorizontalAlignment="Stretch"
+                                                 Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type TextBlock}, Mode=FindAncestor}}"
+                                                 PreviewKeyDown="textBox_CommandLine_PreviewKeyDown"
+                                                 TextChanged="textBox_CommandLine_TextChanged_1"
+                                                 Template="{StaticResource TextBoxBaseControlTemplate}" />-->
+        <TextBox x:Name="textBox_CommandLine"
+                 Grid.Row="1"
                  FontSize="24"
-                 DockPanel.Dock="Right"
                  TextWrapping="Wrap"
                  HorizontalAlignment="Stretch"
-                 Width="{Binding Path=ActualWidth, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type TextBlock}}}"
+                 Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type TextBlock}, Mode=FindAncestor}}"
                  PreviewKeyDown="textBox_CommandLine_PreviewKeyDown"
                  TextChanged="textBox_CommandLine_TextChanged"
                  Template="{StaticResource TextBoxBaseControlTemplate}" />
-        <Expander IsExpanded="False"
-                  Margin="0,5,0,0">
-            <TreeView Name="treeView_CommandList"
+        <Grid Grid.Row="2"
+              Margin="0,5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition MinWidth="150"
+                                  Width="150" />
+                <ColumnDefinition />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <System_Windows_Controls:AutoCompleteBox Name="autoCompleteTextbox"
+                                                     VerticalAlignment="Top"
+                                                     Grid.Column="2" />
+            <!--<Expander Grid.Column="0"
+                      IsExpanded="False"
+                      Margin="0,5,0,0"
+                      ExpandDirection="Right">-->
+            <TreeView x:Name="treeView_CommandList"
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch"
-                      Height="150"
                       BorderBrush="#ddd"
                       FontSize="20"
-                      Template="{StaticResource TreeviewControlTemplate}"
-                      SelectedItemChanged="treeView_CommandList_SelectedItemChanged">
+                      SelectedItemChanged="treeView_CommandList_SelectedItemChanged"
+                      Margin="0,-9,0,9">
                 <TreeView.Resources>
                     <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
                                      Color="#E33232" />
@@ -1009,8 +964,17 @@
                 <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey}"
                                  Color="Black" />-->
                 </TreeView.Resources>
+                <TreeView.Template>
+                    <StaticResource ResourceKey="TreeviewControlTemplate" />
+                </TreeView.Template>
                 <TreeView.ItemContainerStyle>
                     <Style TargetType="{x:Type TreeViewItem}">
+                        <Style.Resources>
+                            <Style TargetType="{x:Type Border}">
+                                <Setter Property="CornerRadius"
+                                        Value="2" />
+                            </Style>
+                        </Style.Resources>
                         <!-- Style for the selected item -->
                         <Setter Property="BorderThickness"
                                 Value="1" />
@@ -1069,12 +1033,6 @@
                                 </Setter>
                             </MultiTrigger>
                         </Style.Triggers>
-                        <Style.Resources>
-                            <Style TargetType="Border">
-                                <Setter Property="CornerRadius"
-                                        Value="2" />
-                            </Style>
-                        </Style.Resources>
                     </Style>
                 </TreeView.ItemContainerStyle>
                 <TreeView.ItemsPanel>
@@ -1086,20 +1044,31 @@
                                ScrollViewer.HorizontalScrollBarVisibility="Disabled" />-->
                         <!--<VirtualizingStackPanel Orientation="Horizontal"
                                             IsItemsHost="True"/>-->
-                        <WrapPanel IsItemsHost="True"
-                                   VirtualizingPanel.IsContainerVirtualizable="True"
-                                   VirtualizingPanel.IsVirtualizing="True"
-                                   VirtualizingPanel.VirtualizationMode="Recycling"
-                                   Width="{Binding Path=ActualWidth, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ScrollContentPresenter}}}" />
+                        <StackPanel IsItemsHost="True"
+                                    VirtualizingPanel.IsContainerVirtualizable="True"
+                                    VirtualizingPanel.IsVirtualizing="True"
+                                    VirtualizingPanel.VirtualizationMode="Recycling"
+                                    Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type ScrollContentPresenter}, Mode=FindAncestor}}" />
+                        <!--<WrapPanel IsItemsHost="True"
+                                       VirtualizingPanel.IsContainerVirtualizable="True"
+                                       VirtualizingPanel.IsVirtualizing="True"
+                                       VirtualizingPanel.VirtualizationMode="Recycling"
+                                       Width="{Binding Path=ActualWidth, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ScrollContentPresenter}}}" />-->
                     </ItemsPanelTemplate>
                 </TreeView.ItemsPanel>
             </TreeView>
-        </Expander>
-        <!--<ListView x:Name="listView1" Height="50"/>-->
-        <TextBlock x:Name="textBox_Messages"
-                   HorizontalAlignment="Stretch"
-                   Margin="0,0,0,0"
-                   Text=""
-                   Foreground="Green" />
-    </StackPanel>
+            <!--</Expander>-->
+            <GridSplitter Width="2"
+                          BorderThickness="1"
+                          BorderBrush="#999" />
+            <TextBlock Grid.Column="1"
+                       x:Name="textBox_Messages"
+                       HorizontalAlignment="Stretch"
+                       Margin="0,0,0,0"
+                       MinWidth="50"
+                       Text=""
+                       Foreground="Green" />
+        </Grid>
+        <!--</DockPanel>-->
+    </Grid>
 </UserControl>

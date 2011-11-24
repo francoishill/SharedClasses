@@ -1249,6 +1249,79 @@ public class TempNewCommandsManagerClass
 		};
 	}
 
+	public class KillCommand : OverrideToStringClass, ICommandWithHandler
+	{
+		public override string ToString() { return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(CommandName); }
+
+		public string CommandName { get { return "kill"; } }
+		public string DisplayName { get { return "Kill"; } }
+		public string Description { get { return "Kills a process"; } }
+		public string ArgumentsExample { get { return "notepad"; } }
+
+		private ObservableCollection<string> LastProcessList;
+		public ObservableCollection<string> GetPredefinedArgumentsList
+		{
+			get
+			{
+				if (LastProcessList == null) LastProcessList = new ObservableCollection<string>();
+				List<string> tmpList = new List<string>();
+				Process[] processes = System.Diagnostics.Process.GetProcesses();
+				foreach (Process proc in processes)
+					tmpList.Add(proc.ProcessName);
+				tmpList.Sort();
+				for (int i = LastProcessList.Count - 1; i >= 0; i--)
+					if (!tmpList.Contains(LastProcessList[i]))
+						LastProcessList.RemoveAt(i);
+				foreach (string item in tmpList)
+					if (!LastProcessList.Contains(item))
+						LastProcessList.Add(item);
+				//LastProcessList = tmpList;
+				return LastProcessList;
+			}
+		}
+
+		public bool ValidateArguments(out string errorMessage, params string[] arguments)
+		{
+			errorMessage = "";
+			if (arguments.Length != 1) errorMessage = "Exactly one argument required for Kill command";
+			else if (string.IsNullOrWhiteSpace(arguments[0])) errorMessage = "First argument of Kill command may not be null/empty/whitespaces";
+			else if (!GetPredefinedArgumentsList.Contains(arguments[0])) errorMessage = "Process not found in running list: " + arguments[0];
+			else return true;
+			return false;
+		}
+
+		public bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+		{
+			try
+			{
+				errorMessage = "";
+				string processName = arguments[0];
+				Process[] processes = Process.GetProcessesByName(processName);
+				if (processes.Length > 1) errorMessage = "More than one process found, cannot kill";
+				else if (processes.Length == 0) errorMessage = "Cannot find process with name ";
+				else
+				{
+					if (UserMessages.Confirm("Confirm to kill process '" + processes[0].ProcessName + "'"))
+					{
+						processes[0].Kill();
+						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Process killed: " + processName);
+						errorMessage = "";
+						
+						//Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Process killed: " + processName);
+					}
+					else errorMessage = "User cancelled to kill process";
+					return true;
+				}
+				return false;
+			}
+			catch (Exception exc)
+			{
+				errorMessage = "Cannot kill process: " + arguments[0] + Environment.NewLine + exc.Message;
+				return false;
+			}
+		}
+	}
+
 	//TODO: This platform (using interface) is already working fine, should build on on it and add all commands
 	public static bool PerformCommand(ICommandWithHandler command, TextFeedbackEventHandler textfeedbackEvent, params string[] arguments)
 	{

@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using System.Reflection;
 using System.Globalization;
+using System.Collections.ObjectModel;
 
 public class CommandsManagerClass
 {
@@ -869,6 +870,7 @@ public class TempNewCommandsManagerClass
 		string ArgumentsExample { get; }
 		bool ValidateArguments(out string errorMessage, params string[] arguments);
 		bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments);
+		ObservableCollection<string> GetPredefinedArgumentsList { get; }
 	}
 	public abstract class OverrideToStringClass
 	{
@@ -883,6 +885,18 @@ public class TempNewCommandsManagerClass
 		public string DisplayName { get { return "Run"; } }
 		public string Description { get { return "Run any file/folder"; } }
 		public string ArgumentsExample { get { return "outlook"; } }
+
+		public ObservableCollection<string> GetPredefinedArgumentsList
+		{
+			get
+			{
+				return new ObservableCollection<string>()
+				{
+					"cmd",
+					"outlook"
+				};
+			}
+		}
 
 		public bool ValidateArguments(out string errorMessage, params string[] arguments)
 		{
@@ -921,6 +935,16 @@ public class TempNewCommandsManagerClass
 		public string Description { get { return "Google search a word/phrase"; } }
 		public string ArgumentsExample { get { return "first man on the moon"; } }
 
+		public ObservableCollection<string> GetPredefinedArgumentsList
+		{
+			get
+			{
+				return new ObservableCollection<string>()
+				{
+				};
+			}
+		}
+
 		public bool ValidateArguments(out string errorMessage, params string[] arguments)
 		{
 			errorMessage = "";
@@ -957,6 +981,18 @@ public class TempNewCommandsManagerClass
 		public string DisplayName { get { return "Explore"; } }
 		public string Description { get { return "Explore a folder"; } }
 		public string ArgumentsExample { get { return @"c:\windows"; } }
+
+		public ObservableCollection<string> GetPredefinedArgumentsList
+		{
+			get
+			{
+				return new ObservableCollection<string>()
+				{
+					@"c:\",
+					@"c:\program files"
+				};
+			}
+		}
 
 		public bool ValidateArguments(out string errorMessage, params string[] arguments)
 		{
@@ -997,6 +1033,16 @@ public class TempNewCommandsManagerClass
 		public string DisplayName { get { return "Add todo"; } }
 		public string Description { get { return "Add todo item to firepuma"; } }
 		public string ArgumentsExample { get { return "13;30;Reminder;Buy milk => (MinutesFromNow, Autosnooze, Name, Description)"; } }
+
+		public ObservableCollection<string> GetPredefinedArgumentsList
+		{
+			get
+			{
+				return new ObservableCollection<string>()
+				{
+				};
+			}
+		}
 
 		public bool ValidateArguments(out string errorMessage, params string[] arguments)
 		{
@@ -1055,6 +1101,16 @@ public class TempNewCommandsManagerClass
 		public string Description { get { return "Send an email"; } }
 		public string ArgumentsExample { get { return "billgates@microsoft.com;My subject;Hi Bill.\nHow have you been?"; } }
 
+		public ObservableCollection<string> GetPredefinedArgumentsList
+		{
+			get
+			{
+				return new ObservableCollection<string>()
+				{
+				};
+			}
+		}
+
 		public bool ValidateArguments(out string errorMessage, params string[] arguments)
 		{
 			errorMessage = "";
@@ -1095,6 +1151,19 @@ public class TempNewCommandsManagerClass
 		public string Description { get { return "Open a web URL"; } }
 		public string ArgumentsExample { get { return "google.com"; } }
 
+		public ObservableCollection<string> GetPredefinedArgumentsList
+		{
+			get
+			{
+				return new ObservableCollection<string>()
+				{
+					"google.com",
+					"firepuma.com",
+					"fjh.dyndns.org"
+				};
+			}
+		}
+
 		public bool ValidateArguments(out string errorMessage, params string[] arguments)
 		{
 			errorMessage = "";
@@ -1123,6 +1192,61 @@ public class TempNewCommandsManagerClass
 				return false;
 			}
 		}
+	}
+
+	public class CallCommand : OverrideToStringClass, ICommandWithHandler
+	{
+		public override string ToString() { return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(CommandName); }
+
+		public string CommandName { get { return "call"; } }
+		public string DisplayName { get { return "Call"; } }
+		public string Description { get { return "Shows the phone number of a contact"; } }
+		public string ArgumentsExample { get { return "yolwork"; } }
+
+		public ObservableCollection<string> GetPredefinedArgumentsList
+		{
+			get
+			{
+				return new ObservableCollection<string>(NameAndNumberDictionary.Keys);
+			}
+		}
+
+		public bool ValidateArguments(out string errorMessage, params string[] arguments)
+		{
+			errorMessage = "";
+			if (arguments.Length != 1) errorMessage = "Exactly one argument required for Call command";
+			else if (string.IsNullOrWhiteSpace(arguments[0])) errorMessage = "First argument of Call command may not be null/empty/whitespaces";
+			else if (!NameAndNumberDictionary.ContainsKey(arguments[0])) errorMessage = "Name not found in contact list: " + arguments[0];
+			else return true;
+			return false;
+		}
+
+		public bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+		{
+			try
+			{
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, NameAndNumberDictionary[arguments[0]]);
+				errorMessage = "";
+				return true;
+			}
+			catch (Exception exc)
+			{
+				errorMessage = "Cannot find name in dictionary: " + arguments[0] + Environment.NewLine + exc.Message;
+				return false;
+			}
+		}
+
+		private static Dictionary<string, string> NameAndNumberDictionary = new Dictionary<string, string>()
+		{
+			{ "yolwork", "Yolande work: (021) 853 3564" },
+			{ "imqs", "IMQS office: 021-880 2712 / 880 1632" },
+			{ "kerry", "Kerry extension: 107" },
+			{ "adrian", "Adrian extension: 106" },
+			{ "deon",   "Deon extension: 121" },
+			{ "johann", "Johann extension: 119" },
+			{ "wesley", "Wesley extension: 111" },
+			{ "honda",  "Honda Tygervalley: 021 910 8300" }
+		};
 	}
 
 	//TODO: This platform (using interface) is already working fine, should build on on it and add all commands

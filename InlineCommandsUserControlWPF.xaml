@@ -542,8 +542,31 @@
                                     <TextBlock Name="EmbeddedButtonTextBlock"
                                                Foreground="#555">Testing</TextBlock>
                                 </Border>
+                                <Border Name="EmbeddedButton2"
+                                        DockPanel.Dock="Right"
+                                        BorderBrush="#ccc"
+                                        BorderThickness="1"
+                                        CornerRadius="3"
+                                        Padding="3,0,3,3"
+                                        Margin="0,0,3,0"
+                                        VerticalAlignment="Center">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0"
+                                                             EndPoint="0,1">
+                                            <GradientStop Color="#222"
+                                                          Offset="0" />
+                                            <GradientStop Color="#000"
+                                                          Offset="0.7" />
+                                            <GradientStop Color="#101010"
+                                                          Offset="1" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <TextBlock Name="EmbeddedButtonTextBlock2"
+                                               Foreground="#eee"
+                                               FontSize="12">Testing</TextBlock>
+                                </Border>
                                 <ScrollViewer x:Name="PART_ContentHost"
-                                              DockPanel.Dock="Right"/>
+                                              DockPanel.Dock="Right" />
                             </DockPanel>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -943,10 +966,11 @@
                  TextWrapping="Wrap"
                  HorizontalAlignment="Stretch"
                  Width="{Binding Path=ActualWidth, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type TextBlock}}}"
-                 KeyDown="textBox_CommandLine_KeyDown"
+                 PreviewKeyDown="textBox_CommandLine_PreviewKeyDown"
                  TextChanged="textBox_CommandLine_TextChanged"
                  Template="{StaticResource TextBoxBaseControlTemplate}" />
-        <Expander IsExpanded="False" Margin="0,5,0,0">
+        <Expander IsExpanded="False"
+                  Margin="0,5,0,0">
             <TreeView Name="treeView_CommandList"
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch"

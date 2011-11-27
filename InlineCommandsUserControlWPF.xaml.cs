@@ -294,7 +294,13 @@ namespace SharedClasses
 			}
 			else if (e.Key == Key.Escape)
 			{
-				if (textBox_CommandLine.Text.Length > 0) textBox_CommandLine.Text = "";
+				TextBox actualTextBox = GetActualTextBoxOfAutocompleteControl();
+				actualTextBox.SelectionLength = 0;
+				actualTextBox.SelectionStart = actualTextBox.Text.Length;
+
+				if (textBox_CommandLine.IsDropDownOpen)
+					textBox_CommandLine.IsDropDownOpen = false;
+				else if (actualTextBox.Text.Length > 0) actualTextBox.Text = "";
 				else
 				{
 					ClearSelection(treeView_CommandList);

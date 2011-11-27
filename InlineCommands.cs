@@ -904,6 +904,11 @@ namespace InlineCommands
 					base.Add(value);
 				return boolResultWithErrorMessage;
 			}
+
+			public void AddWithoutValidation(T value)
+			{
+				base.Add(value);
+			}
 		}
 
 		//TODO: Check out "Code Definition Window" in the view menu of Visual Studio
@@ -918,6 +923,7 @@ namespace InlineCommands
 			bool ValidateArguments(out string errorMessage, params string[] arguments);
 			bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments);
 			ObservableCollection<string> GetPredefinedArgumentsList(int Index, bool SuppressErrors = false);
+			void ClearAndAddAllBlankArguments();
 			BoolResultWithErrorMessage AddCurrentArgument(string argument);
 			int CurrentArgumentCount { get; }
 			void RemoveCurrentArgument(int Index);
@@ -999,6 +1005,13 @@ namespace InlineCommands
 				return new BoolResultWithErrorMessage(success, errorMessage);
 			}
 
+			public void ClearAndAddAllBlankArguments()
+			{
+				CurrentArgumentsPair.Clear();
+				foreach (string argdesc in ArgumentDescriptions)
+					CurrentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", argdesc));
+			}
+
 			private string[] ArgumentDescriptions = new string[]
 			{
 				"parameter"
@@ -1013,7 +1026,7 @@ namespace InlineCommands
 
 			public int CurrentArgumentCount
 			{
-				get { return currentArgumentsPair.Count; }
+				get { return CurrentArgumentsPair.Count; }
 			}
 
 			public void RemoveCurrentArgument(int Index)
@@ -1102,6 +1115,13 @@ namespace InlineCommands
 				return new BoolResultWithErrorMessage(success, errorMessage);
 			}
 
+			public void ClearAndAddAllBlankArguments()
+			{
+				CurrentArgumentsPair.Clear();
+				foreach (string argdesc in ArgumentDescriptions)
+					CurrentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", argdesc));
+			}
+
 			private string[] ArgumentDescriptions = new string[]
 			{
 				"search phrase"
@@ -1116,7 +1136,7 @@ namespace InlineCommands
 
 			public int CurrentArgumentCount
 			{
-				get { return currentArgumentsPair.Count; }
+				get { return CurrentArgumentsPair.Count; }
 			}
 
 			public void RemoveCurrentArgument(int Index)
@@ -1211,6 +1231,13 @@ namespace InlineCommands
 				return new BoolResultWithErrorMessage(success, errorMessage);
 			}
 
+			public void ClearAndAddAllBlankArguments()
+			{
+				CurrentArgumentsPair.Clear();
+				foreach (string argdesc in ArgumentDescriptions)
+					CurrentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", argdesc));
+			}
+
 			private string[] ArgumentDescriptions = new string[]
 			{
 				"folder"
@@ -1225,7 +1252,7 @@ namespace InlineCommands
 
 			public int CurrentArgumentCount
 			{
-				get { return currentArgumentsPair.Count; }
+				get { return CurrentArgumentsPair.Count; }
 			}
 
 			public void RemoveCurrentArgument(int Index)
@@ -1339,6 +1366,13 @@ namespace InlineCommands
 				return new BoolResultWithErrorMessage(success, errorMessage);
 			}
 
+			public void ClearAndAddAllBlankArguments()
+			{
+				CurrentArgumentsPair.Clear();
+				foreach (string argdesc in ArgumentDescriptions)
+					CurrentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", argdesc));
+			}
+
 			private string[] ArgumentDescriptions = new string[]
 			{
 				"minutes",
@@ -1356,7 +1390,7 @@ namespace InlineCommands
 
 			public int CurrentArgumentCount
 			{
-				get { return currentArgumentsPair.Count; }
+				get { return CurrentArgumentsPair.Count; }
 			}
 
 			public void RemoveCurrentArgument(int Index)
@@ -1455,6 +1489,13 @@ namespace InlineCommands
 				return new BoolResultWithErrorMessage(success, errorMessage);
 			}
 
+			public void ClearAndAddAllBlankArguments()
+			{
+				CurrentArgumentsPair.Clear();
+				foreach (string argdesc in ArgumentDescriptions)
+					CurrentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", argdesc));
+			}
+
 			private string[] ArgumentDescriptions = new string[]
 			{
 				"to address",
@@ -1471,7 +1512,7 @@ namespace InlineCommands
 
 			public int CurrentArgumentCount
 			{
-				get { return currentArgumentsPair.Count; }
+				get { return CurrentArgumentsPair.Count; }
 			}
 
 			public void RemoveCurrentArgument(int Index)
@@ -1565,6 +1606,13 @@ namespace InlineCommands
 				return new BoolResultWithErrorMessage(success, errorMessage);
 			}
 
+			public void ClearAndAddAllBlankArguments()
+			{
+				CurrentArgumentsPair.Clear();
+				foreach (string argdesc in ArgumentDescriptions)
+					CurrentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", argdesc));
+			}
+
 			private string[] ArgumentDescriptions = new string[]
 			{
 				"url"
@@ -1579,7 +1627,7 @@ namespace InlineCommands
 
 			public int CurrentArgumentCount
 			{
-				get { return currentArgumentsPair.Count; }
+				get { return CurrentArgumentsPair.Count; }
 			}
 
 			public void RemoveCurrentArgument(int Index)
@@ -1681,6 +1729,13 @@ namespace InlineCommands
 				return new BoolResultWithErrorMessage(success, errorMessage);
 			}
 
+			public void ClearAndAddAllBlankArguments()
+			{
+				CurrentArgumentsPair.Clear();
+				foreach (string argdesc in ArgumentDescriptions)
+					CurrentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", argdesc));
+			}
+
 			private string[] ArgumentDescriptions = new string[]
 			{
 				"name"
@@ -1695,7 +1750,7 @@ namespace InlineCommands
 
 			public int CurrentArgumentCount
 			{
-				get { return currentArgumentsPair.Count; }
+				get { return CurrentArgumentsPair.Count; }
 			}
 
 			public void RemoveCurrentArgument(int Index)
@@ -1816,6 +1871,13 @@ namespace InlineCommands
 				return new BoolResultWithErrorMessage(success, errorMessage);
 			}
 
+			public void ClearAndAddAllBlankArguments()
+			{
+				CurrentArgumentsPair.Clear();
+				foreach (string argdesc in ArgumentDescriptions)
+					CurrentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", argdesc));
+			}
+
 			private string[] ArgumentDescriptions = new string[]
 			{
 				"process name"
@@ -1830,7 +1892,7 @@ namespace InlineCommands
 
 			public int CurrentArgumentCount
 			{
-				get { return currentArgumentsPair.Count; }
+				get { return CurrentArgumentsPair.Count; }
 			}
 
 			public void RemoveCurrentArgument(int Index)
@@ -1849,7 +1911,7 @@ namespace InlineCommands
 				set { currentArgumentsPair = value; }
 			}
 		}
-		
+
 		//TODO: This platform (using interface) is already working fine, should build on on it and add all commands
 		public static bool PerformCommand(ICommandWithHandler command, TextFeedbackEventHandler textfeedbackEvent, params string[] arguments)
 		{

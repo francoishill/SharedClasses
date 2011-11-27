@@ -6,7 +6,6 @@
 						 xmlns:theme="clr-namespace:Microsoft.Windows.Themes;assembly=PresentationFramework.Aero"
 						 xmlns:input="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls.Input.Toolkit"
 						 xmlns:system="clr-namespace:System;assembly=mscorlib"
-						 xmlns:vsm="clr-namespace:System.Windows;assembly=System.Windows"
 						 x:Class="SharedClasses.InlineCommandsUserControlWPF"
 						 mc:Ignorable="d"
 						 d:DesignHeight="300"
@@ -560,11 +559,14 @@
 														 Foreground="#555"
 														 Text="Testing" />
 								</Border>
-								<Border DockPanel.Dock='Left'
-												Focusable='False'>
+								<Border DockPanel.Dock='Left'>
+									<Border.Resources>
+										<SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
+																		 Color="Transparent" />
+										<SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"
+																		 Color="Transparent" />
+									</Border.Resources>
 									<ListBox x:Name='EmbeddedListbox'
-													 ScrollViewer.HorizontalScrollBarVisibility='Disabled'
-													 Focusable='False'
 													 BorderThickness='0'>
 										<ListBox.ItemsPanel>
 											<ItemsPanelTemplate>
@@ -572,12 +574,14 @@
 											</ItemsPanelTemplate>
 										</ListBox.ItemsPanel>
 										<ListBox.ItemTemplate>
-											<ItemContainerTemplate>
-												<Border BorderBrush="#ccc"
+											<DataTemplate>
+												<Border x:Name='MainBorder'
+																BorderBrush="#ccc"
 																BorderThickness="1"
 																CornerRadius="3"
 																Padding="3,0,3,3"
-																Margin="0,0,3,0">
+																Margin="0,0,3,0"
+																Opacity='0.7'>
 													<Border.Background>
 														<LinearGradientBrush StartPoint="0,0"
 																								 EndPoint="0,1">
@@ -590,19 +594,31 @@
 														</LinearGradientBrush>
 													</Border.Background>
 													<DockPanel>
-														<TextBlock DockPanel.Dock='Top'
+														<!--<TextBlock DockPanel.Dock='Top'
 																			 Foreground="#f0f0f0"
 																			 Text='{Binding Key}'
 																			 HorizontalAlignment='Center'
-																			 FontSize='20'/>
+																			 FontSize='20'/>-->
+														<input:AutoCompleteBox x:Name='ArgumentText'
+																									 DockPanel.Dock='Top'
+																									 Foreground="#f0f0f0"
+																									 Background='Transparent'
+																									 BorderBrush='Transparent'
+																									 Margin='0,3,0,0'
+																									 Text='{Binding Key, UpdateSourceTrigger=PropertyChanged}'
+																									 HorizontalAlignment='Stretch'
+																									 FontSize='16'
+																									 IsTextCompletionEnabled='True'
+																									 Style='{DynamicResource AutoCompleteBox_InlineCommands}'
+																									 Width='auto' />
 														<TextBlock DockPanel.Dock='Bottom'
 																			 Text='{Binding Value}'
 																			 Foreground='#ddd'
 																			 HorizontalAlignment='Center'
-																			 FontSize='12'/>
+																			 FontSize='12' />
 													</DockPanel>
 												</Border>
-											</ItemContainerTemplate>
+											</DataTemplate>
 										</ListBox.ItemTemplate>
 									</ListBox>
 								</Border>
@@ -1042,7 +1058,8 @@
 					</Style>
 				</ResourceDictionary>
 				<ResourceDictionary>
-					<Style TargetType="{x:Type input:AutoCompleteBox}">
+					<Style x:Key='AutoCompleteBox_InlineCommands'
+								 TargetType="{x:Type input:AutoCompleteBox}">
 						<Setter Property="IsTabStop"
 										Value="False" />
 						<Setter Property="Padding"
@@ -1078,10 +1095,11 @@
 														 Background="{TemplateBinding Background}"
 														 IsTabStop="True"
 														 x:Name="Text"
+														 Text='{Binding Key}'
+														 HorizontalContentAlignment='Center'
 														 Style="{TemplateBinding TextBoxStyle}"
 														 BorderThickness="{TemplateBinding BorderThickness}"
 														 Foreground="{TemplateBinding Foreground}"
-														 Template="{StaticResource TextBoxBaseControlTemplate}"
 														 Margin="0" />
 										<Border x:Name="ValidationErrorElement"
 														Visibility="Collapsed"
@@ -1166,86 +1184,26 @@
 											<Border CornerRadius='3'
 															BorderBrush='#aaa'
 															BorderThickness='1'
-															Padding='3'>
+															Padding='3'
+															Background='#fff'>
 												<ListBox x:Name="Selector"
 																 ScrollViewer.HorizontalScrollBarVisibility="Auto"
 																 ScrollViewer.VerticalScrollBarVisibility="Auto"
 																 ItemContainerStyle="{TemplateBinding ItemContainerStyle}"
 																 Background="{TemplateBinding Background}"
-																 Foreground="{TemplateBinding Foreground}"
+																 Foreground="#000"
 																 BorderThickness="0"
-																 ItemTemplate="{TemplateBinding ItemTemplate}" />
+																 ItemTemplate="{TemplateBinding ItemTemplate}" >
+												</ListBox>
 											</Border>
 											<!--</Border>
 												</Border>
 											</Grid>-->
 										</Popup>
-										<!--<VisualStateManager.VisualStateGroups>
-											<VisualStateGroup x:Name="PopupStates">
-												<VisualStateGroup.Transitions>
-													<VisualTransition GeneratedDuration="0:0:0.1"
-																						To="PopupOpened" />
-													<VisualTransition GeneratedDuration="0:0:0.2"
-																						To="PopupClosed" />
-												</VisualStateGroup.Transitions>
-												<VisualState x:Name="PopupOpened">
-													<Storyboard>
-														<DoubleAnimation Storyboard.TargetName="PopupBorder"
-																						 Storyboard.TargetProperty="Opacity"
-																						 To="1.0" />
-													</Storyboard>
-												</VisualState>
-												<VisualState x:Name="PopupClosed">
-													<Storyboard>
-														<DoubleAnimation Storyboard.TargetName="PopupBorder"
-																						 Storyboard.TargetProperty="Opacity"
-																						 To="0.0" />
-													</Storyboard>
-												</VisualState>
-											</VisualStateGroup>
-											<VisualStateGroup x:Name="ValidationStates">
-												<VisualState x:Name="Valid" />
-												<VisualState x:Name="InvalidUnfocused">
-													<Storyboard>
-														<ObjectAnimationUsingKeyFrames Storyboard.TargetName="ValidationErrorElement"
-																													 Storyboard.TargetProperty="Visibility">
-															<DiscreteObjectKeyFrame KeyTime="0">
-																<DiscreteObjectKeyFrame.Value>
-																	<Visibility>Visible</Visibility>
-																</DiscreteObjectKeyFrame.Value>
-															</DiscreteObjectKeyFrame>
-														</ObjectAnimationUsingKeyFrames>
-													</Storyboard>
-												</VisualState>
-												<VisualState x:Name="InvalidFocused">
-													<Storyboard>
-														<ObjectAnimationUsingKeyFrames Storyboard.TargetName="ValidationErrorElement"
-																													 Storyboard.TargetProperty="Visibility">
-															<DiscreteObjectKeyFrame KeyTime="0">
-																<DiscreteObjectKeyFrame.Value>
-																	<Visibility>Visible</Visibility>
-																</DiscreteObjectKeyFrame.Value>
-															</DiscreteObjectKeyFrame>
-														</ObjectAnimationUsingKeyFrames>
-														<ObjectAnimationUsingKeyFrames Storyboard.TargetName="validationTooltip"
-																													 Storyboard.TargetProperty="IsOpen">
-															<DiscreteObjectKeyFrame KeyTime="0">
-																<DiscreteObjectKeyFrame.Value>
-																	<system:Boolean>True</system:Boolean>
-																</DiscreteObjectKeyFrame.Value>
-															</DiscreteObjectKeyFrame>
-														</ObjectAnimationUsingKeyFrames>
-													</Storyboard>
-												</VisualState>
-											</VisualStateGroup>
-										</VisualStateManager.VisualStateGroups>-->
 									</Grid>
 									<ControlTemplate.Triggers>
 										<Trigger Property="IsEnabled"
 														 Value="False">
-											<!--<Setter Property="Background"
-															Value="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
-															TargetName="Bd" />-->
 											<Setter Property="Background"
 															Value="{DynamicResource {x:Static SystemColors.ControlBrushKey}}" />
 											<Setter Property="Foreground"
@@ -1325,6 +1283,7 @@
 													 Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type TextBlock}, Mode=FindAncestor}}"
 													 PreviewKeyDown="textBox_CommandLine_PreviewKeyDown"
 													 TextChanged="textBox_CommandLine_TextChanged_1"
+													 Style='{StaticResource AutoCompleteBox_InlineCommands}'
 													 IsTextCompletionEnabled='True'
 													 BorderBrush='#777' />
 		<!--<TextBox x:Name="textBox_CommandLine"

@@ -13,9 +13,10 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using InlineCommands;
 //using dragonz.actb.core;
 //using dragonz.actb.provider;
-using ICommandWithHandler = TempNewCommandsManagerClass.ICommandWithHandler;
+using ICommandWithHandler = InlineCommands.TempNewCommandsManagerClass.ICommandWithHandler;
 
 namespace SharedClasses
 {
@@ -73,49 +74,40 @@ namespace SharedClasses
 			return actualTextBoxOfAutocompleteControl;
 		}
 
-		enum OneOrTwo { One, Two };
-		private TextBlock _GetEmbeddedButtonTextblock(OneOrTwo oneOrTwo)
-		{
-			TextBox actualTextBoxOfAutocompleteControl = GetActualTextBoxOfAutocompleteControl();
-			if (actualTextBoxOfAutocompleteControl == null)
-				return null;
-
-			TextBlock returnTextBlock = (TextBlock)actualTextBoxOfAutocompleteControl.Template.FindName(oneOrTwo == OneOrTwo.One ? "EmbeddedButtonTextBlock" : "EmbeddedButtonTextBlock2", actualTextBoxOfAutocompleteControl);
-			if (returnTextBlock == null)
-				UserMessages.ShowWarningMessage("Could not find " + (oneOrTwo == OneOrTwo.One ? "EmbeddedButtonTextBlock" : "EmbeddedButtonTextBlock2") + " in template");
-			return returnTextBlock;
-		}
-
 		private TextBlock GetEmbeddedButtonTextBlock()
 		{
-			return _GetEmbeddedButtonTextblock(OneOrTwo.One);
-		}
-
-		private TextBlock GetEmbeddedButtonTextBlock2()
-		{
-			return _GetEmbeddedButtonTextblock(OneOrTwo.Two);
-		}
-
-		private Border _GetEmbeddedButton(OneOrTwo oneOrTwo)
-		{
 			TextBox actualTextBoxOfAutocompleteControl = GetActualTextBoxOfAutocompleteControl();
 			if (actualTextBoxOfAutocompleteControl == null)
 				return null;
 
-			Border returnBorder = (Border)actualTextBoxOfAutocompleteControl.Template.FindName(oneOrTwo == OneOrTwo.One ? "EmbeddedButton" : "EmbeddedButton2", actualTextBoxOfAutocompleteControl);
-			if (returnBorder == null)
-				UserMessages.ShowWarningMessage("Could not find " + (oneOrTwo == OneOrTwo.One ? "EmbeddedButton" : "EmbeddedButton2") + " in template");
-			return returnBorder;
+			TextBlock returnTextBlock = (TextBlock)actualTextBoxOfAutocompleteControl.Template.FindName("EmbeddedButtonTextBlock", actualTextBoxOfAutocompleteControl);
+			if (returnTextBlock == null)
+				UserMessages.ShowWarningMessage("Could not find EmbeddedButtonTextBlock in template");
+			return returnTextBlock;
 		}
 
 		private Border GetEmbeddedButton()
 		{
-			return _GetEmbeddedButton(OneOrTwo.One);
+			TextBox actualTextBoxOfAutocompleteControl = GetActualTextBoxOfAutocompleteControl();
+			if (actualTextBoxOfAutocompleteControl == null)
+				return null;
+
+			Border returnBorder = (Border)actualTextBoxOfAutocompleteControl.Template.FindName("EmbeddedButton", actualTextBoxOfAutocompleteControl);
+			if (returnBorder == null)
+				UserMessages.ShowWarningMessage("Could not find EmbeddedButton in template");
+			return returnBorder;
 		}
 
-		private Border GetEmbeddedButton2()
+		private ListBox GetEmbeddedListbox()
 		{
-			return _GetEmbeddedButton(OneOrTwo.Two);
+			TextBox actualTextBoxOfAutocompleteControl = GetActualTextBoxOfAutocompleteControl();
+			if (actualTextBoxOfAutocompleteControl == null)
+				return null;
+
+			ListBox returnListBox = (ListBox)actualTextBoxOfAutocompleteControl.Template.FindName("EmbeddedListbox", actualTextBoxOfAutocompleteControl);
+			if (returnListBox == null)
+				UserMessages.ShowWarningMessage("Could not find EmbeddedListbox in template");
+			return returnListBox;
 		}
 
 		private void treeView_CommandList_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
@@ -142,7 +134,9 @@ namespace SharedClasses
 				//textBox_CommandLine.Text = "";
 
 				//autoCompleteTextbox.ItemsSource = command.GetPredefinedArgumentsList;
-				textBox_CommandLine.ItemsSource = command.GetPredefinedArgumentsList;
+				textBox_CommandLine.ItemsSource = command.GetPredefinedArgumentsList(0, true);
+
+				GetEmbeddedListbox().ItemsSource = command.CurrentArgumentsPair;
 
 				//if (autcompleteManager == null)
 				//{
@@ -167,9 +161,9 @@ namespace SharedClasses
 					tmpBorder.Visibility = System.Windows.Visibility.Collapsed;
 
 				//Border tmpBorder2 = (Border)textBox_CommandLine.Template.FindName("EmbeddedButton2", textBox_CommandLine);
-				Border tmpBorder2 = GetEmbeddedButton2();
-				if (tmpBorder2.Visibility != System.Windows.Visibility.Collapsed)
-					tmpBorder2.Visibility = System.Windows.Visibility.Collapsed;
+				//Border tmpBorder2 = GetEmbeddedButton2();
+				//if (tmpBorder2.Visibility != System.Windows.Visibility.Collapsed)
+				//	tmpBorder2.Visibility = System.Windows.Visibility.Collapsed;
 
 				//textBox_CommandLine.Focus();
 				GetActualTextBoxOfAutocompleteControl().Focus();
@@ -184,13 +178,13 @@ namespace SharedClasses
 			tmpBorder.Visibility = System.Windows.Visibility.Collapsed;
 
 			//Border tmpBorder2 = (Border)textBox_CommandLine.Template.FindName("EmbeddedButton2", textBox_CommandLine);
-			Border tmpBorder2 = GetEmbeddedButton2();
-			tmpBorder2.Visibility = System.Windows.Visibility.Collapsed;
+			//Border tmpBorder2 = GetEmbeddedButton2();
+			//tmpBorder2.Visibility = System.Windows.Visibility.Collapsed;
 		}
 
 		private bool CommandNameExistOfTextboxText(out string CommandName)
 		{
-			foreach (ICommandWithHandler comm in treeView_CommandList.Items)
+			foreach (InlineCommands.TempNewCommandsManagerClass.ICommandWithHandler comm in treeView_CommandList.Items)
 				if (textBox_CommandLine.Text.Equals(comm.CommandName, StringComparison.InvariantCultureIgnoreCase))
 				{
 					CommandName = comm.DisplayName;
@@ -260,37 +254,61 @@ namespace SharedClasses
 
 		private void textBox_CommandLine_PreviewKeyDown(object sender, KeyEventArgs e)
 		{
-			if (e.Key == Key.Enter)
+			if (e.Key == Key.Enter && !textBox_CommandLine.IsDropDownOpen && textBox_CommandLine.Text.Length == 0)
 			{
 				e.Handled = true;
-				ICommandWithHandler activeCommand;
+				InlineCommands.TempNewCommandsManagerClass.ICommandWithHandler activeCommand;
 				if (GetActiveCommand(out activeCommand))
 				{
 					TextBox actualTextBox = GetActualTextBoxOfAutocompleteControl();
 					actualTextBox.SelectionLength = 0;
 					actualTextBox.SelectionStart = actualTextBox.Text.Length;
-					//Border tmpBorder2 = (Border)textBox_CommandLine.Template.FindName("EmbeddedButton2", textBox_CommandLine);
-					Border tmpBorder2 = GetEmbeddedButton2();
-					//TextBlock tmpTextBlock2 = (TextBlock)textBox_CommandLine.Template.FindName("EmbeddedButtonTextBlock2", textBox_CommandLine);
-					TextBlock tmpTextBlock2 = GetEmbeddedButtonTextBlock2();
-					if (TempNewCommandsManagerClass.PerformCommandFromString(
-						activeCommand,
-						textFeedbackEvent,
-						tmpBorder2.Visibility == System.Windows.Visibility.Collapsed
-						? textBox_CommandLine.Text
-						: tmpTextBlock2.Text))
+
+					if (TempNewCommandsManagerClass.PerformCommandFromCurrentArguments(
+							activeCommand,
+							textFeedbackEvent))
 						textBox_CommandLine.Text = "";//.Clear();
 				}
 			}
-			else if (e.Key == Key.Tab)
+			else if (e.Key == Key.Tab || (e.Key == Key.Enter && (textBox_CommandLine.IsDropDownOpen || textBox_CommandLine.Text.Length > 0)))
 			{
-				foreach (ICommandWithHandler comm in treeView_CommandList.Items)//tmplist)
-					if (textBox_CommandLine.Text.Equals(comm.CommandName, StringComparison.InvariantCultureIgnoreCase))
+				Border tmpBorder = GetEmbeddedButton();
+				if (tmpBorder.Tag == null && textBox_CommandLine.Text.Trim().Length > 0)
+				{
+					foreach (ICommandWithHandler comm in treeView_CommandList.Items)//tmplist)
+						if (textBox_CommandLine.Text.Equals(comm.CommandName, StringComparison.InvariantCultureIgnoreCase))
+						{
+							e.Handled = true;
+							SetSelectedItem(treeView_CommandList, comm);
+							textBox_CommandLine.ItemsSource = comm.GetPredefinedArgumentsList(0, true);
+							break;
+						}
+				}
+				else if (textBox_CommandLine.Text.Trim().Length > 0)
+				{
+					e.Handled = true;
+					ICommandWithHandler comm = tmpBorder.Tag as ICommandWithHandler;
+					TempNewCommandsManagerClass.BoolResultWithErrorMessage boolResultWithErrorMessage =
+						comm.AddCurrentArgument(textBox_CommandLine.Text.Trim());
+					if (boolResultWithErrorMessage.Success)
 					{
-						e.Handled = true;
-						SetSelectedItem(treeView_CommandList, comm);
-						break;
+						GetActualTextBoxOfAutocompleteControl().Clear();
+						textBox_CommandLine.ItemsSource = comm.GetPredefinedArgumentsList(comm.CurrentArgumentCount, true);
+
+						if (e.Key == Key.Enter)
+							textBox_CommandLine.RaiseEvent(
+								new KeyEventArgs(
+									Keyboard.PrimaryDevice,
+									PresentationSource.FromVisual(textBox_CommandLine),
+									0,
+									Key.Enter)
+								{
+									RoutedEvent = TextBox.PreviewKeyDownEvent
+								});
 					}
+					else
+						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, boolResultWithErrorMessage.ErrorMessage);
+				}
 			}
 			else if (e.Key == Key.Escape)
 			{
@@ -301,63 +319,69 @@ namespace SharedClasses
 				if (textBox_CommandLine.IsDropDownOpen)
 					textBox_CommandLine.IsDropDownOpen = false;
 				else if (actualTextBox.Text.Length > 0) actualTextBox.Text = "";
+				else if (GetEmbeddedButton().Tag != null && (GetEmbeddedButton().Tag as ICommandWithHandler).CurrentArgumentCount > 0)
+				{
+					ICommandWithHandler tmpCommand = GetEmbeddedButton().Tag as ICommandWithHandler;
+					tmpCommand.RemoveCurrentArgument(tmpCommand.CurrentArgumentCount - 1);
+					textBox_CommandLine.ItemsSource = tmpCommand.GetPredefinedArgumentsList(tmpCommand.CurrentArgumentCount, true);
+				}
 				else
 				{
 					ClearSelection(treeView_CommandList);
 					ResetAutocompleteToCommandNamesList();
 				}
 			}
-			else if (e.Key == Key.Down)
-			{
-				ICommandWithHandler activeCommand;
-				if (GetActiveCommand(out activeCommand))
-				{
-					ObservableCollection<string> predefinedList = activeCommand.GetPredefinedArgumentsList;
-					if (predefinedList != null && predefinedList.Count > 0)
-					{
-						//TextBlock tmpTextBlock2 = (TextBlock)textBox_CommandLine.Template.FindName("EmbeddedButtonTextBlock2", textBox_CommandLine);
-						TextBlock tmpTextBlock2 = GetEmbeddedButtonTextBlock2();
-						int NextIndex = predefinedList.IndexOf(tmpTextBlock2.Text) + 1;
-						if (NextIndex >= predefinedList.Count)
-							NextIndex = 0;
-						tmpTextBlock2.Text = predefinedList[NextIndex];
+			//else if (e.Key == Key.Down)
+			//{
+			//	ICommandWithHandler activeCommand;
+			//	if (GetActiveCommand(out activeCommand))
+			//	{
+			//		ObservableCollection<string> predefinedList = activeCommand.GetPredefinedArgumentsList;
+			//		if (predefinedList != null && predefinedList.Count > 0)
+			//		{
+			//			//TextBlock tmpTextBlock2 = (TextBlock)textBox_CommandLine.Template.FindName("EmbeddedButtonTextBlock2", textBox_CommandLine);
+			//			//TextBlock tmpTextBlock2 = GetEmbeddedButtonTextBlock2();
+			//			//int NextIndex = predefinedList.IndexOf(tmpTextBlock2.Text) + 1;
+			//			//if (NextIndex >= predefinedList.Count)
+			//			//	NextIndex = 0;
+			//			//tmpTextBlock2.Text = predefinedList[NextIndex];
 
-						//Border tmpBorder2 = (Border)textBox_CommandLine.Template.FindName("EmbeddedButton2", textBox_CommandLine);
-						Border tmpBorder2 = GetEmbeddedButton2();
-						if (tmpBorder2.Visibility != System.Windows.Visibility.Visible)
-							tmpBorder2.Visibility = System.Windows.Visibility.Visible;
-					}
-				}
-			}
-			else if (e.Key == Key.Up)
-			{
-				ICommandWithHandler activeCommand;
-				if (GetActiveCommand(out activeCommand))
-				{
-					ObservableCollection<string> predefinedList = activeCommand.GetPredefinedArgumentsList;
-					if (predefinedList != null && predefinedList.Count > 0)
-					{
-						//TextBlock tmpTextBlock2 = (TextBlock)textBox_CommandLine.Template.FindName("EmbeddedButtonTextBlock2", textBox_CommandLine);
-						TextBlock tmpTextBlock2 = GetEmbeddedButtonTextBlock2();
-						int PreviousIndex = predefinedList.IndexOf(tmpTextBlock2.Text) - 1;
-						if (PreviousIndex < 0)
-							PreviousIndex = predefinedList.Count - 1;
-						tmpTextBlock2.Text = predefinedList[PreviousIndex];
+			//			//Border tmpBorder2 = (Border)textBox_CommandLine.Template.FindName("EmbeddedButton2", textBox_CommandLine);
+			//			//Border tmpBorder2 = GetEmbeddedButton2();
+			//			//if (tmpBorder2.Visibility != System.Windows.Visibility.Visible)
+			//			//	tmpBorder2.Visibility = System.Windows.Visibility.Visible;
+			//		}
+			//	}
+			//}
+			//else if (e.Key == Key.Up)
+			//{
+			//	ICommandWithHandler activeCommand;
+			//	if (GetActiveCommand(out activeCommand))
+			//	{
+			//		ObservableCollection<string> predefinedList = activeCommand.GetPredefinedArgumentsList;
+			//		if (predefinedList != null && predefinedList.Count > 0)
+			//		{
+			//			//TextBlock tmpTextBlock2 = (TextBlock)textBox_CommandLine.Template.FindName("EmbeddedButtonTextBlock2", textBox_CommandLine);
+			//			//TextBlock tmpTextBlock2 = GetEmbeddedButtonTextBlock2();
+			//			//int PreviousIndex = predefinedList.IndexOf(tmpTextBlock2.Text) - 1;
+			//			//if (PreviousIndex < 0)
+			//			//	PreviousIndex = predefinedList.Count - 1;
+			//			//tmpTextBlock2.Text = predefinedList[PreviousIndex];
 
-						//Border tmpBorder2 = (Border)textBox_CommandLine.Template.FindName("EmbeddedButton2", textBox_CommandLine);
-						Border tmpBorder2 = GetEmbeddedButton2();
-						if (tmpBorder2.Visibility != System.Windows.Visibility.Visible)
-							tmpBorder2.Visibility = System.Windows.Visibility.Visible;
-					}
-				}
-			}
+			//			//Border tmpBorder2 = (Border)textBox_CommandLine.Template.FindName("EmbeddedButton2", textBox_CommandLine);
+			//			//Border tmpBorder2 = GetEmbeddedButton2();
+			//			//if (tmpBorder2.Visibility != System.Windows.Visibility.Visible)
+			//			//	tmpBorder2.Visibility = System.Windows.Visibility.Visible;
+			//		}
+			//	}
+			//}
 		}
 
-		private bool GetActiveCommand(out ICommandWithHandler activeCommand)
+		private bool GetActiveCommand(out InlineCommands.TempNewCommandsManagerClass.ICommandWithHandler activeCommand)
 		{
 			if (treeView_CommandList.SelectedItem != null && treeView_CommandList.SelectedItem is ICommandWithHandler)
 			{
-				activeCommand = treeView_CommandList.SelectedItem as ICommandWithHandler;;
+				activeCommand = treeView_CommandList.SelectedItem as InlineCommands.TempNewCommandsManagerClass.ICommandWithHandler; ;
 				return true;
 			}
 			activeCommand = null;
@@ -369,6 +393,19 @@ namespace SharedClasses
 			string tmpCommandName;
 			if (CommandNameExistOfTextboxText(out tmpCommandName))
 				label_ArgumentsExample.Content = "Press TAB to initiate mode for " + tmpCommandName;
+		}
+
+		private void GoButton_Click(object sender, RoutedEventArgs e)
+		{
+			textBox_CommandLine.RaiseEvent(
+				new KeyEventArgs(
+					Keyboard.PrimaryDevice,
+					PresentationSource.FromVisual(textBox_CommandLine),
+					0,
+					Key.Enter)
+			{
+				RoutedEvent = TextBox.PreviewKeyDownEvent
+			});
 		}
 
 		//private class AutocompleteProvider : IAutoCompleteDataProvider

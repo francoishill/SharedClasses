@@ -16,6 +16,7 @@ using System.Windows.Media.Animation;
 using System.Reflection;
 using System.IO;
 using System.Diagnostics;
+using InlineCommands;
 
 /// <summary>
 /// Interaction logic for MainWindow.xaml
@@ -288,8 +289,8 @@ public partial class OverlayWindow : Window
 			string commandName = "";
 			if (sender is CommandUserControl)
 				commandName = (sender as CommandUserControl).labelTitle.Content.ToString();
-			else if (sender is TextBox && (sender as TextBox).Tag is InlineCommands.CommandDetails)
-				commandName = ((sender as TextBox).Tag as InlineCommands.CommandDetails).commandName;
+			else if (sender is TextBox && (sender as TextBox).Tag is InlineCommands.InlineCommands.CommandDetails)
+				commandName = ((sender as TextBox).Tag as InlineCommands.InlineCommands.CommandDetails).commandName;
 			else
 			{
 				string controlType = sender.GetType().ToString();
@@ -301,12 +302,12 @@ public partial class OverlayWindow : Window
 			string commandNameLowercase = commandName.ToLower();
 			e.Handled = true;
 			string[] filesDropped = e.Data.GetData(System.Windows.DataFormats.FileDrop) as string[];
-			if ((new string[] { "cmd", "vscmd" }).Any(s => commandNameLowercase == s) && InlineCommands.CommandList.ContainsKey(commandNameLowercase)
+			if ((new string[] { "cmd", "vscmd" }).Any(s => commandNameLowercase == s) && InlineCommands.InlineCommands.CommandList.ContainsKey(commandNameLowercase)
 				&& Directory.Exists(filesDropped[0]))
 			{
 				System.Windows.Forms.ComboBox tmpCombobox = new System.Windows.Forms.ComboBox();
 				System.Windows.Forms.TextBox tmpTextbox = new System.Windows.Forms.TextBox();
-				InlineCommands.CommandList[commandNameLowercase].PerformCommand(commandNameLowercase + " " + filesDropped[0], tmpCombobox);
+				InlineCommands.InlineCommands.CommandList[commandNameLowercase].PerformCommand(commandNameLowercase + " " + filesDropped[0], tmpCombobox);
 				tmpCombobox.Dispose();
 				tmpTextbox.Dispose();
 				tmpCombobox = null;

@@ -2,7 +2,7 @@
 						 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 						 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 						 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-						 xmlns:local='clr-namespace:SharedClasses'
+						 xmlns:inlinecommands='clr-namespace:InlineCommands'
 						 xmlns:theme="clr-namespace:Microsoft.Windows.Themes;assembly=PresentationFramework.Aero"
 						 xmlns:input="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls.Input.Toolkit"
 						 xmlns:system="clr-namespace:System;assembly=mscorlib"
@@ -557,9 +557,90 @@
 										</LinearGradientBrush>
 									</Border.Background>
 									<TextBlock x:Name="EmbeddedButtonTextBlock"
-														 Foreground="#555"><Run Text="Testing" /></TextBlock>
+														 Foreground="#555"
+														 Text="Testing" />
 								</Border>
-								<Border x:Name="EmbeddedButton2"
+								<Border DockPanel.Dock='Left'
+												Focusable='False'>
+									<ListBox x:Name='EmbeddedListbox'
+													 ScrollViewer.HorizontalScrollBarVisibility='Disabled'
+													 Focusable='False'
+													 BorderThickness='0'>
+										<ListBox.ItemsPanel>
+											<ItemsPanelTemplate>
+												<WrapPanel IsItemsHost="True" />
+											</ItemsPanelTemplate>
+										</ListBox.ItemsPanel>
+										<ListBox.ItemTemplate>
+											<ItemContainerTemplate>
+												<Border BorderBrush="#ccc"
+																BorderThickness="1"
+																CornerRadius="3"
+																Padding="3,0,3,3"
+																Margin="0,0,3,0">
+													<Border.Background>
+														<LinearGradientBrush StartPoint="0,0"
+																								 EndPoint="0,1">
+															<GradientStop Color="#456"
+																						Offset="0" />
+															<GradientStop Color="#345"
+																						Offset="0.7" />
+															<GradientStop Color="#405060"
+																						Offset="1" />
+														</LinearGradientBrush>
+													</Border.Background>
+													<DockPanel>
+														<TextBlock DockPanel.Dock='Top'
+																			 Foreground="#f0f0f0"
+																			 Text='{Binding Key}'
+																			 HorizontalAlignment='Center'
+																			 FontSize='20'/>
+														<TextBlock DockPanel.Dock='Bottom'
+																			 Text='{Binding Value}'
+																			 Foreground='#ddd'
+																			 HorizontalAlignment='Center'
+																			 FontSize='12'/>
+													</DockPanel>
+												</Border>
+											</ItemContainerTemplate>
+										</ListBox.ItemTemplate>
+									</ListBox>
+								</Border>
+								<Button x:Name='GoButton'
+												DockPanel.Dock='Right'
+												FontFamily="Marlett"
+												Focusable='False'
+												Foreground='#080'
+												Opacity='0.3'
+												FontSize="20"
+												Content="4"
+												Height='24'
+												Padding='0'
+												Background='Transparent'
+												BorderBrush='Transparent'
+												Click='GoButton_Click'>
+									<Button.Triggers>
+										<EventTrigger RoutedEvent='MouseEnter'>
+											<BeginStoryboard>
+												<Storyboard>
+													<DoubleAnimation Storyboard.TargetProperty='Opacity'
+																					 Duration='0:0:0.4'
+																					 To='1' />
+												</Storyboard>
+											</BeginStoryboard>
+										</EventTrigger>
+										<EventTrigger RoutedEvent='MouseLeave'>
+											<BeginStoryboard>
+												<Storyboard>
+													<DoubleAnimation Storyboard.TargetProperty='Opacity'
+																					 Duration='0:0:0.2'
+																					 To='0.3' />
+												</Storyboard>
+											</BeginStoryboard>
+										</EventTrigger>
+									</Button.Triggers>
+								</Button>
+								<!--<Border x:Name="EmbeddedButton2"
 												DockPanel.Dock="Right"
 												BorderBrush="#ccc"
 												BorderThickness="1"
@@ -581,7 +662,7 @@
 									<TextBlock x:Name="EmbeddedButtonTextBlock2"
 														 Foreground="#eee"
 														 FontSize="12"><Run Text="Testing" /></TextBlock>
-								</Border>
+								</Border>-->
 								<ScrollViewer x:Name="PART_ContentHost"
 															DockPanel.Dock="Right" />
 							</DockPanel>
@@ -1239,7 +1320,7 @@
 					 Foreground="Gray" />
 		<input:AutoCompleteBox x:Name="textBox_CommandLine"
 													 Grid.Row="1"
-													 FontSize="24"
+													 FontSize="36"
 													 HorizontalAlignment="Stretch"
 													 Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type TextBlock}, Mode=FindAncestor}}"
 													 PreviewKeyDown="textBox_CommandLine_PreviewKeyDown"
@@ -1417,7 +1498,7 @@
 								 MinWidth="50"
 								 Text=""
 								 Foreground="Green"
-								 Padding='10,0'/>
+								 Padding='10,0' />
 		</Grid>
 		<!--</DockPanel>-->
 	</Grid>

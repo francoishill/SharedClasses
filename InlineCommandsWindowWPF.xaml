@@ -6,7 +6,8 @@
         x:Name='InlineCommandsWindowWPF1'
         Loaded="InlineCommandsWindowWPF1_Loaded"
         Width="584.7"
-        MinWidth="150">
+        MinWidth="150"
+				WindowStartupLocation='CenterScreen'>
     <Window.Resources>
         <ResourceDictionary></ResourceDictionary>
     </Window.Resources>

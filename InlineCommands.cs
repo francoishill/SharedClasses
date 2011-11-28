@@ -840,7 +840,7 @@ namespace InlineCommands
 					listOfInitializedCommandInterfaces = new List<ICommandWithHandler>();
 					Type[] types = typeof(TempNewCommandsManagerClass).GetNestedTypes(BindingFlags.Public);
 					foreach (Type type in types)
-						if (!type.IsInterface)
+						if (!type.IsInterface && !type.IsAbstract)
 							if (type.GetInterfaces().Contains(typeof(ICommandWithHandler)))
 								listOfInitializedCommandInterfaces.Add((ICommandWithHandler)type.GetConstructor(new Type[0]).Invoke(new object[0]));
 				}
@@ -929,37 +929,96 @@ namespace InlineCommands
 			void RemoveCurrentArgument(int Index);
 			ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair { get; }
 		}
-		public abstract class OverrideToStringClass
-		{
-			public abstract override string ToString();
-		}
+		//public abstract class OverrideToStringClass
+		//{
+		//	public abstract override string ToString();
 
-		public class RunCommand : OverrideToStringClass, ICommandWithHandler
+		//}
+
+		public abstract class OverrideToStringClass : ICommandWithHandler
 		{
+			//public abstract override string ToString();
 			public override string ToString() { return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(CommandName); }
-
-			public string CommandName { get { return "run"; } }
-			public string DisplayName { get { return "Run"; } }
-			public string Description { get { return "Run any file/folder"; } }
-			public string ArgumentsExample { get { return "outlook"; } }
-
-			private readonly ObservableCollection<string>[] predefinedArgumentsList =
+			public abstract string CommandName { get; }
+			public abstract string DisplayName { get; }
+			public abstract string Description { get; }
+			public abstract string ArgumentsExample { get; }
+			public abstract bool PreValidateArgument(out string errorMessage, int Index, string argumentValue);
+			public abstract bool ValidateArguments(out string errorMessage, params string[] arguments);
+			public abstract bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments);
+			public abstract ObservableCollection<string>[] PredefinedArgumentsList { get; }
+			public virtual ObservableCollection<string> GetPredefinedArgumentsList(int Index, bool SuppressErrors = false)
 			{
-				new ObservableCollection<string>() { "cmd", "outlook" }
-			};
-
-			public ObservableCollection<string> GetPredefinedArgumentsList(int Index, bool SuppressErrors = false)
-			{
-				if (Index < predefinedArgumentsList.Length)
-					return predefinedArgumentsList[Index];
+				if (Index < PredefinedArgumentsList.Length)
+					return PredefinedArgumentsList[Index];
 				else
 				{
 					if (!SuppressErrors) UserMessages.ShowWarningMessage("Index out of bounds for predefinedArgumentsList, " + this.CommandName + " command, index = " + Index);
 					return new ObservableCollection<string>();
 				}
 			}
+			public abstract string[] ArgumentDescriptions { get; }
+			public virtual void ClearAndAddAllBlankArguments()
+			{
+				CurrentArgumentsPair.Clear();
+				foreach (string argdesc in ArgumentDescriptions)
+					CurrentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", argdesc));
+			}
+			//public abstract BoolResultWithErrorMessage AddCurrentArgument(string argument);
+			public virtual BoolResultWithErrorMessage AddCurrentArgument(string argument)
+			{
+				string argumentDescription = "";
+				if (ArgumentDescriptions.Length >= currentArgumentsPair.Count + 1)
+					argumentDescription = ArgumentDescriptions[currentArgumentsPair.Count];
+				return currentArgumentsPair.Add(new KeyAndValuePair(argument, argumentDescription));
+			}
 
-			public bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
+			public virtual int CurrentArgumentCount
+			{
+				get { return CurrentArgumentsPair.Count; }
+			}
+
+			public virtual void RemoveCurrentArgument(int Index)
+			{
+				currentArgumentsPair.RemoveAt(Index);
+			}
+
+			//public abstract BoolResultWithErrorMessage ValidationFunction(KeyAndValuePair argumentToAdd);
+			public virtual BoolResultWithErrorMessage ValidationFunction(KeyAndValuePair argumentToAdd)
+			{
+				string errorMessage;
+				bool success = PreValidateArgument(out errorMessage, CurrentArgumentsPair.Count, argumentToAdd.Key);
+				return new BoolResultWithErrorMessage(success, errorMessage);
+			}
+			private ObservableCollectionWithValidationOnAdd<KeyAndValuePair> currentArgumentsPair;
+			public virtual ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair
+			{
+				get
+				{
+					if (currentArgumentsPair == null) currentArgumentsPair = new ObservableCollectionWithValidationOnAdd<KeyAndValuePair>(ValidationFunction);
+					return currentArgumentsPair;
+				}
+				set { currentArgumentsPair = value; }
+			}
+			//public abstract int CurrentArgumentCount { get; }
+			//public abstract void RemoveCurrentArgument(int Index);
+			//public abstract ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair { get; set; }
+		}
+
+		public class RunCommand : OverrideToStringClass//, ICommandWithHandler
+		{
+			public override string CommandName { get { return "run"; } }
+			public override string DisplayName { get { return "Run"; } }
+			public override string Description { get { return "Run any file/folder"; } }
+			public override string ArgumentsExample { get { return "outlook"; } }
+
+			private readonly ObservableCollection<string>[] predefinedArgumentsList =
+			{
+				new ObservableCollection<string>() { "cmd", "outlook" }
+			};
+			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
+
+			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
 			{
 				errorMessage = "";
 				if (Index != 0)
@@ -970,7 +1029,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public bool ValidateArguments(out string errorMessage, params string[] arguments)
+			public override bool ValidateArguments(out string errorMessage, params string[] arguments)
 			{
 				errorMessage = "";
 				if (arguments.Length != 1) errorMessage = "Exactly one argument required for Run command";
@@ -981,7 +1040,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
 			{
 				//if (!ValidateArguments(out errorMessage, arguments)) return false;
 				try
@@ -998,79 +1057,26 @@ namespace InlineCommands
 				}
 			}
 
-			private BoolResultWithErrorMessage ValidationFunction(KeyAndValuePair argumentToAdd)
-			{
-				string errorMessage;
-				bool success = PreValidateArgument(out errorMessage, currentArgumentsPair.Count, argumentToAdd.Key);
-				return new BoolResultWithErrorMessage(success, errorMessage);
-			}
-
-			public void ClearAndAddAllBlankArguments()
-			{
-				CurrentArgumentsPair.Clear();
-				foreach (string argdesc in ArgumentDescriptions)
-					CurrentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", argdesc));
-			}
-
-			private string[] ArgumentDescriptions = new string[]
+			private string[] argumentDescriptions = new string[]
 			{
 				"parameter"
 			};
-			public BoolResultWithErrorMessage AddCurrentArgument(string argument)
-			{
-				string argumentDescription = "";
-				if (ArgumentDescriptions.Length >= currentArgumentsPair.Count + 1)
-					argumentDescription = ArgumentDescriptions[currentArgumentsPair.Count];
-				return currentArgumentsPair.Add(new KeyAndValuePair(argument, argumentDescription));
-			}
-
-			public int CurrentArgumentCount
-			{
-				get { return CurrentArgumentsPair.Count; }
-			}
-
-			public void RemoveCurrentArgument(int Index)
-			{
-				currentArgumentsPair.RemoveAt(Index);
-			}
-
-			private ObservableCollectionWithValidationOnAdd<KeyAndValuePair> currentArgumentsPair;
-			public ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair
-			{
-				get
-				{
-					if (currentArgumentsPair == null) currentArgumentsPair = new ObservableCollectionWithValidationOnAdd<KeyAndValuePair>(ValidationFunction);
-					return currentArgumentsPair;
-				}
-				set { currentArgumentsPair = value; }
-			}
+			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
 		}
 
-		public class GoogleSearchCommand : OverrideToStringClass, ICommandWithHandler
+		public class GoogleSearchCommand : OverrideToStringClass//, ICommandWithHandler
 		{
-			public override string ToString() { return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(CommandName); ; }
-
-			public string CommandName { get { return "google"; } }
-			public string DisplayName { get { return "Google Search"; } }
-			public string Description { get { return "Google search a word/phrase"; } }
-			public string ArgumentsExample { get { return "first man on the moon"; } }
+			public override string CommandName { get { return "google"; } }
+			public override string DisplayName { get { return "Google Search"; } }
+			public override string Description { get { return "Google search a word/phrase"; } }
+			public override string ArgumentsExample { get { return "first man on the moon"; } }
 
 			private readonly ObservableCollection<string>[] predefinedArgumentsList =
 			{
 			};
+			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
 
-			public ObservableCollection<string> GetPredefinedArgumentsList(int Index, bool SuppressErrors = false)
-			{
-				if (Index < predefinedArgumentsList.Length)
-					return predefinedArgumentsList[Index];
-				else
-				{
-					if (!SuppressErrors) UserMessages.ShowWarningMessage("Index out of bounds for predefinedArgumentsList, " + this.CommandName + " command, index = " + Index);
-					return new ObservableCollection<string>();
-				}
-			}
-
-			public bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
+			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
 			{
 				errorMessage = ""; if (Index != 0)
 					errorMessage = "Only one argument allowed for Google search command";
@@ -1080,7 +1086,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public bool ValidateArguments(out string errorMessage, params string[] arguments)
+			public override bool ValidateArguments(out string errorMessage, params string[] arguments)
 			{
 				errorMessage = "";
 				if (arguments.Length != 1) errorMessage = "Exactly one argument required for Google search command";
@@ -1091,7 +1097,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
 			{
 				//if (!ValidateArguments(out errorMessage, arguments)) return false;
 				try
@@ -1108,80 +1114,27 @@ namespace InlineCommands
 				}
 			}
 
-			private BoolResultWithErrorMessage ValidationFunction(KeyAndValuePair argumentToAdd)
-			{
-				string errorMessage;
-				bool success = PreValidateArgument(out errorMessage, currentArgumentsPair.Count, argumentToAdd.Key);
-				return new BoolResultWithErrorMessage(success, errorMessage);
-			}
-
-			public void ClearAndAddAllBlankArguments()
-			{
-				CurrentArgumentsPair.Clear();
-				foreach (string argdesc in ArgumentDescriptions)
-					CurrentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", argdesc));
-			}
-
-			private string[] ArgumentDescriptions = new string[]
+			private string[] argumentDescriptions = new string[]
 			{
 				"search phrase"
 			};
-			public BoolResultWithErrorMessage AddCurrentArgument(string argument)
-			{
-				string argumentDescription = "";
-				if (ArgumentDescriptions.Length >= currentArgumentsPair.Count + 1)
-					argumentDescription = ArgumentDescriptions[currentArgumentsPair.Count];
-				return currentArgumentsPair.Add(new KeyAndValuePair(argument, argumentDescription));
-			}
-
-			public int CurrentArgumentCount
-			{
-				get { return CurrentArgumentsPair.Count; }
-			}
-
-			public void RemoveCurrentArgument(int Index)
-			{
-				currentArgumentsPair.RemoveAt(Index);
-			}
-
-			private ObservableCollectionWithValidationOnAdd<KeyAndValuePair> currentArgumentsPair;
-			public ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair
-			{
-				get
-				{
-					if (currentArgumentsPair == null) currentArgumentsPair = new ObservableCollectionWithValidationOnAdd<KeyAndValuePair>(ValidationFunction);
-					return currentArgumentsPair;
-				}
-				set { currentArgumentsPair = value; }
-			}
+			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
 		}
 
-		public class ExploreCommand : OverrideToStringClass, ICommandWithHandler
+		public class ExploreCommand : OverrideToStringClass//, ICommandWithHandler
 		{
-			public override string ToString() { return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(CommandName); ; }
-
-			public string CommandName { get { return "explore"; } }
-			public string DisplayName { get { return "Explore"; } }
-			public string Description { get { return "Explore a folder"; } }
-			public string ArgumentsExample { get { return @"c:\windows"; } }
+			public override string CommandName { get { return "explore"; } }
+			public override string DisplayName { get { return "Explore"; } }
+			public override string Description { get { return "Explore a folder"; } }
+			public override string ArgumentsExample { get { return @"c:\windows"; } }
 
 			private readonly ObservableCollection<string>[] predefinedArgumentsList =
 			{
 				new ObservableCollection<string>() { @"c:\", @"c:\Program Files" }
 			};
+			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
 
-			public ObservableCollection<string> GetPredefinedArgumentsList(int Index, bool SuppressErrors = false)
-			{
-				if (Index < predefinedArgumentsList.Length)
-					return predefinedArgumentsList[Index];
-				else
-				{
-					if (!SuppressErrors) UserMessages.ShowWarningMessage("Index out of bounds for predefinedArgumentsList, " + this.CommandName + " command, index = " + Index);
-					return new ObservableCollection<string>();
-				}
-			}
-
-			public bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
+			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
 			{
 				errorMessage = "";
 				if (Index != 0)
@@ -1194,7 +1147,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public bool ValidateArguments(out string errorMessage, params string[] arguments)
+			public override bool ValidateArguments(out string errorMessage, params string[] arguments)
 			{
 				errorMessage = "";
 				if (arguments.Length != 1) errorMessage = "Exactly one argument required for Explore command";
@@ -1205,7 +1158,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
 			{
 				//if (!ValidateArguments(out errorMessage, arguments)) return false;
 				try
@@ -1224,62 +1177,19 @@ namespace InlineCommands
 				}
 			}
 
-			private BoolResultWithErrorMessage ValidationFunction(KeyAndValuePair argumentToAdd)
-			{
-				string errorMessage;
-				bool success = PreValidateArgument(out errorMessage, currentArgumentsPair.Count, argumentToAdd.Key);
-				return new BoolResultWithErrorMessage(success, errorMessage);
-			}
-
-			public void ClearAndAddAllBlankArguments()
-			{
-				CurrentArgumentsPair.Clear();
-				foreach (string argdesc in ArgumentDescriptions)
-					CurrentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", argdesc));
-			}
-
-			private string[] ArgumentDescriptions = new string[]
+			private string[] argumentDescriptions = new string[]
 			{
 				"folder"
 			};
-			public BoolResultWithErrorMessage AddCurrentArgument(string argument)
-			{
-				string argumentDescription = "";
-				if (ArgumentDescriptions.Length >= currentArgumentsPair.Count + 1)
-					argumentDescription = ArgumentDescriptions[currentArgumentsPair.Count];
-				return currentArgumentsPair.Add(new KeyAndValuePair(argument, argumentDescription));
-			}
-
-			public int CurrentArgumentCount
-			{
-				get { return CurrentArgumentsPair.Count; }
-			}
-
-			public void RemoveCurrentArgument(int Index)
-			{
-				currentArgumentsPair.RemoveAt(Index);
-			}
-
-			private ObservableCollectionWithValidationOnAdd<KeyAndValuePair> currentArgumentsPair;
-			public ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair
-			{
-				get
-				{
-					if (currentArgumentsPair == null) currentArgumentsPair = new ObservableCollectionWithValidationOnAdd<KeyAndValuePair>(ValidationFunction);
-					return currentArgumentsPair;
-				}
-				set { currentArgumentsPair = value; }
-			}
+			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
 		}
 
-		public class AddTodoitemFirepumaCommand : OverrideToStringClass, ICommandWithHandler
+		public class AddTodoitemFirepumaCommand : OverrideToStringClass//, ICommandWithHandler
 		{
-			public override string ToString() { return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(CommandName); ; }
-
-			public string CommandName { get { return "addtodo"; } }
-			public string DisplayName { get { return "Add todo"; } }
-			public string Description { get { return "Add todo item to firepuma"; } }
-			public string ArgumentsExample { get { return "13;30;Reminder;Buy milk => (MinutesFromNow, Autosnooze, Name, Description)"; } }
+			public override string CommandName { get { return "addtodo"; } }
+			public override string DisplayName { get { return "Add todo"; } }
+			public override string Description { get { return "Add todo item to firepuma"; } }
+			public override string ArgumentsExample { get { return "13;30;Reminder;Buy milk => (MinutesFromNow, Autosnooze, Name, Description)"; } }
 
 			private readonly ObservableCollection<string>[] predefinedArgumentsList =
 			{
@@ -1287,19 +1197,9 @@ namespace InlineCommands
 				new ObservableCollection<string>() { "15", "30", "60" },
 				new ObservableCollection<string>() { "Shop" }
 			};
+			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
 
-			public ObservableCollection<string> GetPredefinedArgumentsList(int Index, bool SuppressErrors = false)
-			{
-				if (Index < predefinedArgumentsList.Length)
-					return predefinedArgumentsList[Index];
-				else
-				{
-					if (!SuppressErrors) UserMessages.ShowWarningMessage("Index out of bounds for predefinedArgumentsList, " + this.CommandName + " command, index = " + Index);
-					return new ObservableCollection<string>();
-				}
-			}
-
-			public bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
+			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
 			{
 				errorMessage = "";
 				if (Index >= 4)
@@ -1314,7 +1214,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public bool ValidateArguments(out string errorMessage, params string[] arguments)
+			public override bool ValidateArguments(out string errorMessage, params string[] arguments)
 			{
 				//minutes, autosnooze, name, desc
 				errorMessage = "";
@@ -1330,7 +1230,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
 			{
 				//if (!ValidateArguments(out errorMessage, arguments)) return false;
 				try
@@ -1362,65 +1262,22 @@ namespace InlineCommands
 				}
 			}
 
-			private BoolResultWithErrorMessage ValidationFunction(KeyAndValuePair argumentToAdd)
-			{
-				string errorMessage;
-				bool success = PreValidateArgument(out errorMessage, currentArgumentsPair.Count, argumentToAdd.Key					);
-				return new BoolResultWithErrorMessage(success, errorMessage);
-			}
-
-			public void ClearAndAddAllBlankArguments()
-			{
-				CurrentArgumentsPair.Clear();
-				foreach (string argdesc in ArgumentDescriptions)
-					CurrentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", argdesc));
-			}
-
-			private string[] ArgumentDescriptions = new string[]
+			private string[] argumentDescriptions = new string[]
 			{
 				"minutes",
 				"autosnooze",
 				"name",
 				"description"
 			};
-			public BoolResultWithErrorMessage AddCurrentArgument(string argument)
-			{
-				string argumentDescription = "";
-				if (ArgumentDescriptions.Length >= currentArgumentsPair.Count + 1)
-					argumentDescription = ArgumentDescriptions[currentArgumentsPair.Count];
-				return currentArgumentsPair.Add(new KeyAndValuePair(argument, argumentDescription));
-			}
-
-			public int CurrentArgumentCount
-			{
-				get { return CurrentArgumentsPair.Count; }
-			}
-
-			public void RemoveCurrentArgument(int Index)
-			{
-				currentArgumentsPair.RemoveAt(Index);
-			}
-
-			private ObservableCollectionWithValidationOnAdd<KeyAndValuePair> currentArgumentsPair;
-			public ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair
-			{
-				get
-				{
-					if (currentArgumentsPair == null) currentArgumentsPair = new ObservableCollectionWithValidationOnAdd<KeyAndValuePair>(ValidationFunction);
-					return currentArgumentsPair;
-				}
-				set { currentArgumentsPair = value; }
-			}
+			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
 		}
 
-		public class MailCommand : OverrideToStringClass, ICommandWithHandler
+		public class MailCommand : OverrideToStringClass//, ICommandWithHandler
 		{
-			public override string ToString() { return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(CommandName); ; }
-
-			public string CommandName { get { return "mail"; } }
-			public string DisplayName { get { return "Mail"; } }
-			public string Description { get { return "Send an email"; } }
-			public string ArgumentsExample { get { return "billgates@microsoft.com;My subject;Hi Bill.\nHow have you been?"; } }
+			public override string CommandName { get { return "mail"; } }
+			public override string DisplayName { get { return "Mail"; } }
+			public override string Description { get { return "Send an email"; } }
+			public override string ArgumentsExample { get { return "billgates@microsoft.com;My subject;Hi Bill.\nHow have you been?"; } }
 
 			private readonly ObservableCollection<string>[] predefinedArgumentsList =
 			{
@@ -1428,19 +1285,9 @@ namespace InlineCommands
 				//new ObservableCollection<string>() { "Hi there", "This is a subject" },
 				//new ObservableCollection<string>() { "How have you been?", "This is the body" }
 			};
+			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }			
 
-			public ObservableCollection<string> GetPredefinedArgumentsList(int Index, bool SuppressErrors = false)
-			{
-				if (Index < predefinedArgumentsList.Length)
-					return predefinedArgumentsList[Index];
-				else
-				{
-					if (!SuppressErrors) UserMessages.ShowWarningMessage("Index out of bounds for predefinedArgumentsList, " + this.CommandName + " command, index = " + Index);
-					return new ObservableCollection<string>();
-				}
-			}
-
-			public bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
+			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
 			{
 				errorMessage = "";
 				if (Index >= 3)
@@ -1453,7 +1300,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public bool ValidateArguments(out string errorMessage, params string[] arguments)
+			public override bool ValidateArguments(out string errorMessage, params string[] arguments)
 			{
 				errorMessage = "";
 				if (arguments.Length < 2) errorMessage = "At least 2 arguments required for Mail command (mail, subject, body)";
@@ -1466,7 +1313,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
 			{
 				try
 				{
@@ -1485,82 +1332,29 @@ namespace InlineCommands
 				}
 			}
 
-			private BoolResultWithErrorMessage ValidationFunction(KeyAndValuePair argumentToAdd)
-			{
-				string errorMessage;
-				bool success = PreValidateArgument(out errorMessage, currentArgumentsPair.Count, argumentToAdd.Key);
-				return new BoolResultWithErrorMessage(success, errorMessage);
-			}
-
-			public void ClearAndAddAllBlankArguments()
-			{
-				CurrentArgumentsPair.Clear();
-				foreach (string argdesc in ArgumentDescriptions)
-					CurrentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", argdesc));
-			}
-
-			private string[] ArgumentDescriptions = new string[]
+			private string[] argumentDescriptions = new string[]
 			{
 				"to address",
 				"subject",
 				"body"
 			};
-			public BoolResultWithErrorMessage AddCurrentArgument(string argument)
-			{
-				string argumentDescription = "";
-				if (ArgumentDescriptions.Length >= currentArgumentsPair.Count + 1)
-					argumentDescription = ArgumentDescriptions[currentArgumentsPair.Count];
-				return currentArgumentsPair.Add(new KeyAndValuePair(argument, argumentDescription));
-			}
-
-			public int CurrentArgumentCount
-			{
-				get { return CurrentArgumentsPair.Count; }
-			}
-
-			public void RemoveCurrentArgument(int Index)
-			{
-				currentArgumentsPair.RemoveAt(Index);
-			}
-
-			private ObservableCollectionWithValidationOnAdd<KeyAndValuePair> currentArgumentsPair;
-			public ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair
-			{
-				get
-				{
-					if (currentArgumentsPair == null) currentArgumentsPair = new ObservableCollectionWithValidationOnAdd<KeyAndValuePair>(ValidationFunction);
-					return currentArgumentsPair;
-				}
-				set { currentArgumentsPair = value; }
-			}
+			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
 		}
 
-		public class WebCommand : OverrideToStringClass, ICommandWithHandler
+		public class WebCommand : OverrideToStringClass//, ICommandWithHandler
 		{
-			public override string ToString() { return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(CommandName); ; }
-
-			public string CommandName { get { return "web"; } }
-			public string DisplayName { get { return "Web"; } }
-			public string Description { get { return "Open a web URL"; } }
-			public string ArgumentsExample { get { return "google.com"; } }
+			public override string CommandName { get { return "web"; } }
+			public override string DisplayName { get { return "Web"; } }
+			public override string Description { get { return "Open a web URL"; } }
+			public override string ArgumentsExample { get { return "google.com"; } }
 
 			private readonly ObservableCollection<string>[] predefinedArgumentsList =
 			{
 				new ObservableCollection<string>() { "google.com", "firepuma.com", "fjh.dyndns.org" }
 			};
+			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
 
-			public ObservableCollection<string> GetPredefinedArgumentsList(int Index, bool SuppressErrors = false)
-			{
-				if (Index < predefinedArgumentsList.Length)
-					return predefinedArgumentsList[Index];
-				else
-				{
-					if (!SuppressErrors) UserMessages.ShowWarningMessage("Index out of bounds for predefinedArgumentsList, " + this.CommandName + " command, index = " + Index);
-					return new ObservableCollection<string>();
-				}
-			}
-
-			public bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
+			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
 			{
 				errorMessage = "";
 				if (Index != 0)
@@ -1573,7 +1367,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public bool ValidateArguments(out string errorMessage, params string[] arguments)
+			public override bool ValidateArguments(out string errorMessage, params string[] arguments)
 			{
 				errorMessage = "";
 				if (arguments.Length != 1) errorMessage = "Exactly one argument required for Web command";
@@ -1583,7 +1377,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
 			{
 				//if (!ValidateArguments(out errorMessage, arguments)) return false;
 				try
@@ -1602,80 +1396,27 @@ namespace InlineCommands
 				}
 			}
 
-			private BoolResultWithErrorMessage ValidationFunction(KeyAndValuePair argumentToAdd)
-			{
-				string errorMessage;
-				bool success = PreValidateArgument(out errorMessage, currentArgumentsPair.Count, argumentToAdd.Key);
-				return new BoolResultWithErrorMessage(success, errorMessage);
-			}
-
-			public void ClearAndAddAllBlankArguments()
-			{
-				CurrentArgumentsPair.Clear();
-				foreach (string argdesc in ArgumentDescriptions)
-					CurrentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", argdesc));
-			}
-
-			private string[] ArgumentDescriptions = new string[]
+			private string[] argumentDescriptions = new string[]
 			{
 				"url"
 			};
-			public BoolResultWithErrorMessage AddCurrentArgument(string argument)
-			{
-				string argumentDescription = "";
-				if (ArgumentDescriptions.Length >= currentArgumentsPair.Count + 1)
-					argumentDescription = ArgumentDescriptions[currentArgumentsPair.Count];
-				return currentArgumentsPair.Add(new KeyAndValuePair(argument, argumentDescription));
-			}
-
-			public int CurrentArgumentCount
-			{
-				get { return CurrentArgumentsPair.Count; }
-			}
-
-			public void RemoveCurrentArgument(int Index)
-			{
-				currentArgumentsPair.RemoveAt(Index);
-			}
-
-			private ObservableCollectionWithValidationOnAdd<KeyAndValuePair> currentArgumentsPair;
-			public ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair
-			{
-				get
-				{
-					if (currentArgumentsPair == null) currentArgumentsPair = new ObservableCollectionWithValidationOnAdd<KeyAndValuePair>(ValidationFunction);
-					return currentArgumentsPair;
-				}
-				set { currentArgumentsPair = value; }
-			}
+			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
 		}
 
-		public class CallCommand : OverrideToStringClass, ICommandWithHandler
+		public class CallCommand : OverrideToStringClass//, ICommandWithHandler
 		{
-			public override string ToString() { return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(CommandName); }
-
-			public string CommandName { get { return "call"; } }
-			public string DisplayName { get { return "Call"; } }
-			public string Description { get { return "Shows the phone number of a contact"; } }
-			public string ArgumentsExample { get { return "yolwork"; } }
+			public override string CommandName { get { return "call"; } }
+			public override string DisplayName { get { return "Call"; } }
+			public override string Description { get { return "Shows the phone number of a contact"; } }
+			public override string ArgumentsExample { get { return "yolwork"; } }
 
 			private readonly ObservableCollection<string>[] predefinedArgumentsList =
 			{
 				new ObservableCollection<string>(NameAndNumberDictionary.Keys)
 			};
+			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }			
 
-			public ObservableCollection<string> GetPredefinedArgumentsList(int Index, bool SuppressErrors = false)
-			{
-				if (Index < predefinedArgumentsList.Length)
-					return predefinedArgumentsList[Index];
-				else
-				{
-					if (!SuppressErrors) UserMessages.ShowWarningMessage("Index out of bounds for predefinedArgumentsList, " + this.CommandName + " command, index = " + Index);
-					return new ObservableCollection<string>();
-				}
-			}
-
-			public bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
+			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
 			{
 				errorMessage = "";
 				if (Index != 0)
@@ -1688,7 +1429,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public bool ValidateArguments(out string errorMessage, params string[] arguments)
+			public override bool ValidateArguments(out string errorMessage, params string[] arguments)
 			{
 				errorMessage = "";
 				if (arguments.Length != 1) errorMessage = "Exactly one argument required for Call command";
@@ -1698,7 +1439,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
 			{
 				try
 				{
@@ -1725,95 +1466,50 @@ namespace InlineCommands
 				{ "honda",  "Honda Tygervalley: 021 910 8300" }
 			};
 
-			private BoolResultWithErrorMessage ValidationFunction(KeyAndValuePair argumentToAdd)
-			{
-				string errorMessage;
-				bool success = PreValidateArgument(out errorMessage, currentArgumentsPair.Count, argumentToAdd.Key);
-				return new BoolResultWithErrorMessage(success, errorMessage);
-			}
-
-			public void ClearAndAddAllBlankArguments()
-			{
-				CurrentArgumentsPair.Clear();
-				foreach (string argdesc in ArgumentDescriptions)
-					CurrentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", argdesc));
-			}
-
-			private string[] ArgumentDescriptions = new string[]
+			private string[] argumentDescriptions = new string[]
 			{
 				"name"
 			};
-			public BoolResultWithErrorMessage AddCurrentArgument(string argument)
+			public override string[] ArgumentDescriptions
 			{
-				string argumentDescription = "";
-				if (ArgumentDescriptions.Length >= currentArgumentsPair.Count + 1)
-					argumentDescription = ArgumentDescriptions[currentArgumentsPair.Count];
-				return currentArgumentsPair.Add(new KeyAndValuePair(argument, argumentDescription));
-			}
-
-			public int CurrentArgumentCount
-			{
-				get { return CurrentArgumentsPair.Count; }
-			}
-
-			public void RemoveCurrentArgument(int Index)
-			{
-				currentArgumentsPair.RemoveAt(Index);
-			}
-
-			private ObservableCollectionWithValidationOnAdd<KeyAndValuePair> currentArgumentsPair;
-			public ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair
-			{
-				get
-				{
-					if (currentArgumentsPair == null) currentArgumentsPair = new ObservableCollectionWithValidationOnAdd<KeyAndValuePair>(ValidationFunction);
-					return currentArgumentsPair;
-				}
-				set { currentArgumentsPair = value; }
+				get { return argumentDescriptions; }
 			}
 		}
 
-		public class KillCommand : OverrideToStringClass, ICommandWithHandler
+		public class KillCommand : OverrideToStringClass//, ICommandWithHandler
 		{
-			public override string ToString() { return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(CommandName); }
-
-			public string CommandName { get { return "kill"; } }
-			public string DisplayName { get { return "Kill"; } }
-			public string Description { get { return "Kills a process"; } }
-			public string ArgumentsExample { get { return "notepad"; } }
+			public override string CommandName { get { return "kill"; } }
+			public override string DisplayName { get { return "Kill"; } }
+			public override string Description { get { return "Kills a process"; } }
+			public override string ArgumentsExample { get { return "notepad"; } }
 
 			private ObservableCollection<string> LastProcessList;
 			private readonly ObservableCollection<string>[] predefinedArgumentsList =
 			{
 				new ObservableCollection<string>() { }//Empty collection because populated on demand
 			};
-
-			public ObservableCollection<string> GetPredefinedArgumentsList(int Index, bool SuppressErrors = false)
+			public override ObservableCollection<string>[] PredefinedArgumentsList
 			{
-				if (LastProcessList == null) LastProcessList = new ObservableCollection<string>();
-				List<string> tmpList = new List<string>();
-				Process[] processes = System.Diagnostics.Process.GetProcesses();
-				foreach (Process proc in processes)
-					tmpList.Add(proc.ProcessName);
-				tmpList.Sort();
-				for (int i = LastProcessList.Count - 1; i >= 0; i--)
-					if (!tmpList.Contains(LastProcessList[i]))
-						LastProcessList.RemoveAt(i);
-				foreach (string item in tmpList)
-					if (!LastProcessList.Contains(item))
-						LastProcessList.Add(item);
-				predefinedArgumentsList[0] = LastProcessList;
-
-				if (Index < predefinedArgumentsList.Length)
-					return predefinedArgumentsList[Index];
-				else
+				get
 				{
-					if (!SuppressErrors) UserMessages.ShowWarningMessage("Index out of bounds for predefinedArgumentsList, " + this.CommandName + " command, index = " + Index);
-					return new ObservableCollection<string>();
+					if (LastProcessList == null) LastProcessList = new ObservableCollection<string>();
+					List<string> tmpList = new List<string>();
+					Process[] processes = System.Diagnostics.Process.GetProcesses();
+					foreach (Process proc in processes)
+						tmpList.Add(proc.ProcessName);
+					tmpList.Sort();
+					for (int i = LastProcessList.Count - 1; i >= 0; i--)
+						if (!tmpList.Contains(LastProcessList[i]))
+							LastProcessList.RemoveAt(i);
+					foreach (string item in tmpList)
+						if (!LastProcessList.Contains(item))
+							LastProcessList.Add(item);
+					predefinedArgumentsList[0] = LastProcessList;
+					return predefinedArgumentsList;
 				}
 			}
 
-			public bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
+			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
 			{
 				errorMessage = "";
 				if (Index != 0)
@@ -1826,7 +1522,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public bool ValidateArguments(out string errorMessage, params string[] arguments)
+			public override bool ValidateArguments(out string errorMessage, params string[] arguments)
 			{
 				errorMessage = "";
 				if (arguments.Length != 1) errorMessage = "Exactly one argument required for Kill command";
@@ -1836,7 +1532,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
 			{
 				try
 				{
@@ -1867,51 +1563,353 @@ namespace InlineCommands
 				}
 			}
 
-			private BoolResultWithErrorMessage ValidationFunction(KeyAndValuePair argumentToAdd)
-			{
-				string errorMessage;
-				bool success = PreValidateArgument(out errorMessage, currentArgumentsPair.Count, argumentToAdd.Key);
-				return new BoolResultWithErrorMessage(success, errorMessage);
-			}
-
-			public void ClearAndAddAllBlankArguments()
-			{
-				CurrentArgumentsPair.Clear();
-				foreach (string argdesc in ArgumentDescriptions)
-					CurrentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", argdesc));
-			}
-
-			private string[] ArgumentDescriptions = new string[]
+			private string[] argumentDescriptions = new string[]
 			{
 				"process name"
 			};
-			public BoolResultWithErrorMessage AddCurrentArgument(string argument)
+			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
+		}
+
+		public class StartubBatCommand : OverrideToStringClass//, ICommandWithHandler
+		{
+			public override string CommandName { get { return "startupbat"; } }
+			public override string DisplayName { get { return "Startup bat"; } }
+			public override string Description { get { return "Startup batch file"; } }
+			public override string ArgumentsExample { get { return "getline outlook.exe"; } }
+
+			private readonly ObservableCollection<string>[] predefinedArgumentsList =
 			{
-				string argumentDescription = "";
-				if (ArgumentDescriptions.Length >= currentArgumentsPair.Count + 1)
-					argumentDescription = ArgumentDescriptions[currentArgumentsPair.Count];
-				return currentArgumentsPair.Add(new KeyAndValuePair(argument, argumentDescription));
+				new ObservableCollection<string>() { "open", "getall", "getline", "comment", "uncomment" },
+			};
+			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
+
+			private bool IsStartubBatCommand(string command)
+			{
+				string commandLowercase = command.ToLower().Trim();
+				return
+					commandLowercase == "open" ||
+					commandLowercase == "getall" ||
+					commandLowercase == "getline" ||
+					commandLowercase == "comment" ||
+					commandLowercase == "uncomment";
 			}
 
-			public int CurrentArgumentCount
+			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
 			{
-				get { return CurrentArgumentsPair.Count; }
+				errorMessage = "";
+				if (Index >= 2)
+					errorMessage = "More than 2 arguments not allowed for Startub bat command";
+				else if (Index == 0 && !IsStartubBatCommand(argumentValue))
+					errorMessage = "First argument of Startup bat command is invalid, must be one of the predefined commands: " + argumentValue;
+				else if (Index == 1 && (new string[] { "open", "getall" }).Contains(CurrentArgumentsPair[0].Key))
+					errorMessage = "No additional arguments allowed for '" + CurrentArgumentsPair[0].Key + "'";
+				else if (Index == 1 && (new string[] { "comment", "uncomment" }).Contains(CurrentArgumentsPair[0].Key) && !CanParseToInt(argumentValue))
+					errorMessage = "Second argument of Startup bat command (" + CurrentArgumentsPair[0].Key + ") must be a valid integer";
+				else if (Index == 1 && "getline" == CurrentArgumentsPair[0].Key && string.IsNullOrWhiteSpace(argumentValue))
+					errorMessage = "Second argument of Startup bat command (" + CurrentArgumentsPair[0].Key + ") may not be null/empty/whitespaces";
+				else return true;
+				return false;
 			}
 
-			public void RemoveCurrentArgument(int Index)
+			public override bool ValidateArguments(out string errorMessage, params string[] arguments)
 			{
-				currentArgumentsPair.RemoveAt(Index);
+				//minutes, autosnooze, name, desc
+				errorMessage = "";
+				if (arguments.Length < 1) errorMessage = "At least 1 argument is required for Startub bat command";
+				else if (arguments.Length > 2) errorMessage = "More than 2 arguments not allowed for Startup bat command";
+				else if (!PreValidateArgument(out errorMessage, 0, arguments[0]))
+					errorMessage = errorMessage + "";
+				else if (!PreValidateArgument(out errorMessage, 1, arguments[1]))
+					errorMessage = errorMessage + "";
+				else return true;
+				return false;
 			}
 
-			private ObservableCollectionWithValidationOnAdd<KeyAndValuePair> currentArgumentsPair;
-			public ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
 			{
-				get
+				try
 				{
-					if (currentArgumentsPair == null) currentArgumentsPair = new ObservableCollectionWithValidationOnAdd<KeyAndValuePair>(ValidationFunction);
-					return currentArgumentsPair;
+					string filePath = @"C:\Francois\Other\Startup\work Startup.bat";
+					StartupbatInterop.PerformStartupbatCommand(filePath, arguments[0] + " " + arguments[1], textFeedbackEvent);
+					errorMessage = "";
+					return true;
 				}
-				set { currentArgumentsPair = value; }
+				catch (Exception exc)
+				{
+					//UserMessages.ShowWarningMessage("Cannot add todo item: " + Environment.NewLine + exc.Message);
+					errorMessage = "Cannot perform startup bat command: " + Environment.NewLine + exc.Message;
+					return false;
+				}
+			}
+
+			private string[] argumentDescriptions = new string[]
+			{
+				"sub-command",
+				"parameter",
+			};
+			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
+		}
+
+		public class CmdCommand : OverrideToStringClass//, ICommandWithHandler
+		{
+			public override string CommandName { get { return "cmd"; } }
+			public override string DisplayName { get { return "Cmd"; } }
+			public override string Description { get { return "Open a folder in Command Prompt"; } }
+			public override string ArgumentsExample { get { return @"c:\windows\system32"; } }
+
+			private readonly ObservableCollection<string>[] predefinedArgumentsList =
+			{
+				new ObservableCollection<string>() { @"c:\windows", @"c:\windows\system32" }
+			};
+			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
+
+			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
+			{
+				errorMessage = "";
+				if (Index != 0)
+					errorMessage = "Only one argument allowed for Cmd command";
+				else if (Index == 0 && string.IsNullOrWhiteSpace(argumentValue))
+					errorMessage = "First argument of Cmd command may not be null/empty/whitespaces only";
+				else if (Index == 0 && !Directory.Exists(argumentValue))
+					errorMessage = "First argument of Cmd command must be existing directory";
+				else return true;
+				return false;
+			}
+
+			public override bool ValidateArguments(out string errorMessage, params string[] arguments)
+			{
+				errorMessage = "";
+				if (arguments.Length != 1) errorMessage = "Exactly one argument required for Cmd command";
+				//else if (!(arguments[0] is string)) errorMessage = "First argument of Explore command must be of type string";
+				else if (!PreValidateArgument(out errorMessage, 0, arguments[0]))
+					errorMessage = errorMessage + "";
+				else return true;
+				return false;
+			}
+
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			{
+				try
+				{
+					WindowsInterop.StartCommandPromptOrVScommandPrompt(arguments[0], false, textFeedbackEvent);
+					errorMessage = "";
+					return true;
+				}
+				catch (Exception exc)
+				{
+					errorMessage = "Cannot open Cmd: " + arguments[0] + Environment.NewLine + exc.Message;
+					return false;
+				}
+			}
+
+			private string[] argumentDescriptions = new string[]
+			{
+				"folder"
+			};
+			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
+		}
+
+		public class VsCmdCommand : OverrideToStringClass//, ICommandWithHandler
+		{
+			public override string CommandName { get { return "vscmd"; } }
+			public override string DisplayName { get { return "VsCmd"; } }
+			public override string Description { get { return "Open a folder in Visual Command Prompt"; } }
+			public override string ArgumentsExample { get { return @"c:\windows\system32"; } }
+
+			private readonly ObservableCollection<string>[] predefinedArgumentsList =
+			{
+				new ObservableCollection<string>() { @"c:\windows", @"c:\windows\system32" }
+			};
+			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
+
+			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
+			{
+				errorMessage = "";
+				if (Index != 0)
+					errorMessage = "Only one argument allowed for VsCmd command";
+				else if (Index == 0 && string.IsNullOrWhiteSpace(argumentValue))
+					errorMessage = "First argument of VsCmd command may not be null/empty/whitespaces only";
+				else if (Index == 0 && !Directory.Exists(argumentValue))
+					errorMessage = "First argument of VsCmd command must be existing directory";
+				else return true;
+				return false;
+			}
+
+			public override bool ValidateArguments(out string errorMessage, params string[] arguments)
+			{
+				errorMessage = "";
+				if (arguments.Length != 1) errorMessage = "Exactly one argument required for VsCmd command";
+				//else if (!(arguments[0] is string)) errorMessage = "First argument of Explore command must be of type string";
+				else if (!PreValidateArgument(out errorMessage, 0, arguments[0]))
+					errorMessage = errorMessage + "";
+				else return true;
+				return false;
+			}
+
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			{
+				try
+				{
+					WindowsInterop.StartCommandPromptOrVScommandPrompt(arguments[0], true, textFeedbackEvent);
+					errorMessage = "";
+					return true;
+				}
+				catch (Exception exc)
+				{
+					errorMessage = "Cannot open VsCmd: " + arguments[0] + Environment.NewLine + exc.Message;
+					return false;
+				}
+			}
+
+			private string[] argumentDescriptions = new string[]
+			{
+				"folder"
+			};
+			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
+		}
+
+		public class BtwCommand : OverrideToStringClass//, ICommandWithHandler
+		{
+			public override string CommandName { get { return "btw"; } }
+			public override string DisplayName { get { return "Btwtodo"; } }
+			public override string Description { get { return "Add btw (by the way) item on firepuma"; } }
+			public override string ArgumentsExample { get { return "Steve Jobs was friends with Bill Gates"; } }
+
+			private readonly ObservableCollection<string>[] predefinedArgumentsList =
+			{
+				//new ObservableCollection<string>() { "5", "30", "60" },
+				//new ObservableCollection<string>() { "15", "30", "60" },
+				//new ObservableCollection<string>() { "Shop" }
+			};
+			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
+
+			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
+			{
+				errorMessage = "";
+				if (Index != 0)
+					errorMessage = "Exaclty one argument required for Btw command";
+				else if (Index == 0 && string.IsNullOrWhiteSpace(argumentValue))
+					errorMessage = "First argument Btw command may not be null/empty/whitespaces only";
+				else return true;
+				return false;
+			}
+
+			public override bool ValidateArguments(out string errorMessage, params string[] arguments)
+			{
+				//minutes, autosnooze, name, desc
+				errorMessage = "";
+				if (arguments.Length != 1) errorMessage = "Exaclty one argument required for Btw command";
+				else if (!PreValidateArgument(out errorMessage, 0, arguments[0]))
+					errorMessage = errorMessage + "";
+				else return true;
+				return false;
+			}
+
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			{
+				try
+				{
+					PhpInterop.AddBtwTextFirepuma(arguments[0], textFeedbackEvent);
+					errorMessage = "";
+					return true;
+				}
+				catch (Exception exc)
+				{
+					//UserMessages.ShowWarningMessage("Cannot add todo item: " + Environment.NewLine + exc.Message);
+					errorMessage = "Cannot add btw item: " + Environment.NewLine + exc.Message;
+					return false;
+				}
+			}
+
+			private string[] argumentDescriptions = new string[]
+			{
+				"btw text"
+			};
+			public override string[] ArgumentDescriptions
+			{
+				get { return argumentDescriptions; }
+			}
+		}
+
+		public class SvnCommand : OverrideToStringClass//, ICommandWithHandler
+		{
+			public override string CommandName { get { return "svn"; } }
+			public override string DisplayName { get { return "Svn"; } }
+			public override string Description { get { return "Perform svn command(s) on a folder"; } }
+			public override string ArgumentsExample { get { return @"commit c:\dev86\myproject1;Bug fixed where it automatically..."; } }
+
+			private readonly ObservableCollection<string>[] predefinedArgumentsList =
+			{
+				new ObservableCollection<string>() { "commit", "update", "status", "statuslocal" },
+				new ObservableCollection<string>() { "QuickAccess", "SharedClasses", "TestingSharedClasses" },
+			};
+			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
+
+			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
+			{
+				errorMessage = "";
+				if (Index >= 3)
+					errorMessage = "More than 3 arguments not allowed for Svn command (sub-command, folder, description)";
+				else if (Index == 0 && string.IsNullOrWhiteSpace(argumentValue))
+					errorMessage = "First argument (sub-command) of Svn command may not be null/empty/whitespaces";
+				else if (Index == 0 && !(predefinedArgumentsList[0].ToArray()).Contains(argumentValue))
+					errorMessage = "First argument of Svn command is an invalid sub-command";
+				else if (Index == 1 && string.IsNullOrWhiteSpace(argumentValue))
+					errorMessage = "Second argument (folder) of Svn command may not be null/empty/whitespaces";
+				else return true;
+				return false;
+			}
+
+			public override bool ValidateArguments(out string errorMessage, params string[] arguments)
+			{
+				//minutes, autosnooze, name, desc
+				errorMessage = "";
+				if (arguments.Length < 2) errorMessage = "At least 2 arguments required for Svn command (sub-command, folder, description)";
+				else if (arguments.Length > 3) errorMessage = "More than 3 arguments not allowed for Svn command (sub-command, folder, description)";
+				else if (!PreValidateArgument(out errorMessage, 0, arguments[0]))
+					errorMessage = errorMessage + "";
+				else if (!PreValidateArgument(out errorMessage, 1, arguments[1]))
+					errorMessage = errorMessage + "";
+				else return true;
+				return false;
+			}
+
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			{
+				try
+				{
+					SvnInterop.SvnCommand svnCommand;
+					if (Enum.TryParse<SvnInterop.SvnCommand>(arguments[0], true, out svnCommand))
+					{
+						SvnInterop.PerformSvn(
+						 arguments[1],//+ ";" + arguments[2]; still need to add here for description
+						 SvnInterop.SvnCommand.StatusLocal,
+						 textFeedbackEvent);
+						errorMessage = "";
+						return true;
+					}
+					else
+					{
+						errorMessage = "Invalid svn command = " + arguments[0];
+						return false;
+					}
+				}
+				catch (Exception exc)
+				{
+					errorMessage = "Cannot perform Svn command: " + Environment.NewLine + exc.Message;
+					return false;
+				}
+			}
+
+			private string[] argumentDescriptions = new string[]
+			{
+				"sub-command",
+				"Folder/Path",
+				//"Description",
+			};
+			public override string[] ArgumentDescriptions
+			{
+				get { return argumentDescriptions; }
 			}
 		}
 

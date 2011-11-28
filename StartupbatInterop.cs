@@ -19,13 +19,13 @@ public class StartupbatInterop
 		else if (comm.StartsWith("getall"))
 		{
 			StreamReader sr = new StreamReader(filePath);
-			string line = sr.ReadLine();
 			int counter = 1;
 			while (!sr.EndOfStream)
 			{
+				string line = sr.ReadLine();
 				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, (counter++) + ": " + line);
 				//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, (counter++) + ": " + line);
-				line = sr.ReadLine();
+				//line = sr.ReadLine();
 			}
 			sr.Close();
 		}
@@ -35,13 +35,13 @@ public class StartupbatInterop
 			{
 				string searchstr = comm.Substring(8);//comm.Split('\'')[1];
 				StreamReader sr = new StreamReader(filePath);
-				string line = sr.ReadLine();
 				int counter = 1;
 				while (!sr.EndOfStream)
 				{
+					string line = sr.ReadLine();
 					if (line.ToLower().Contains(searchstr)) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, counter + ": " + line);
 					counter++;
-					line = sr.ReadLine();
+					//line = sr.ReadLine();
 				}
 				sr.Close();
 			}
@@ -57,14 +57,14 @@ public class StartupbatInterop
 				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Commenting line number " + linenum.ToString());
 				List<string> tmpLines = new List<string>();
 				StreamReader sr = new StreamReader(filePath);
-				string line = sr.ReadLine();
 				int counter = 1;
 				while (!sr.EndOfStream)
 				{
+					string line = sr.ReadLine();
 					if (counter == linenum && !line.Trim().StartsWith("::")) line = "::" + line;
 					tmpLines.Add(line);
 					counter++;
-					line = sr.ReadLine();
+					//line = sr.ReadLine();
 				}
 				sr.Close();
 				StreamWriter sw = new StreamWriter(filePath);
@@ -86,14 +86,14 @@ public class StartupbatInterop
 				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Unommenting line number " + linenum.ToString());
 				List<string> tmpLines = new List<string>();
 				StreamReader sr = new StreamReader(filePath);
-				string line = sr.ReadLine();
 				int counter = 1;
 				while (!sr.EndOfStream)
 				{
+					string line = sr.ReadLine();
 					if (counter == linenum && line.Trim().StartsWith("::")) line = line.Substring(2);
 					tmpLines.Add(line);
 					counter++;
-					line = sr.ReadLine();
+					//line = sr.ReadLine();
 				}
 				sr.Close();
 				StreamWriter sw = new StreamWriter(filePath);

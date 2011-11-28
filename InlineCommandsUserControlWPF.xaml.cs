@@ -42,8 +42,18 @@ namespace SharedClasses
 			{
 				textFeedbackEvent += (snder, evtargs) =>
 				{
-					textBox_Messages.Text += (textBox_Messages.Text.Length > 0 ? Environment.NewLine : "")
-						+ evtargs.FeedbackText;
+					try
+					{
+						Dispatcher.BeginInvoke(DispatcherPriority.Background,
+						(Action)delegate
+						{
+							textBox_Messages.Text += (textBox_Messages.Text.Length > 0 ? Environment.NewLine : "")
+								+ evtargs.FeedbackText;
+						});
+					}
+					catch
+					{
+					}
 				};
 				textFeedbackEventInitialized = true;
 			}

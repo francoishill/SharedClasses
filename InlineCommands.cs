@@ -1283,6 +1283,9 @@ namespace InlineCommands
 
 			private readonly ObservableCollection<string>[] predefinedArgumentsList =
 			{
+				new ObservableCollection<string>() { "5", "30", "60" },
+				new ObservableCollection<string>() { "15", "30", "60" },
+				new ObservableCollection<string>() { "Shop" }
 			};
 
 			public ObservableCollection<string> GetPredefinedArgumentsList(int Index, bool SuppressErrors = false)

@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using InlineCommands;
 //using dragonz.actb.core;
 //using dragonz.actb.provider;
@@ -120,46 +121,76 @@ namespace SharedClasses
 		{
 			if (e.NewValue != null && e.NewValue is ICommandWithHandler)
 			{
-				ICommandWithHandler command = e.NewValue as ICommandWithHandler;
-				label_ArgumentsExample.Content = label_ArgumentsExample.ToolTip = command.ArgumentsExample.Replace("\n", "  ");
-
-				//TextBlock tmpTextBlock = (TextBlock)textBox_CommandLine.Template.FindName("EmbeddedButtonTextBlock", textBox_CommandLine);
-				TextBlock tmpTextBlock = GetEmbeddedButtonTextBlock();
-				tmpTextBlock.Text = command.DisplayName;
-				tmpTextBlock.ToolTip = command.Description + Environment.NewLine + "For example:" + Environment.NewLine + command.ArgumentsExample;
-				//Border tmpBorder = (Border)textBox_CommandLine.Template.FindName("EmbeddedButton", textBox_CommandLine);
-				Border tmpBorder = GetEmbeddedButton();
-				tmpBorder.Tag = command;
-				if (tmpBorder.Visibility != System.Windows.Visibility.Visible)
-					tmpBorder.Visibility = System.Windows.Visibility.Visible;
-
-				TextBox actualTextbox = GetActualTextBoxOfAutocompleteControl();
-				actualTextbox.Focus();
-				actualTextbox.Text = "";
-				textBox_CommandLine.Focus();
-				//textBox_CommandLine.Text = "";
-
-				//autoCompleteTextbox.ItemsSource = command.GetPredefinedArgumentsList;
-				textBox_CommandLine.ItemsSource = command.GetPredefinedArgumentsList(0, true);
-
-				if (command.CurrentArgumentCount == 0)
-					command.ClearAndAddAllBlankArguments();
-				GetEmbeddedListbox().ItemsSource = command.CurrentArgumentsPair;
-				this.UpdateLayout();
-				if (command.CurrentArgumentCount > 0)
+				Dispatcher.BeginInvoke(DispatcherPriority.Background,
+				(Action)delegate
 				{
-					ListBox tmpListbox = GetEmbeddedListbox();
-					tmpListbox.SelectedIndex = 0;
-					GetActualTextboxOfArgument(tmpListbox.SelectedItem).Focus();
-				}
+					e.Handled = true;
+					ICommandWithHandler command = e.NewValue as ICommandWithHandler;
+					label_ArgumentsExample.Content = label_ArgumentsExample.ToolTip = command.ArgumentsExample.Replace("\n", "  ");
 
-				//if (autcompleteManager == null)
-				//{
-				//	autcompleteManager = new AutoCompleteManager(textBox_CommandLine);
-				//	autocompleteProvider = new AutocompleteProvider();
-				//	autcompleteManager.DataProvider = autocompleteProvider;
-				//}
-				//autocompleteProvider.activeCommand = command;
+					//TextBlock tmpTextBlock = (TextBlock)textBox_CommandLine.Template.FindName("EmbeddedButtonTextBlock", textBox_CommandLine);
+					TextBlock tmpTextBlock = GetEmbeddedButtonTextBlock();
+					tmpTextBlock.Text = command.DisplayName;
+					tmpTextBlock.ToolTip = command.Description + Environment.NewLine + "For example:" + Environment.NewLine + command.ArgumentsExample;
+					//Border tmpBorder = (Border)textBox_CommandLine.Template.FindName("EmbeddedButton", textBox_CommandLine);
+					Border tmpBorder = GetEmbeddedButton();
+					tmpBorder.Tag = command;
+					if (tmpBorder.Visibility != System.Windows.Visibility.Visible)
+						tmpBorder.Visibility = System.Windows.Visibility.Visible;
+
+					TextBox actualTextbox = GetActualTextBoxOfAutocompleteControl();
+					actualTextbox.Focus();
+					actualTextbox.Text = "";
+					//textBox_CommandLine.Focus();
+					//textBox_CommandLine.Text = "";
+
+					textBox_CommandLine.ItemsSource = null;
+					textBox_CommandLine.UpdateLayout();
+					//autoCompleteTextbox.ItemsSource = command.GetPredefinedArgumentsList;
+					//textBox_CommandLine.ItemsSource = command.GetPredefinedArgumentsList(0, true);
+					//textBox_CommandLine.UpdateLayout();
+
+					if (command.CurrentArgumentCount == 0)
+						command.ClearAndAddAllBlankArguments();
+					GetEmbeddedListbox().ItemsSource = command.CurrentArgumentsPair;
+					this.UpdateLayout();
+					if (command.CurrentArgumentCount > 0)
+					{
+						ListBox tmpListbox = GetEmbeddedListbox();
+						tmpListbox.SelectedIndex = 0;
+						GetActualTextboxOfArgument(tmpListbox.SelectedItem).Focus();
+						textBox_CommandLine.IsDropDownOpen = false;
+						//GetAutocompleteBoxOfArgument(tmpListbox.SelectedItem).IsDropDownOpen = true;
+					}
+
+					//textBox_CommandLine.ItemsSource = command.GetPredefinedArgumentsList(0, true);
+
+					//textBox_CommandLine.Focus();
+					ListBox tmpListbox2 = GetEmbeddedListbox();
+					for (int i = 0; i < tmpListbox2.Items.Count; i++)
+					{
+						GetAutocompleteBoxOfArgument(tmpListbox2.Items[i]).ItemsSource = command.GetPredefinedArgumentsList(i, true);
+						//GetAutocompleteBoxOfArgument(tmpListbox.Items[i]).IsDropDownOpen = true;
+					}
+					if (tmpListbox2.Items.Count > 0)
+					{
+						//GetAutocompleteBoxOfArgument(tmpListbox2.Items[0]).Focus();
+						//textBox_CommandLine.Focus();
+						//GetEmbeddedListbox().Focus();
+						//GetActualTextBoxOfAutocompleteControl().Focus();
+						GetActualTextboxOfArgument(tmpListbox2.Items[0]).Focus();
+						//GetAutocompleteBoxOfArgument(tmpListbox2.Items[0]).Focus();
+						GetAutocompleteBoxOfArgument(tmpListbox2.Items[0]).IsDropDownOpen = true;
+					}
+
+					//if (autcompleteManager == null)
+					//{
+					//	autcompleteManager = new AutoCompleteManager(textBox_CommandLine);
+					//	autocompleteProvider = new AutocompleteProvider();
+					//	autcompleteManager.DataProvider = autocompleteProvider;
+					//}
+					//autocompleteProvider.activeCommand = command;
+				});
 			}
 			else if (e.NewValue == null)
 			{
@@ -285,7 +316,7 @@ namespace SharedClasses
 
 		private void textBox_CommandLine_PreviewKeyDown(object sender, KeyEventArgs e)
 		{
-			if (e.Key == Key.Enter && !textBox_CommandLine.IsDropDownOpen && textBox_CommandLine.Text.Length == 0)
+			if (e.Key == Key.Enter && !textBox_CommandLine.IsDropDownOpen)// && textBox_CommandLine.Text.Length == 0)
 			{
 				e.Handled = true;
 				InlineCommands.TempNewCommandsManagerClass.ICommandWithHandler activeCommand;
@@ -299,7 +330,10 @@ namespace SharedClasses
 					if (lb.Items.Count == 0) return;
 					foreach (object lbo in lb.Items)
 					{
+						GetAutocompleteBoxOfArgument(lbo).IsDropDownOpen = false;
 						TextBox t = GetActualTextboxOfArgument(lbo);
+						t.SelectionLength = 0;
+						t.SelectionStart = t.Text.Length;
 						BindingExpression be = t.GetBindingExpression(TextBox.TextProperty);
 						be.UpdateSource();
 					}
@@ -326,13 +360,29 @@ namespace SharedClasses
 					ListBox lb = GetEmbeddedListbox();
 					if (lb.Items.Count == 0) return;
 					int currentSelectedIndex = lb.SelectedIndex;
-					int nextSelectedIndex = currentSelectedIndex + 1;
-					if (nextSelectedIndex >= lb.Items.Count)
-						nextSelectedIndex = 0;
-					lb.SelectedIndex = nextSelectedIndex;
+					int newSelectedIndex = currentSelectedIndex;
+					if (Keyboard.Modifiers != ModifierKeys.Shift && Keyboard.Modifiers != ModifierKeys.None)
+						return;
+					if (Keyboard.Modifiers == ModifierKeys.None)
+					{
+						int nextSelectedIndex = currentSelectedIndex + 1;
+						if (nextSelectedIndex >= lb.Items.Count)
+							nextSelectedIndex = 0;
+						newSelectedIndex = nextSelectedIndex;
+					}
+					else if (Keyboard.Modifiers == ModifierKeys.Shift)
+					{
+						int previousSelectedIndex = currentSelectedIndex - 1;
+						if (previousSelectedIndex < 0)
+							previousSelectedIndex = lb.Items.Count - 1;
+						newSelectedIndex = previousSelectedIndex;
+					}
+					if (newSelectedIndex == -1) return;
+					lb.SelectedIndex = newSelectedIndex;
 					TextBox textboxOfArgument = GetActualTextboxOfArgument(lb.SelectedItem);
-					GetAutocompleteBoxOfArgument(lb.SelectedItem).ItemsSource = comm.GetPredefinedArgumentsList(nextSelectedIndex, true);
+					GetAutocompleteBoxOfArgument(lb.SelectedItem).ItemsSource = comm.GetPredefinedArgumentsList(newSelectedIndex, true);
 					textboxOfArgument.Focus();
+					//GetAutocompleteBoxOfArgument(lb.SelectedItem).IsDropDownOpen = true;
 
 					//return;
 					////ICommandWithHandler comm = tmpBorder.Tag as ICommandWithHandler;
@@ -365,19 +415,38 @@ namespace SharedClasses
 				actualTextBox.SelectionStart = actualTextBox.Text.Length;
 
 				if (textBox_CommandLine.IsDropDownOpen)
-					textBox_CommandLine.IsDropDownOpen = false;
-				else if (actualTextBox.Text.Length > 0) actualTextBox.Text = "";
-				else if (GetEmbeddedButton().Tag != null && (GetEmbeddedButton().Tag as ICommandWithHandler).CurrentArgumentCount > 0)
 				{
-					ICommandWithHandler tmpCommand = GetEmbeddedButton().Tag as ICommandWithHandler;
-					tmpCommand.RemoveCurrentArgument(tmpCommand.CurrentArgumentCount - 1);
-					textBox_CommandLine.ItemsSource = tmpCommand.GetPredefinedArgumentsList(tmpCommand.CurrentArgumentCount, true);
+					e.Handled = true;
+					textBox_CommandLine.IsDropDownOpen = false;
+				}
+				else if (actualTextBox.Text.Length > 0)
+				{
+					e.Handled = true;
+					actualTextBox.Text = "";
+				}
+				//else if (GetEmbeddedButton().Tag != null && (GetEmbeddedButton().Tag as ICommandWithHandler).CurrentArgumentCount > 0)
+				//{
+				//	ICommandWithHandler tmpCommand = GetEmbeddedButton().Tag as ICommandWithHandler;
+				//	tmpCommand.RemoveCurrentArgument(tmpCommand.CurrentArgumentCount - 1);
+				//	textBox_CommandLine.ItemsSource = tmpCommand.GetPredefinedArgumentsList(tmpCommand.CurrentArgumentCount, true);
+				//}
+				else if (treeView_CommandList.SelectedItem != null)
+				{
+					e.Handled = true;
+					ClearSelection(treeView_CommandList);
+					GetEmbeddedListbox().ItemsSource = null;
+					ResetAutocompleteToCommandNamesList();
 				}
 				else
 				{
-					ClearSelection(treeView_CommandList);
-					ResetAutocompleteToCommandNamesList();
+					e.Handled = true;
+					GetTopParent().Hide();
 				}
+			}
+			else if (e.Key == Key.Space && Keyboard.Modifiers == ModifierKeys.Control)
+			{
+				e.Handled = true;
+				textBox_CommandLine.IsDropDownOpen = true;
 			}
 			//else if (e.Key == Key.Down)
 			//{
@@ -425,19 +494,33 @@ namespace SharedClasses
 			//}
 		}
 
+		private Window GetTopParent()
+		{
+			DependencyObject dpParent = this.Parent;
+			do
+			{
+				dpParent = LogicalTreeHelper.GetParent(dpParent);
+			} while (dpParent.GetType().BaseType != typeof(Window));
+			return dpParent as Window;
+		}
+
 		private bool InitiateCommandFromTextboxText()
 		{
 			foreach (ICommandWithHandler comm in treeView_CommandList.Items)//tmplist)
 				if (textBox_CommandLine.Text.Equals(comm.CommandName, StringComparison.InvariantCultureIgnoreCase))
 				{
 					SetSelectedItem(treeView_CommandList, comm);
-					textBox_CommandLine.ItemsSource = comm.GetPredefinedArgumentsList(0, true);
+					//textBox_CommandLine.ItemsSource = comm.GetPredefinedArgumentsList(0, true);
 
-					ListBox tmpListbox = GetEmbeddedListbox();
-					for (int i = 0; i < tmpListbox.Items.Count; i++)
-					{
-						GetAutocompleteBoxOfArgument(tmpListbox.Items[i]).ItemsSource = comm.GetPredefinedArgumentsList(i, true);
-					}
+					//ListBox tmpListbox = GetEmbeddedListbox();
+					//for (int i = 0; i < tmpListbox.Items.Count; i++)
+					//{
+					//	GetAutocompleteBoxOfArgument(tmpListbox.Items[i]).ItemsSource = comm.GetPredefinedArgumentsList(i, true);
+					//	//GetAutocompleteBoxOfArgument(tmpListbox.Items[i]).IsDropDownOpen = true;
+					//}
+					//if (tmpListbox.Items.Count > 0)
+					//	GetAutocompleteBoxOfArgument(tmpListbox.Items[0]).IsDropDownOpen = true;
+					//textBox_CommandLine.ItemsSource = null;
 					return true;
 					//break;
 				}
@@ -473,6 +556,11 @@ namespace SharedClasses
 			{
 				RoutedEvent = TextBox.PreviewKeyDownEvent
 			});
+		}
+
+		private void ArgumentText_GotFocus(object sender, RoutedEventArgs e)
+		{
+			(sender as AutoCompleteBox).IsDropDownOpen = true;
 		}
 
 		//private class AutocompleteProvider : IAutoCompleteDataProvider

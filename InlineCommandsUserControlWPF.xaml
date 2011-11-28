@@ -201,13 +201,15 @@
 										Value="{DynamicResource {x:Static SystemParameters.VerticalScrollBarWidthKey}}" />
 						<Setter Property="Margin"
 										Value="2" />
+						<!--<Setter Property="Margin"
+										Value="0" />-->
 						<Setter Property="Width"
 										Value="10" />
-						<Setter Property="Template">
+						<!--<Setter Property="Template">
 							<Setter.Value>
 								<ControlTemplate TargetType="{x:Type ScrollBar}">
 									<Border CornerRadius="4"
-													Margin="2"
+													Margin="4"
 													Opacity="0.75"
 													Background="{TemplateBinding Background}">
 										<Grid SnapsToDevicePixels="true">
@@ -261,47 +263,47 @@
 									</Border>
 								</ControlTemplate>
 							</Setter.Value>
+						</Setter>-->
+						<Setter Property="Template">
+							<Setter.Value>
+								<ControlTemplate TargetType="{x:Type ScrollBar}">
+									<Border x:Name="Bg"
+													CornerRadius="2"
+													Margin="2,10"
+													Opacity="0.75"
+													Background="{TemplateBinding Background}"
+													VerticalAlignment="Bottom">
+										<Grid SnapsToDevicePixels="true">
+											<Grid.RowDefinitions>
+												<RowDefinition MaxHeight="{DynamicResource {x:Static SystemParameters.VerticalScrollBarButtonHeightKey}}" />
+												<RowDefinition MaxHeight="{DynamicResource {x:Static SystemParameters.VerticalScrollBarButtonHeightKey}}" />
+											</Grid.RowDefinitions>
+											<RepeatButton Style="{StaticResource ScrollBarButton}"
+																		Background="#FFCBCBCB"
+																		IsEnabled="{TemplateBinding IsMouseOver}"
+																		Command="{x:Static ScrollBar.LineUpCommand}"
+																		theme:ScrollChrome.ScrollGlyph="UpArrow"
+																		Margin="0,4" />
+											<RepeatButton Style="{StaticResource ScrollBarButton}"
+																		Background="#FFCBCBCB"
+																		Grid.Row="1"
+																		IsEnabled="{TemplateBinding IsMouseOver}"
+																		Command="{x:Static ScrollBar.LineDownCommand}"
+																		theme:ScrollChrome.ScrollGlyph="DownArrow"
+																		Margin="0,4"></RepeatButton>
+										</Grid>
+									</Border>
+									<ControlTemplate.Triggers>
+										<Trigger Property="IsEnabled"
+														 Value="false">
+											<Setter TargetName="Bg"
+															Property="Visibility"
+															Value="Hidden" />
+										</Trigger>
+									</ControlTemplate.Triggers>
+								</ControlTemplate>
+							</Setter.Value>
 						</Setter>
-						<!--<Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="{x:Type ScrollBar}">
-                                    <Border x:Name="Bg"
-                                            CornerRadius="2"
-                                            Margin="2"
-                                            Opacity="0.75"
-                                            Background="{TemplateBinding Background}"
-                                            VerticalAlignment="Bottom">
-                                        <Grid SnapsToDevicePixels="true">
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition MaxHeight="{DynamicResource {x:Static SystemParameters.VerticalScrollBarButtonHeightKey}}" />
-                                                <RowDefinition MaxHeight="{DynamicResource {x:Static SystemParameters.VerticalScrollBarButtonHeightKey}}" />
-                                            </Grid.RowDefinitions>
-                                            <RepeatButton Style="{StaticResource ScrollBarButton}"
-                                                          Background="#FFCBCBCB"
-                                                          IsEnabled="{TemplateBinding IsMouseOver}"
-                                                          Command="{x:Static ScrollBar.LineUpCommand}"
-                                                          theme:ScrollChrome.ScrollGlyph="UpArrow"
-                                                          Margin="0,4" />
-                                            <RepeatButton Style="{StaticResource ScrollBarButton}"
-                                                          Background="#FFCBCBCB"
-                                                          Grid.Row="1"
-                                                          IsEnabled="{TemplateBinding IsMouseOver}"
-                                                          Command="{x:Static ScrollBar.LineDownCommand}"
-                                                          theme:ScrollChrome.ScrollGlyph="DownArrow"
-                                                          Margin="0,4"></RepeatButton>
-                                        </Grid>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsEnabled"
-                                                 Value="false">
-                                            <Setter TargetName="Bg"
-                                                    Property="Visibility"
-                                                    Value="Hidden" />
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>-->
 						<Style.Triggers>
 							<MultiTrigger>
 								<MultiTrigger.Conditions>
@@ -605,12 +607,14 @@
 																									 Background='Transparent'
 																									 BorderBrush='Transparent'
 																									 Margin='0,3,0,0'
+																									 MinimumPrefixLength='0'
 																									 Text='{Binding Key, UpdateSourceTrigger=PropertyChanged}'
 																									 HorizontalAlignment='Stretch'
 																									 FontSize='16'
+																									 GotFocus='ArgumentText_GotFocus'
 																									 IsTextCompletionEnabled='True'
 																									 Style='{DynamicResource AutoCompleteBox_InlineCommands}'
-																									 Width='auto' />
+																									 Width='auto'></input:AutoCompleteBox>
 														<TextBlock DockPanel.Dock='Bottom'
 																			 Text='{Binding Value}'
 																			 Foreground='#ddd'
@@ -1097,6 +1101,7 @@
 														 x:Name="Text"
 														 Text='{Binding Key}'
 														 HorizontalContentAlignment='Center'
+														 HorizontalScrollBarVisibility='Visible'
 														 Style="{TemplateBinding TextBoxStyle}"
 														 BorderThickness="{TemplateBinding BorderThickness}"
 														 Foreground="{TemplateBinding Foreground}"
@@ -1193,8 +1198,7 @@
 																 Background="{TemplateBinding Background}"
 																 Foreground="#000"
 																 BorderThickness="0"
-																 ItemTemplate="{TemplateBinding ItemTemplate}" >
-												</ListBox>
+																 ItemTemplate="{TemplateBinding ItemTemplate}"></ListBox>
 											</Border>
 											<!--</Border>
 												</Border>
@@ -1279,7 +1283,9 @@
 		<input:AutoCompleteBox x:Name="textBox_CommandLine"
 													 Grid.Row="1"
 													 FontSize="36"
+													 Margin='5'
 													 HorizontalAlignment="Stretch"
+													 MinimumPrefixLength='0'
 													 Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type TextBlock}, Mode=FindAncestor}}"
 													 PreviewKeyDown="textBox_CommandLine_PreviewKeyDown"
 													 TextChanged="textBox_CommandLine_TextChanged_1"
@@ -1321,7 +1327,8 @@
 								VerticalAlignment="Stretch"
 								BorderBrush="#ddd"
 								FontSize="20"
-								SelectedItemChanged="treeView_CommandList_SelectedItemChanged">
+								SelectedItemChanged="treeView_CommandList_SelectedItemChanged"
+								Focusable='False'>
 				<TreeView.Resources>
 					<SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
 													 Color="#E33232" />
@@ -1459,6 +1466,5 @@
 								 Foreground="Green"
 								 Padding='10,0' />
 		</Grid>
-		<!--</DockPanel>-->
 	</Grid>
 </UserControl>

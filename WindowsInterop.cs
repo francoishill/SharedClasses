@@ -5,6 +5,7 @@ using System.Text;
 using System.Diagnostics;
 using System.IO;
 using System.Windows.Forms;
+using System.Windows;
 
 public class WindowsInterop
 {
@@ -38,5 +39,12 @@ public class WindowsInterop
 		form.Visible = true;
 		form.Activate();
 		form.WindowState = FormWindowState.Normal;
+	}
+
+	public static void ShowAndActivateWindow(Window window)
+	{
+		window.Visibility = Visibility.Visible;
+		window.Activate();
+		window.WindowState = WindowState.Normal;
 	}
 }

@@ -23,4 +23,9 @@ public partial class InlineCommandsWindowWPF : Window
 	{
 		DragMove();
 	}
+
+	private void InlineCommandsWindowWPF1_MouseRightButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+	{
+		this.Hide();
+	}
 }

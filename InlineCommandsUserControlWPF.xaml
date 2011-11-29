@@ -19,6 +19,7 @@
 				<!--<ResourceDictionary Source='/PresentationFramework.Luna,Version=3.0.0.0,Culture=neutral,PublicKeyToken=31bf3856ad364e35;component/themes/luna.homestead.xaml' />-->
 				<!--<ResourceDictionary Source='/PresentationFramework.Luna,Version=3.0.0.0,Culture=neutral,PublicKeyToken=31bf3856ad364e35;component/themes/luna.metallic.xaml' />-->
 				<!--<ResourceDictionary Source='/PresentationFramework.Luna,Version=3.0.0.0,Culture=neutral,PublicKeyToken=31bf3856ad364e35;component/themes/luna.normalcolor.xaml' />-->
+				<!--<ResourceDictionary Source='Themes/Generic.xaml' />-->
 				<ResourceDictionary>
 					<Style x:Key="{x:Type ScrollViewer}"
 								 TargetType="{x:Type ScrollViewer}">
@@ -545,7 +546,9 @@
 												BorderThickness="1"
 												CornerRadius="3"
 												Padding="3,0,3,3"
-												Margin="0,0,3,0">
+												Margin="0,0,3,0"
+												MouseLeftButtonDown='EmbeddedButton_MouseLeftButtonDown'
+												MouseRightButtonDown='EmbeddedButton_MouseRightButtonDown'>
 									<Border.Background>
 										<LinearGradientBrush StartPoint="0,0"
 																				 EndPoint="0,1">
@@ -614,7 +617,7 @@
 																									 GotFocus='ArgumentText_GotFocus'
 																									 IsTextCompletionEnabled='True'
 																									 Style='{DynamicResource AutoCompleteBox_InlineCommands}'
-																									 Width='auto'></input:AutoCompleteBox>
+																									 Width='auto' />
 														<TextBlock DockPanel.Dock='Bottom'
 																			 Text='{Binding Value}'
 																			 Foreground='#ddd'
@@ -1095,17 +1098,50 @@
 							<Setter.Value>
 								<ControlTemplate TargetType="{x:Type input:AutoCompleteBox}">
 									<Grid Opacity="{TemplateBinding Opacity}">
+										<!--<SharedClasses:FilterTextBox Text='Hallo' />-->
 										<TextBox Padding="{TemplateBinding Padding}"
 														 Background="{TemplateBinding Background}"
 														 IsTabStop="True"
 														 x:Name="Text"
-														 Text='{Binding Key}'
+														 Text='{Binding Key, UpdateSourceTrigger=PropertyChanged}'
 														 HorizontalContentAlignment='Center'
 														 HorizontalScrollBarVisibility='Visible'
 														 Style="{TemplateBinding TextBoxStyle}"
 														 BorderThickness="{TemplateBinding BorderThickness}"
 														 Foreground="{TemplateBinding Foreground}"
-														 Margin="0" />
+														 Margin="0">
+											<TextBox.Template>
+												<ControlTemplate>
+													<Border Background='White' CornerRadius='3' BorderThickness='1'>
+														<Border.Resources>
+															<Style TargetType='{x:Type TextBlock}'>
+																<Style.Triggers>
+																	<Trigger Property='IsMouseOver'
+																					 Value='True'>
+																		<Setter Property='Background'
+																						Value='#88000000' />
+																	</Trigger>
+																</Style.Triggers>
+															</Style>
+														</Border.Resources>
+														<DockPanel LastChildFill='True'>
+															<Border x:Name='ClearTextboxTextButton'
+																			DockPanel.Dock='Right'
+																			MouseLeftButtonDown='ClearTextboxTextButton_MouseLeftButtonDown'
+																			BorderThickness='0'
+																			Background='Transparent'>
+																<TextBlock Foreground='#bbb' Padding='3,0'>x</TextBlock>
+															</Border>
+															<TextBox DockPanel.Dock='Left'
+																			 Background='Transparent'
+																			 BorderBrush='Transparent'
+																			 BorderThickness='0'
+																			 Text='{Binding Key, UpdateSourceTrigger=PropertyChanged}' />
+														</DockPanel>
+													</Border>
+												</ControlTemplate>
+											</TextBox.Template>
+										</TextBox>
 										<Border x:Name="ValidationErrorElement"
 														Visibility="Collapsed"
 														BorderBrush="#FFDB000C"
@@ -1268,32 +1304,33 @@
 		</ResourceDictionary>
 	</UserControl.Resources>
 	<!--<DockPanel LastChildFill="True">-->
-	<Border BorderThickness='1' BorderBrush='Black'>
-	<Grid>
-		<Grid.RowDefinitions>
-			<RowDefinition Height="Auto" />
-			<RowDefinition Height="Auto" />
-			<RowDefinition />
-		</Grid.RowDefinitions>
-		<Label x:Name="label_ArgumentsExample"
-					 Grid.Row="0"
-					 Content="Label"
-					 HorizontalAlignment="Stretch"
-					 VerticalAlignment="Top"
-					 Foreground="Gray" />
-		<input:AutoCompleteBox x:Name="textBox_CommandLine"
-													 Grid.Row="1"
-													 FontSize="36"
-													 Margin='5'
-													 HorizontalAlignment="Stretch"
-													 MinimumPrefixLength='0'
-													 Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type TextBlock}, Mode=FindAncestor}}"
-													 PreviewKeyDown="textBox_CommandLine_PreviewKeyDown"
-													 TextChanged="textBox_CommandLine_TextChanged_1"
-													 Style='{StaticResource AutoCompleteBox_InlineCommands}'
-													 IsTextCompletionEnabled='True'
-													 BorderBrush='#777' />
-		<!--<TextBox x:Name="textBox_CommandLine"
+	<Border BorderThickness='1'
+					BorderBrush='Black'>
+		<Grid>
+			<Grid.RowDefinitions>
+				<RowDefinition Height="Auto" />
+				<RowDefinition Height="Auto" />
+				<RowDefinition />
+			</Grid.RowDefinitions>
+			<Label x:Name="label_ArgumentsExample"
+						 Grid.Row="0"
+						 Content="Label"
+						 HorizontalAlignment="Stretch"
+						 VerticalAlignment="Top"
+						 Foreground="Gray" />
+			<input:AutoCompleteBox x:Name="textBox_CommandLine"
+														 Grid.Row="1"
+														 FontSize="36"
+														 Margin='5'
+														 HorizontalAlignment="Stretch"
+														 MinimumPrefixLength='0'
+														 Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type TextBlock}, Mode=FindAncestor}}"
+														 PreviewKeyDown="textBox_CommandLine_PreviewKeyDown"
+														 TextChanged="textBox_CommandLine_TextChanged_1"
+														 Style='{StaticResource AutoCompleteBox_InlineCommands}'
+														 IsTextCompletionEnabled='True'
+														 BorderBrush='#777' />
+			<!--<TextBox x:Name="textBox_CommandLine"
 						 Grid.Row="1"
 						 FontSize="24"
 						 TextWrapping="Wrap"
@@ -1302,44 +1339,44 @@
 						 PreviewKeyDown="textBox_CommandLine_PreviewKeyDown"
 						 TextChanged="textBox_CommandLine_TextChanged"
 						 Template="{StaticResource TextBoxBaseControlTemplate}" />-->
-		<Grid Grid.Row="2"
-					Margin="0,5">
-			<Grid.ColumnDefinitions>
-				<ColumnDefinition MinWidth="150"
-													Width="150" />
-				<ColumnDefinition />
-				<!--<ColumnDefinition />-->
-			</Grid.ColumnDefinitions>
-			<!--<TextBox
+			<Grid Grid.Row="2"
+						Margin="0,5">
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition MinWidth="150"
+														Width="150" />
+					<ColumnDefinition />
+					<!--<ColumnDefinition />-->
+				</Grid.ColumnDefinitions>
+				<!--<TextBox
 				VerticalAlignment="Top"
 							 Grid.Column="2"
 							 Style='{StaticResource autoCompleteTextBox}' />-->
-			<!--<input:AutoCompleteBox Name="autoCompleteTextbox"
+				<!--<input:AutoCompleteBox Name="autoCompleteTextbox"
 														 VerticalAlignment="Top"
 														 Grid.Column="2"
 														 IsTextCompletionEnabled='True'
 														 BorderBrush='#777' />-->
-			<!--<Expander Grid.Column="0"
+				<!--<Expander Grid.Column="0"
                       IsExpanded="False"
                       Margin="0,5,0,0"
                       ExpandDirection="Right">-->
-			<TreeView x:Name="treeView_CommandList"
-								HorizontalAlignment="Stretch"
-								VerticalAlignment="Stretch"
-								BorderBrush="#ddd"
-								FontSize="20"
-								SelectedItemChanged="treeView_CommandList_SelectedItemChanged"
-								Focusable='False'>
-				<TreeView.Resources>
-					<SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
-													 Color="#E33232" />
-					<SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}"
-													 Color="Transparent" />
-					<SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"
-													 Color="#f9f9f9" />
-					<SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey}"
-													 Color="Black" />
-					<!--<LinearGradientBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
+				<TreeView x:Name="treeView_CommandList"
+									HorizontalAlignment="Stretch"
+									VerticalAlignment="Stretch"
+									BorderBrush="#ddd"
+									FontSize="20"
+									SelectedItemChanged="treeView_CommandList_SelectedItemChanged"
+									Focusable='False'>
+					<TreeView.Resources>
+						<SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
+														 Color="#E33232" />
+						<SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}"
+														 Color="Transparent" />
+						<SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"
+														 Color="#f9f9f9" />
+						<SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey}"
+														 Color="Black" />
+						<!--<LinearGradientBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
                                      EndPoint="0,1"
                                      StartPoint="0,0">
                     <GradientStop Color="#99DCEBFC"
@@ -1347,7 +1384,7 @@
                     <GradientStop Color="#99C1DBFC"
                                   Offset="1" />
                 </LinearGradientBrush>-->
-					<!--<LinearGradientBrush x:Key="{x:Static SystemColors.ControlBrushKey}"
+						<!--<LinearGradientBrush x:Key="{x:Static SystemColors.ControlBrushKey}"
                                      EndPoint="0,1"
                                      StartPoint="0,0">
                     <GradientStop Color="#99F8F8F8"
@@ -1359,65 +1396,65 @@
                                  Color="Black" />
                 <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey}"
                                  Color="Black" />-->
-				</TreeView.Resources>
-				<TreeView.Template>
-					<StaticResource ResourceKey="TreeviewControlTemplate" />
-				</TreeView.Template>
-				<TreeView.ItemContainerStyle>
-					<Style TargetType="{x:Type TreeViewItem}">
-						<Style.Resources>
-							<Style TargetType="{x:Type Border}">
-								<Setter Property="CornerRadius"
-												Value="2" />
-							</Style>
-						</Style.Resources>
-						<!-- Style for the selected item -->
-						<Setter Property="BorderThickness"
-										Value="1" />
-						<Setter Property="BorderBrush"
-										Value="#eee" />
-						<!--<Setter Property="Background"
+					</TreeView.Resources>
+					<TreeView.Template>
+						<StaticResource ResourceKey="TreeviewControlTemplate" />
+					</TreeView.Template>
+					<TreeView.ItemContainerStyle>
+						<Style TargetType="{x:Type TreeViewItem}">
+							<Style.Resources>
+								<Style TargetType="{x:Type Border}">
+									<Setter Property="CornerRadius"
+													Value="2" />
+								</Style>
+							</Style.Resources>
+							<!-- Style for the selected item -->
+							<Setter Property="BorderThickness"
+											Value="1" />
+							<Setter Property="BorderBrush"
+											Value="#eee" />
+							<!--<Setter Property="Background"
                             Value="Green" />-->
-						<Setter Property="Padding"
-										Value="3" />
-						<Style.Triggers>
-							<!-- Selected and has focus -->
-							<Trigger Property="IsSelected"
-											 Value="True">
-								<Setter Property="BorderBrush"
-												Value="#d32222" />
-								<!--<Setter Property="BorderBrush"
+							<Setter Property="Padding"
+											Value="3" />
+							<Style.Triggers>
+								<!-- Selected and has focus -->
+								<Trigger Property="IsSelected"
+												 Value="True">
+									<Setter Property="BorderBrush"
+													Value="#d32222" />
+									<!--<Setter Property="BorderBrush"
                                     Value="#7DA2CE" />-->
-								<!--<Setter Property="Foreground"
+									<!--<Setter Property="Foreground"
                                     Value="#FF4242" />-->
-							</Trigger>
-							<!-- Selected but does not have the focus -->
-							<MultiTrigger>
-								<MultiTrigger.Conditions>
-									<Condition Property="IsSelected"
-														 Value="True" />
-									<Condition Property="IsSelectionActive"
-														 Value="False" />
-								</MultiTrigger.Conditions>
-								<Setter Property="BorderBrush"
-												Value="#eee" />
-								<Setter Property="Foreground"
-												Value="#d32222" />
-							</MultiTrigger>
-							<MultiTrigger>
-								<MultiTrigger.Conditions>
-									<Condition Property="IsSelected"
-														 Value="False" />
-									<Condition Property="IsMouseOver"
-														 Value="True" />
-								</MultiTrigger.Conditions>
-								<!--<Setter Property="BorderBrush"
+								</Trigger>
+								<!-- Selected but does not have the focus -->
+								<MultiTrigger>
+									<MultiTrigger.Conditions>
+										<Condition Property="IsSelected"
+															 Value="True" />
+										<Condition Property="IsSelectionActive"
+															 Value="False" />
+									</MultiTrigger.Conditions>
+									<Setter Property="BorderBrush"
+													Value="#eee" />
+									<Setter Property="Foreground"
+													Value="#d32222" />
+								</MultiTrigger>
+								<MultiTrigger>
+									<MultiTrigger.Conditions>
+										<Condition Property="IsSelected"
+															 Value="False" />
+										<Condition Property="IsMouseOver"
+															 Value="True" />
+									</MultiTrigger.Conditions>
+									<!--<Setter Property="BorderBrush"
                                     Value="#997DA2CE" />-->
-								<Setter Property="BorderBrush"
-												Value="#55d32222" />
-								<Setter Property="Background"
-												Value="#33E33232">
-									<!--<Setter.Value>
+									<Setter Property="BorderBrush"
+													Value="#55d32222" />
+									<Setter Property="Background"
+													Value="#33E33232">
+										<!--<Setter.Value>
                                     <LinearGradientBrush EndPoint="0,1"
                                                          StartPoint="0,0">
                                         <GradientStop Color="#55DCEBFC"
@@ -1426,47 +1463,47 @@
                                                       Offset="1" />
                                     </LinearGradientBrush>
                                 </Setter.Value>-->
-								</Setter>
-							</MultiTrigger>
-						</Style.Triggers>
-					</Style>
-				</TreeView.ItemContainerStyle>
-				<TreeView.ItemsPanel>
-					<ItemsPanelTemplate>
-						<!--<UniformGrid Columns="3" />-->
-						<!--<WrapPanel Orientation="Horizontal"
+									</Setter>
+								</MultiTrigger>
+							</Style.Triggers>
+						</Style>
+					</TreeView.ItemContainerStyle>
+					<TreeView.ItemsPanel>
+						<ItemsPanelTemplate>
+							<!--<UniformGrid Columns="3" />-->
+							<!--<WrapPanel Orientation="Horizontal"
                                HorizontalAlignment="Stretch"
                                Width="auto"
                                ScrollViewer.HorizontalScrollBarVisibility="Disabled" />-->
-						<!--<VirtualizingStackPanel Orientation="Horizontal"
+							<!--<VirtualizingStackPanel Orientation="Horizontal"
                                             IsItemsHost="True"/>-->
-						<StackPanel IsItemsHost="True"
-												VirtualizingPanel.IsContainerVirtualizable="True"
-												VirtualizingPanel.IsVirtualizing="True"
-												VirtualizingPanel.VirtualizationMode="Recycling"
-												Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type ScrollContentPresenter}, Mode=FindAncestor}}" />
-						<!--<WrapPanel IsItemsHost="True"
+							<StackPanel IsItemsHost="True"
+													VirtualizingPanel.IsContainerVirtualizable="True"
+													VirtualizingPanel.IsVirtualizing="True"
+													VirtualizingPanel.VirtualizationMode="Recycling"
+													Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type ScrollContentPresenter}, Mode=FindAncestor}}" />
+							<!--<WrapPanel IsItemsHost="True"
                                        VirtualizingPanel.IsContainerVirtualizable="True"
                                        VirtualizingPanel.IsVirtualizing="True"
                                        VirtualizingPanel.VirtualizationMode="Recycling"
                                        Width="{Binding Path=ActualWidth, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ScrollContentPresenter}}}" />-->
-					</ItemsPanelTemplate>
-				</TreeView.ItemsPanel>
-			</TreeView>
-			<!--</Expander>-->
-			<GridSplitter Width="2"
-										BorderThickness="1"
-										BorderBrush="#999"
-										Focusable='False' />
-			<TextBlock Grid.Column="1"
-								 x:Name="textBox_Messages"
-								 HorizontalAlignment="Stretch"
-								 Margin="0,0,0,0"
-								 MinWidth="50"
-								 Text=""
-								 Foreground="Green"
-								 Padding='10,0' />
-		</Grid>
+						</ItemsPanelTemplate>
+					</TreeView.ItemsPanel>
+				</TreeView>
+				<!--</Expander>-->
+				<GridSplitter Width="2"
+											BorderThickness="1"
+											BorderBrush="#999"
+											Focusable='False' />
+				<TextBlock Grid.Column="1"
+									 x:Name="textBox_Messages"
+									 HorizontalAlignment="Stretch"
+									 Margin="0,0,0,0"
+									 MinWidth="50"
+									 Text=""
+									 Foreground="Green"
+									 Padding='10,0' />
+			</Grid>
 		</Grid>
 	</Border>
 </UserControl>

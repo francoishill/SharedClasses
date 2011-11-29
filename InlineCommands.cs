@@ -921,19 +921,15 @@ namespace InlineCommands
 			string ArgumentsExample { get; }
 			bool PreValidateArgument(out string errorMessage, int Index, string argumentValue);
 			bool ValidateArguments(out string errorMessage, params string[] arguments);
-			bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments);
+			bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments);
 			ObservableCollection<string> GetPredefinedArgumentsList(int Index, bool SuppressErrors = false);
+			Dictionary<string, string> GetArgumentReplaceKeyValuePair(int Index, bool SuppressErrors = false);
 			void ClearAndAddAllBlankArguments();
 			BoolResultWithErrorMessage AddCurrentArgument(string argument);
 			int CurrentArgumentCount { get; }
 			void RemoveCurrentArgument(int Index);
 			ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair { get; }
 		}
-		//public abstract class OverrideToStringClass
-		//{
-		//	public abstract override string ToString();
-
-		//}
 
 		public abstract class OverrideToStringClass : ICommandWithHandler
 		{
@@ -945,7 +941,7 @@ namespace InlineCommands
 			public abstract string ArgumentsExample { get; }
 			public abstract bool PreValidateArgument(out string errorMessage, int Index, string argumentValue);
 			public abstract bool ValidateArguments(out string errorMessage, params string[] arguments);
-			public abstract bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments);
+			public abstract bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments);
 			public abstract ObservableCollection<string>[] PredefinedArgumentsList { get; }
 			public virtual ObservableCollection<string> GetPredefinedArgumentsList(int Index, bool SuppressErrors = false)
 			{
@@ -955,6 +951,17 @@ namespace InlineCommands
 				{
 					if (!SuppressErrors) UserMessages.ShowWarningMessage("Index out of bounds for predefinedArgumentsList, " + this.CommandName + " command, index = " + Index);
 					return new ObservableCollection<string>();
+				}
+			}
+			public abstract Dictionary<string, string>[] ArgumentsReplaceKeyValuePair { get; }
+			public virtual Dictionary<string, string> GetArgumentReplaceKeyValuePair(int Index, bool SuppressErrors = false)
+			{
+				if (Index < ArgumentsReplaceKeyValuePair.Length)
+					return ArgumentsReplaceKeyValuePair[Index];
+				else
+				{
+					if (!SuppressErrors) UserMessages.ShowWarningMessage("Index out of bounds for predefinedArgumentsList, " + this.CommandName + " command, index = " + Index);
+					return new Dictionary<string, string>();
 				}
 			}
 			public abstract string[] ArgumentDescriptions { get; }
@@ -1005,7 +1012,7 @@ namespace InlineCommands
 			//public abstract ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair { get; set; }
 		}
 
-		public class RunCommand : OverrideToStringClass//, ICommandWithHandler
+		public class RunCommand : OverrideToStringClass
 		{
 			public override string CommandName { get { return "run"; } }
 			public override string DisplayName { get { return "Run"; } }
@@ -1018,9 +1025,17 @@ namespace InlineCommands
 			};
 			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
 
+			private readonly Dictionary<string, string>[] argumentsReplaceKeyValuePair =
+			{
+				new Dictionary<string, string>() { { "cmd", "cmd1" }, { "outlook", "outlook1" } }
+			};
+			public override Dictionary<string, string>[] ArgumentsReplaceKeyValuePair { get { return argumentsReplaceKeyValuePair; } }
+
 			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
 			{
 				errorMessage = "";
+				if (Index < argumentsReplaceKeyValuePair.Length && argumentsReplaceKeyValuePair[Index].ContainsKey(argumentValue))
+					argumentValue = argumentsReplaceKeyValuePair[Index][argumentValue];
 				if (Index != 0)
 					errorMessage = "Only one argument allowed for Run command";
 				else if (Index == 0 && string.IsNullOrWhiteSpace(argumentValue))
@@ -1040,7 +1055,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments)
 			{
 				//if (!ValidateArguments(out errorMessage, arguments)) return false;
 				try
@@ -1064,7 +1079,7 @@ namespace InlineCommands
 			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
 		}
 
-		public class GoogleSearchCommand : OverrideToStringClass//, ICommandWithHandler
+		public class GoogleSearchCommand : OverrideToStringClass
 		{
 			public override string CommandName { get { return "google"; } }
 			public override string DisplayName { get { return "Google Search"; } }
@@ -1076,9 +1091,17 @@ namespace InlineCommands
 			};
 			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
 
+			private readonly Dictionary<string, string>[] argumentsReplaceKeyValuePair =
+			{
+			};
+			public override Dictionary<string, string>[] ArgumentsReplaceKeyValuePair { get { return argumentsReplaceKeyValuePair; } }
+
 			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
 			{
-				errorMessage = ""; if (Index != 0)
+				errorMessage = "";
+				if (Index < argumentsReplaceKeyValuePair.Length && argumentsReplaceKeyValuePair[Index].ContainsKey(argumentValue))
+					argumentValue = argumentsReplaceKeyValuePair[Index][argumentValue];
+				if (Index != 0)
 					errorMessage = "Only one argument allowed for Google search command";
 				else if (Index == 0 && string.IsNullOrWhiteSpace(argumentValue))
 					errorMessage = "First argument of Google search command may not be null/empty/whitespaces only";
@@ -1097,7 +1120,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments)
 			{
 				//if (!ValidateArguments(out errorMessage, arguments)) return false;
 				try
@@ -1121,7 +1144,7 @@ namespace InlineCommands
 			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
 		}
 
-		public class ExploreCommand : OverrideToStringClass//, ICommandWithHandler
+		public class ExploreCommand : OverrideToStringClass
 		{
 			public override string CommandName { get { return "explore"; } }
 			public override string DisplayName { get { return "Explore"; } }
@@ -1134,9 +1157,16 @@ namespace InlineCommands
 			};
 			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
 
+			private readonly Dictionary<string, string>[] argumentsReplaceKeyValuePair =
+			{
+			};
+			public override Dictionary<string, string>[] ArgumentsReplaceKeyValuePair { get { return argumentsReplaceKeyValuePair; } }
+
 			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
 			{
 				errorMessage = "";
+				if (Index < argumentsReplaceKeyValuePair.Length && argumentsReplaceKeyValuePair[Index].ContainsKey(argumentValue))
+					argumentValue = argumentsReplaceKeyValuePair[Index][argumentValue];
 				if (Index != 0)
 					errorMessage = "Only one argument allowed for Explore command";
 				else if (Index == 0 && string.IsNullOrWhiteSpace(argumentValue))
@@ -1158,7 +1188,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments)
 			{
 				//if (!ValidateArguments(out errorMessage, arguments)) return false;
 				try
@@ -1184,7 +1214,7 @@ namespace InlineCommands
 			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
 		}
 
-		public class AddTodoitemFirepumaCommand : OverrideToStringClass//, ICommandWithHandler
+		public class AddTodoitemFirepumaCommand : OverrideToStringClass
 		{
 			public override string CommandName { get { return "addtodo"; } }
 			public override string DisplayName { get { return "Add todo"; } }
@@ -1199,9 +1229,16 @@ namespace InlineCommands
 			};
 			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
 
+			private readonly Dictionary<string, string>[] argumentsReplaceKeyValuePair =
+			{
+			};
+			public override Dictionary<string, string>[] ArgumentsReplaceKeyValuePair { get { return argumentsReplaceKeyValuePair; } }
+
 			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
 			{
 				errorMessage = "";
+				if (Index < argumentsReplaceKeyValuePair.Length && argumentsReplaceKeyValuePair[Index].ContainsKey(argumentValue))
+					argumentValue = argumentsReplaceKeyValuePair[Index][argumentValue];
 				if (Index >= 4)
 					errorMessage = "More than 4 arguments not allowed for Add todo command (minutesfromnow, autosnooze, name, desc)";
 				else if (Index == 0 && !CanParseToInt(argumentValue))
@@ -1230,7 +1267,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments)
 			{
 				//if (!ValidateArguments(out errorMessage, arguments)) return false;
 				try
@@ -1272,7 +1309,7 @@ namespace InlineCommands
 			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
 		}
 
-		public class MailCommand : OverrideToStringClass//, ICommandWithHandler
+		public class MailCommand : OverrideToStringClass
 		{
 			public override string CommandName { get { return "mail"; } }
 			public override string DisplayName { get { return "Mail"; } }
@@ -1285,11 +1322,18 @@ namespace InlineCommands
 				//new ObservableCollection<string>() { "Hi there", "This is a subject" },
 				//new ObservableCollection<string>() { "How have you been?", "This is the body" }
 			};
-			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }			
+			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
+
+			private readonly Dictionary<string, string>[] argumentsReplaceKeyValuePair =
+			{
+			};
+			public override Dictionary<string, string>[] ArgumentsReplaceKeyValuePair { get { return argumentsReplaceKeyValuePair; } }
 
 			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
 			{
 				errorMessage = "";
+				if (Index < argumentsReplaceKeyValuePair.Length && argumentsReplaceKeyValuePair[Index].ContainsKey(argumentValue))
+					argumentValue = argumentsReplaceKeyValuePair[Index][argumentValue];
 				if (Index >= 3)
 					errorMessage = "More than 3 arguments not allowed for Mail command (mail, subject, body)";
 				else if (Index == 0 && !IsEmail(argumentValue))
@@ -1313,7 +1357,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments)
 			{
 				try
 				{
@@ -1341,7 +1385,7 @@ namespace InlineCommands
 			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
 		}
 
-		public class WebCommand : OverrideToStringClass//, ICommandWithHandler
+		public class WebCommand : OverrideToStringClass
 		{
 			public override string CommandName { get { return "web"; } }
 			public override string DisplayName { get { return "Web"; } }
@@ -1354,9 +1398,16 @@ namespace InlineCommands
 			};
 			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
 
+			private readonly Dictionary<string, string>[] argumentsReplaceKeyValuePair =
+			{
+			};
+			public override Dictionary<string, string>[] ArgumentsReplaceKeyValuePair { get { return argumentsReplaceKeyValuePair; } }
+
 			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
 			{
 				errorMessage = "";
+				if (Index < argumentsReplaceKeyValuePair.Length && argumentsReplaceKeyValuePair[Index].ContainsKey(argumentValue))
+					argumentValue = argumentsReplaceKeyValuePair[Index][argumentValue];
 				if (Index != 0)
 					errorMessage = "Only one argument required for Web command";
 				else if (Index == 0 && string.IsNullOrWhiteSpace(argumentValue))
@@ -1377,7 +1428,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments)
 			{
 				//if (!ValidateArguments(out errorMessage, arguments)) return false;
 				try
@@ -1403,7 +1454,7 @@ namespace InlineCommands
 			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
 		}
 
-		public class CallCommand : OverrideToStringClass//, ICommandWithHandler
+		public class CallCommand : OverrideToStringClass
 		{
 			public override string CommandName { get { return "call"; } }
 			public override string DisplayName { get { return "Call"; } }
@@ -1414,11 +1465,18 @@ namespace InlineCommands
 			{
 				new ObservableCollection<string>(NameAndNumberDictionary.Keys)
 			};
-			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }			
+			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
+
+			private readonly Dictionary<string, string>[] argumentsReplaceKeyValuePair =
+			{
+			};
+			public override Dictionary<string, string>[] ArgumentsReplaceKeyValuePair { get { return argumentsReplaceKeyValuePair; } }
 
 			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
 			{
 				errorMessage = "";
+				if (Index < argumentsReplaceKeyValuePair.Length && argumentsReplaceKeyValuePair[Index].ContainsKey(argumentValue))
+					argumentValue = argumentsReplaceKeyValuePair[Index][argumentValue];
 				if (Index != 0)
 					errorMessage = "Only one argument required for Call command";
 				else if (Index == 0 && string.IsNullOrWhiteSpace(argumentValue))
@@ -1439,7 +1497,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments)
 			{
 				try
 				{
@@ -1476,7 +1534,7 @@ namespace InlineCommands
 			}
 		}
 
-		public class KillCommand : OverrideToStringClass//, ICommandWithHandler
+		public class KillCommand : OverrideToStringClass
 		{
 			public override string CommandName { get { return "kill"; } }
 			public override string DisplayName { get { return "Kill"; } }
@@ -1509,9 +1567,16 @@ namespace InlineCommands
 				}
 			}
 
+			private readonly Dictionary<string, string>[] argumentsReplaceKeyValuePair =
+			{
+			};
+			public override Dictionary<string, string>[] ArgumentsReplaceKeyValuePair { get { return argumentsReplaceKeyValuePair; } }
+
 			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
 			{
 				errorMessage = "";
+				if (Index < argumentsReplaceKeyValuePair.Length && argumentsReplaceKeyValuePair[Index].ContainsKey(argumentValue))
+					argumentValue = argumentsReplaceKeyValuePair[Index][argumentValue];
 				if (Index != 0)
 					errorMessage = "Only one argument required for Kill command";
 				else if (Index == 0 && string.IsNullOrWhiteSpace(argumentValue))
@@ -1532,7 +1597,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments)
 			{
 				try
 				{
@@ -1570,7 +1635,7 @@ namespace InlineCommands
 			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
 		}
 
-		public class StartubBatCommand : OverrideToStringClass//, ICommandWithHandler
+		public class StartubBatCommand : OverrideToStringClass
 		{
 			public override string CommandName { get { return "startupbat"; } }
 			public override string DisplayName { get { return "Startup bat"; } }
@@ -1582,6 +1647,11 @@ namespace InlineCommands
 				new ObservableCollection<string>() { "open", "getall", "getline", "comment", "uncomment" },
 			};
 			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
+
+			private readonly Dictionary<string, string>[] argumentsReplaceKeyValuePair =
+			{
+			};
+			public override Dictionary<string, string>[] ArgumentsReplaceKeyValuePair { get { return argumentsReplaceKeyValuePair; } }
 
 			private bool IsStartubBatCommand(string command)
 			{
@@ -1597,6 +1667,8 @@ namespace InlineCommands
 			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
 			{
 				errorMessage = "";
+				if (Index < argumentsReplaceKeyValuePair.Length && argumentsReplaceKeyValuePair[Index].ContainsKey(argumentValue))
+					argumentValue = argumentsReplaceKeyValuePair[Index][argumentValue];
 				if (Index >= 2)
 					errorMessage = "More than 2 arguments not allowed for Startub bat command";
 				else if (Index == 0 && !IsStartubBatCommand(argumentValue))
@@ -1625,7 +1697,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments)
 			{
 				try
 				{
@@ -1650,7 +1722,7 @@ namespace InlineCommands
 			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
 		}
 
-		public class CmdCommand : OverrideToStringClass//, ICommandWithHandler
+		public class CmdCommand : OverrideToStringClass
 		{
 			public override string CommandName { get { return "cmd"; } }
 			public override string DisplayName { get { return "Cmd"; } }
@@ -1663,9 +1735,16 @@ namespace InlineCommands
 			};
 			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
 
+			private readonly Dictionary<string, string>[] argumentsReplaceKeyValuePair =
+			{
+			};
+			public override Dictionary<string, string>[] ArgumentsReplaceKeyValuePair { get { return argumentsReplaceKeyValuePair; } }
+
 			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
 			{
 				errorMessage = "";
+				if (Index < argumentsReplaceKeyValuePair.Length && argumentsReplaceKeyValuePair[Index].ContainsKey(argumentValue))
+					argumentValue = argumentsReplaceKeyValuePair[Index][argumentValue];
 				if (Index != 0)
 					errorMessage = "Only one argument allowed for Cmd command";
 				else if (Index == 0 && string.IsNullOrWhiteSpace(argumentValue))
@@ -1687,7 +1766,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments)
 			{
 				try
 				{
@@ -1709,7 +1788,7 @@ namespace InlineCommands
 			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
 		}
 
-		public class VsCmdCommand : OverrideToStringClass//, ICommandWithHandler
+		public class VsCmdCommand : OverrideToStringClass
 		{
 			public override string CommandName { get { return "vscmd"; } }
 			public override string DisplayName { get { return "VsCmd"; } }
@@ -1722,9 +1801,16 @@ namespace InlineCommands
 			};
 			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
 
+			private readonly Dictionary<string, string>[] argumentsReplaceKeyValuePair =
+			{
+			};
+			public override Dictionary<string, string>[] ArgumentsReplaceKeyValuePair { get { return argumentsReplaceKeyValuePair; } }
+
 			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
 			{
 				errorMessage = "";
+				if (Index < argumentsReplaceKeyValuePair.Length && argumentsReplaceKeyValuePair[Index].ContainsKey(argumentValue))
+					argumentValue = argumentsReplaceKeyValuePair[Index][argumentValue];
 				if (Index != 0)
 					errorMessage = "Only one argument allowed for VsCmd command";
 				else if (Index == 0 && string.IsNullOrWhiteSpace(argumentValue))
@@ -1746,7 +1832,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments)
 			{
 				try
 				{
@@ -1768,7 +1854,7 @@ namespace InlineCommands
 			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
 		}
 
-		public class BtwCommand : OverrideToStringClass//, ICommandWithHandler
+		public class BtwCommand : OverrideToStringClass
 		{
 			public override string CommandName { get { return "btw"; } }
 			public override string DisplayName { get { return "Btwtodo"; } }
@@ -1783,9 +1869,16 @@ namespace InlineCommands
 			};
 			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
 
+			private readonly Dictionary<string, string>[] argumentsReplaceKeyValuePair =
+			{
+			};
+			public override Dictionary<string, string>[] ArgumentsReplaceKeyValuePair { get { return argumentsReplaceKeyValuePair; } }
+
 			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
 			{
 				errorMessage = "";
+				if (Index < argumentsReplaceKeyValuePair.Length && argumentsReplaceKeyValuePair[Index].ContainsKey(argumentValue))
+					argumentValue = argumentsReplaceKeyValuePair[Index][argumentValue];
 				if (Index != 0)
 					errorMessage = "Exaclty one argument required for Btw command";
 				else if (Index == 0 && string.IsNullOrWhiteSpace(argumentValue))
@@ -1805,7 +1898,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments)
 			{
 				try
 				{
@@ -1831,7 +1924,7 @@ namespace InlineCommands
 			}
 		}
 
-		public class SvnCommand : OverrideToStringClass//, ICommandWithHandler
+		public class SvnCommand : OverrideToStringClass
 		{
 			public override string CommandName { get { return "svn"; } }
 			public override string DisplayName { get { return "Svn"; } }
@@ -1845,9 +1938,16 @@ namespace InlineCommands
 			};
 			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
 
+			private readonly Dictionary<string, string>[] argumentsReplaceKeyValuePair =
+			{
+			};
+			public override Dictionary<string, string>[] ArgumentsReplaceKeyValuePair { get { return argumentsReplaceKeyValuePair; } }
+
 			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
 			{
 				errorMessage = "";
+				if (Index < argumentsReplaceKeyValuePair.Length && argumentsReplaceKeyValuePair[Index].ContainsKey(argumentValue))
+					argumentValue = argumentsReplaceKeyValuePair[Index][argumentValue];
 				if (Index >= 3)
 					errorMessage = "More than 3 arguments not allowed for Svn command (sub-command, folder, description)";
 				else if (Index == 0 && string.IsNullOrWhiteSpace(argumentValue))
@@ -1874,7 +1974,7 @@ namespace InlineCommands
 				return false;
 			}
 
-			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, params string[] arguments)
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments)
 			{
 				try
 				{
@@ -1883,7 +1983,7 @@ namespace InlineCommands
 					{
 						SvnInterop.PerformSvn(
 						 arguments[1],//+ ";" + arguments[2]; still need to add here for description
-						 SvnInterop.SvnCommand.StatusLocal,
+						 svnCommand,
 						 textFeedbackEvent);
 						errorMessage = "";
 						return true;
@@ -1913,32 +2013,126 @@ namespace InlineCommands
 			}
 		}
 
+		public class PublishCommand : OverrideToStringClass
+		{
+			public override string CommandName { get { return "publish"; } }
+			public override string DisplayName { get { return "Publish"; } }
+			public override string Description { get { return "Perform publish command(s) on a folder"; } }
+			public override string ArgumentsExample { get { return @"localvs c:\dev86\myproject1"; } }
+
+			private readonly ObservableCollection<string>[] predefinedArgumentsList =
+			{
+				new ObservableCollection<string>() { "localvs", "onlinevs" },
+				new ObservableCollection<string>() { "QuickAccess", "MonitorSystem" },
+			};
+			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
+
+			private readonly Dictionary<string, string>[] argumentsReplaceKeyValuePair =
+			{
+			};
+			public override Dictionary<string, string>[] ArgumentsReplaceKeyValuePair { get { return argumentsReplaceKeyValuePair; } }
+
+			public override bool PreValidateArgument(out string errorMessage, int Index, string argumentValue)
+			{
+				errorMessage = "";
+				if (Index < argumentsReplaceKeyValuePair.Length && argumentsReplaceKeyValuePair[Index].ContainsKey(argumentValue))
+					argumentValue = argumentsReplaceKeyValuePair[Index][argumentValue];
+				if (Index >= 2)
+					errorMessage = "More than 2 arguments not allowed for Publish command (sub-command, folder/project)";
+				else if (Index == 0 && string.IsNullOrWhiteSpace(argumentValue))
+					errorMessage = "First argument (sub-command) of Publish command may not be null/empty/whitespaces";
+				else if (Index == 0 && !(predefinedArgumentsList[0].ToArray()).Contains(argumentValue))
+					errorMessage = "First argument of Publish command is an invalid sub-command";
+				else if (Index == 1 && string.IsNullOrWhiteSpace(argumentValue))
+					errorMessage = "Second argument (folder) of Publish command may not be null/empty/whitespaces";
+				else return true;
+				return false;
+			}
+
+			public override bool ValidateArguments(out string errorMessage, params string[] arguments)
+			{
+				//minutes, autosnooze, name, desc
+				errorMessage = "";
+				if (arguments.Length != 2) errorMessage = "Exactly 2 arguments required for Publish command (sub-command, folder/project)";
+				else if (!PreValidateArgument(out errorMessage, 0, arguments[0]))
+					errorMessage = errorMessage + "";
+				else if (!PreValidateArgument(out errorMessage, 1, arguments[1]))
+					errorMessage = errorMessage + "";
+				else return true;
+				return false;
+			}
+
+			public override bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments)
+			{
+				try
+				{
+					if (arguments[0] == "localvs")
+					{
+						string tmpNoUseVersionStr;
+						VisualStudioInterop.PerformPublish(arguments[1], out tmpNoUseVersionStr, textFeedbackEvent: textFeedbackEvent);
+					}
+					else if (arguments[0] == "onlinevs")
+					{
+						VisualStudioInterop.PerformPublishOnline(
+								 arguments[1],
+								 UserMessages.Confirm("Update the revision also?"),
+								 textFeedbackEvent,
+								 progressChangedEvent);
+					}
+					else
+					{
+						errorMessage = "Invalid sub-command for Publish: " + arguments[0];
+						return false;
+					}
+					errorMessage = "";
+					return true;
+				}
+				catch (Exception exc)
+				{
+					errorMessage = "Cannot perform Publish command: " + Environment.NewLine + exc.Message;
+					return false;
+				}
+			}
+
+			private string[] argumentDescriptions = new string[]
+			{
+				"sub-command",
+				"Folder/Path",
+				//"Description",
+			};
+			public override string[] ArgumentDescriptions
+			{
+				get { return argumentDescriptions; }
+			}
+		}
+
 		//TODO: This platform (using interface) is already working fine, should build on on it and add all commands
-		public static bool PerformCommand(ICommandWithHandler command, TextFeedbackEventHandler textfeedbackEvent, params string[] arguments)
+		public static bool PerformCommand(ICommandWithHandler command, TextFeedbackEventHandler textfeedbackEvent, ProgressChangedEventHandler progresschangedEvent, params string[] arguments)
 		{
 			string errorMsg;
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackEvent, "Attempting to perform command: " + command.DisplayName + " (" + command.Description + ")");
 			if (!command.ValidateArguments(out errorMsg, arguments)
 				&& UserMessages.ShowWarningMessage("Invalid command arguments: " + errorMsg))
 				return false;
-			if (!command.PerformCommand(out errorMsg, textfeedbackEvent, arguments)
+			if (!command.PerformCommand(out errorMsg, textfeedbackEvent, progresschangedEvent, arguments)
 				&& UserMessages.ShowWarningMessage("Cannot perform command: " + errorMsg))
 				return false;
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackEvent, "Successfully performed command: " + command.DisplayName + " (" + command.Description + ")");
 			return true;
 		}
 
-		public static bool PerformCommandFromString(ICommandWithHandler command, TextFeedbackEventHandler textfeedbackEvent, string argumentsCombined)
+		[Obsolete]
+		public static bool PerformCommandFromString(ICommandWithHandler command, TextFeedbackEventHandler textfeedbackEvent, ProgressChangedEventHandler progressChangedEvent, string argumentsCombined)
 		{
-			return PerformCommand(command, textfeedbackEvent, argumentsCombined.Split(';'));
+			return PerformCommand(command, textfeedbackEvent, progressChangedEvent, argumentsCombined.Split(';'));
 		}
 
-		public static bool PerformCommandFromCurrentArguments(ICommandWithHandler command, TextFeedbackEventHandler textfeedbackEvent)
+		public static bool PerformCommandFromCurrentArguments(ICommandWithHandler command, TextFeedbackEventHandler textfeedbackEvent, ProgressChangedEventHandler progressChangedEvent)
 		{
 			List<string> tmpList = new List<string>();
 			foreach (KeyAndValuePair keyvaluePair in command.CurrentArgumentsPair)
 				tmpList.Add(keyvaluePair.Key);
-			return PerformCommand(command, textfeedbackEvent, tmpList.ToArray());
+			return PerformCommand(command, textfeedbackEvent, progressChangedEvent, tmpList.ToArray());
 		}
 	}
 }

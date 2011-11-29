@@ -27,6 +27,7 @@ namespace SharedClasses
 	public partial class InlineCommandsUserControlWPF : UserControl
 	{
 		public TextFeedbackEventHandler textFeedbackEvent;
+		public ProgressChangedEventHandler progressChangedEvent;
 		//AutoCompleteManager autcompleteManager;
 		//AutocompleteProvider autocompleteProvider;
 
@@ -42,18 +43,21 @@ namespace SharedClasses
 			{
 				textFeedbackEvent += (snder, evtargs) =>
 				{
-					try
+					Dispatcher.BeginInvoke(DispatcherPriority.Background,
+					(Action)delegate
 					{
-						Dispatcher.BeginInvoke(DispatcherPriority.Background,
-						(Action)delegate
-						{
-							textBox_Messages.Text += (textBox_Messages.Text.Length > 0 ? Environment.NewLine : "")
-								+ evtargs.FeedbackText;
-						});
-					}
-					catch
+						textBox_Messages.Text += (textBox_Messages.Text.Length > 0 ? Environment.NewLine : "")
+							+ evtargs.FeedbackText;
+					});
+				};
+				progressChangedEvent += (snder, evtargs) =>
+				{
+					Dispatcher.BeginInvoke(DispatcherPriority.Background,
+					(Action)delegate
 					{
-					}
+						textBox_Messages.Text += (textBox_Messages.Text.Length > 0 ? Environment.NewLine : "")
+							+ evtargs.CurrentValue + "/" + evtargs.MaximumValue;
+					});
 				};
 				textFeedbackEventInitialized = true;
 			}
@@ -350,7 +354,8 @@ namespace SharedClasses
 
 					if (TempNewCommandsManagerClass.PerformCommandFromCurrentArguments(
 							activeCommand,
-							textFeedbackEvent))
+							textFeedbackEvent,
+							progressChangedEvent))
 						textBox_CommandLine.Text = "";//.Clear();
 				}
 			}
@@ -443,9 +448,7 @@ namespace SharedClasses
 				else if (treeView_CommandList.SelectedItem != null)
 				{
 					e.Handled = true;
-					ClearSelection(treeView_CommandList);
-					GetEmbeddedListbox().ItemsSource = null;
-					ResetAutocompleteToCommandNamesList();
+					ClearCommandSelection();
 				}
 				else
 				{
@@ -504,6 +507,13 @@ namespace SharedClasses
 			//}
 		}
 
+		private void ClearCommandSelection()
+		{
+			ClearSelection(treeView_CommandList);
+			GetEmbeddedListbox().ItemsSource = null;
+			ResetAutocompleteToCommandNamesList();
+		}
+
 		private Window GetTopParent()
 		{
 			DependencyObject dpParent = this.Parent;
@@ -557,20 +567,48 @@ namespace SharedClasses
 
 		private void GoButton_Click(object sender, RoutedEventArgs e)
 		{
+			PerformCurrentCommand();
+		}
+
+		private void PerformCurrentCommand()
+		{
 			textBox_CommandLine.RaiseEvent(
-				new KeyEventArgs(
-					Keyboard.PrimaryDevice,
-					PresentationSource.FromVisual(textBox_CommandLine),
-					0,
-					Key.Enter)
-			{
-				RoutedEvent = TextBox.PreviewKeyDownEvent
-			});
+					 new KeyEventArgs(
+						 Keyboard.PrimaryDevice,
+						 PresentationSource.FromVisual(textBox_CommandLine),
+						 0,
+						 Key.Enter)
+					 {
+						 RoutedEvent = TextBox.PreviewKeyDownEvent
+					 });
 		}
 
 		private void ArgumentText_GotFocus(object sender, RoutedEventArgs e)
 		{
 			(sender as AutoCompleteBox).IsDropDownOpen = true;
+		}
+
+		private void ClearTextboxTextButton_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+		{
+			DependencyObject dp = (sender as Border).Parent;
+			if (dp != null)
+			{
+				TextBox actualtextbox = ((dp as DockPanel).Children[1] as TextBox);
+				actualtextbox.Text = "";
+				actualtextbox.Focus();
+			}
+		}
+
+		private void EmbeddedButton_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+		{
+			e.Handled = true;
+			PerformCurrentCommand();
+		}
+
+		private void EmbeddedButton_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+		{
+			e.Handled = true;
+			ClearCommandSelection();
 		}
 
 		//private class AutocompleteProvider : IAutoCompleteDataProvider

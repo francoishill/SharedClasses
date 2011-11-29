@@ -1268,6 +1268,7 @@
 		</ResourceDictionary>
 	</UserControl.Resources>
 	<!--<DockPanel LastChildFill="True">-->
+	<Border BorderThickness='1' BorderBrush='Black'>
 	<Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto" />
@@ -1466,5 +1467,6 @@
 								 Foreground="Green"
 								 Padding='10,0' />
 		</Grid>
-	</Grid>
+		</Grid>
+	</Border>
 </UserControl>

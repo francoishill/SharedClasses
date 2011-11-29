@@ -5,7 +5,7 @@
 				Title='InlineCommandsWindowWPF'
 				x:Name='InlineCommandsWindowWPF1'
 				Loaded="InlineCommandsWindowWPF1_Loaded"
-				Width="584.7"
+				Width="1200"
 				MinWidth="150"
 				WindowStartupLocation='CenterScreen'
 				AllowsTransparency='True'

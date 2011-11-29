@@ -1841,7 +1841,7 @@ namespace InlineCommands
 			private readonly ObservableCollection<string>[] predefinedArgumentsList =
 			{
 				new ObservableCollection<string>() { "commit", "update", "status", "statuslocal" },
-				new ObservableCollection<string>() { "QuickAccess", "SharedClasses", "TestingSharedClasses" },
+				new ObservableCollection<string>() { "all", "QuickAccess", "SharedClasses", "TestingSharedClasses" },
 			};
 			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
 

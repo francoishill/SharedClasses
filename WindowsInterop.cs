@@ -43,8 +43,9 @@ public class WindowsInterop
 
 	public static void ShowAndActivateWindow(Window window)
 	{
-		window.Visibility = Visibility.Visible;
-		window.Activate();
+		//window.Visibility = Visibility.Visible;
+		window.Show();
 		window.WindowState = WindowState.Normal;
+		window.Activate();
 	}
 }

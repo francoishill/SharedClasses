@@ -548,7 +548,7 @@
 												Padding="3,0,3,3"
 												Margin="0,0,3,0"
 												MouseLeftButtonDown='EmbeddedButton_MouseLeftButtonDown'
-												MouseRightButtonDown='EmbeddedButton_MouseRightButtonDown'>
+												MouseRightButtonUp='EmbeddedButton_MouseRightButtonDown'>
 									<Border.Background>
 										<LinearGradientBrush StartPoint="0,0"
 																				 EndPoint="0,1">
@@ -1109,7 +1109,15 @@
 														 Style="{TemplateBinding TextBoxStyle}"
 														 BorderThickness="{TemplateBinding BorderThickness}"
 														 Foreground="{TemplateBinding Foreground}"
-														 Margin="0">
+														 Margin="0"
+														 ContextMenuOpening='AutoCompleteActualTextBox_ContextMenuOpening'>
+											<TextBox.ContextMenu>
+												<ContextMenu Background="White">
+													<MenuItem Command="ApplicationCommands.Copy" />
+													<MenuItem Command="ApplicationCommands.Cut" />
+													<MenuItem Command="ApplicationCommands.Paste" />
+												</ContextMenu>
+											</TextBox.ContextMenu>
 											<TextBox.Template>
 												<ControlTemplate>
 													<Border Background='White' CornerRadius='3' BorderThickness='1'>
@@ -1119,7 +1127,14 @@
 																	<Trigger Property='IsMouseOver'
 																					 Value='True'>
 																		<Setter Property='Background'
-																						Value='#88000000' />
+																						Value='#ddd' />
+																		<Setter Property='Foreground'
+																						Value='#000' />
+																	</Trigger>
+																	<Trigger Property='IsMouseOver'
+																					 Value='False'>
+																		<Setter Property='Foreground'
+																						Value='#bbb' />
 																	</Trigger>
 																</Style.Triggers>
 															</Style>
@@ -1130,7 +1145,7 @@
 																			MouseLeftButtonDown='ClearTextboxTextButton_MouseLeftButtonDown'
 																			BorderThickness='0'
 																			Background='Transparent'>
-																<TextBlock Foreground='#bbb' Padding='3,0'>x</TextBlock>
+																<TextBlock Padding='3,0'>x</TextBlock>
 															</Border>
 															<TextBox DockPanel.Dock='Left'
 																			 Background='Transparent'

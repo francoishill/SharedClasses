@@ -611,6 +611,14 @@ namespace SharedClasses
 			ClearCommandSelection();
 		}
 
+		ContextMenu cm = new ContextMenu() { Visibility = Visibility.Collapsed };
+		private void AutoCompleteActualTextBox_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+		{
+			//(sender as TextBox).ContextMenu = GetActualTextBoxOfAutocompleteControl().Text == "" ? cm : null;
+			//if (GetActualTextBoxOfAutocompleteControl().Text == "") e.Handled = true;
+			if (textBox_CommandLine.ItemsSource == null) e.Handled = true;
+		}
+
 		//private class AutocompleteProvider : IAutoCompleteDataProvider
 		//{
 		//	public ICommandWithHandler activeCommand;

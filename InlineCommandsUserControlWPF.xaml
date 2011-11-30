@@ -21,7 +21,7 @@
 				<!--<ResourceDictionary Source='/PresentationFramework.Luna,Version=3.0.0.0,Culture=neutral,PublicKeyToken=31bf3856ad364e35;component/themes/luna.normalcolor.xaml' />-->
 				<!--<ResourceDictionary Source='Themes/Generic.xaml' />-->
 				<ResourceDictionary>
-					<Style x:Key="{x:Type ScrollViewer}"
+					<!--<Style x:Key="{x:Type ScrollViewer}"
 								 TargetType="{x:Type ScrollViewer}">
 						<Setter Property="HorizontalScrollBarVisibility"
 										Value="Hidden" />
@@ -202,69 +202,8 @@
 										Value="{DynamicResource {x:Static SystemParameters.VerticalScrollBarWidthKey}}" />
 						<Setter Property="Margin"
 										Value="2" />
-						<!--<Setter Property="Margin"
-										Value="0" />-->
 						<Setter Property="Width"
 										Value="10" />
-						<!--<Setter Property="Template">
-							<Setter.Value>
-								<ControlTemplate TargetType="{x:Type ScrollBar}">
-									<Border CornerRadius="4"
-													Margin="4"
-													Opacity="0.75"
-													Background="{TemplateBinding Background}">
-										<Grid SnapsToDevicePixels="true">
-											<Grid.RowDefinitions>
-												<RowDefinition Height="0.00001*" />
-												<RowDefinition MaxHeight="{DynamicResource {x:Static SystemParameters.VerticalScrollBarButtonHeightKey}}" />
-												<RowDefinition MaxHeight="{DynamicResource {x:Static SystemParameters.VerticalScrollBarButtonHeightKey}}" />
-											</Grid.RowDefinitions>
-											<Track x:Name="PART_Track"
-														 IsEnabled="{TemplateBinding IsMouseOver}"
-														 IsDirectionReversed="true">
-												<Track.DecreaseRepeatButton>
-													<RepeatButton Style="{StaticResource VerticalScrollBarPageButton}"
-																				Command="{x:Static ScrollBar.PageUpCommand}" />
-												</Track.DecreaseRepeatButton>
-												<Track.IncreaseRepeatButton>
-													<RepeatButton Style="{StaticResource VerticalScrollBarPageButton}"
-																				Command="{x:Static ScrollBar.PageDownCommand}" />
-												</Track.IncreaseRepeatButton>
-												<Track.Thumb>
-													<Thumb Style="{StaticResource ScrollBarThumb}"
-																 theme:ScrollChrome.ScrollGlyph="VerticalGripper"
-																 Margin="2" />
-												</Track.Thumb>
-											</Track>
-											<RepeatButton Style="{StaticResource ScrollBarButton}"
-																		Background="#FFFFFFFF"
-																		Grid.Row="1"
-																		IsEnabled="{TemplateBinding IsMouseOver}"
-																		Command="{x:Static ScrollBar.LineUpCommand}"
-																		theme:ScrollChrome.ScrollGlyph="UpArrow"
-																		RenderTransformOrigin="0.5, 0.5">
-												<RepeatButton.RenderTransform>
-													<ScaleTransform ScaleX="1.5"
-																					ScaleY="1.5" />
-												</RepeatButton.RenderTransform>
-											</RepeatButton>
-											<RepeatButton Style="{StaticResource ScrollBarButton}"
-																		Background="#FFFFFFFF"
-																		Grid.Row="2"
-																		IsEnabled="{TemplateBinding IsMouseOver}"
-																		Command="{x:Static ScrollBar.LineDownCommand}"
-																		theme:ScrollChrome.ScrollGlyph="DownArrow"
-																		RenderTransformOrigin="0.5, 0.5">
-												<RepeatButton.RenderTransform>
-													<ScaleTransform ScaleX="1.5"
-																					ScaleY="1.5" />
-												</RepeatButton.RenderTransform>
-											</RepeatButton>
-										</Grid>
-									</Border>
-								</ControlTemplate>
-							</Setter.Value>
-						</Setter>-->
 						<Setter Property="Template">
 							<Setter.Value>
 								<ControlTemplate TargetType="{x:Type ScrollBar}">
@@ -448,7 +387,7 @@
 								</Setter>
 							</MultiTrigger>
 						</Style.Triggers>
-					</Style>
+					</Style>-->
 				</ResourceDictionary>
 				<ResourceDictionary>
 					<ControlTemplate x:Key="CommonValidationToolTipTemplate"
@@ -1118,7 +1057,7 @@
 														 x:Name="Text"
 														 Text='{Binding Key, UpdateSourceTrigger=PropertyChanged}'
 														 HorizontalContentAlignment='Center'
-														 HorizontalScrollBarVisibility='Visible'
+														 HorizontalScrollBarVisibility='Auto'
 														 Style="{TemplateBinding TextBoxStyle}"
 														 BorderThickness="{TemplateBinding BorderThickness}"
 														 Foreground="{TemplateBinding Foreground}"
@@ -1334,8 +1273,8 @@
 		</ResourceDictionary>
 	</UserControl.Resources>
 	<!--<DockPanel LastChildFill="True">-->
-	<Border BorderThickness='1'
-					BorderBrush='Black'>
+	<!--<Border BorderThickness='1'
+					BorderBrush='#aaa'>-->
 		<Grid>
 			<Grid.RowDefinitions>
 				<RowDefinition Height="Auto" />
@@ -1393,7 +1332,7 @@
 				<TreeView x:Name="treeView_CommandList"
 									HorizontalAlignment="Stretch"
 									VerticalAlignment="Stretch"
-									BorderBrush="#ddd"
+									BorderBrush="Transparent"
 									FontSize="20"
 									SelectedItemChanged="treeView_CommandList_SelectedItemChanged"
 									Focusable='False'>
@@ -1522,8 +1461,8 @@
 				</TreeView>
 				<!--</Expander>-->
 				<GridSplitter Width="2"
-											BorderThickness="1"
-											BorderBrush="#999"
+											BorderThickness="2"
+											BorderBrush="#e0e0e0"
 											Focusable='False' />
 				<TextBlock Grid.Column="1"
 									 x:Name="textBox_Messages"
@@ -1535,5 +1474,5 @@
 									 Padding='10,0' />
 			</Grid>
 		</Grid>
-	</Border>
+	<!--</Border>-->
 </UserControl>

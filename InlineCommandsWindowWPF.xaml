@@ -8,7 +8,6 @@
 				Width="1200"
 				MinWidth="150"
 				WindowStartupLocation='CenterScreen'
-				AllowsTransparency='True'
 				WindowStyle='None'
 				Background='Transparent'
 				Closing='InlineCommandsWindowWPF1_Closing'
@@ -27,8 +26,7 @@
 	<Grid>
 		<SharedClasses:InlineCommandsUserControlWPF x:Name="inlineCommandsUserControlWPF1"
 																								HorizontalAlignment="Stretch"
-																								Margin="8"
-																								VerticalAlignment="Top">
+																								VerticalAlignment="Stretch">
 			<SharedClasses:InlineCommandsUserControlWPF.Background>
 				<LinearGradientBrush StartPoint="0,0"
 														 EndPoint="0,1">

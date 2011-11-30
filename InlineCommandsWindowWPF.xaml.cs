@@ -15,8 +15,9 @@ public partial class InlineCommandsWindowWPF : Window
 
 	private void InlineCommandsWindowWPF1_Closing(object sender, System.ComponentModel.CancelEventArgs e)
 	{
-		e.Cancel = true;
-		this.Hide();
+		//e.Cancel = true;
+		//this.Hide();
+		//Application.Current.MainWindow.Close();
 	}
 
 	private void InlineCommandsWindowWPF1_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)

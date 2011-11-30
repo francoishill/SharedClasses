@@ -45,7 +45,7 @@ public class WindowsInterop
 	{
 		//window.Visibility = Visibility.Visible;
 		window.Show();
-		window.WindowState = WindowState.Normal;
+		if (window.WindowState != WindowState.Normal) window.WindowState = WindowState.Normal;
 		window.Activate();
 	}
 }

@@ -560,9 +560,21 @@
 																		Offset="1" />
 										</LinearGradientBrush>
 									</Border.Background>
-									<TextBlock x:Name="EmbeddedButtonTextBlock"
-														 Foreground="#555"
-														 Text="Testing" />
+									<DockPanel>
+										<TextBlock DockPanel.Dock='Left'
+															 x:Name="EmbeddedButtonTextBlock"
+															 Foreground="#555"
+															 Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}">
+										<TextBlock.ToolTip>
+											<StackPanel>
+												<TextBlock Text='{Binding Description, UpdateSourceTrigger=PropertyChanged}'/>
+												<TextBlock Text='{Binding ArgumentsExample, UpdateSourceTrigger=PropertyChanged}'/>
+											</StackPanel>
+										</TextBlock.ToolTip>
+									</TextBlock>
+										<!--<TextBlock DockPanel.Dock='Right'
+															 Text='{Binding Description, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}'/>-->
+									</DockPanel>
 								</Border>
 								<Border DockPanel.Dock='Left'>
 									<Border.Resources>
@@ -572,7 +584,8 @@
 																		 Color="Transparent" />
 									</Border.Resources>
 									<ListBox x:Name='EmbeddedListbox'
-													 BorderThickness='0'>
+													 BorderThickness='0'
+													 ItemsSource='{Binding CurrentArgumentsPair, NotifyOnSourceUpdated=True, UpdateSourceTrigger=PropertyChanged}'>
 										<ListBox.ItemsPanel>
 											<ItemsPanelTemplate>
 												<WrapPanel IsItemsHost="True" />
@@ -1120,7 +1133,9 @@
 											</TextBox.ContextMenu>
 											<TextBox.Template>
 												<ControlTemplate>
-													<Border Background='White' CornerRadius='3' BorderThickness='1'>
+													<Border Background='White'
+																	CornerRadius='3'
+																	BorderThickness='1'>
 														<Border.Resources>
 															<Style TargetType='{x:Type TextBlock}'>
 																<Style.Triggers>

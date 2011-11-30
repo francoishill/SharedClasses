@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.Reflection;
 using System.Globalization;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 
 namespace InlineCommands
 {
@@ -817,14 +818,24 @@ namespace InlineCommands
 		}
 	}
 
-	public class KeyAndValuePair
+	public class KeyAndValuePair: INotifyPropertyChanged
 	{
-		public string Key { get; set; }
+		private string key;
+		public string Key { get { return key; } set { key = value; NotifyPropertyChanged("Key"); } }
 		public string Value { get; set; }
 		public KeyAndValuePair(string KeyIn, string ValueIn)
 		{
 			Key = KeyIn;
 			Value = ValueIn;
+		}
+
+		public event PropertyChangedEventHandler PropertyChanged;
+		private void NotifyPropertyChanged(String info)
+		{
+			if (PropertyChanged != null)
+			{
+				PropertyChanged(this, new PropertyChangedEventArgs(info));
+			}
 		}
 	}
 
@@ -924,14 +935,13 @@ namespace InlineCommands
 			bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments);
 			ObservableCollection<string> GetPredefinedArgumentsList(int Index, bool SuppressErrors = false);
 			Dictionary<string, string> GetArgumentReplaceKeyValuePair(int Index, bool SuppressErrors = false);
-			void ClearAndAddAllBlankArguments();
-			BoolResultWithErrorMessage AddCurrentArgument(string argument);
+			//void Add_AfterClearing_AllBlankArguments();
 			int CurrentArgumentCount { get; }
 			void RemoveCurrentArgument(int Index);
 			ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair { get; }
 		}
 
-		public abstract class OverrideToStringClass : ICommandWithHandler
+		public abstract class OverrideToStringClass : ICommandWithHandler, INotifyPropertyChanged
 		{
 			//public abstract override string ToString();
 			public override string ToString() { return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(CommandName); }
@@ -964,21 +974,15 @@ namespace InlineCommands
 					return new Dictionary<string, string>();
 				}
 			}
-			public abstract string[] ArgumentDescriptions { get; }
-			public virtual void ClearAndAddAllBlankArguments()
-			{
-				CurrentArgumentsPair.Clear();
-				foreach (string argdesc in ArgumentDescriptions)
-					CurrentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", argdesc));
-			}
-			//public abstract BoolResultWithErrorMessage AddCurrentArgument(string argument);
-			public virtual BoolResultWithErrorMessage AddCurrentArgument(string argument)
-			{
-				string argumentDescription = "";
-				if (ArgumentDescriptions.Length >= currentArgumentsPair.Count + 1)
-					argumentDescription = ArgumentDescriptions[currentArgumentsPair.Count];
-				return currentArgumentsPair.Add(new KeyAndValuePair(argument, argumentDescription));
-			}
+
+			private bool KeyAndValuePair_ChangedEventsAdded = false;
+			public abstract KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get; set; }
+			//public virtual void Add_AfterClearing_AllBlankArguments()
+			//{
+			//	CurrentArgumentsPair.Clear();
+			//	foreach (string argdesc in ArgumentDescriptions)
+			//		CurrentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", argdesc));
+			//}
 
 			public virtual int CurrentArgumentCount
 			{
@@ -997,19 +1001,59 @@ namespace InlineCommands
 				bool success = PreValidateArgument(out errorMessage, CurrentArgumentsPair.Count, argumentToAdd.Key);
 				return new BoolResultWithErrorMessage(success, errorMessage);
 			}
-			private ObservableCollectionWithValidationOnAdd<KeyAndValuePair> currentArgumentsPair;
+			internal ObservableCollectionWithValidationOnAdd<KeyAndValuePair> currentArgumentsPair;
 			public virtual ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair
 			{
 				get
 				{
+					if (!KeyAndValuePair_ChangedEventsAdded)
+					{
+						foreach (KeyAndValuePair keyandvalue in AvailableArgumentAndDescriptionsPair)
+							keyandvalue.PropertyChanged += (snder, propchangedevent) =>
+							{
+								NotifyPropertyChanged("CurrentArgumentsPair");
+								//(snder as KeyAndValuePair).
+							};
+						KeyAndValuePair_ChangedEventsAdded = true;
+					}
+
 					if (currentArgumentsPair == null) currentArgumentsPair = new ObservableCollectionWithValidationOnAdd<KeyAndValuePair>(ValidationFunction);
+
+					if (currentArgumentsPair.Count != ArgumentCountForCurrentPopulatedArguments)
+					{
+						if (currentArgumentsPair.Count < ArgumentCountForCurrentPopulatedArguments)
+						{
+							while (currentArgumentsPair.Count < ArgumentCountForCurrentPopulatedArguments)
+							{
+								currentArgumentsPair.AddWithoutValidation(
+									AvailableArgumentAndDescriptionsPair[currentArgumentsPair.Count]);
+								//currentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", currentArgumentsPair.Count <= ArgumentDescriptions.Length ? ArgumentDescriptions[currentArgumentsPair.Count] : "no argument description"));
+							}
+						}
+						else if (currentArgumentsPair.Count > ArgumentCountForCurrentPopulatedArguments)
+						{
+							while (currentArgumentsPair.Count > ArgumentCountForCurrentPopulatedArguments)
+								currentArgumentsPair.RemoveAt(currentArgumentsPair.Count - 1);
+						}
+					}
 					return currentArgumentsPair;
 				}
 				set { currentArgumentsPair = value; }
 			}
+
+			public abstract int ArgumentCountForCurrentPopulatedArguments { get; }
 			//public abstract int CurrentArgumentCount { get; }
 			//public abstract void RemoveCurrentArgument(int Index);
 			//public abstract ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair { get; set; }
+
+			public event PropertyChangedEventHandler PropertyChanged;
+			private void NotifyPropertyChanged(String info)
+			{
+				if (PropertyChanged != null)
+				{
+					PropertyChanged(this, new PropertyChangedEventArgs(info));
+				}
+			}
 		}
 
 		public class RunCommand : OverrideToStringClass
@@ -1072,11 +1116,13 @@ namespace InlineCommands
 				}
 			}
 
-			private string[] argumentDescriptions = new string[]
+			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
 			{
-				"parameter"
+				new KeyAndValuePair("", "parameter")
 			};
-			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
+			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+
+			public override int ArgumentCountForCurrentPopulatedArguments { get { return 1; } }
 		}
 
 		public class GoogleSearchCommand : OverrideToStringClass
@@ -1137,11 +1183,13 @@ namespace InlineCommands
 				}
 			}
 
-			private string[] argumentDescriptions = new string[]
+			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
 			{
-				"search phrase"
+				new KeyAndValuePair("", "search phrase")
 			};
-			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
+			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+
+			public override int ArgumentCountForCurrentPopulatedArguments { get { return 1; } }
 		}
 
 		public class ExploreCommand : OverrideToStringClass
@@ -1207,11 +1255,13 @@ namespace InlineCommands
 				}
 			}
 
-			private string[] argumentDescriptions = new string[]
+			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
 			{
-				"folder"
+				new KeyAndValuePair("", "folder")
 			};
-			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
+			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+
+			public override int ArgumentCountForCurrentPopulatedArguments { get { return 1; } }
 		}
 
 		public class AddTodoitemFirepumaCommand : OverrideToStringClass
@@ -1299,14 +1349,16 @@ namespace InlineCommands
 				}
 			}
 
-			private string[] argumentDescriptions = new string[]
+			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
 			{
-				"minutes",
-				"autosnooze",
-				"name",
-				"description"
+				new KeyAndValuePair("", "minutes"),
+				new KeyAndValuePair("", "autosnooze"),
+				new KeyAndValuePair("", "name"),
+				new KeyAndValuePair("", "description")
 			};
-			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
+			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+
+			public override int ArgumentCountForCurrentPopulatedArguments { get { return 4; } }
 		}
 
 		public class MailCommand : OverrideToStringClass
@@ -1376,13 +1428,15 @@ namespace InlineCommands
 				}
 			}
 
-			private string[] argumentDescriptions = new string[]
+			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
 			{
-				"to address",
-				"subject",
-				"body"
+				new KeyAndValuePair("", "to address"),
+				new KeyAndValuePair("", "subject"),
+				new KeyAndValuePair("", "body"),
 			};
-			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
+			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+
+			public override int ArgumentCountForCurrentPopulatedArguments { get { return 3; } }
 		}
 
 		public class WebCommand : OverrideToStringClass
@@ -1447,11 +1501,13 @@ namespace InlineCommands
 				}
 			}
 
-			private string[] argumentDescriptions = new string[]
+			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
 			{
-				"url"
+				new KeyAndValuePair("", "url")
 			};
-			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
+			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+
+			public override int ArgumentCountForCurrentPopulatedArguments { get { return 1; } }
 		}
 
 		public class CallCommand : OverrideToStringClass
@@ -1524,14 +1580,13 @@ namespace InlineCommands
 				{ "honda",  "Honda Tygervalley: 021 910 8300" }
 			};
 
-			private string[] argumentDescriptions = new string[]
+			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
 			{
-				"name"
+				new KeyAndValuePair("", "name")
 			};
-			public override string[] ArgumentDescriptions
-			{
-				get { return argumentDescriptions; }
-			}
+			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+
+			public override int ArgumentCountForCurrentPopulatedArguments { get { return 1; } }
 		}
 
 		public class KillCommand : OverrideToStringClass
@@ -1628,11 +1683,13 @@ namespace InlineCommands
 				}
 			}
 
-			private string[] argumentDescriptions = new string[]
+			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
 			{
-				"process name"
+				new KeyAndValuePair("", "process name")
 			};
-			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
+			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+
+			public override int ArgumentCountForCurrentPopulatedArguments { get { return 1; } }
 		}
 
 		public class StartubBatCommand : OverrideToStringClass
@@ -1691,7 +1748,7 @@ namespace InlineCommands
 				else if (arguments.Length > 2) errorMessage = "More than 2 arguments not allowed for Startup bat command";
 				else if (!PreValidateArgument(out errorMessage, 0, arguments[0]))
 					errorMessage = errorMessage + "";
-				else if (!PreValidateArgument(out errorMessage, 1, arguments[1]))
+				else if (arguments.Length > 1 && !PreValidateArgument(out errorMessage, 1, arguments[1]))
 					errorMessage = errorMessage + "";
 				else return true;
 				return false;
@@ -1702,7 +1759,7 @@ namespace InlineCommands
 				try
 				{
 					string filePath = @"C:\Francois\Other\Startup\work Startup.bat";
-					StartupbatInterop.PerformStartupbatCommand(filePath, arguments[0] + " " + arguments[1], textFeedbackEvent);
+					StartupbatInterop.PerformStartupbatCommand(filePath, arguments[0] + (arguments.Length > 1 ? " " + arguments[1] : ""), textFeedbackEvent);
 					errorMessage = "";
 					return true;
 				}
@@ -1714,12 +1771,22 @@ namespace InlineCommands
 				}
 			}
 
-			private string[] argumentDescriptions = new string[]
+			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
 			{
-				"sub-command",
-				"parameter",
+				new KeyAndValuePair("", "sub-command"),
+				new KeyAndValuePair("", "parameter")
 			};
-			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
+			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+
+			public override int ArgumentCountForCurrentPopulatedArguments
+			{
+				get
+				{
+					if (currentArgumentsPair.Count > 0 && (new string[] { "getline", "comment", "uncomment" }).Contains(currentArgumentsPair[0].Key))
+						return 2;
+					else return 1;
+				}
+			}
 		}
 
 		public class CmdCommand : OverrideToStringClass
@@ -1781,11 +1848,13 @@ namespace InlineCommands
 				}
 			}
 
-			private string[] argumentDescriptions = new string[]
+			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
 			{
-				"folder"
+				new KeyAndValuePair("", "folder")
 			};
-			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
+			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+
+			public override int ArgumentCountForCurrentPopulatedArguments { get { return 1; } }
 		}
 
 		public class VsCmdCommand : OverrideToStringClass
@@ -1847,11 +1916,13 @@ namespace InlineCommands
 				}
 			}
 
-			private string[] argumentDescriptions = new string[]
+			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
 			{
-				"folder"
+				new KeyAndValuePair("", "folder")
 			};
-			public override string[] ArgumentDescriptions { get { return argumentDescriptions; } }
+			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+
+			public override int ArgumentCountForCurrentPopulatedArguments { get { return 1; } }
 		}
 
 		public class BtwCommand : OverrideToStringClass
@@ -1914,14 +1985,13 @@ namespace InlineCommands
 				}
 			}
 
-			private string[] argumentDescriptions = new string[]
+			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
 			{
-				"btw text"
+				new KeyAndValuePair("", "btw text")
 			};
-			public override string[] ArgumentDescriptions
-			{
-				get { return argumentDescriptions; }
-			}
+			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+
+			public override int ArgumentCountForCurrentPopulatedArguments { get { return 1; } }
 		}
 
 		public class SvnCommand : OverrideToStringClass
@@ -2001,15 +2071,22 @@ namespace InlineCommands
 				}
 			}
 
-			private string[] argumentDescriptions = new string[]
+			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
 			{
-				"sub-command",
-				"Folder/Path",
-				//"Description",
+				new KeyAndValuePair("", "sub-command"),
+				new KeyAndValuePair("", "Folder/path"),
+				new KeyAndValuePair("", "Description")
 			};
-			public override string[] ArgumentDescriptions
+			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+
+			public override int ArgumentCountForCurrentPopulatedArguments
 			{
-				get { return argumentDescriptions; }
+				get
+				{
+					if (currentArgumentsPair.Count > 0 && (new string[] { "commit" }).Contains(currentArgumentsPair[0].Key))
+						return 3;
+					else return 2;
+				}
 			}
 		}
 
@@ -2094,16 +2171,14 @@ namespace InlineCommands
 				}
 			}
 
-			private string[] argumentDescriptions = new string[]
+			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
 			{
-				"sub-command",
-				"Folder/Path",
-				//"Description",
+				new KeyAndValuePair("", "sub-command"),
+				new KeyAndValuePair("", "Folder/Path"),
 			};
-			public override string[] ArgumentDescriptions
-			{
-				get { return argumentDescriptions; }
-			}
+			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+
+			public override int ArgumentCountForCurrentPopulatedArguments { get { return 2; } }
 		}
 
 		//TODO: This platform (using interface) is already working fine, should build on on it and add all commands

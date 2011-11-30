@@ -10,7 +10,6 @@
 				WindowStartupLocation='CenterScreen'
 				AllowsTransparency='True'
 				WindowStyle='None'
-				WindowState='Maximized'
 				Background='Transparent'
 				Closing='InlineCommandsWindowWPF1_Closing'
 				MouseLeftButtonDown='InlineCommandsWindowWPF1_MouseLeftButtonDown'

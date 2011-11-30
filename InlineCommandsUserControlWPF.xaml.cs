@@ -140,12 +140,13 @@ namespace SharedClasses
 				{
 					e.Handled = true;
 					ICommandWithHandler command = e.NewValue as ICommandWithHandler;
+					textBox_CommandLine.DataContext = command;
 					label_ArgumentsExample.Content = label_ArgumentsExample.ToolTip = command.ArgumentsExample.Replace("\n", "  ");
 
 					//TextBlock tmpTextBlock = (TextBlock)textBox_CommandLine.Template.FindName("EmbeddedButtonTextBlock", textBox_CommandLine);
-					TextBlock tmpTextBlock = GetEmbeddedButtonTextBlock();
-					tmpTextBlock.Text = command.DisplayName;
-					tmpTextBlock.ToolTip = command.Description + Environment.NewLine + "For example:" + Environment.NewLine + command.ArgumentsExample;
+					//TextBlock tmpTextBlock = GetEmbeddedButtonTextBlock();
+					//tmpTextBlock.Text = command.DisplayName;
+					//tmpTextBlock.ToolTip = command.Description + Environment.NewLine + "For example:" + Environment.NewLine + command.ArgumentsExample;
 					//Border tmpBorder = (Border)textBox_CommandLine.Template.FindName("EmbeddedButton", textBox_CommandLine);
 					Border tmpBorder = GetEmbeddedButton();
 					tmpBorder.Tag = command;
@@ -164,9 +165,9 @@ namespace SharedClasses
 					//textBox_CommandLine.ItemsSource = command.GetPredefinedArgumentsList(0, true);
 					//textBox_CommandLine.UpdateLayout();
 
-					if (command.CurrentArgumentCount == 0)
-						command.ClearAndAddAllBlankArguments();
-					GetEmbeddedListbox().ItemsSource = command.CurrentArgumentsPair;
+					//if (command.CurrentArgumentCount == 0)
+					//	command.Add_AfterClearing_AllBlankArguments();
+					//GetEmbeddedListbox().ItemsSource = command.CurrentArgumentsPair;
 					this.UpdateLayout();
 					if (command.CurrentArgumentCount > 0)
 					{
@@ -212,7 +213,7 @@ namespace SharedClasses
 
 				//TextBlock tmpTextBlock = (TextBlock)textBox_CommandLine.Template.FindName("EmbeddedButtonTextBlock", textBox_CommandLine);
 				TextBlock tmpTextBlock = GetEmbeddedButtonTextBlock();
-				tmpTextBlock.Text = "";
+				//tmpTextBlock.Text = "";
 
 				//Border tmpBorder = (Border)textBox_CommandLine.Template.FindName("EmbeddedButton", textBox_CommandLine);
 				Border tmpBorder = GetEmbeddedButton();
@@ -510,7 +511,8 @@ namespace SharedClasses
 		private void ClearCommandSelection()
 		{
 			ClearSelection(treeView_CommandList);
-			GetEmbeddedListbox().ItemsSource = null;
+			textBox_CommandLine.DataContext = null;
+			//GetEmbeddedListbox().ItemsSource = null;
 			ResetAutocompleteToCommandNamesList();
 		}
 

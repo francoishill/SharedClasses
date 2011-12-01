@@ -2052,7 +2052,7 @@ namespace InlineCommands
 					if (Enum.TryParse<SvnInterop.SvnCommand>(arguments[0], true, out svnCommand))
 					{
 						SvnInterop.PerformSvn(
-						 arguments[1],//+ ";" + arguments[2]; still need to add here for description
+							arguments[1] + (arguments[0] == "commit" ? ";" + arguments[2] : ""),
 						 svnCommand,
 						 textFeedbackEvent);
 						errorMessage = "";

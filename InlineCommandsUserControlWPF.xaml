@@ -1155,9 +1155,13 @@
 											</Grid>
 										</Border>
 										<Popup x:Name="Popup"
-													 Width='{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type Grid}, Mode=FindAncestor}}'
+													 Width='Auto'
 													 VerticalOffset='1'
 													 AllowsTransparency='True'>
+										<!--<Popup x:Name="Popup"
+													 Width='{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type Grid}, Mode=FindAncestor}}'
+													 VerticalOffset='1'
+													 AllowsTransparency='True'>-->
 											<!--<Grid Opacity="{TemplateBinding Opacity}" >
 												<Border x:Name="PopupBorder"
 																HorizontalAlignment="Stretch"

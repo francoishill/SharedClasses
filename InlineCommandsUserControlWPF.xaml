@@ -1468,15 +1468,27 @@
 											BorderThickness="2"
 											BorderBrush="#e0e0e0"
 											Focusable='False' />
-				<TextBlock Grid.Column="1"
+				<!--<TextBlock Grid.Column="1"
 									 x:Name="textBox_Messages"
 									 HorizontalAlignment="Stretch"
-									 Margin="0,0,0,0"
+									 Margin="0,0,5,0"
 									 MinWidth="50"
 									 Text=""
+									 ScrollViewer.HorizontalScrollBarVisibility='Visible'
+									 ScrollViewer.VerticalScrollBarVisibility='Visible'
 									 Foreground="Green"
-									 Padding='10,0' />
-			</Grid>
+									 Padding='10,0' />-->
+			<ScrollViewer Grid.Column="1"
+								 x:Name="textBox_Messages"
+								 HorizontalAlignment="Stretch"
+								 Margin="0,0,5,0"
+								 MinWidth="50"
+								 Content=""
+								 ScrollViewer.HorizontalScrollBarVisibility='Auto'
+								 ScrollViewer.VerticalScrollBarVisibility='Auto'
+								 Foreground="Green"
+								 Padding='10,0' />
+		</Grid>
 		</Grid>
 	<!--</Border>-->
 </UserControl>

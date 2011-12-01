@@ -46,8 +46,11 @@ namespace SharedClasses
 					Dispatcher.BeginInvoke(DispatcherPriority.Background,
 					(Action)delegate
 					{
-						textBox_Messages.Text += (textBox_Messages.Text.Length > 0 ? Environment.NewLine : "")
+						//textBox_Messages.Text += (textBox_Messages.Text.Length > 0 ? Environment.NewLine : "")
+						//	+ evtargs.FeedbackText;
+						textBox_Messages.Content += (textBox_Messages.Content.ToString().Length > 0 ? Environment.NewLine : "")
 							+ evtargs.FeedbackText;
+						textBox_Messages.ScrollToBottom();
 					});
 				};
 				progressChangedEvent += (snder, evtargs) =>
@@ -55,8 +58,11 @@ namespace SharedClasses
 					Dispatcher.BeginInvoke(DispatcherPriority.Background,
 					(Action)delegate
 					{
-						textBox_Messages.Text += (textBox_Messages.Text.Length > 0 ? Environment.NewLine : "")
+						//textBox_Messages.Text += (textBox_Messages.Text.Length > 0 ? Environment.NewLine : "")
+						//	+ evtargs.CurrentValue + "/" + evtargs.MaximumValue;
+						textBox_Messages.Content += (textBox_Messages.Content.ToString().Length > 0 ? Environment.NewLine : "")
 							+ evtargs.CurrentValue + "/" + evtargs.MaximumValue;
+						textBox_Messages.ScrollToBottom();
 					});
 				};
 				textFeedbackEventInitialized = true;

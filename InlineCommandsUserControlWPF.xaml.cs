@@ -403,6 +403,7 @@ namespace SharedClasses
 					lb.SelectedIndex = newSelectedIndex;
 					TextBox textboxOfArgument = GetActualTextboxOfArgument(lb.SelectedItem);
 					GetAutocompleteBoxOfArgument(lb.SelectedItem).ItemsSource = comm.GetPredefinedArgumentsList(newSelectedIndex, true);
+					GetAutocompleteBoxOfArgument(lb.SelectedItem).Focus();
 					textboxOfArgument.Focus();
 					//GetAutocompleteBoxOfArgument(lb.SelectedItem).IsDropDownOpen = true;
 
@@ -625,6 +626,11 @@ namespace SharedClasses
 			//(sender as TextBox).ContextMenu = GetActualTextBoxOfAutocompleteControl().Text == "" ? cm : null;
 			//if (GetActualTextBoxOfAutocompleteControl().Text == "") e.Handled = true;
 			if (textBox_CommandLine.ItemsSource == null) e.Handled = true;
+		}
+
+		private void TextBoxWithText_GotFocus(object sender, RoutedEventArgs e)
+		{
+			(sender as TextBox).SelectionStart = (sender as TextBox).Text.Length;
 		}
 
 		//private class AutocompleteProvider : IAutoCompleteDataProvider

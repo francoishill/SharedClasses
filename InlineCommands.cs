@@ -2146,7 +2146,11 @@ namespace InlineCommands
 					if (arguments[0] == "localvs")
 					{
 						string tmpNoUseVersionStr;
-						VisualStudioInterop.PerformPublish(arguments[1], out tmpNoUseVersionStr, textFeedbackEvent: textFeedbackEvent);
+						VisualStudioInterop.PerformPublish(
+							arguments[1],
+							out tmpNoUseVersionStr,
+							UserMessages.Confirm("Update the revision also?"),
+							textFeedbackEvent: textFeedbackEvent);
 					}
 					else if (arguments[0] == "onlinevs")
 					{

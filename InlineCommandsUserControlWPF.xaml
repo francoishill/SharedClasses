@@ -1101,13 +1101,22 @@
 																			Background='Transparent'>
 																<TextBlock Padding='3,0'>x</TextBlock>
 															</Border>
-															<TextBox DockPanel.Dock='Left'
+															<TextBox x:Name='TextBoxWithText' DockPanel.Dock='Left'
 																			 Background='Transparent'
 																			 BorderBrush='Transparent'
 																			 BorderThickness='0'
-																			 Text='{Binding Key, UpdateSourceTrigger=PropertyChanged}' />
+																			 Text='{Binding Key, UpdateSourceTrigger=PropertyChanged}' 
+																			 GotFocus='TextBoxWithText_GotFocus'/>
 														</DockPanel>
 													</Border>
+													<ControlTemplate.Triggers>
+														<Trigger Property="IsFocused"
+																		 Value="True">
+															<Setter TargetName="TextBoxWithText"
+																			Property="FocusManager.FocusedElement"
+																			Value="{Binding ElementName=TextBoxWithText}" />
+														</Trigger>
+													</ControlTemplate.Triggers>
 												</ControlTemplate>
 											</TextBox.Template>
 										</TextBox>

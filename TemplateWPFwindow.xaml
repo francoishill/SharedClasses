@@ -1,0 +1,10 @@
+﻿<Window xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
+				xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
+				xmlns:SharedClasses="clr-namespace:SharedClasses"
+				x:Class='TemplateWPFwindow'
+				Title='TemplateWPFwindow'
+				x:Name='TemplateWPFwindow1'>
+	<Grid>
+		
+	</Grid>
+</Window>

@@ -368,43 +368,19 @@ namespace SharedClasses
 			}
 			else if (e.Key == Key.Tab || (e.Key == Key.Enter && (textBox_CommandLine.IsDropDownOpen || textBox_CommandLine.Text.Length > 0)))
 			{
-				Border tmpBorder = GetEmbeddedButton();
-				if (tmpBorder.Tag == null && textBox_CommandLine.Text.Trim().Length > 0)
+				//Border tmpBorder = GetEmbeddedButton();
+				//ICommandWithHandler comm = GetEmbeddedButton().Tag as ICommandWithHandler;
+				if (GetEmbeddedButton().Tag == null && textBox_CommandLine.Text.Trim().Length > 0)
 				{
 					if (InitiateCommandFromTextboxText())
 						e.Handled = true;
 				}
 				else// if (textBox_CommandLine.Text.Trim().Length > 0)
 				{
-					e.Handled = true;
-
-					ICommandWithHandler comm = tmpBorder.Tag as ICommandWithHandler;
-					ListBox lb = GetEmbeddedListbox();
-					if (lb.Items.Count == 0) return;
-					int currentSelectedIndex = lb.SelectedIndex;
-					int newSelectedIndex = currentSelectedIndex;
 					if (Keyboard.Modifiers != ModifierKeys.Shift && Keyboard.Modifiers != ModifierKeys.None)
 						return;
-					if (Keyboard.Modifiers == ModifierKeys.None)
-					{
-						int nextSelectedIndex = currentSelectedIndex + 1;
-						if (nextSelectedIndex >= lb.Items.Count)
-							nextSelectedIndex = 0;
-						newSelectedIndex = nextSelectedIndex;
-					}
-					else if (Keyboard.Modifiers == ModifierKeys.Shift)
-					{
-						int previousSelectedIndex = currentSelectedIndex - 1;
-						if (previousSelectedIndex < 0)
-							previousSelectedIndex = lb.Items.Count - 1;
-						newSelectedIndex = previousSelectedIndex;
-					}
-					if (newSelectedIndex == -1) return;
-					lb.SelectedIndex = newSelectedIndex;
-					TextBox textboxOfArgument = GetActualTextboxOfArgument(lb.SelectedItem);
-					GetAutocompleteBoxOfArgument(lb.SelectedItem).ItemsSource = comm.GetPredefinedArgumentsList(newSelectedIndex, true);
-					GetAutocompleteBoxOfArgument(lb.SelectedItem).Focus();
-					textboxOfArgument.Focus();
+					e.Handled = true;
+					FocusNextCommandArgument();
 					//GetAutocompleteBoxOfArgument(lb.SelectedItem).IsDropDownOpen = true;
 
 					//return;
@@ -515,6 +491,35 @@ namespace SharedClasses
 			//}
 		}
 
+		private void FocusNextCommandArgument()
+		{
+			ICommandWithHandler comm = GetEmbeddedButton().Tag as ICommandWithHandler;
+			ListBox lb = GetEmbeddedListbox();
+			if (lb.Items.Count == 0) return;
+			int currentSelectedIndex = lb.SelectedIndex;
+			int newSelectedIndex = currentSelectedIndex;
+			if (Keyboard.Modifiers == ModifierKeys.None)
+			{
+				int nextSelectedIndex = currentSelectedIndex + 1;
+				if (nextSelectedIndex >= lb.Items.Count)
+					nextSelectedIndex = 0;
+				newSelectedIndex = nextSelectedIndex;
+			}
+			else if (Keyboard.Modifiers == ModifierKeys.Shift)
+			{
+				int previousSelectedIndex = currentSelectedIndex - 1;
+				if (previousSelectedIndex < 0)
+					previousSelectedIndex = lb.Items.Count - 1;
+				newSelectedIndex = previousSelectedIndex;
+			}
+			if (newSelectedIndex == -1 || newSelectedIndex == currentSelectedIndex) return;
+			lb.SelectedIndex = newSelectedIndex;
+			TextBox textboxOfArgument = GetActualTextboxOfArgument(lb.SelectedItem);
+			GetAutocompleteBoxOfArgument(lb.SelectedItem).ItemsSource = comm.GetPredefinedArgumentsList(newSelectedIndex, true);
+			GetAutocompleteBoxOfArgument(lb.SelectedItem).Focus();
+			textboxOfArgument.Focus();
+		}
+
 		private void ClearCommandSelection()
 		{
 			ClearSelection(treeView_CommandList);
@@ -594,7 +599,11 @@ namespace SharedClasses
 
 		private void ArgumentText_GotFocus(object sender, RoutedEventArgs e)
 		{
-			(sender as AutoCompleteBox).IsDropDownOpen = true;
+			//try
+			//{
+				(sender as AutoCompleteBox).IsDropDownOpen = true;
+			//}
+			//catch { }
 		}
 
 		private void ClearTextboxTextButton_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -631,6 +640,24 @@ namespace SharedClasses
 		private void TextBoxWithText_GotFocus(object sender, RoutedEventArgs e)
 		{
 			(sender as TextBox).SelectionStart = (sender as TextBox).Text.Length;
+		}
+
+		private void textBox_Messages_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+		{
+			if (e.ChangedButton == System.Windows.Input.MouseButton.Left)
+			{
+				Window w = this.GetTopParent();
+				if (w != null)
+				{
+					e.Handled = true;
+					w.DragMove();
+				}
+			}
+		}
+
+		private void ArgumentText_DropDownClosed(object sender, RoutedPropertyChangedEventArgs<bool> e)
+		{
+			//FocusNextCommandArgument();
 		}
 
 		//private class AutocompleteProvider : IAutoCompleteDataProvider

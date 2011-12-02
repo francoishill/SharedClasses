@@ -22,7 +22,8 @@ public partial class InlineCommandsWindowWPF : Window
 
 	private void InlineCommandsWindowWPF1_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
 	{
-		DragMove();
+		if (e.ChangedButton == System.Windows.Input.MouseButton.Left)
+			DragMove();
 	}
 
 	private void InlineCommandsWindowWPF1_MouseRightButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)

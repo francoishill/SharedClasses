@@ -8,7 +8,7 @@ using System.Windows.Forms;
 
 public class MicrosoftOfficeInterop
 {
-	public static void CreateNewOutlookMessage(string To, string Subject, string Body, TextFeedbackEventHandler textFeedbackEvent = null)
+	public static void CreateNewOutlookMessage(string To, string Subject, string Body, TextFeedbackEventHandler textFeedbackEvent = null, bool ShowModally = true)
 	{
 		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 		{
@@ -27,7 +27,7 @@ public class MicrosoftOfficeInterop
 			mic.Subject = Subject;
 			mic.Body = Body;
 			//form.TopMost = false;
-			mic.Display(true);
+			mic.Display(ShowModally);
 			//form.TopMost = true;
 			//WindowsInterop.ShowAndActivateForm(form);
 		});

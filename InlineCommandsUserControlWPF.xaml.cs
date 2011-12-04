@@ -727,11 +727,11 @@ namespace SharedClasses
 		{
 			if (e.Key == Key.Down)
 			{
-				e.Handled = true;
-				Grid parentGrid = (sender as TextBox).Parent as Grid;
-				Popup popupAutocomplete = parentGrid.Children[2] as Popup;
-				ListBox listboxAutocomplete =	(popupAutocomplete.Child as Border).Child as ListBox;
-				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, listboxAutocomplete.SelectedIndex.ToString());
+				//e.Handled = true;
+				//Grid parentGrid = (sender as TextBox).Parent as Grid;
+				//Popup popupAutocomplete = parentGrid.Children[2] as Popup;
+				//ListBox listboxAutocomplete =	(popupAutocomplete.Child as Border).Child as ListBox;
+				//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, listboxAutocomplete.SelectedIndex.ToString());
 			}
 		}
 

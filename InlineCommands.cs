@@ -818,15 +818,38 @@ namespace InlineCommands
 		}
 	}
 
-	public class KeyAndValuePair: INotifyPropertyChanged
+	//public class KeyAndValuePair: INotifyPropertyChanged
+	//{
+	//	private string key;
+	//	public string Key { get { return key; } set { key = value; NotifyPropertyChanged("Key"); } }
+	//	public string Value { get; set; }
+	//	public KeyAndValuePair(string KeyIn, string ValueIn)
+	//	{
+	//		Key = KeyIn;
+	//		Value = ValueIn;
+	//	}
+
+	//	public event PropertyChangedEventHandler PropertyChanged;
+	//	private void NotifyPropertyChanged(String info)
+	//	{
+	//		if (PropertyChanged != null)
+	//		{
+	//			PropertyChanged(this, new PropertyChangedEventArgs(info));
+	//		}
+	//	}
+	//}
+
+	public class CommandArgument : INotifyPropertyChanged
 	{
-		private string key;
-		public string Key { get { return key; } set { key = value; NotifyPropertyChanged("Key"); } }
-		public string Value { get; set; }
-		public KeyAndValuePair(string KeyIn, string ValueIn)
+		private string currentValue;
+		public string CurrentValue { get { return currentValue; } set { currentValue = value; NotifyPropertyChanged("CurrentValue"); } }
+		public ObservableCollection<string> PredefinedAutocompleteList { get; set; }
+		public string DisplayName { get; set; }
+		public CommandArgument(string CurrentValueIn, string DisplayNameIn, ObservableCollection<string> PredefinedAutocompleteListIn)
 		{
-			Key = KeyIn;
-			Value = ValueIn;
+			CurrentValue = CurrentValueIn;
+			DisplayName = DisplayNameIn;
+			PredefinedAutocompleteList = PredefinedAutocompleteListIn;
 		}
 
 		public event PropertyChangedEventHandler PropertyChanged;
@@ -938,7 +961,8 @@ namespace InlineCommands
 			//void Add_AfterClearing_AllBlankArguments();
 			int CurrentArgumentCount { get; }
 			void RemoveCurrentArgument(int Index);
-			ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair { get; }
+			ObservableCollectionWithValidationOnAdd<CommandArgument> CurrentArguments { get; }
+			//ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair { get; }
 		}
 
 		public abstract class OverrideToStringClass : ICommandWithHandler, INotifyPropertyChanged
@@ -952,8 +976,48 @@ namespace InlineCommands
 			public abstract bool PreValidateArgument(out string errorMessage, int Index, string argumentValue);
 			public abstract bool ValidateArguments(out string errorMessage, params string[] arguments);
 			public abstract bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments);
+
+			public abstract CommandArgument[] AvailableArguments { get; set; }
+			internal ObservableCollectionWithValidationOnAdd<CommandArgument> currentArguments;
+			public ObservableCollectionWithValidationOnAdd<CommandArgument> CurrentArguments
+			{
+				get
+				{
+					if (!KeyAndValuePair_ChangedEventsAdded)
+					{
+						foreach (CommandArgument commandArgument in AvailableArguments)
+							commandArgument.PropertyChanged += (snder, propchangedevent) =>
+							{
+								NotifyPropertyChanged("CurrentArguments");
+							};
+						KeyAndValuePair_ChangedEventsAdded = true;
+					}
+
+					if (currentArguments == null) currentArguments = new ObservableCollectionWithValidationOnAdd<CommandArgument>(ValidationFunction);
+
+					if (currentArguments.Count != ArgumentCountForCurrentPopulatedArguments)
+					{
+						if (currentArguments.Count < ArgumentCountForCurrentPopulatedArguments)
+						{
+							while (currentArguments.Count < ArgumentCountForCurrentPopulatedArguments)
+							{
+								currentArguments.AddWithoutValidation(
+									AvailableArguments[currentArguments.Count]);
+							}
+						}
+						else if (currentArguments.Count > ArgumentCountForCurrentPopulatedArguments)
+						{
+							while (currentArguments.Count > ArgumentCountForCurrentPopulatedArguments)
+								currentArguments.RemoveAt(currentArguments.Count - 1);
+						}
+					}
+					return currentArguments;
+				}
+				set { currentArguments = value; }
+			}
+
 			public abstract ObservableCollection<string>[] PredefinedArgumentsList { get; }
-			public virtual ObservableCollection<string> GetPredefinedArgumentsList(int Index, bool SuppressErrors = false)
+			public ObservableCollection<string> GetPredefinedArgumentsList(int Index, bool SuppressErrors = false)
 			{
 				if (Index < PredefinedArgumentsList.Length)
 					return PredefinedArgumentsList[Index];
@@ -964,7 +1028,7 @@ namespace InlineCommands
 				}
 			}
 			public abstract Dictionary<string, string>[] ArgumentsReplaceKeyValuePair { get; }
-			public virtual Dictionary<string, string> GetArgumentReplaceKeyValuePair(int Index, bool SuppressErrors = false)
+			public Dictionary<string, string> GetArgumentReplaceKeyValuePair(int Index, bool SuppressErrors = false)
 			{
 				if (Index < ArgumentsReplaceKeyValuePair.Length)
 					return ArgumentsReplaceKeyValuePair[Index];
@@ -976,70 +1040,70 @@ namespace InlineCommands
 			}
 
 			private bool KeyAndValuePair_ChangedEventsAdded = false;
-			public abstract KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get; set; }
-			//public virtual void Add_AfterClearing_AllBlankArguments()
-			//{
-			//	CurrentArgumentsPair.Clear();
-			//	foreach (string argdesc in ArgumentDescriptions)
-			//		CurrentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", argdesc));
-			//}
-
+			//public abstract KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get; set; }
 			public virtual int CurrentArgumentCount
 			{
-				get { return CurrentArgumentsPair.Count; }
+				get { return CurrentArguments.Count; }
 			}
 
 			public virtual void RemoveCurrentArgument(int Index)
 			{
-				currentArgumentsPair.RemoveAt(Index);
+				currentArguments.RemoveAt(Index);
 			}
 
-			//public abstract BoolResultWithErrorMessage ValidationFunction(KeyAndValuePair argumentToAdd);
-			public virtual BoolResultWithErrorMessage ValidationFunction(KeyAndValuePair argumentToAdd)
+			public BoolResultWithErrorMessage ValidationFunction(CommandArgument argumentToAdd)
 			{
 				string errorMessage;
-				bool success = PreValidateArgument(out errorMessage, CurrentArgumentsPair.Count, argumentToAdd.Key);
+				bool success = PreValidateArgument(out errorMessage, CurrentArguments.Count, argumentToAdd.CurrentValue);
 				return new BoolResultWithErrorMessage(success, errorMessage);
 			}
-			internal ObservableCollectionWithValidationOnAdd<KeyAndValuePair> currentArgumentsPair;
-			public virtual ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair
-			{
-				get
-				{
-					if (!KeyAndValuePair_ChangedEventsAdded)
-					{
-						foreach (KeyAndValuePair keyandvalue in AvailableArgumentAndDescriptionsPair)
-							keyandvalue.PropertyChanged += (snder, propchangedevent) =>
-							{
-								NotifyPropertyChanged("CurrentArgumentsPair");
-								//(snder as KeyAndValuePair).
-							};
-						KeyAndValuePair_ChangedEventsAdded = true;
-					}
+			//public BoolResultWithErrorMessage ValidationFunction(KeyAndValuePair argumentToAdd)
+			//{
+			//	string errorMessage;
+			//	bool success = PreValidateArgument(out errorMessage, CurrentArgumentsPair.Count, argumentToAdd.Key);
+			//	return new BoolResultWithErrorMessage(success, errorMessage);
+			//}
 
-					if (currentArgumentsPair == null) currentArgumentsPair = new ObservableCollectionWithValidationOnAdd<KeyAndValuePair>(ValidationFunction);
 
-					if (currentArgumentsPair.Count != ArgumentCountForCurrentPopulatedArguments)
-					{
-						if (currentArgumentsPair.Count < ArgumentCountForCurrentPopulatedArguments)
-						{
-							while (currentArgumentsPair.Count < ArgumentCountForCurrentPopulatedArguments)
-							{
-								currentArgumentsPair.AddWithoutValidation(
-									AvailableArgumentAndDescriptionsPair[currentArgumentsPair.Count]);
-								//currentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", currentArgumentsPair.Count <= ArgumentDescriptions.Length ? ArgumentDescriptions[currentArgumentsPair.Count] : "no argument description"));
-							}
-						}
-						else if (currentArgumentsPair.Count > ArgumentCountForCurrentPopulatedArguments)
-						{
-							while (currentArgumentsPair.Count > ArgumentCountForCurrentPopulatedArguments)
-								currentArgumentsPair.RemoveAt(currentArgumentsPair.Count - 1);
-						}
-					}
-					return currentArgumentsPair;
-				}
-				set { currentArgumentsPair = value; }
-			}
+			//internal ObservableCollectionWithValidationOnAdd<KeyAndValuePair> currentArgumentsPair;
+			//public ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair
+			//{
+			//	get
+			//	{
+			//		if (!KeyAndValuePair_ChangedEventsAdded)
+			//		{
+			//			foreach (KeyAndValuePair keyandvalue in AvailableArgumentAndDescriptionsPair)
+			//				keyandvalue.PropertyChanged += (snder, propchangedevent) =>
+			//				{
+			//					NotifyPropertyChanged("CurrentArgumentsPair");
+			//					//(snder as KeyAndValuePair).
+			//				};
+			//			KeyAndValuePair_ChangedEventsAdded = true;
+			//		}
+
+			//		if (currentArgumentsPair == null) currentArgumentsPair = new ObservableCollectionWithValidationOnAdd<KeyAndValuePair>(ValidationFunction);
+
+			//		if (currentArgumentsPair.Count != ArgumentCountForCurrentPopulatedArguments)
+			//		{
+			//			if (currentArgumentsPair.Count < ArgumentCountForCurrentPopulatedArguments)
+			//			{
+			//				while (currentArgumentsPair.Count < ArgumentCountForCurrentPopulatedArguments)
+			//				{
+			//					currentArgumentsPair.AddWithoutValidation(
+			//						AvailableArgumentAndDescriptionsPair[currentArgumentsPair.Count]);
+			//					//currentArgumentsPair.AddWithoutValidation(new KeyAndValuePair("", currentArgumentsPair.Count <= ArgumentDescriptions.Length ? ArgumentDescriptions[currentArgumentsPair.Count] : "no argument description"));
+			//				}
+			//			}
+			//			else if (currentArgumentsPair.Count > ArgumentCountForCurrentPopulatedArguments)
+			//			{
+			//				while (currentArgumentsPair.Count > ArgumentCountForCurrentPopulatedArguments)
+			//					currentArgumentsPair.RemoveAt(currentArgumentsPair.Count - 1);
+			//			}
+			//		}
+			//		return currentArgumentsPair;
+			//	}
+			//	set { currentArgumentsPair = value; }
+			//}
 
 			public abstract int ArgumentCountForCurrentPopulatedArguments { get; }
 			//public abstract int CurrentArgumentCount { get; }
@@ -1116,11 +1180,17 @@ namespace InlineCommands
 				}
 			}
 
-			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			private CommandArgument[] availableArguments = new CommandArgument[]
 			{
-				new KeyAndValuePair("", "parameter")
+				new CommandArgument("", "parameter", new ObservableCollection<string>() { "cmd", "outlook" })
 			};
-			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+			public override CommandArgument[] AvailableArguments { get { return availableArguments; } set { availableArguments = value; } }
+
+			//private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			//{
+			//	new KeyAndValuePair("", "parameter")
+			//};
+			//public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
 
 			public override int ArgumentCountForCurrentPopulatedArguments { get { return 1; } }
 		}
@@ -1183,11 +1253,17 @@ namespace InlineCommands
 				}
 			}
 
-			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			private CommandArgument[] availableArguments = new CommandArgument[]
 			{
-				new KeyAndValuePair("", "search phrase")
+				new CommandArgument("", "search phrase", new ObservableCollection<string>() { })
 			};
-			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+			public override CommandArgument[] AvailableArguments { get { return availableArguments; } set { availableArguments = value; } }
+
+			//private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			//{
+			//	new KeyAndValuePair("", "search phrase")
+			//};
+			//public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
 
 			public override int ArgumentCountForCurrentPopulatedArguments { get { return 1; } }
 		}
@@ -1255,11 +1331,17 @@ namespace InlineCommands
 				}
 			}
 
-			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			private CommandArgument[] availableArguments = new CommandArgument[]
 			{
-				new KeyAndValuePair("", "folder")
+				new CommandArgument("", "folder", new ObservableCollection<string>() { @"c:\", @"c:\Program Files" })
 			};
-			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+			public override CommandArgument[] AvailableArguments { get { return availableArguments; } set { availableArguments = value; } }
+
+			//private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			//{
+			//	new KeyAndValuePair("", "folder")
+			//};
+			//public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
 
 			public override int ArgumentCountForCurrentPopulatedArguments { get { return 1; } }
 		}
@@ -1349,14 +1431,23 @@ namespace InlineCommands
 				}
 			}
 
-			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			private CommandArgument[] availableArguments = new CommandArgument[]
 			{
-				new KeyAndValuePair("", "minutes"),
-				new KeyAndValuePair("", "autosnooze"),
-				new KeyAndValuePair("", "name"),
-				new KeyAndValuePair("", "description")
+				new CommandArgument("", "minutes", new ObservableCollection<string>() { "5", "30", "60" }),
+				new CommandArgument("", "autosnooze", new ObservableCollection<string>() { "15", "30", "60" }),
+				new CommandArgument("", "name", new ObservableCollection<string>() { "Shop" }),
+				new CommandArgument("", "description", new ObservableCollection<string>())
 			};
-			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+			public override CommandArgument[] AvailableArguments { get { return availableArguments; } set { availableArguments = value; } }
+
+			//private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			//{
+			//	new KeyAndValuePair("", "minutes"),
+			//	new KeyAndValuePair("", "autosnooze"),
+			//	new KeyAndValuePair("", "name"),
+			//	new KeyAndValuePair("", "description")
+			//};
+			//public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
 
 			public override int ArgumentCountForCurrentPopulatedArguments { get { return 4; } }
 		}
@@ -1428,13 +1519,21 @@ namespace InlineCommands
 				}
 			}
 
-			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			private CommandArgument[] availableArguments = new CommandArgument[]
 			{
-				new KeyAndValuePair("", "to address"),
-				new KeyAndValuePair("", "subject"),
-				new KeyAndValuePair("", "body"),
+				new CommandArgument("", "to address", new ObservableCollection<string>() { "fhill@gls.co.za", "francoishill11@gmail.com" }),
+				new CommandArgument("", "subject", new ObservableCollection<string>()),
+				new CommandArgument("", "body", new ObservableCollection<string>())
 			};
-			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+			public override CommandArgument[] AvailableArguments { get { return availableArguments; } set { availableArguments = value; } }
+
+			//private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			//{
+			//	new KeyAndValuePair("", "to address"),
+			//	new KeyAndValuePair("", "subject"),
+			//	new KeyAndValuePair("", "body"),
+			//};
+			//public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
 
 			public override int ArgumentCountForCurrentPopulatedArguments { get { return 3; } }
 		}
@@ -1501,11 +1600,17 @@ namespace InlineCommands
 				}
 			}
 
-			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			private CommandArgument[] availableArguments = new CommandArgument[]
 			{
-				new KeyAndValuePair("", "url")
+				new CommandArgument("", "url", new ObservableCollection<string>() { "google.com", "firepuma.com", "fjh.dyndns.org" })
 			};
-			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+			public override CommandArgument[] AvailableArguments { get { return availableArguments; } set { availableArguments = value; } }
+
+			//private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			//{
+			//	new KeyAndValuePair("", "url")
+			//};
+			//public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
 
 			public override int ArgumentCountForCurrentPopulatedArguments { get { return 1; } }
 		}
@@ -1580,11 +1685,17 @@ namespace InlineCommands
 				{ "honda",  "Honda Tygervalley: 021 910 8300" }
 			};
 
-			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			private CommandArgument[] availableArguments = new CommandArgument[]
 			{
-				new KeyAndValuePair("", "name")
+				new CommandArgument("", "name", new ObservableCollection<string>(NameAndNumberDictionary.Keys))
 			};
-			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+			public override CommandArgument[] AvailableArguments { get { return availableArguments; } set { availableArguments = value; } }
+
+			//private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			//{
+			//	new KeyAndValuePair("", "name")
+			//};
+			//public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
 
 			public override int ArgumentCountForCurrentPopulatedArguments { get { return 1; } }
 		}
@@ -1683,11 +1794,17 @@ namespace InlineCommands
 				}
 			}
 
-			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			private CommandArgument[] availableArguments = new CommandArgument[]
 			{
-				new KeyAndValuePair("", "process name")
+				new CommandArgument("", "process name", new ObservableCollection<string>())
 			};
-			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+			public override CommandArgument[] AvailableArguments { get { return availableArguments; } set { availableArguments = value; } }
+
+			//private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			//{
+			//	new KeyAndValuePair("", "process name")
+			//};
+			//public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
 
 			public override int ArgumentCountForCurrentPopulatedArguments { get { return 1; } }
 		}
@@ -1730,12 +1847,12 @@ namespace InlineCommands
 					errorMessage = "More than 2 arguments not allowed for Startub bat command";
 				else if (Index == 0 && !IsStartubBatCommand(argumentValue))
 					errorMessage = "First argument of Startup bat command is invalid, must be one of the predefined commands: " + argumentValue;
-				else if (Index == 1 && (new string[] { "open", "getall" }).Contains(CurrentArgumentsPair[0].Key))
-					errorMessage = "No additional arguments allowed for '" + CurrentArgumentsPair[0].Key + "'";
-				else if (Index == 1 && (new string[] { "comment", "uncomment" }).Contains(CurrentArgumentsPair[0].Key) && !CanParseToInt(argumentValue))
-					errorMessage = "Second argument of Startup bat command (" + CurrentArgumentsPair[0].Key + ") must be a valid integer";
-				else if (Index == 1 && "getline" == CurrentArgumentsPair[0].Key && string.IsNullOrWhiteSpace(argumentValue))
-					errorMessage = "Second argument of Startup bat command (" + CurrentArgumentsPair[0].Key + ") may not be null/empty/whitespaces";
+				else if (Index == 1 && (new string[] { "open", "getall" }).Contains(CurrentArguments[0].CurrentValue))
+					errorMessage = "No additional arguments allowed for '" + CurrentArguments[0].CurrentValue + "'";
+				else if (Index == 1 && (new string[] { "comment", "uncomment" }).Contains(CurrentArguments[0].CurrentValue) && !CanParseToInt(argumentValue))
+					errorMessage = "Second argument of Startup bat command (" + CurrentArguments[0].CurrentValue + ") must be a valid integer";
+				else if (Index == 1 && "getline" == CurrentArguments[0].CurrentValue && string.IsNullOrWhiteSpace(argumentValue))
+					errorMessage = "Second argument of Startup bat command (" + CurrentArguments[0].CurrentValue + ") may not be null/empty/whitespaces";
 				else return true;
 				return false;
 			}
@@ -1771,18 +1888,25 @@ namespace InlineCommands
 				}
 			}
 
-			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			private CommandArgument[] availableArguments = new CommandArgument[]
 			{
-				new KeyAndValuePair("", "sub-command"),
-				new KeyAndValuePair("", "parameter")
+				new CommandArgument("", "sub-command", new ObservableCollection<string>() { "open", "getall", "getline", "comment", "uncomment" }),
+				new CommandArgument("", "parameter", new ObservableCollection<string>())
 			};
-			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+			public override CommandArgument[] AvailableArguments { get { return availableArguments; } set { availableArguments = value; } }
+
+			//private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			//{
+			//	new KeyAndValuePair("", "sub-command"),
+			//	new KeyAndValuePair("", "parameter")
+			//};
+			//public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
 
 			public override int ArgumentCountForCurrentPopulatedArguments
 			{
 				get
 				{
-					if (currentArgumentsPair.Count > 0 && (new string[] { "getline", "comment", "uncomment" }).Contains(currentArgumentsPair[0].Key))
+					if (currentArguments.Count > 0 && (new string[] { "getline", "comment", "uncomment" }).Contains(currentArguments[0].CurrentValue))
 						return 2;
 					else return 1;
 				}
@@ -1848,11 +1972,17 @@ namespace InlineCommands
 				}
 			}
 
-			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			private CommandArgument[] availableArguments = new CommandArgument[]
 			{
-				new KeyAndValuePair("", "folder")
+				new CommandArgument("", "folder", new ObservableCollection<string>() { @"c:\Windows", @"c:\Windows\System32" })
 			};
-			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+			public override CommandArgument[] AvailableArguments { get { return availableArguments; } set { availableArguments = value; } }
+
+			//private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			//{
+			//	new KeyAndValuePair("", "folder")
+			//};
+			//public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
 
 			public override int ArgumentCountForCurrentPopulatedArguments { get { return 1; } }
 		}
@@ -1916,11 +2046,17 @@ namespace InlineCommands
 				}
 			}
 
-			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			private CommandArgument[] availableArguments = new CommandArgument[]
 			{
-				new KeyAndValuePair("", "folder")
+				new CommandArgument("", "folder", new ObservableCollection<string>() { @"c:\Windows", @"c:\Windows\System32" })
 			};
-			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+			public override CommandArgument[] AvailableArguments { get { return availableArguments; } set { availableArguments = value; } }
+
+			//private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			//{
+			//	new KeyAndValuePair("", "folder")
+			//};
+			//public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
 
 			public override int ArgumentCountForCurrentPopulatedArguments { get { return 1; } }
 		}
@@ -1934,9 +2070,6 @@ namespace InlineCommands
 
 			private readonly ObservableCollection<string>[] predefinedArgumentsList =
 			{
-				//new ObservableCollection<string>() { "5", "30", "60" },
-				//new ObservableCollection<string>() { "15", "30", "60" },
-				//new ObservableCollection<string>() { "Shop" }
 			};
 			public override ObservableCollection<string>[] PredefinedArgumentsList { get { return predefinedArgumentsList; } }
 
@@ -1985,11 +2118,17 @@ namespace InlineCommands
 				}
 			}
 
-			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			private CommandArgument[] availableArguments = new CommandArgument[]
 			{
-				new KeyAndValuePair("", "btw text")
+				new CommandArgument("", "btw text", new ObservableCollection<string>())
 			};
-			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+			public override CommandArgument[] AvailableArguments { get { return availableArguments; } set { availableArguments = value; } }
+
+			//private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			//{
+			//	new KeyAndValuePair("", "btw text")
+			//};
+			//public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
 
 			public override int ArgumentCountForCurrentPopulatedArguments { get { return 1; } }
 		}
@@ -2071,19 +2210,27 @@ namespace InlineCommands
 				}
 			}
 
-			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			private CommandArgument[] availableArguments = new CommandArgument[]
 			{
-				new KeyAndValuePair("", "sub-command"),
-				new KeyAndValuePair("", "Folder/path"),
-				new KeyAndValuePair("", "Description")
+				new CommandArgument("", "sub-command", new ObservableCollection<string>() { "commit", "update", "status", "statuslocal" }),
+				new CommandArgument("", "folder/path", new ObservableCollection<string>() { "all", "QuickAccess", "SharedClasses", "TestingSharedClasses"}),
+				new CommandArgument("", "description", new ObservableCollection<string>())
 			};
-			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+			public override CommandArgument[] AvailableArguments { get { return availableArguments; } set { availableArguments = value; } }
+
+			//private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			//{
+			//	new KeyAndValuePair("", "sub-command"),
+			//	new KeyAndValuePair("", "Folder/path"),
+			//	new KeyAndValuePair("", "Description")
+			//};
+			//public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
 
 			public override int ArgumentCountForCurrentPopulatedArguments
 			{
 				get
 				{
-					if (currentArgumentsPair.Count > 0 && (new string[] { "commit" }).Contains(currentArgumentsPair[0].Key))
+					if (currentArguments.Count > 0 && (new string[] { "commit" }).Contains(currentArguments[0].CurrentValue))
 						return 3;
 					else return 2;
 				}
@@ -2175,12 +2322,19 @@ namespace InlineCommands
 				}
 			}
 
-			private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			private CommandArgument[] availableArguments = new CommandArgument[]
 			{
-				new KeyAndValuePair("", "sub-command"),
-				new KeyAndValuePair("", "Folder/Path"),
+				new CommandArgument("", "sub-command", new ObservableCollection<string>() { "localvs", "onlinevs" }),
+				new CommandArgument("", "folder/path", new ObservableCollection<string>() { "QuickAccess", "MonitorSystem"})
 			};
-			public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
+			public override CommandArgument[] AvailableArguments { get { return availableArguments; } set { availableArguments = value; } }
+
+			//private KeyAndValuePair[] availableArgumentAndDescriptionsPair = new KeyAndValuePair[]
+			//{
+			//	new KeyAndValuePair("", "sub-command"),
+			//	new KeyAndValuePair("", "Folder/Path"),
+			//};
+			//public override KeyAndValuePair[] AvailableArgumentAndDescriptionsPair { get { return availableArgumentAndDescriptionsPair; } set { availableArgumentAndDescriptionsPair = value; } }
 
 			public override int ArgumentCountForCurrentPopulatedArguments { get { return 2; } }
 		}
@@ -2209,8 +2363,8 @@ namespace InlineCommands
 		public static bool PerformCommandFromCurrentArguments(ICommandWithHandler command, TextFeedbackEventHandler textfeedbackEvent, ProgressChangedEventHandler progressChangedEvent)
 		{
 			List<string> tmpList = new List<string>();
-			foreach (KeyAndValuePair keyvaluePair in command.CurrentArgumentsPair)
-				tmpList.Add(keyvaluePair.Key);
+			foreach (CommandArgument commandArgument in command.CurrentArguments)
+				tmpList.Add(commandArgument.CurrentValue);
 			return PerformCommand(command, textfeedbackEvent, progressChangedEvent, tmpList.ToArray());
 		}
 	}

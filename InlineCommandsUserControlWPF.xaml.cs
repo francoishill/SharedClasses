@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -82,7 +83,7 @@ namespace SharedClasses
 			ResetAutocompleteToCommandNamesList();
 			HideEmbeddedButton();
 
-			GetActualTextBoxOfAutocompleteControl().Focus();
+			if (!GetActualTextBoxOfAutocompleteControl().IsFocused) GetActualTextBoxOfAutocompleteControl().Focus();
 		}
 
 		private void ResetAutocompleteToCommandNamesList()
@@ -160,7 +161,7 @@ namespace SharedClasses
 						tmpBorder.Visibility = System.Windows.Visibility.Visible;
 
 					TextBox actualTextbox = GetActualTextBoxOfAutocompleteControl();
-					actualTextbox.Focus();
+					if (!actualTextbox.IsFocused) actualTextbox.Focus();
 					actualTextbox.Text = "";
 					//textBox_CommandLine.Focus();
 					//textBox_CommandLine.Text = "";
@@ -178,8 +179,12 @@ namespace SharedClasses
 					if (command.CurrentArgumentCount > 0)
 					{
 						ListBox tmpListbox = GetEmbeddedListbox();
+
+						//for (int i = 1; i < tmpListbox.Items.Count; i++)
+						//	GetAutocompleteBoxOfArgument(tmpListbox.Items[i]).IsDropDownOpen = false;
+
 						tmpListbox.SelectedIndex = 0;
-						GetActualTextboxOfArgument(tmpListbox.SelectedItem).Focus();
+						if (!GetActualTextboxOfArgument(tmpListbox.SelectedItem).IsFocused) GetActualTextboxOfArgument(tmpListbox.SelectedItem).Focus();
 						textBox_CommandLine.IsDropDownOpen = false;
 						//GetAutocompleteBoxOfArgument(tmpListbox.SelectedItem).IsDropDownOpen = true;
 					}
@@ -190,7 +195,7 @@ namespace SharedClasses
 					ListBox tmpListbox2 = GetEmbeddedListbox();
 					for (int i = 0; i < tmpListbox2.Items.Count; i++)
 					{
-						GetAutocompleteBoxOfArgument(tmpListbox2.Items[i]).ItemsSource = command.GetPredefinedArgumentsList(i, true);
+						//GetAutocompleteBoxOfArgument(tmpListbox2.Items[i]).ItemsSource = command.GetPredefinedArgumentsList(i, true);
 						//GetAutocompleteBoxOfArgument(tmpListbox.Items[i]).IsDropDownOpen = true;
 					}
 					if (tmpListbox2.Items.Count > 0)
@@ -199,9 +204,9 @@ namespace SharedClasses
 						//textBox_CommandLine.Focus();
 						//GetEmbeddedListbox().Focus();
 						//GetActualTextBoxOfAutocompleteControl().Focus();
-						GetActualTextboxOfArgument(tmpListbox2.Items[0]).Focus();
+						if (!GetActualTextboxOfArgument(tmpListbox2.Items[0]).IsFocused) GetActualTextboxOfArgument(tmpListbox2.Items[0]).Focus();
 						//GetAutocompleteBoxOfArgument(tmpListbox2.Items[0]).Focus();
-						GetAutocompleteBoxOfArgument(tmpListbox2.Items[0]).IsDropDownOpen = true;
+						//GetAutocompleteBoxOfArgument(tmpListbox2.Items[0]).IsDropDownOpen = true;
 					}
 
 					//if (autcompleteManager == null)
@@ -233,7 +238,7 @@ namespace SharedClasses
 				//	tmpBorder2.Visibility = System.Windows.Visibility.Collapsed;
 
 				//textBox_CommandLine.Focus();
-				GetActualTextBoxOfAutocompleteControl().Focus();
+				if (!GetActualTextBoxOfAutocompleteControl().IsFocused) GetActualTextBoxOfAutocompleteControl().Focus();
 				//autocompleteProvider.activeCommand = null;
 			}
 		}
@@ -289,7 +294,7 @@ namespace SharedClasses
 
 			if (childNode != null)
 			{
-				childNode.Focus();
+				if (!childNode.IsFocused) childNode.Focus();
 				return childNode.IsSelected = true;
 			}
 
@@ -351,7 +356,7 @@ namespace SharedClasses
 					if (lb.Items.Count == 0) return;
 					foreach (object lbo in lb.Items)
 					{
-						GetAutocompleteBoxOfArgument(lbo).IsDropDownOpen = false;
+						//GetAutocompleteBoxOfArgument(lbo).IsDropDownOpen = false;
 						TextBox t = GetActualTextboxOfArgument(lbo);
 						t.SelectionLength = 0;
 						t.SelectionStart = t.Text.Length;
@@ -380,6 +385,7 @@ namespace SharedClasses
 					if (Keyboard.Modifiers != ModifierKeys.Shift && Keyboard.Modifiers != ModifierKeys.None)
 						return;
 					e.Handled = true;
+
 					FocusNextCommandArgument();
 					//GetAutocompleteBoxOfArgument(lb.SelectedItem).IsDropDownOpen = true;
 
@@ -491,7 +497,7 @@ namespace SharedClasses
 			//}
 		}
 
-		private void FocusNextCommandArgument()
+		private void FocusNextCommandArgument(int overwriteNewSelectedIndex = -2)
 		{
 			ICommandWithHandler comm = GetEmbeddedButton().Tag as ICommandWithHandler;
 			ListBox lb = GetEmbeddedListbox();
@@ -512,12 +518,25 @@ namespace SharedClasses
 					previousSelectedIndex = lb.Items.Count - 1;
 				newSelectedIndex = previousSelectedIndex;
 			}
+			if (overwriteNewSelectedIndex != -2)
+				newSelectedIndex = overwriteNewSelectedIndex;
 			if (newSelectedIndex == -1 || newSelectedIndex == currentSelectedIndex) return;
+
+			//bool OpenDropDownFound = false;
+			//ListBox tmpListbox = GetEmbeddedListbox();
+			//for (int i = 1; i < tmpListbox.Items.Count; i++)
+			//	if (GetAutocompleteBoxOfArgument(tmpListbox.Items[i]).IsDropDownOpen)
+			//		OpenDropDownFound = true;
+
+			//if (OpenDropDownFound)
+			//	return;
+
 			lb.SelectedIndex = newSelectedIndex;
 			TextBox textboxOfArgument = GetActualTextboxOfArgument(lb.SelectedItem);
-			GetAutocompleteBoxOfArgument(lb.SelectedItem).ItemsSource = comm.GetPredefinedArgumentsList(newSelectedIndex, true);
-			GetAutocompleteBoxOfArgument(lb.SelectedItem).Focus();
-			textboxOfArgument.Focus();
+			//GetAutocompleteBoxOfArgument(lb.SelectedItem).ItemsSource = comm.GetPredefinedArgumentsList(newSelectedIndex, true);
+			if (!GetAutocompleteBoxOfArgument(lb.SelectedItem).IsFocused) GetAutocompleteBoxOfArgument(lb.SelectedItem).Focus();
+			if (!textboxOfArgument.IsFocused) textboxOfArgument.Focus();
+			GetAutocompleteBoxOfArgument(lb.Items[currentSelectedIndex]).IsDropDownOpen = false;
 		}
 
 		private void ClearCommandSelection()
@@ -597,11 +616,28 @@ namespace SharedClasses
 					 });
 		}
 
+		//private AutoCompleteBox LastFocusedArgumentAutocompleteTextbox;
 		private void ArgumentText_GotFocus(object sender, RoutedEventArgs e)
 		{
 			//try
 			//{
-				(sender as AutoCompleteBox).IsDropDownOpen = true;
+			//AutoCompleteBox acb = sender as AutoCompleteBox;
+			//DockPanel dp = acb.Parent as DockPanel;
+			//TextBlock tb = dp.Children[1] as TextBlock;
+			//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, tb.Text);
+			//if (acb.ItemsSource is ObservableCollection<string>)
+			//{
+			//	ObservableCollection<string> tmpFilteredAutocompleteList = acb.ItemsSource as ObservableCollection<string>;
+			//	if (tmpFilteredAutocompleteList.Count != null || tmpFilteredAutocompleteList[0] != acb.Text)
+			//		acb.IsDropDownOpen = true;
+			//}
+			//if (LastFocusedArgumentAutocompleteTextbox != sender)
+			//{
+			//	LastFocusedArgumentAutocompleteTextbox = sender as AutoCompleteBox;
+			//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, (sender as AutoCompleteBox).Tag.ToString());
+			(sender as AutoCompleteBox).IsDropDownOpen = true;
+			//}
+			//(sender as AutoCompleteBox).IsDropDownOpen = true;
 			//}
 			//catch { }
 		}
@@ -613,7 +649,7 @@ namespace SharedClasses
 			{
 				TextBox actualtextbox = ((dp as DockPanel).Children[1] as TextBox);
 				actualtextbox.Text = "";
-				actualtextbox.Focus();
+				if (!actualtextbox.IsFocused) actualtextbox.Focus();
 			}
 		}
 
@@ -637,9 +673,18 @@ namespace SharedClasses
 			if (textBox_CommandLine.ItemsSource == null) e.Handled = true;
 		}
 
+		private void TextBoxWithText_LostFocus(object sender, RoutedEventArgs e)
+		{
+
+		}
+
+		//private TextBox LastFocusedArgumentTextbox;
 		private void TextBoxWithText_GotFocus(object sender, RoutedEventArgs e)
 		{
-			(sender as TextBox).SelectionStart = (sender as TextBox).Text.Length;
+			//if (LastFocusedArgumentTextbox != sender)
+			//	TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, (sender as TextBox).Tag.ToString());
+			//LastFocusedArgumentTextbox = sender as TextBox;
+			//(sender as TextBox).SelectionStart = (sender as TextBox).Text.Length;
 		}
 
 		private void textBox_Messages_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -655,9 +700,39 @@ namespace SharedClasses
 			}
 		}
 
-		private void ArgumentText_DropDownClosed(object sender, RoutedPropertyChangedEventArgs<bool> e)
+		//private ListBox FindListboxInsidePopup(Popup popup)
+		//{
+		//	return popup.FindName("Selector") as ListBox;
+		//}
+
+		private TextBox FindTextboxPopupSibling(Popup popup)
 		{
-			//FocusNextCommandArgument();
+			return (popup.Parent as Grid).Children[0] as TextBox;
+		}
+
+		//private string lastValue;
+		private void Popup_Opened(object sender, EventArgs e)
+		{
+			////LastSelectedIndex = FindListboxInsidePopup(sender as Popup).SelectedIndex;
+			//lastValue = FindTextboxPopupSibling(sender as Popup).Text;
+		}
+
+		private void Popup_Closed(object sender, EventArgs e)
+		{
+			//if (FindTextboxPopupSibling(sender as Popup).Text != lastValue)
+			//	if (!Keyboard.IsKeyDown(Key.Tab)) FocusNextCommandArgument();
+		}
+
+		private void AutoCompleteActualTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
+		{
+			if (e.Key == Key.Down)
+			{
+				e.Handled = true;
+				Grid parentGrid = (sender as TextBox).Parent as Grid;
+				Popup popupAutocomplete = parentGrid.Children[2] as Popup;
+				ListBox listboxAutocomplete =	(popupAutocomplete.Child as Border).Child as ListBox;
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, listboxAutocomplete.SelectedIndex.ToString());
+			}
 		}
 
 		//private class AutocompleteProvider : IAutoCompleteDataProvider

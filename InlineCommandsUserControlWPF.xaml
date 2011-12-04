@@ -524,7 +524,7 @@
 									</Border.Resources>
 									<ListBox x:Name='EmbeddedListbox'
 													 BorderThickness='0'
-													 ItemsSource='{Binding CurrentArgumentsPair, NotifyOnSourceUpdated=True, UpdateSourceTrigger=PropertyChanged}'>
+													 ItemsSource='{Binding CurrentArguments, NotifyOnSourceUpdated=True, UpdateSourceTrigger=PropertyChanged}'>
 										<ListBox.ItemsPanel>
 											<ItemsPanelTemplate>
 												<WrapPanel IsItemsHost="True" />
@@ -553,7 +553,7 @@
 													<DockPanel>
 														<!--<TextBlock DockPanel.Dock='Top'
 																			 Foreground="#f0f0f0"
-																			 Text='{Binding Key}'
+																			 Text='{Binding CurrentValue}'
 																			 HorizontalAlignment='Center'
 																			 FontSize='20'/>-->
 														<input:AutoCompleteBox x:Name='ArgumentText'
@@ -563,16 +563,17 @@
 																									 BorderBrush='Transparent'
 																									 Margin='0,3,0,0'
 																									 MinimumPrefixLength='0'
-																									 Text='{Binding Key, UpdateSourceTrigger=PropertyChanged}'
+																									 Text='{Binding CurrentValue, UpdateSourceTrigger=PropertyChanged}'
+																									 Tag='{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}'
+																									 ItemsSource='{Binding PredefinedAutocompleteList, UpdateSourceTrigger=PropertyChanged}'
 																									 HorizontalAlignment='Stretch'
-																									 DropDownClosed='ArgumentText_DropDownClosed'
 																									 FontSize='16'
 																									 GotFocus='ArgumentText_GotFocus'
 																									 IsTextCompletionEnabled='True'
 																									 Style='{DynamicResource AutoCompleteBox_InlineCommands}'
 																									 Width='auto' />
 														<TextBlock DockPanel.Dock='Bottom'
-																			 Text='{Binding Value}'
+																			 Text='{Binding DisplayName}'
 																			 Foreground='#ddd'
 																			 HorizontalAlignment='Center'
 																			 FontSize='12' />
@@ -1056,14 +1057,15 @@
 														 Background="{TemplateBinding Background}"
 														 IsTabStop="True"
 														 x:Name="Text"
-														 Text='{Binding Key, UpdateSourceTrigger=PropertyChanged}'
+														 Text='{Binding CurrentValue}'
 														 HorizontalContentAlignment='Center'
 														 HorizontalScrollBarVisibility='Auto'
 														 Style="{TemplateBinding TextBoxStyle}"
 														 BorderThickness="{TemplateBinding BorderThickness}"
 														 Foreground="{TemplateBinding Foreground}"
 														 Margin="0"
-														 ContextMenuOpening='AutoCompleteActualTextBox_ContextMenuOpening'>
+														 ContextMenuOpening='AutoCompleteActualTextBox_ContextMenuOpening'
+														 PreviewKeyDown='AutoCompleteActualTextBox_PreviewKeyDown'>
 											<TextBox.ContextMenu>
 												<ContextMenu Background="White">
 													<MenuItem Command="ApplicationCommands.Copy" />
@@ -1107,7 +1109,8 @@
 																			 Background='Transparent'
 																			 BorderBrush='Transparent'
 																			 BorderThickness='0'
-																			 Text='{Binding Key, UpdateSourceTrigger=PropertyChanged}'
+																			 Text='{Binding CurrentValue, UpdateSourceTrigger=PropertyChanged}'
+																			 LostFocus='TextBoxWithText_LostFocus'
 																			 GotFocus='TextBoxWithText_GotFocus' />
 														</DockPanel>
 													</Border>
@@ -1165,10 +1168,18 @@
 															Data="M 0,0 L2,0 L 8,6 L8,8" />
 											</Grid>
 										</Border>
+										<!--<Popup x:Name="Popup"
+													 Width='Auto'
+													 VerticalOffset='1'
+													 AllowsTransparency='True'
+													 Opened='Popup_Opened'
+													 Closed='Popup_Closed'>-->
 										<Popup x:Name="Popup"
 													 Width='Auto'
 													 VerticalOffset='1'
-													 AllowsTransparency='True'>
+													 AllowsTransparency='True'
+													 Opened='Popup_Opened'
+													 Closed='Popup_Closed'>
 											<!--<Popup x:Name="Popup"
 													 Width='{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type Grid}, Mode=FindAncestor}}'
 													 VerticalOffset='1'
@@ -1218,7 +1229,8 @@
 																 Background="{TemplateBinding Background}"
 																 Foreground="#000"
 																 BorderThickness="0"
-																 ItemTemplate="{TemplateBinding ItemTemplate}"></ListBox>
+																 
+																 ItemTemplate='{TemplateBinding ItemTemplate}'/>
 											</Border>
 											<!--</Border>
 												</Border>

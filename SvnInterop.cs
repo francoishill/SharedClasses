@@ -70,14 +70,14 @@ public class SvnInterop
 						svnproc.OutputDataReceived += delegate(object sendingProcess, DataReceivedEventArgs outLine)
 						{
 							if (outLine.Data != null && outLine.Data.Trim().Length > 0)
-								TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Svn output: " + outLine.Data);
+								TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, string.Format("Svn output for {0}: {1}", projnameOrDir, outLine.Data));
 							//else appendLogTextbox("Svn output empty");
 						};
 						svnproc.ErrorDataReceived += delegate(object sendingProcess, DataReceivedEventArgs outLine)
 						{
 							if (outLine.Data != null && outLine.Data.Trim().Length > 0
 								&& !outLine.Data.ToLower().Contains("not a working copy"))
-								TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Svn error: " + outLine.Data);
+								TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, string.Format("Svn error for {0}: {1}", projnameOrDir, outLine.Data));
 							//else appendLogTextbox("Svn error empty");
 						};
 						svnproc.StartInfo = start;
@@ -89,7 +89,7 @@ public class SvnInterop
 							: svnCommand == SvnCommand.StatusLocal ? "Check status of svn (local), please wait..."
 							: "";
 						if (!svnproc.Start())
-							TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Error: Could not start SVN process.");
+							TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Error: Could not start SVN process for " + projnameOrDir);
 						else if (!pleaseWaitAlreadyDisplayed)
 						{
 							pleaseWaitAlreadyDisplayed = true;

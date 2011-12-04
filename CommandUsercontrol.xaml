@@ -1,22 +1,21 @@
-﻿<UserControl
-	x:Class='CommandUserControl'
-	xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
-	xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
-	xmlns:mc='http://schemas.openxmlformats.org/markup-compatibility/2006'
-	xmlns:d='http://schemas.microsoft.com/expression/blend/2008'
-	xmlns:clr='clr-namespace:System;assembly=mscorlib'
-	mc:Ignorable='d'
-	d:DesignHeight='299'
-	d:DesignWidth='549'
-	Margin='10'
-	Background='Transparent'
-	Focusable='True'
-	Name='parentUsercontrol'
-	VerticalAlignment='Top'
-	HorizontalAlignment='Left'
-	MinWidth='150'
-	AllowDrop='True'
-	KeyboardNavigation.TabNavigation='Cycle'>
+﻿<UserControl x:Class='CommandUserControl'
+						 xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
+						 xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
+						 xmlns:mc='http://schemas.openxmlformats.org/markup-compatibility/2006'
+						 xmlns:d='http://schemas.microsoft.com/expression/blend/2008'
+						 xmlns:clr='clr-namespace:System;assembly=mscorlib'
+						 mc:Ignorable='d'
+						 d:DesignHeight='299'
+						 d:DesignWidth='549'
+						 Margin='10'
+						 Background='Transparent'
+						 Focusable='True'
+						 Name='parentUsercontrol'
+						 VerticalAlignment='Top'
+						 HorizontalAlignment='Left'
+						 MinWidth='150'
+						 AllowDrop='True'
+						 KeyboardNavigation.TabNavigation='Cycle'>
 	<UserControl.Resources>
 		<ResourceDictionary>
 			<ResourceDictionary.MergedDictionaries>
@@ -26,78 +25,57 @@
 				<!--<ResourceDictionary Source='/PresentationFramework.Luna,Version=3.0.0.0,Culture=neutral,PublicKeyToken=31bf3856ad364e35;component/themes/luna.homestead.xaml' />-->
 				<!--<ResourceDictionary Source='/PresentationFramework.Luna,Version=3.0.0.0,Culture=neutral,PublicKeyToken=31bf3856ad364e35;component/themes/luna.metallic.xaml' />-->
 				<!--<ResourceDictionary Source='/PresentationFramework.Luna,Version=3.0.0.0,Culture=neutral,PublicKeyToken=31bf3856ad364e35;component/themes/luna.normalcolor.xaml' />-->
-
 				<ResourceDictionary>
 					<!--<SolidColorBrush
 						Color="Transparent"
 						x:Key="{x:Static SystemColors.HighlightBrushKey}" />-->
-
-					<LinearGradientBrush
-						x:Key="{x:Static SystemColors.HighlightBrushKey}"
-						EndPoint="0,1"
-						StartPoint="0,0">
-						<GradientStop
-							Color="#FFD9F4FF"
-							Offset="0" />
-						<GradientStop
-							Color="#FF9BDDFB"
-							Offset="1" />
+					<LinearGradientBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
+															 EndPoint="0,1"
+															 StartPoint="0,0">
+						<GradientStop Color="#FFD9F4FF"
+													Offset="0" />
+						<GradientStop Color="#FF9BDDFB"
+													Offset="1" />
 					</LinearGradientBrush>
-					<LinearGradientBrush
-						x:Key="{x:Static SystemColors.ControlBrushKey}"
-						EndPoint="0,1"
-						StartPoint="0,0">
-						<GradientStop
-							Color="#FFEEEDED"
-							Offset="0" />
-						<GradientStop
-							Color="#FFDDDDDD"
-							Offset="1" />
+					<LinearGradientBrush x:Key="{x:Static SystemColors.ControlBrushKey}"
+															 EndPoint="0,1"
+															 StartPoint="0,0">
+						<GradientStop Color="#FFEEEDED"
+													Offset="0" />
+						<GradientStop Color="#FFDDDDDD"
+													Offset="1" />
 					</LinearGradientBrush>
-					<SolidColorBrush
-						x:Key="{x:Static SystemColors.HighlightTextBrushKey}"
-						Color="Black" />
-					<SolidColorBrush
-						x:Key="{x:Static SystemColors.ControlTextBrushKey}"
-						Color="Black" />
-
-					<Style
-						TargetType="{x:Type TreeViewItem}">
-						<Setter
-							Property="BorderThickness"
-							Value="1" />
+					<SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"
+													 Color="Black" />
+					<SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey}"
+													 Color="Black" />
+					<Style TargetType="{x:Type TreeViewItem}">
+						<Setter Property="BorderThickness"
+										Value="1" />
 						<Style.Triggers>
-							<Trigger
-								Property="IsSelected"
-								Value="True">
-								<Setter
-									Property="BorderBrush"
-									Value="#adc6e5" />
+							<Trigger Property="IsSelected"
+											 Value="True">
+								<Setter Property="BorderBrush"
+												Value="#adc6e5" />
 							</Trigger>
 							<MultiTrigger>
 								<MultiTrigger.Conditions>
-									<Condition
-										Property="IsSelected"
-										Value="True" />
-									<Condition
-										Property="IsSelectionActive"
-										Value="False" />
+									<Condition Property="IsSelected"
+														 Value="True" />
+									<Condition Property="IsSelectionActive"
+														 Value="False" />
 								</MultiTrigger.Conditions>
-								<Setter
-									Property="BorderBrush"
-									Value="LightGray" />
+								<Setter Property="BorderBrush"
+												Value="LightGray" />
 							</MultiTrigger>
 						</Style.Triggers>
 						<Style.Resources>
-							<Style
-								TargetType="Border">
-								<Setter
-									Property="CornerRadius"
-									Value="2" />
+							<Style TargetType="Border">
+								<Setter Property="CornerRadius"
+												Value="2" />
 							</Style>
 						</Style.Resources>
 					</Style>
-					
 					<!--<DataTemplate
 						x:Key='ItemTemplate'>
 						<TextBlock
@@ -164,189 +142,153 @@
 		</ResourceDictionary>
 	</UserControl.Resources>
 	<UserControl.Triggers>
-		<EventTrigger
-			RoutedEvent='GotKeyboardFocus'>
+		<EventTrigger RoutedEvent='GotKeyboardFocus'>
 			<BeginStoryboard>
 				<Storyboard>
-					<ColorAnimation
-						Storyboard.TargetName='mainGradient1'
-						Storyboard.TargetProperty='Color'
-						To='#bbb'
-						Duration='0:0:0:0.1'
-						AutoReverse='False'
-						RepeatBehavior='1x' />
-					<ColorAnimation
-						Storyboard.TargetName='mainGradient2'
-						Storyboard.TargetProperty='Color'
-						To='#777'
-						Duration='0:0:0:0.1'
-						AutoReverse='False'
-						RepeatBehavior='1x' />
+					<ColorAnimation Storyboard.TargetName='mainGradient1'
+													Storyboard.TargetProperty='Color'
+													To='#bbb'
+													Duration='0:0:0:0.1'
+													AutoReverse='False'
+													RepeatBehavior='1x' />
+					<ColorAnimation Storyboard.TargetName='mainGradient2'
+													Storyboard.TargetProperty='Color'
+													To='#777'
+													Duration='0:0:0:0.1'
+													AutoReverse='False'
+													RepeatBehavior='1x' />
 				</Storyboard>
 			</BeginStoryboard>
 		</EventTrigger>
-		<EventTrigger
-			RoutedEvent='LostKeyboardFocus'>
+		<EventTrigger RoutedEvent='LostKeyboardFocus'>
 			<BeginStoryboard>
 				<Storyboard>
-					<ColorAnimation
-						Storyboard.TargetName='mainGradient1'
-						Storyboard.TargetProperty='Color'
-						Duration='0:0:0:0.1'
-						AutoReverse='False'
-						RepeatBehavior='1x' />
-					<ColorAnimation
-						Storyboard.TargetName='mainGradient2'
-						Storyboard.TargetProperty='Color'
-						Duration='0:0:0:0.1'
-						AutoReverse='False'
-						RepeatBehavior='1x' />
+					<ColorAnimation Storyboard.TargetName='mainGradient1'
+													Storyboard.TargetProperty='Color'
+													Duration='0:0:0:0.1'
+													AutoReverse='False'
+													RepeatBehavior='1x' />
+					<ColorAnimation Storyboard.TargetName='mainGradient2'
+													Storyboard.TargetProperty='Color'
+													Duration='0:0:0:0.1'
+													AutoReverse='False'
+													RepeatBehavior='1x' />
 				</Storyboard>
 			</BeginStoryboard>
 		</EventTrigger>
-
 	</UserControl.Triggers>
-	<Border
-		Name='mainBorder'
-		Margin='10'
-		CornerRadius='15'
-		Padding='10'
-		VerticalAlignment='Stretch'
-		HorizontalAlignment='Stretch'>
+	<Border Name='mainBorder'
+					Margin='10'
+					CornerRadius='15'
+					Padding='10'
+					VerticalAlignment='Stretch'
+					HorizontalAlignment='Stretch'>
 		<Border.Background>
-			<RadialGradientBrush
-				SpreadMethod='Repeat'
-				ColorInterpolationMode='ScRgbLinearInterpolation'
-				RadiusX='5'
-				RadiusY='2'>
+			<RadialGradientBrush SpreadMethod='Repeat'
+													 ColorInterpolationMode='ScRgbLinearInterpolation'
+													 RadiusX='5'
+													 RadiusY='2'>
 				<RadialGradientBrush.GradientStops>
 					<!---webkit-gradient(linear, center top, center bottom, from(#BBB), color-stop(25%,#DDD), to(#BBB))-->
-					<GradientStop
-						x:Name='mainGradient1'
-						Color='#777'
-						Offset='0' />
-					<GradientStop
-						x:Name='mainGradient2'
-						Color='#444'
-						Offset='0.3' />
+					<GradientStop x:Name='mainGradient1'
+												Color='#777'
+												Offset='0' />
+					<GradientStop x:Name='mainGradient2'
+												Color='#444'
+												Offset='0.3' />
 				</RadialGradientBrush.GradientStops>
 			</RadialGradientBrush>
 		</Border.Background>
-		<Grid
-			Name='mainGrid'
-			HorizontalAlignment='Stretch'
-			VerticalAlignment='Stretch'
-			Margin='0,0,0,0'>
-			<Border
-				HorizontalAlignment='Left'
-				VerticalAlignment='Top'
-				CornerRadius='3'>
+		<Grid Name='mainGrid'
+					HorizontalAlignment='Stretch'
+					VerticalAlignment='Stretch'
+					Margin='0,0,0,0'>
+			<Border HorizontalAlignment='Left'
+							VerticalAlignment='Top'
+							CornerRadius='3'>
 				<Border.Background>
-					<LinearGradientBrush
-						StartPoint='0,0'
-						EndPoint='0,1'>
+					<LinearGradientBrush StartPoint='0,0'
+															 EndPoint='0,1'>
 						<LinearGradientBrush.GradientStops>
-							<GradientStop
-								Color='#aaa'
-								Offset='0' />
-							<GradientStop
-								Color='#ddd'
-								Offset='0.25' />
-							<GradientStop
-								Color='#aaa'
-								Offset='1' />
+							<GradientStop Color='#aaa'
+														Offset='0' />
+							<GradientStop Color='#ddd'
+														Offset='0.25' />
+							<GradientStop Color='#aaa'
+														Offset='1' />
 						</LinearGradientBrush.GradientStops>
 					</LinearGradientBrush>
 				</Border.Background>
-				<Label
-					Name='labelShortcutKeyNumber'
-					Foreground='#000'
-					Content='0' />
+				<Label Name='labelShortcutKeyNumber'
+							 Foreground='#000'
+							 Content='0' />
 			</Border>
-			<Border
-				Name='border_Closebutton'
-				HorizontalAlignment='Right'
-				VerticalAlignment='Top'
-				CornerRadius='3'
-				Width='20'
-				Height='20'
-				Cursor='Hand'
-				MouseUp='border_Closebutton_MouseUp'>
-				<Border.Triggers>
-				</Border.Triggers>
+			<Border Name='border_Closebutton'
+							HorizontalAlignment='Right'
+							VerticalAlignment='Top'
+							CornerRadius='3'
+							Width='20'
+							Height='20'
+							Cursor='Hand'
+							MouseUp='border_Closebutton_MouseUp'>
+				<Border.Triggers></Border.Triggers>
 				<Border.Background>
-					<LinearGradientBrush
-						StartPoint='0,0'
-						EndPoint='0,1'>
+					<LinearGradientBrush StartPoint='0,0'
+															 EndPoint='0,1'>
 						<LinearGradientBrush.GradientStops>
-							<GradientStop
-								Color='#aaa'
-								Offset='0' />
-							<GradientStop
-								Color='#ddd'
-								Offset='0.25' />
-							<GradientStop
-								Color='#aaa'
-								Offset='1' />
+							<GradientStop Color='#aaa'
+														Offset='0' />
+							<GradientStop Color='#ddd'
+														Offset='0.25' />
+							<GradientStop Color='#aaa'
+														Offset='1' />
 						</LinearGradientBrush.GradientStops>
 					</LinearGradientBrush>
 				</Border.Background>
-				<Label
-					Content='x'
-					Padding='0'
-					HorizontalContentAlignment='Center'
-					VerticalContentAlignment='Center'
-					Foreground='Red' />
+				<Label Content='x'
+							 Padding='0'
+							 HorizontalContentAlignment='Center'
+							 VerticalContentAlignment='Center'
+							 Foreground='Red' />
 			</Border>
-			<Label
-				Name='labelTitle'
-				Foreground='LightGreen'
-				Content='Testing'
-				HorizontalAlignment='Center'
-				VerticalAlignment='Top'
-				FontSize='18' />
-			<Grid
-				HorizontalAlignment='Stretch'
-				VerticalAlignment='Stretch'
-				Margin='0,38,0,0'>
+			<Label Name='labelTitle'
+						 Foreground='LightGreen'
+						 Content='Testing'
+						 HorizontalAlignment='Center'
+						 VerticalAlignment='Top'
+						 FontSize='18' />
+			<Grid HorizontalAlignment='Stretch'
+						VerticalAlignment='Stretch'
+						Margin='0,38,0,0'>
 				<Grid.ColumnDefinitions>
-					<ColumnDefinition
-						Width='Auto' />
-					<ColumnDefinition
-						Width='auto' />
-					<ColumnDefinition
-						Width='354*' />
+					<ColumnDefinition Width='Auto' />
+					<ColumnDefinition Width='auto' />
+					<ColumnDefinition Width='354*' />
 				</Grid.ColumnDefinitions>
 				<Grid.RowDefinitions>
-					<RowDefinition
-						Height='auto' />
-					<RowDefinition
-						Height='auto' />
+					<RowDefinition Height='auto' />
+					<RowDefinition Height='auto' />
 				</Grid.RowDefinitions>
-				<Expander
-					Name='expanderContainingTreeview'
-					ExpandDirection='Right'
-					IsExpanded='False'
-					Grid.RowSpan='2'>
-					<TreeView
-						Grid.Column='0'
-						Name='treeViewPredefinedArguments'
-						Focusable='True'
-						UseLayoutRounding='True'
-						VirtualizingStackPanel.IsVirtualizing='True'
-						VirtualizingStackPanel.VirtualizationMode='Recycling'>
-						<TreeViewItem
-							Header='My command 1' />
-						<TreeViewItem
-							Header='My command 2' IsSelected='True' />
+				<Expander Name='expanderContainingTreeview'
+									ExpandDirection='Right'
+									IsExpanded='False'
+									Grid.RowSpan='2'>
+					<TreeView Grid.Column='0'
+										Name='treeViewPredefinedArguments'
+										Focusable='True'
+										UseLayoutRounding='True'
+										VirtualizingStackPanel.IsVirtualizing='True'
+										VirtualizingStackPanel.VirtualizationMode='Recycling'>
+						<TreeViewItem Header='My command 1' />
+						<TreeViewItem Header='My command 2'
+													IsSelected='True' />
 					</TreeView>
 				</Expander>
-				<Expander
-					Name='expanderContainingTextboxes'
-					ExpandDirection='Right'
-					IsExpanded='False'
-					Grid.Column='1'
-					BorderThickness='0'>
+				<Expander Name='expanderContainingTextboxes'
+									ExpandDirection='Right'
+									IsExpanded='False'
+									Grid.Column='1'
+									BorderThickness='0'>
 					<!--<Expander.Background>
 						<LinearGradientBrush StartPoint='0,0' EndPoint='0,1'>
 							<GradientStop
@@ -360,50 +302,43 @@
 								Color='#cde' />
 						</LinearGradientBrush>
 					</Expander.Background>-->
-					<Grid
-						Name='gridCustomArguments'>
+					<Grid Name='gridCustomArguments'>
 						<Grid.ColumnDefinitions>
 							<ColumnDefinition />
 							<ColumnDefinition />
 						</Grid.ColumnDefinitions>
 						<Grid.RowDefinitions>
-							<RowDefinition
-								Height='auto' />
-							<RowDefinition
-								Height='auto' />
+							<RowDefinition Height='auto' />
+							<RowDefinition Height='auto' />
 						</Grid.RowDefinitions>
-						<Label
-							Content='Label'
-							Grid.Column='0'
-							Grid.Row='0'
-							Height='28'
-							HorizontalAlignment='Left'
-							Name='label1'
-							VerticalAlignment='Top' />
-						<TextBox
-							Grid.Column='1'
-							Grid.Row='0'
-							Height='23'
-							HorizontalAlignment='Left'
-							Name='textBox1'
-							VerticalAlignment='Top'
-							Width='120' />
-						<Label
-							Content='Label'
-							Grid.Column='0'
-							Grid.Row='1'
-							Height='28'
-							HorizontalAlignment='Left'
-							Name='label2'
-							VerticalAlignment='Top' />
-						<TextBox
-							Grid.Column='1'
-							Grid.Row='1'
-							Height='23'
-							HorizontalAlignment='Left'
-							Name='textBox2'
-							VerticalAlignment='Top'
-							Width='120' />
+						<Label Content='Label'
+									 Grid.Column='0'
+									 Grid.Row='0'
+									 Height='28'
+									 HorizontalAlignment='Left'
+									 Name='label1'
+									 VerticalAlignment='Top' />
+						<TextBox Grid.Column='1'
+										 Grid.Row='0'
+										 Height='23'
+										 HorizontalAlignment='Left'
+										 Name='textBox1'
+										 VerticalAlignment='Top'
+										 Width='120' />
+						<Label Content='Label'
+									 Grid.Column='0'
+									 Grid.Row='1'
+									 Height='28'
+									 HorizontalAlignment='Left'
+									 Name='label2'
+									 VerticalAlignment='Top' />
+						<TextBox Grid.Column='1'
+										 Grid.Row='1'
+										 Height='23'
+										 HorizontalAlignment='Left'
+										 Name='textBox2'
+										 VerticalAlignment='Top'
+										 Width='120' />
 					</Grid>
 				</Expander>
 			</Grid>

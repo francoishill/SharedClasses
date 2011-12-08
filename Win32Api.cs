@@ -15,6 +15,11 @@ public static class Win32Api
 	[DllImportAttribute("user32.dll")]
 	public static extern bool ReleaseCapture();
 
+	[DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+	public extern static IntPtr GetModuleHandle(string moduleName);
+	[DllImport("kernel32.dll", CharSet = CharSet.Ansi, SetLastError = true)]
+	public extern static IntPtr GetProcAddress(IntPtr hModule, string methodName);
+
 	/// <summary>The GetForegroundWindow function returns a handle to the foreground window.</summary>
 	[DllImport("user32.dll")]
 	public static extern IntPtr GetForegroundWindow();

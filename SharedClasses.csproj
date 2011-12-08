@@ -39,9 +39,11 @@
   <ItemGroup>
     <Compile Include="ApplicationRecoveryAndRestart.cs" />
     <Compile Include="AutoCompleteInterop.cs" />
+    <Compile Include="ChartInterop_MeterReadings.cs" />
     <Compile Include="CommandUsercontrol.xaml.cs">
       <DependentUpon>CommandUsercontrol.xaml</DependentUpon>
     </Compile>
+    <Compile Include="CompressAndDecompressInterop.cs" />
     <Compile Include="CustomBalloonTip.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -51,6 +53,7 @@
     <Compile Include="CustomBalloonTipwpf.xaml.cs">
       <DependentUpon>CustomBalloonTipwpf.xaml</DependentUpon>
     </Compile>
+    <Compile Include="DateTimeInterop.cs" />
     <Compile Include="DictionaryPropertyGridAdapter.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -61,8 +64,13 @@
     <Compile Include="DynamicCodeInvokingUserControl.Designer.cs">
       <DependentUpon>DynamicCodeInvokingUserControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="EncodeAndDecodeInterop.cs" />
+    <Compile Include="EnumsInterop.cs" />
     <Compile Include="EventHandlers.cs" />
     <Compile Include="FileSystemInterop.cs" />
+    <Compile Include="FormAndControlsInterop.cs" />
+    <Compile Include="IconsInterop.cs" />
+    <Compile Include="ImagesInterop.cs" />
     <Compile Include="InlineCommands.cs" />
     <Compile Include="InlineCommandsUserControl.cs">
       <SubType>UserControl</SubType>
@@ -72,6 +80,12 @@
     </Compile>
     <Compile Include="InlineCommandsUserControlWPF.xaml.cs">
       <DependentUpon>InlineCommandsUserControlWPF.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="InputBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="InputBox.Designer.cs">
+      <DependentUpon>InputBox.cs</DependentUpon>
     </Compile>
     <Compile Include="Logging.cs" />
     <Compile Include="MicrosoftOfficeInterop.cs" />
@@ -97,6 +111,7 @@
       <DependentUpon>PickItemForm.cs</DependentUpon>
     </Compile>
     <Compile Include="QueueingActionsInterop.cs" />
+    <Compile Include="ScreenAndDrawingInterop.cs" />
     <Compile Include="SerializationInterop.cs" />
     <Compile Include="SettingsInterop.cs" />
     <Compile Include="SharedClassesSettings.cs" />
@@ -136,6 +151,9 @@
     <Reference Include="CookComputing.XmlRpcV2">
       <HintPath>..\..\..\..\..\..\Francois\other\DLLs\XmlRpc\CookComputing.XmlRpcV2.dll</HintPath>
     </Reference>
+    <Reference Include="ICSharpCode.SharpZipLib">
+      <HintPath>DLLs\ICSharpCode.SharpZipLib.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="Microsoft.WindowsAPICodePack, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -154,6 +172,7 @@
       <HintPath>..\..\..\..\..\..\Francois\other\DLLs\WPF Toolkit\System.Windows.Controls.Input.Toolkit.dll</HintPath>
     </Reference>
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Windows.Forms.DataVisualization" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />
     <Reference Include="WindowsBase" />

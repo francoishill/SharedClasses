@@ -474,13 +474,12 @@
 													 TargetType="{x:Type TextBoxBase}">
 						<Border Background="{TemplateBinding Background}"
 										x:Name="Bd"
-										BorderBrush="{TemplateBinding BorderBrush}"
 										BorderThickness="{TemplateBinding BorderThickness}"
 										CornerRadius="5"
 										Padding="2">
 							<DockPanel>
-								<RatherPutActiveCommandNameButtonAndArgumentsListOutsideTheAutoCompleteBox />
-								<FixDownKeyIssue_UncommentFollowingCode_CannotMoveUpDownWithArrowKeys />
+								<!--<RatherPutActiveCommandNameButtonAndArgumentsListOutsideTheAutoCompleteBox />
+								<FixDownKeyIssue_UncommentFollowingCode_CannotMoveUpDownWithArrowKeys />-->
 								<!--<ListBox>
 									<ListBoxItem>Hallo1</ListBoxItem>
 									<ListBoxItem>Hallo2</ListBoxItem>
@@ -506,7 +505,11 @@
 																		Offset="1" />
 										</LinearGradientBrush>
 									</Border.Background>
-									<DockPanel>
+									<DockPanel VerticalAlignment='Center'>
+										<!--<TextBlock DockPanel.Dock='Left'
+															 x:Name="EmbeddedButtonTextBlock"
+															 Foreground="#555"
+															 Text="Halloo">-->
 										<TextBlock DockPanel.Dock='Left'
 															 x:Name="EmbeddedButtonTextBlock"
 															 Foreground="#555"
@@ -580,6 +583,23 @@
 																									 Style='{DynamicResource AutoCompleteBox_InlineCommands}'
 																									 PreviewKeyDown='AutoCompleteActualTextBox_PreviewKeyDown'
 																									 Width='auto' />
+														<!--<input:AutoCompleteBox x:Name='ArgumentText'
+																									 DockPanel.Dock='Top'
+																									 Foreground="#f0f0f0"
+																									 Background='Transparent'
+																									 BorderBrush='Transparent'
+																									 Margin='0,3,0,0'
+																									 MinimumPrefixLength='0'
+																									 Text='{Binding CurrentValue, UpdateSourceTrigger=PropertyChanged}'
+																									 Tag='{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}'
+																									 ItemsSource='{Binding PredefinedAutocompleteList, UpdateSourceTrigger=PropertyChanged}'
+																									 HorizontalAlignment='Stretch'
+																									 FontSize='16'
+																									 GotFocus='ArgumentText_GotFocus'
+																									 IsTextCompletionEnabled='True'
+																									 Style='{DynamicResource AutoCompleteBox_InlineCommands}'
+																									 PreviewKeyDown='AutoCompleteActualTextBox_PreviewKeyDown'
+																									 Width='auto' />-->
 														<!--<input:AutoCompleteBox x:Name="ArgumentText"
 																									 DockPanel.Dock='Top'
 																									 FontSize="36"
@@ -912,7 +932,7 @@
 																			 BorderThickness='0'
 																			 Text='{Binding CurrentValue, UpdateSourceTrigger=PropertyChanged}'
 																			 LostFocus='TextBoxWithText_LostFocus'
-																			 GotFocus='TextBoxWithText_GotFocus' />
+																			 GotFocus='TextBoxWithText_GotFocus'/>
 														</DockPanel>
 													</Border>
 													<ControlTemplate.Triggers>
@@ -1023,8 +1043,8 @@
 																 ItemContainerStyle="{TemplateBinding ItemContainerStyle}"
 																 Background="{TemplateBinding Background}"
 																 Foreground="#000"
-																 BorderThickness="0"																 
-																 ItemTemplate='{TemplateBinding ItemTemplate}'/>
+																 BorderThickness="0"
+																 ItemTemplate='{TemplateBinding ItemTemplate}' />
 											</Border>
 											<!--</Border>
 												</Border>
@@ -1108,18 +1128,35 @@
 					 HorizontalAlignment="Stretch"
 					 VerticalAlignment="Top"
 					 Foreground="Gray" />
-		<input:AutoCompleteBox x:Name="textBox_CommandLine"
-													 Grid.Row="1"
-													 FontSize="36"
-													 Margin='5'
-													 HorizontalAlignment="Stretch"
-													 MinimumPrefixLength='0'
-													 Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type TextBlock}, Mode=FindAncestor}}"
-													 PreviewKeyDown="textBox_CommandLine_PreviewKeyDown"
-													 TextChanged="textBox_CommandLine_TextChanged_1"
-													 Style='{StaticResource AutoCompleteBox_InlineCommands}'
-													 IsTextCompletionEnabled='True'
-													 BorderBrush='#777' />
+		<TextBox Name='MainAutoCompleteTextbox'
+						 Grid.Row="1"
+						 FontSize="36"
+						 Margin='5'
+						 HorizontalAlignment="Stretch"
+						 PreviewKeyDown='MainAutoCompleteTextbox_PreviewKeyDown'>
+			<TextBox.Template>
+				<ControlTemplate>
+					<DockPanel LastChildFill='True' Background='White'>
+						<TextBox Name='TextBoxWithButtons' DockPanel.Dock='Left' Template='{StaticResource TextBoxBaseControlTemplate}' />
+						<!--<input:AutoCompleteBox x:Name="textBox_CommandLine"
+																	 MinimumPrefixLength='0'
+																	 Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type TextBlock}, Mode=FindAncestor}}"
+																	 PreviewKeyDown="textBox_CommandLine_PreviewKeyDown"
+																	 TextChanged="textBox_CommandLine_TextChanged_1"
+																	 Style='{StaticResource AutoCompleteBox_InlineCommands}'
+																	 IsTextCompletionEnabled='True'
+																	 BorderBrush='#777' />-->
+						<input:AutoCompleteBox x:Name="textBox_CommandLine"
+																	 MinimumPrefixLength='0'
+																	 Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type TextBlock}, Mode=FindAncestor}}"
+																	 PreviewKeyDown="textBox_CommandLine_PreviewKeyDown"
+																	 TextChanged="textBox_CommandLine_TextChanged_1"
+																	 IsTextCompletionEnabled='True'
+																	 BorderBrush='#777' />
+					</DockPanel>
+				</ControlTemplate>
+			</TextBox.Template>
+		</TextBox>
 		<!--<TextBox x:Name="textBox_CommandLine"
 						 Grid.Row="1"
 						 FontSize="24"

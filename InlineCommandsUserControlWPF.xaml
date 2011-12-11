@@ -932,7 +932,7 @@
 																			 BorderThickness='0'
 																			 Text='{Binding CurrentValue, UpdateSourceTrigger=PropertyChanged}'
 																			 LostFocus='TextBoxWithText_LostFocus'
-																			 GotFocus='TextBoxWithText_GotFocus'/>
+																			 GotFocus='TextBoxWithText_GotFocus' />
 														</DockPanel>
 													</Border>
 													<ControlTemplate.Triggers>
@@ -1136,9 +1136,13 @@
 						 PreviewKeyDown='MainAutoCompleteTextbox_PreviewKeyDown'>
 			<TextBox.Template>
 				<ControlTemplate>
-					<DockPanel LastChildFill='True' Background='White'>
-						<TextBox Name='TextBoxWithButtons' DockPanel.Dock='Left' Template='{StaticResource TextBoxBaseControlTemplate}' />
-						<!--<input:AutoCompleteBox x:Name="textBox_CommandLine"
+					<Border BorderBrush='#bbb' BorderThickness='1' CornerRadius='10' Padding='5'>
+						<DockPanel LastChildFill='True'
+											 Background='Transparent'>
+							<TextBox Name='TextBoxWithButtons'
+											 DockPanel.Dock='Left'
+											 Template='{StaticResource TextBoxBaseControlTemplate}'/>
+							<!--<input:AutoCompleteBox x:Name="textBox_CommandLine"
 																	 MinimumPrefixLength='0'
 																	 Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type TextBlock}, Mode=FindAncestor}}"
 																	 PreviewKeyDown="textBox_CommandLine_PreviewKeyDown"
@@ -1146,14 +1150,15 @@
 																	 Style='{StaticResource AutoCompleteBox_InlineCommands}'
 																	 IsTextCompletionEnabled='True'
 																	 BorderBrush='#777' />-->
-						<input:AutoCompleteBox x:Name="textBox_CommandLine"
-																	 MinimumPrefixLength='0'
-																	 Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type TextBlock}, Mode=FindAncestor}}"
-																	 PreviewKeyDown="textBox_CommandLine_PreviewKeyDown"
-																	 TextChanged="textBox_CommandLine_TextChanged_1"
-																	 IsTextCompletionEnabled='True'
-																	 BorderBrush='#777' />
-					</DockPanel>
+							<input:AutoCompleteBox x:Name="textBox_CommandLine"
+																		 MinimumPrefixLength='0'
+																		 Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type TextBlock}, Mode=FindAncestor}}"
+																		 PreviewKeyDown="textBox_CommandLine_PreviewKeyDown"
+																		 TextChanged="textBox_CommandLine_TextChanged_1"
+																		 IsTextCompletionEnabled='True'
+																		 BorderBrush='Transparent'/>
+						</DockPanel>
+					</Border>
 				</ControlTemplate>
 			</TextBox.Template>
 		</TextBox>

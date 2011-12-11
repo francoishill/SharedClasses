@@ -582,6 +582,9 @@
 																									 IsTextCompletionEnabled='True'
 																									 Style='{DynamicResource AutoCompleteBox_InlineCommands}'
 																									 PreviewKeyDown='AutoCompleteActualTextBox_PreviewKeyDown'
+																									 AllowDrop='True'
+																									 PreviewDragOver='ArgumentText_DragOver'
+																									 PreviewDrop='ArgumentText_Drop'
 																									 Width='auto' />
 														<!--<input:AutoCompleteBox x:Name='ArgumentText'
 																									 DockPanel.Dock='Top'

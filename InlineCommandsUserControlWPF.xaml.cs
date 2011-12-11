@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -920,15 +921,28 @@ namespace SharedClasses
 			//}
 		}
 
-		//private class AutocompleteProvider : IAutoCompleteDataProvider
-		//{
-		//	public ICommandWithHandler activeCommand;
-		//	public IEnumerable<string> GetItems(string textPattern)
-		//	{
-		//		if (activeCommand != null)
-		//		return activeCommand.GetPredefinedArgumentsList;
-		//		return new List<string>();
-		//	}
-		//}
+		private void ArgumentText_DragOver(object sender, DragEventArgs e)
+		{
+			if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
+			{
+				e.Effects = DragDropEffects.Copy;
+				e.Handled = true;
+			}
+		}
+
+		private void ArgumentText_Drop(object sender, DragEventArgs e)
+		{
+			if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
+			{
+				e.Handled = true;
+				string[] filesDropped = e.Data.GetData(System.Windows.DataFormats.FileDrop) as string[];
+				if (filesDropped.Length > 1 &&
+					UserMessages.ShowWarningMessage("Only one file dropped is allowed"))
+					return;
+				ListBox embeddedListbox = GetEmbeddedListbox();
+				CommandArgument arg = embeddedListbox.SelectedItem as CommandArgument;
+				arg.CurrentValue = filesDropped[0];
+			}
+		}
 	}
 }

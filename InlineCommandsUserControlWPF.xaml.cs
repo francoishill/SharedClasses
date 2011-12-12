@@ -38,21 +38,32 @@ namespace SharedClasses
 			InitializeComponent();
 		}
 
+		//private FlowDocument messagesFlowDocument = new FlowDocument();
 		private bool textFeedbackEventInitialized = false;
 		public void InitializeTreeViewNodes()
 		{
 			if (!textFeedbackEventInitialized)
 			{
+				//TODO: Should eventually keep track of which messages goes with which command (keep track of Paragraphs).
 				textFeedbackEvent += (snder, evtargs) =>
 				{
 					Dispatcher.BeginInvoke(DispatcherPriority.Background,
 					(Action)delegate
 					{
+						textBox_Messages.Document.Blocks.Add(new Paragraph(new Run(evtargs.FeedbackText))
+						{
+							Foreground = evtargs.FeedbackType == TextFeedbackType.Error ? Brushes.Red
+								: evtargs.FeedbackType == TextFeedbackType.Noteworthy ? Brushes.Purple
+								: evtargs.FeedbackType == TextFeedbackType.Success ? Brushes.Green
+								: evtargs.FeedbackType == TextFeedbackType.Subtle ? Brushes.LightGray
+								: Brushes.Gold,
+							TextIndent = -25,
+							Margin = new Thickness(25, 0, 0, 0)
+						});
 						//textBox_Messages.Text += (textBox_Messages.Text.Length > 0 ? Environment.NewLine : "")
+						////textBox_Messages.Content += (textBox_Messages.Content.ToString().Length > 0 ? Environment.NewLine : "")
 						//	+ evtargs.FeedbackText;
-						textBox_Messages.Content += (textBox_Messages.Content.ToString().Length > 0 ? Environment.NewLine : "")
-							+ evtargs.FeedbackText;
-						textBox_Messages.ScrollToBottom();
+						//textBox_Messages.ScrollToEnd();//.ScrollToBottom();
 					});
 				};
 				progressChangedEvent += (snder, evtargs) =>
@@ -60,11 +71,11 @@ namespace SharedClasses
 					Dispatcher.BeginInvoke(DispatcherPriority.Background,
 					(Action)delegate
 					{
+						textBox_Messages.Document.Blocks.Add(new Paragraph(new Run(evtargs.CurrentValue + "/" + evtargs.MaximumValue)) { Foreground = Brushes.Blue });
 						//textBox_Messages.Text += (textBox_Messages.Text.Length > 0 ? Environment.NewLine : "")
+						////textBox_Messages.Content += (textBox_Messages.Content.ToString().Length > 0 ? Environment.NewLine : "")
 						//	+ evtargs.CurrentValue + "/" + evtargs.MaximumValue;
-						textBox_Messages.Content += (textBox_Messages.Content.ToString().Length > 0 ? Environment.NewLine : "")
-							+ evtargs.CurrentValue + "/" + evtargs.MaximumValue;
-						textBox_Messages.ScrollToBottom();
+						//textBox_Messages.ScrollToEnd();//.ScrollToBottom();
 					});
 				};
 				textFeedbackEventInitialized = true;
@@ -167,8 +178,7 @@ namespace SharedClasses
 				{
 					e.Handled = true;
 					ICommandWithHandler command = e.NewValue as ICommandWithHandler;
-					textBox_CommandLine.DataContext = command;
-					textBoxWithButtons.DataContext = command;
+					SetDataContext(command);
 					label_ArgumentsExample.Content = label_ArgumentsExample.ToolTip = command.ArgumentsExample.Replace("\n", "  ");
 
 					//TextBlock tmpTextBlock = (TextBlock)textBox_CommandLine.Template.FindName("EmbeddedButtonTextBlock", textBox_CommandLine);
@@ -182,7 +192,7 @@ namespace SharedClasses
 						tmpBorder.Visibility = System.Windows.Visibility.Visible;
 
 					TextBox actualTextbox = GetActualTextBoxOfAutocompleteControl();
-					if (!actualTextbox.IsFocused) actualTextbox.Focus();
+					//					if (!actualTextbox.IsFocused) actualTextbox.Focus();
 					actualTextbox.Text = "";
 					//textBox_CommandLine.Focus();
 					//textBox_CommandLine.Text = "";
@@ -205,7 +215,12 @@ namespace SharedClasses
 						//	GetAutocompleteBoxOfArgument(tmpListbox.Items[i]).IsDropDownOpen = false;
 
 						tmpListbox.SelectedIndex = 0;
-						if (!GetActualTextboxOfArgument(tmpListbox.SelectedItem).IsFocused) GetActualTextboxOfArgument(tmpListbox.SelectedItem).Focus();
+						if (!SelectedTreeViewItemChangedFromDragOver
+							&& !GetActualTextboxOfArgument(tmpListbox.SelectedItem).IsFocused)
+							GetActualTextboxOfArgument(tmpListbox.SelectedItem).Focus();
+						//else
+						//	treeView_CommandList.Focus();
+						SelectedTreeViewItemChangedFromDragOver = false;
 						textBox_CommandLine.IsDropDownOpen = false;
 						//GetAutocompleteBoxOfArgument(tmpListbox.SelectedItem).IsDropDownOpen = true;
 					}
@@ -225,7 +240,7 @@ namespace SharedClasses
 						//textBox_CommandLine.Focus();
 						//GetEmbeddedListbox().Focus();
 						//GetActualTextBoxOfAutocompleteControl().Focus();
-						if (!GetActualTextboxOfArgument(tmpListbox2.Items[0]).IsFocused) GetActualTextboxOfArgument(tmpListbox2.Items[0]).Focus();
+						//						if (!GetActualTextboxOfArgument(tmpListbox2.Items[0]).IsFocused) GetActualTextboxOfArgument(tmpListbox2.Items[0]).Focus();
 						//GetAutocompleteBoxOfArgument(tmpListbox2.Items[0]).Focus();
 						//GetAutocompleteBoxOfArgument(tmpListbox2.Items[0]).IsDropDownOpen = true;
 					}
@@ -262,6 +277,14 @@ namespace SharedClasses
 				if (!GetActualTextBoxOfAutocompleteControl().IsFocused) GetActualTextBoxOfAutocompleteControl().Focus();
 				//autocompleteProvider.activeCommand = null;
 			}
+		}
+
+		private ICommandWithHandler activeCommand = null;
+		private void SetDataContext(ICommandWithHandler command = null)
+		{
+			activeCommand = command;
+			textBox_CommandLine.DataContext = activeCommand;
+			textBoxWithButtons.DataContext = activeCommand;
 		}
 
 		private void HideEmbeddedButton()
@@ -563,8 +586,7 @@ namespace SharedClasses
 		private void ClearCommandSelection()
 		{
 			ClearSelection(treeView_CommandList);
-			textBox_CommandLine.DataContext = null;
-			textBoxWithButtons.DataContext = null;
+			SetDataContext(null);
 			//GetEmbeddedListbox().ItemsSource = null;
 			ResetAutocompleteToCommandNamesList();
 		}
@@ -712,15 +734,12 @@ namespace SharedClasses
 
 		private void textBox_Messages_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
 		{
-			if (e.ChangedButton == System.Windows.Input.MouseButton.Left)
-			{
-				Window w = this.GetTopParent();
-				if (w != null)
-				{
-					e.Handled = true;
-					w.DragMove();
-				}
-			}
+			//Window w = this.GetTopParent();
+			//if (w != null)
+			//{
+			//	e.Handled = true;
+			//	w.DragMove();
+			//}
 		}
 
 		//private ListBox FindListboxInsidePopup(Popup popup)
@@ -923,26 +942,107 @@ namespace SharedClasses
 
 		private void ArgumentText_DragOver(object sender, DragEventArgs e)
 		{
-			if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
+			if (IsDragDropFormatSupported(e))
 			{
-				e.Effects = DragDropEffects.Copy;
-				e.Handled = true;
+				if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
+				{
+					e.Effects = DragDropEffects.Copy;
+					e.Handled = true;
+				}
 			}
 		}
 
 		private void ArgumentText_Drop(object sender, DragEventArgs e)
 		{
-			if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
+			e.Handled = true;
+			int tmpIndex = GetEmbeddedListbox().Items.IndexOf((sender as AutoCompleteBox).DataContext);
+			if (tmpIndex == -1)
+				return;
+			//GetEmbeddedListbox().SelectedItem = GetEmbeddedListbox().ItemContainerGenerator.ContainerFromIndex(tmpIndex) as ListBoxItem;
+			(GetEmbeddedListbox().ItemContainerGenerator.ContainerFromIndex(tmpIndex) as ListBoxItem).IsSelected = true;
+			DoDropOfActiveCommand(e);
+		}
+
+		private bool IsDragDropFormatSupported(DragEventArgs evtArgs)
+		{
+			return
+				evtArgs.Data.GetDataPresent(DataFormats.FileDrop)
+				|| evtArgs.Data.GetDataPresent(DataFormats.Text);
+		}
+
+		private void DoDropOfActiveCommand(DragEventArgs e, bool PrompBeforePerformingCommand = true)
+		{
+			string NewText = null;
+			if (
+				IsDragDropFormatSupported(e)
+				 && activeCommand != null)
 			{
-				e.Handled = true;
-				string[] filesDropped = e.Data.GetData(System.Windows.DataFormats.FileDrop) as string[];
-				if (filesDropped.Length > 1 &&
-					UserMessages.ShowWarningMessage("Only one file dropped is allowed"))
-					return;
-				ListBox embeddedListbox = GetEmbeddedListbox();
-				CommandArgument arg = embeddedListbox.SelectedItem as CommandArgument;
-				arg.CurrentValue = filesDropped[0];
+				if (e.Data.GetDataPresent(DataFormats.FileDrop))
+				{
+					string[] filesDropped = e.Data.GetData(DataFormats.FileDrop) as string[];
+					if (filesDropped.Length > 1 &&
+						UserMessages.ShowWarningMessage("Only one file dropped is allowed"))
+						return;
+					NewText = filesDropped[0];
+				}
+				else if (e.Data.GetDataPresent(DataFormats.Text))
+				{
+					NewText = e.Data.GetData(DataFormats.Text) as string;
+				}
+
+				if (NewText != null)
+				{
+					ListBox embeddedListbox = GetEmbeddedListbox();
+					CommandArgument arg = embeddedListbox.SelectedItem as CommandArgument;
+					arg.CurrentValue = NewText;
+					if (activeCommand.CurrentArguments.Count == 1)
+						if (!PrompBeforePerformingCommand
+							|| UserMessages.Confirm("Perform command now?", DefaultYesButton: true))
+							PerformCurrentCommand();
+				}
 			}
 		}
+
+		private bool SelectedTreeViewItemChangedFromDragOver = false;
+		private void treeView_CommandList_DragOver(object sender, DragEventArgs e)
+		{
+			if (IsDragDropFormatSupported(e))//(e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
+			{
+				e.Effects = DragDropEffects.Copy;
+				e.Handled = true;
+				DependencyObject k = VisualTreeHelper.HitTest(treeView_CommandList, e.GetPosition(treeView_CommandList)).VisualHit;
+				if (k != null)
+				{
+					DependencyObject dp = k;
+					do
+					{
+						if (dp is TreeViewItem) break;
+						if (dp is TreeView) break;//Busy dragging inside treeview but not inside an treeviewitem
+						dp = VisualTreeHelper.GetParent(dp);
+					}
+					while (dp != null);
+					if (dp is TreeViewItem)
+					{
+						TreeViewItem tvi = dp as TreeViewItem;
+						SelectedTreeViewItemChangedFromDragOver = true;
+						tvi.IsSelected = true;
+						treeView_CommandList.Focus();
+						tvi.Focus();
+					}
+				}
+			}
+		}
+
+		private void treeView_CommandList_PreviewDrop(object sender, DragEventArgs e)
+		{
+			e.Handled = true;
+
+			DoDropOfActiveCommand(e, false);
+
+			//if (activeCommand.CurrentArguments.Count == 1)
+			//	activeCommand.CurrentArguments[0].CurrentValue = 
+		}
+
+		//private bool IsTreeViewDragBusy = false;
 	}
 }

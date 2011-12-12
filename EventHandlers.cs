@@ -14,16 +14,19 @@ public class ProgressChangedEventArgs : EventArgs
 	}
 }
 
+public enum TextFeedbackType { Error, Success, Noteworthy, Subtle };
 public delegate void TextFeedbackEventHandler(object sender, TextFeedbackEventArgs e);
 public class TextFeedbackEventArgs : EventArgs
 {
 	public string FeedbackText;
-	public TextFeedbackEventArgs(string FeedbackTextIn)
+	public TextFeedbackType FeedbackType;
+	public TextFeedbackEventArgs(string FeedbackTextIn, TextFeedbackType FeedbackTypeIn = TextFeedbackType.Subtle)
 	{
 		FeedbackText = FeedbackTextIn;
+		FeedbackType = FeedbackTypeIn;
 	}
-	public static void RaiseTextFeedbackEvent_Ifnotnull(TextFeedbackEventHandler textFeedbackEvent, string textMessage)
+	public static void RaiseTextFeedbackEvent_Ifnotnull(TextFeedbackEventHandler textFeedbackEvent, string textMessage, TextFeedbackType FeedbackTypeIn = TextFeedbackType.Subtle)
 	{
-		if (textFeedbackEvent != null) textFeedbackEvent(null, new TextFeedbackEventArgs(textMessage));
+		if (textFeedbackEvent != null) textFeedbackEvent(null, new TextFeedbackEventArgs(textMessage, FeedbackTypeIn));
 	}
 }

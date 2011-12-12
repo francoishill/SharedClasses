@@ -46,6 +46,7 @@ public class WindowsInterop
 		System.Windows.Forms.Integration.ElementHost.EnableModelessKeyboardInterop(window);
 		//window.Visibility = Visibility.Visible;
 		window.Show();
+		window.UpdateLayout();
 		if (window.WindowState != WindowState.Normal) window.WindowState = WindowState.Normal;
 		window.Activate();
 	}

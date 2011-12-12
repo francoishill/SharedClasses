@@ -5,14 +5,15 @@
 				Title='InlineCommandsWindowWPF'
 				x:Name='InlineCommandsWindowWPF1'
 				Loaded="InlineCommandsWindowWPF1_Loaded"
-				Width="1200"
+				Width="800"
 				MinWidth="150"
 				WindowStartupLocation='CenterScreen'
 				WindowStyle='None'
 				Background='Transparent'
 				Closing='InlineCommandsWindowWPF1_Closing'
 				MouseLeftButtonDown='InlineCommandsWindowWPF1_MouseLeftButtonDown'
-				MouseRightButtonDown='InlineCommandsWindowWPF1_MouseRightButtonDown'>
+				MouseRightButtonDown='InlineCommandsWindowWPF1_MouseRightButtonDown'
+				Height="650">
 	<!--<Window.Background>
         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
             <GradientStop Color="#fff"

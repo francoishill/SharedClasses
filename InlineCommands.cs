@@ -1662,7 +1662,7 @@ namespace InlineCommands
 			{
 				try
 				{
-					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, NameAndNumberDictionary[arguments[0]]);
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, NameAndNumberDictionary[arguments[0]], TextFeedbackType.Noteworthy);
 					errorMessage = "";
 					return true;
 				}
@@ -1777,7 +1777,7 @@ namespace InlineCommands
 						if (UserMessages.Confirm("Confirm to kill process '" + processes[0].ProcessName + "'"))
 						{
 							processes[0].Kill();
-							TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Process killed: " + processName);
+							TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Process killed: " + processName, TextFeedbackType.Noteworthy);
 							errorMessage = "";
 
 							//Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Process killed: " + processName);
@@ -2343,14 +2343,14 @@ namespace InlineCommands
 		public static bool PerformCommand(ICommandWithHandler command, TextFeedbackEventHandler textfeedbackEvent, ProgressChangedEventHandler progresschangedEvent, params string[] arguments)
 		{
 			string errorMsg;
-			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackEvent, "Attempting to perform command: " + command.DisplayName + " (" + command.Description + ")");
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackEvent, "Attempting to perform command: " + command.DisplayName + " (" + command.Description + ")", TextFeedbackType.Subtle);
 			if (!command.ValidateArguments(out errorMsg, arguments)
 				&& UserMessages.ShowWarningMessage("Invalid command arguments: " + errorMsg))
 				return false;
 			if (!command.PerformCommand(out errorMsg, textfeedbackEvent, progresschangedEvent, arguments)
 				&& UserMessages.ShowWarningMessage("Cannot perform command: " + errorMsg))
 				return false;
-			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackEvent, "Successfully performed command: " + command.DisplayName + " (" + command.Description + ")");
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackEvent, "Successfully performed command: " + command.DisplayName + " (" + command.Description + ")", TextFeedbackType.Success);
 			return true;
 		}
 

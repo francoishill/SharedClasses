@@ -569,6 +569,7 @@
 														<input:AutoCompleteBox x:Name='ArgumentText'
 																									 DockPanel.Dock='Top'
 																									 Foreground="#f0f0f0"
+																									 DataContext='{Binding}'
 																									 Background='Transparent'
 																									 BorderBrush='Transparent'
 																									 Margin='0,3,0,0'
@@ -1128,7 +1129,7 @@
 		<Label x:Name="label_ArgumentsExample"
 					 Grid.Row="0"
 					 Content="Label"
-					 HorizontalAlignment="Stretch"
+					 HorizontalAlignment="Left"
 					 VerticalAlignment="Top"
 					 Foreground="Gray" />
 		<TextBox Name='MainAutoCompleteTextbox'
@@ -1200,8 +1201,12 @@
 								VerticalAlignment="Stretch"
 								BorderBrush="Transparent"
 								FontSize="20"
+								Margin='0,0,5,0'
 								SelectedItemChanged="treeView_CommandList_SelectedItemChanged"
-								Focusable='False'>
+								Focusable='False'
+								AllowDrop='True'
+								PreviewDragOver='treeView_CommandList_DragOver'
+								PreviewDrop='treeView_CommandList_PreviewDrop'>
 				<TreeView.Resources>
 					<SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
 													 Color="#E33232" />
@@ -1326,8 +1331,8 @@
 				</TreeView.ItemsPanel>
 			</TreeView>
 			<!--</Expander>-->
-			<GridSplitter Width="2"
-										BorderThickness="2"
+			<GridSplitter Width="5"
+										BorderThickness="1"
 										BorderBrush="#e0e0e0"
 										Focusable='False' />
 			<!--<TextBlock Grid.Column="1"
@@ -1340,7 +1345,37 @@
 									 ScrollViewer.VerticalScrollBarVisibility='Visible'
 									 Foreground="Green"
 									 Padding='10,0' />-->
-			<ScrollViewer Grid.Column="1"
+			<RichTextBox Grid.Column="1"
+									 x:Name="textBox_Messages"
+									 HorizontalAlignment="Stretch"
+									 Margin="0,0,5,0"
+									 MinWidth="50"
+									 PreviewMouseLeftButtonDown='textBox_Messages_PreviewMouseLeftButtonDown'
+									 Foreground="Green"
+									 Padding='10,0'
+									 IsReadOnly='True'>
+				<FlowDocument>
+					<FlowDocument.Resources>
+						<!-- This style is used to set the margins for all paragraphs in the FlowDocument to 0. -->
+						<Style TargetType="{x:Type Paragraph}">
+							<Setter Property="Margin"
+											Value="0" />
+						</Style>
+					</FlowDocument.Resources>
+				</FlowDocument>
+			</RichTextBox>
+			<!--<TextBox Grid.Column="1"
+							 x:Name="textBox_Messages"
+							 HorizontalAlignment="Stretch"
+							 ScrollViewer.HorizontalScrollBarVisibility='Auto'
+							 ScrollViewer.VerticalScrollBarVisibility='Auto'
+							 Margin="0,0,5,0"
+							 MinWidth="50"
+							 PreviewMouseLeftButtonDown='textBox_Messages_PreviewMouseLeftButtonDown'
+							 Foreground="Green"
+							 Padding='10,0'
+							 IsReadOnly='True' />-->
+			<!--<ScrollViewer Grid.Column="1"
 										x:Name="textBox_Messages"
 										HorizontalAlignment="Stretch"
 										Margin="0,0,5,0"
@@ -1350,7 +1385,7 @@
 										ScrollViewer.VerticalScrollBarVisibility='Auto'
 										PreviewMouseLeftButtonDown='textBox_Messages_PreviewMouseLeftButtonDown'
 										Foreground="Green"
-										Padding='10,0' />
+										Padding='10,0' />-->
 		</Grid>
 	</Grid>
 	<!--</Border>-->

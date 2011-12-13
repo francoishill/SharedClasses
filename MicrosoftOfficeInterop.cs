@@ -10,7 +10,8 @@ using System.IO;
 
 public class MicrosoftOfficeInterop
 {
-	public static void CreateNewOutlookMessage(string To, string Subject, string Body, TextFeedbackEventHandler textFeedbackEvent = null, bool ShowModally = true)
+	public enum OutlookMessageActionEnum { Show, ShowModally, SendAutomatically };
+	public static void CreateNewOutlookMessage(string To, string Subject, string Body, TextFeedbackEventHandler textFeedbackEvent = null, OutlookMessageActionEnum OutlookMessageAction = OutlookMessageActionEnum.ShowModally)
 	{
 		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 		{
@@ -29,7 +30,21 @@ public class MicrosoftOfficeInterop
 			mic.Subject = Subject;
 			mic.Body = Body;
 			//form.TopMost = false;
-			mic.Display(ShowModally);
+			switch (OutlookMessageAction)
+			{
+				case OutlookMessageActionEnum.Show:
+					mic.Display(false);
+					break;
+				case OutlookMessageActionEnum.ShowModally:
+					mic.Display(true);
+					break;
+				case OutlookMessageActionEnum.SendAutomatically:
+					mic.Send();
+					break;
+				default:
+					mic.Display(true);
+					break;
+			}
 			//form.TopMost = true;
 			//WindowsInterop.ShowAndActivateForm(form);
 		});

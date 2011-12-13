@@ -19,7 +19,7 @@ using System.Windows.Threading;
 using InlineCommands;
 //using dragonz.actb.core;
 //using dragonz.actb.provider;
-using ICommandWithHandler = InlineCommands.TempNewCommandsManagerClass.ICommandWithHandler;
+using ICommandWithHandler = InlineCommands.CommandsManagerClass.ICommandWithHandler;
 
 namespace SharedClasses
 {
@@ -40,8 +40,11 @@ namespace SharedClasses
 
 		//private FlowDocument messagesFlowDocument = new FlowDocument();
 		private bool textFeedbackEventInitialized = false;
-		public void InitializeTreeViewNodes()
+		public void InitializeTreeViewNodes(bool ShowExitButton = false)
 		{
+			if (ShowExitButton)
+				CloseUsercontrolButton.Visibility = System.Windows.Visibility.Visible;
+
 			if (!textFeedbackEventInitialized)
 			{
 				//TODO: Should eventually keep track of which messages goes with which command (keep track of Paragraphs).
@@ -50,7 +53,7 @@ namespace SharedClasses
 					Dispatcher.BeginInvoke(DispatcherPriority.Background,
 					(Action)delegate
 					{
-						textBox_Messages.Document.Blocks.Add(new Paragraph(new Run(evtargs.FeedbackText))
+						Paragraph tmpParagraph = new Paragraph(new Run(evtargs.FeedbackText))
 						{
 							Foreground = evtargs.FeedbackType == TextFeedbackType.Error ? Brushes.Red
 								: evtargs.FeedbackType == TextFeedbackType.Noteworthy ? Brushes.Purple
@@ -59,7 +62,19 @@ namespace SharedClasses
 								: Brushes.Gold,
 							TextIndent = -25,
 							Margin = new Thickness(25, 0, 0, 0)
-						});
+						};
+						if (snder is ICommandWithHandler)
+						{
+							ICommandWithHandler tmpCommand = snder as ICommandWithHandler;
+							tmpCommand.ParagraphListForMessages.Add(tmpParagraph);
+							//TODO: Handle the messages better
+							//Like if a message is new and the relevant command is not selected, add a "star" to the command
+							SelectTreeViewItemBasedOnCommand(tmpCommand);
+							if (tmpCommand != activeCommand) SetDataContext(tmpCommand);
+							textBox_Messages.Document.Blocks.Add(tmpParagraph);
+						}
+						else UserMessages.ShowWarningMessage("Text feedback did not have a command linked to it, not written into messages list: " + evtargs.FeedbackText);
+
 						//textBox_Messages.Text += (textBox_Messages.Text.Length > 0 ? Environment.NewLine : "")
 						////textBox_Messages.Content += (textBox_Messages.Content.ToString().Length > 0 ? Environment.NewLine : "")
 						//	+ evtargs.FeedbackText;
@@ -83,7 +98,7 @@ namespace SharedClasses
 
 			label_ArgumentsExample.Content = "";
 			treeView_CommandList.Items.Clear();
-			List<ICommandWithHandler> tmplist = TempNewCommandsManagerClass.ListOfInitializedCommandInterfaces;
+			List<ICommandWithHandler> tmplist = CommandsManagerClass.ListOfInitializedCommandInterfaces;
 			textBox_CommandLine.ItemsSource = new ObservableCollection<string>();
 			foreach (ICommandWithHandler comm in tmplist)
 				treeView_CommandList.Items.Add(comm);
@@ -109,7 +124,7 @@ namespace SharedClasses
 		private void ResetAutocompleteToCommandNamesList()
 		{
 			textBox_CommandLine.ItemsSource = new ObservableCollection<string>();
-			List<ICommandWithHandler> tmplist = TempNewCommandsManagerClass.ListOfInitializedCommandInterfaces;
+			List<ICommandWithHandler> tmplist = CommandsManagerClass.ListOfInitializedCommandInterfaces;
 			foreach (ICommandWithHandler comm in tmplist)
 				(textBox_CommandLine.ItemsSource as ObservableCollection<string>).Add(comm.CommandName);
 		}
@@ -284,7 +299,13 @@ namespace SharedClasses
 		{
 			activeCommand = command;
 			textBox_CommandLine.DataContext = activeCommand;
+			textBox_CommandLine.UpdateLayout();
 			textBoxWithButtons.DataContext = activeCommand;
+			textBoxWithButtons.UpdateLayout();
+
+			textBox_Messages.UpdateLayout();
+			textBox_Messages.Document.Blocks.Clear();
+			if (command != null) textBox_Messages.Document.Blocks.AddRange(command.ParagraphListForMessages);
 		}
 
 		private void HideEmbeddedButton()
@@ -300,7 +321,7 @@ namespace SharedClasses
 
 		private bool CommandNameExistOfTextboxText(out string CommandName)
 		{
-			foreach (InlineCommands.TempNewCommandsManagerClass.ICommandWithHandler comm in treeView_CommandList.Items)
+			foreach (InlineCommands.CommandsManagerClass.ICommandWithHandler comm in treeView_CommandList.Items)
 				if (textBox_CommandLine.Text.Equals(comm.CommandName, StringComparison.InvariantCultureIgnoreCase))
 				{
 					CommandName = comm.DisplayName;
@@ -308,6 +329,14 @@ namespace SharedClasses
 				}
 			CommandName = "";
 			return false;
+		}
+
+		private void SelectTreeViewItemBasedOnCommand(ICommandWithHandler command)
+		{
+			int tmpIndex = treeView_CommandList.Items.IndexOf(command);
+			if (tmpIndex == -1) return;
+			TreeViewItem tvi = treeView_CommandList.ItemContainerGenerator.ContainerFromIndex(tmpIndex) as TreeViewItem;
+			tvi.IsSelected = true;
 		}
 
 		static void ClearSelection(TreeView input)
@@ -624,11 +653,11 @@ namespace SharedClasses
 			return false;
 		}
 
-		private bool GetActiveCommand(out InlineCommands.TempNewCommandsManagerClass.ICommandWithHandler activeCommand)
+		private bool GetActiveCommand(out InlineCommands.CommandsManagerClass.ICommandWithHandler activeCommand)
 		{
 			if (treeView_CommandList.SelectedItem != null && treeView_CommandList.SelectedItem is ICommandWithHandler)
 			{
-				activeCommand = treeView_CommandList.SelectedItem as InlineCommands.TempNewCommandsManagerClass.ICommandWithHandler; ;
+				activeCommand = treeView_CommandList.SelectedItem as InlineCommands.CommandsManagerClass.ICommandWithHandler; ;
 				return true;
 			}
 			activeCommand = null;
@@ -840,7 +869,7 @@ namespace SharedClasses
 
 		private void PressEnterKeyInsideArgumentTextbox()
 		{
-			InlineCommands.TempNewCommandsManagerClass.ICommandWithHandler activeCommand;
+			InlineCommands.CommandsManagerClass.ICommandWithHandler activeCommand;
 			if (GetActiveCommand(out activeCommand))
 			{
 				TextBox actualTextBox = GetActualTextBoxOfAutocompleteControl();
@@ -859,7 +888,7 @@ namespace SharedClasses
 					be.UpdateSource();
 				}
 
-				if (TempNewCommandsManagerClass.PerformCommandFromCurrentArguments(
+				if (CommandsManagerClass.PerformCommandFromCurrentArguments(
 						activeCommand,
 						textFeedbackEvent,
 						progressChangedEvent))

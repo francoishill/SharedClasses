@@ -12,7 +12,7 @@ public class WindowsInterop
 	public static readonly string LocalAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 	public static readonly string MydocsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
-	public static void StartCommandPromptOrVScommandPrompt(string cmdpath, bool VisualStudioMode, TextFeedbackEventHandler textFeedbackEvent = null)
+	public static void StartCommandPromptOrVScommandPrompt(Object textfeedbackSenderObject, string cmdpath, bool VisualStudioMode, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
 		const string vsbatfile = @"c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\vcvarsall.bat";
 
@@ -29,9 +29,9 @@ public class WindowsInterop
 				proc.StartInfo.WorkingDirectory = cmdpath;
 				proc.Start();
 			}
-			else TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, @"Unable to start Visual Studio Command Prompt, cannot find file: """ + vsbatfile + @"""" + cmdpath);
+			else TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, @"Unable to start Visual Studio Command Prompt, cannot find file: """ + vsbatfile + @"""" + cmdpath);
 		}
-		else TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Folder does not exist, cannot start cmd: " + cmdpath);
+		else TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Folder does not exist, cannot start cmd: " + cmdpath);
 	}
 
 	public static void ShowAndActivateForm(Form form)

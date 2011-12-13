@@ -11,13 +11,13 @@ using System.IO;
 public class MicrosoftOfficeInterop
 {
 	public enum OutlookMessageActionEnum { Show, ShowModally, SendAutomatically };
-	public static void CreateNewOutlookMessage(string To, string Subject, string Body, TextFeedbackEventHandler textFeedbackEvent = null, OutlookMessageActionEnum OutlookMessageAction = OutlookMessageActionEnum.ShowModally)
+	public static void CreateNewOutlookMessage(Object textfeedbackSenderObject, string To, string Subject, string Body, TextFeedbackEventHandler textFeedbackEvent = null, OutlookMessageActionEnum OutlookMessageAction = OutlookMessageActionEnum.ShowModally)
 	{
 		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 		{
 			if (Process.GetProcessesByName("Outlook").Length == 0)
 			{
-				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Starting Outlook, please wait...");
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Starting Outlook, please wait...");
 				//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Starting Outlook, please wait...");
 				Process p = System.Diagnostics.Process.Start("Outlook");
 			}

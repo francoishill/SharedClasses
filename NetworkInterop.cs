@@ -869,7 +869,7 @@ public class NetworkInterop
 							}
 						};
 						await client.UploadFileTaskAsync(dirOnFtpServer, "STOR", localFilename);
-						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Successfully uploaded " + fileNameOnServer);
+						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackEvent, "Successfully uploaded " + fileNameOnServer);
 					}
 					if (urlWhenSuccessullyUploaded != null) Process.Start(urlWhenSuccessullyUploaded);
 					client.Dispose();

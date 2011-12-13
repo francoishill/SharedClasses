@@ -41,12 +41,12 @@ public class VisualStudioInterop
 	private enum BuildType { Rebuild, Build };
 	private enum ProjectConfiguration { Debug, Release };
 	private enum PlatformTarget { x86, x64 };
-	private static string BuildVsProjectReturnNewversionString(string projName, string projectFilename, BuildType buildType, ProjectConfiguration configuration, PlatformTarget platformTarget, bool AutomaticallyUpdateRevision, TextFeedbackEventHandler textFeedbackEvent = null)
+	private static string BuildVsProjectReturnNewversionString(string projName, string projectFilename, BuildType buildType, ProjectConfiguration configuration, PlatformTarget platformTarget, bool AutomaticallyUpdateRevision, Object textfeedbackSenderObject, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
 		string msbuildpath;
 		if (!FindMsbuildPath4(out msbuildpath))
 		{
-			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Unable to find msbuild path: " + msbuildpath);
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Unable to find msbuild path: " + msbuildpath);
 			return null;
 		}
 		//Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox,
@@ -80,15 +80,15 @@ public class VisualStudioInterop
 				if (outLine.Data != null && outLine.Data.Trim().Length > 0)
 				{
 					errorOccurred = true;
-					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Msbuild error: " + outLine.Data);
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Msbuild error: " + outLine.Data);
 				}
 				//else appendLogTextbox("Svn error empty");
 			};
 			msbuildproc.StartInfo = startinfo;
 
 			if (msbuildproc.Start())
-				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Started building for " + projName + ", please wait...");
-			else TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Error: Could not start SVN process.");
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Started building for " + projName + ", please wait...");
+			else TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Error: Could not start SVN process.");
 
 			msbuildproc.BeginOutputReadLine();
 			msbuildproc.BeginErrorReadLine();
@@ -126,7 +126,7 @@ public class VisualStudioInterop
 						apprevlinenum = i;
 						apprevision = tmpint;
 					}
-					else TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Could not obtain revision int from string: " + line);
+					else TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not obtain revision int from string: " + line);
 				}
 				else if (line.StartsWith(appverstart.ToLower()) && line.EndsWith(appverend.ToLower()))
 				{
@@ -134,8 +134,8 @@ public class VisualStudioInterop
 					appversion = line.Substring(appverstart.Length, line.Length - appverstart.Length - appverend.Length);
 				}
 			}
-			if (apprevision == -1) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Unable to obtain app revision");
-			else if (appversion.Trim().Length == 0) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Unable to obtain app version string");
+			if (apprevision == -1) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Unable to obtain app revision");
+			else if (appversion.Trim().Length == 0) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Unable to obtain app version string");
 			else
 			{
 				string oldversionstring = appversion.Substring(0, appversion.LastIndexOf('.') + 1) + apprevision;
@@ -183,7 +183,7 @@ public class VisualStudioInterop
 	}
 
 	//TODO: Start building own publishing platform (FTP, the html page, etc)
-	public static string PerformPublish(string projName, out string versionString, bool AutomaticallyUpdateRevision = false, bool OpenFolderAndSetupFileAfterSuccessfullNSIS = true, TextFeedbackEventHandler textFeedbackEvent = null)
+	public static string PerformPublish(Object textfeedbackSenderObject, string projName, out string versionString, bool AutomaticallyUpdateRevision = false, bool OpenFolderAndSetupFileAfterSuccessfullNSIS = true, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
 		versionString = "";
 		string projDir =
@@ -201,10 +201,10 @@ public class VisualStudioInterop
 			if (File.Exists(csprojFileName)) ProjFileFound = true;
 		}
 
-		if (!ProjFileFound) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Could not find project file (csproj) in dir " + projDir);
+		if (!ProjFileFound) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not find project file (csproj) in dir " + projDir);
 		else
 		{
-			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Attempting to MsBuild project " + projName);
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Attempting to MsBuild project " + projName);
 			string newversionstring = BuildVsProjectReturnNewversionString(
 				projName,
 				csprojFileName,
@@ -212,13 +212,15 @@ public class VisualStudioInterop
 				ProjectConfiguration.Release,
 				PlatformTarget.x86,//.x64,
 				AutomaticallyUpdateRevision,
+				textfeedbackSenderObject, 
 				textFeedbackEvent);
 			if (newversionstring == null)
 			{
-				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Could not obtain version string for project " + projName);
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not obtain version string for project " + projName);
 				return null;
 			}
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(
+				textfeedbackSenderObject,
 				textFeedbackEvent,
 				AutomaticallyUpdateRevision
 				? "Updated revision of " + projName + " to " + newversionstring + ", attempting to publish..."
@@ -251,7 +253,7 @@ public class VisualStudioInterop
 					true);
 					foreach (string line in list)
 						sw1.WriteLine(line);
-					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Successfully created NSIS file: " + nsisFileName);
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Successfully created NSIS file: " + nsisFileName);
 				}
 
 				//DONE TODO: Must make provision if pc (to do building and compiling of NSIS scripts), does not have the DotNetChecker.dll plugin for NSIS
@@ -277,7 +279,7 @@ public class VisualStudioInterop
 
 
 				string MakeNsisFilePath = @"C:\Program Files (x86)\NSIS\makensis.exe";
-				if (!File.Exists(MakeNsisFilePath)) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Could not find MakeNsis.exe: " + MakeNsisFilePath);
+				if (!File.Exists(MakeNsisFilePath)) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not find MakeNsis.exe: " + MakeNsisFilePath);
 				else
 				{
 					if (File.Exists(resultSetupFileName))
@@ -289,13 +291,13 @@ public class VisualStudioInterop
 					{
 						if (OpenFolderAndSetupFileAfterSuccessfullNSIS)
 						{
-							TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Publish success, opening folder and running setup file...");
+							TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Publish success, opening folder and running setup file...");
 							Process.Start("explorer", "/select, \"" + resultSetupFileName + "\"");
 							Process.Start(resultSetupFileName);
 						}
 						successfullyCreatedNSISfile = true;
 					}
-					else TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Could not successfully create setup for " + projName);
+					else TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not successfully create setup for " + projName);
 					//else Process.Start("explorer", "/select, \"" + Path.GetDirectoryName(nsisFileName) + "\"");
 				}
 			});
@@ -376,10 +378,10 @@ public class VisualStudioInterop
 		return tempFilename;
 	}
 
-	public async static void PerformPublishOnline(string projName, bool AutomaticallyUpdateRevision = false, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
+	public async static void PerformPublishOnline(Object textfeedbackSenderObject, string projName, bool AutomaticallyUpdateRevision = false, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
 	{
 		string versionString;
-		string publishedSetupPath = PerformPublish(projName, out versionString, AutomaticallyUpdateRevision, false, textFeedbackEvent);
+		string publishedSetupPath = PerformPublish(textfeedbackSenderObject, projName, out versionString, AutomaticallyUpdateRevision, false, textFeedbackEvent);
 		if (publishedSetupPath != null)
 		{
 			string validatedUrlsectionForProjname = HttpUtility.UrlPathEncode(projName).ToLower();
@@ -392,8 +394,8 @@ public class VisualStudioInterop
 				new List<string>() { "Bug 1 fixed", "Bug 2 fixed" },
 				new List<string>() { "Improvement 1", "Improvement 2", "Improvement 3" },
 				new List<string>() { "New feature 1" });
-			
-			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent,
+
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent,
 				"Attempting Ftp Uploading of Setup file and index file for " + projName);
 			await NetworkInterop.FtpUploadFiles(
 				SharedClassesSettings.visualStudioInterop.GetCombinedUriForVsPublishing() + "/" + validatedUrlsectionForProjname,

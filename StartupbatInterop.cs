@@ -7,10 +7,10 @@ using System.Windows.Forms;
 
 public class StartupbatInterop
 {
-	public static void PerformStartupbatCommand(string filePath, string comm, TextFeedbackEventHandler textFeedbackEvent = null)
+	public static void PerformStartupbatCommand(Object textfeedbackSenderObject, string filePath, string comm, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
 		if (!File.Exists(filePath))
-			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "File not found: " + filePath);
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "File not found: " + filePath);
 			//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "File not found: " + filePath);
 		else if (comm.StartsWith("open"))
 		{
@@ -23,7 +23,7 @@ public class StartupbatInterop
 			while (!sr.EndOfStream)
 			{
 				string line = sr.ReadLine();
-				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, (counter++) + ": " + line);
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, (counter++) + ": " + line);
 				//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, (counter++) + ": " + line);
 				//line = sr.ReadLine();
 			}
@@ -39,22 +39,22 @@ public class StartupbatInterop
 				while (!sr.EndOfStream)
 				{
 					string line = sr.ReadLine();
-					if (line.ToLower().Contains(searchstr)) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, counter + ": " + line);
+					if (line.ToLower().Contains(searchstr)) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, counter + ": " + line);
 					counter++;
 					//line = sr.ReadLine();
 				}
 				sr.Close();
 			}
-			else TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Getline search string not defined (must be i.e. getline skype): " + comm);
+			else TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Getline search string not defined (must be i.e. getline skype): " + comm);
 		}
 		else if (comm.StartsWith("comment"))
 		{
 			string linenumstr = comm.Substring(7).Trim();
 			int linenum;
-			if (!int.TryParse(linenumstr, out linenum)) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Cannot obtain line number from: " + comm.Substring(7));
+			if (!int.TryParse(linenumstr, out linenum)) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Cannot obtain line number from: " + comm.Substring(7));
 			else
 			{
-				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Commenting line number " + linenum.ToString());
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Commenting line number " + linenum.ToString());
 				List<string> tmpLines = new List<string>();
 				StreamReader sr = new StreamReader(filePath);
 				int counter = 1;
@@ -73,17 +73,17 @@ public class StartupbatInterop
 					foreach (string s in tmpLines) sw.WriteLine(s);
 				}
 				finally { sw.Close(); }
-				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Successfully commented line number " + linenum.ToString());
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Successfully commented line number " + linenum.ToString());
 			}
 		}
 		else if (comm.StartsWith("uncomment"))
 		{
 			string linenumstr = comm.Substring(9).Trim();
 			int linenum;
-			if (!int.TryParse(linenumstr, out linenum)) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Cannot obtain line number from: " + comm.Substring(9));
+			if (!int.TryParse(linenumstr, out linenum)) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Cannot obtain line number from: " + comm.Substring(9));
 			else
 			{
-				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Unommenting line number " + linenum.ToString());
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Unommenting line number " + linenum.ToString());
 				List<string> tmpLines = new List<string>();
 				StreamReader sr = new StreamReader(filePath);
 				int counter = 1;
@@ -102,7 +102,7 @@ public class StartupbatInterop
 					foreach (string s in tmpLines) sw.WriteLine(s);
 				}
 				finally { sw.Close(); }
-				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Successfully uncommented line number " + linenum.ToString());
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Successfully uncommented line number " + linenum.ToString());
 			}
 		}
 	}

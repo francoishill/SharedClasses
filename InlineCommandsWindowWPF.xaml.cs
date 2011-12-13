@@ -1,6 +1,25 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Windows;
-
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+using System.Windows.Interop;
+using System.Windows.Media.Animation;
+using System.Reflection;
+using System.IO;
+using System.Diagnostics;
+using InlineCommands;
+/// <summary>
+/// Interaction logic for InlineCommandsWindowWPF.xaml
+/// </summary>
 public partial class InlineCommandsWindowWPF : Window
 {
 	public InlineCommandsWindowWPF()
@@ -10,7 +29,8 @@ public partial class InlineCommandsWindowWPF : Window
 
 	private void InlineCommandsWindowWPF1_Loaded(object sender, RoutedEventArgs e)
 	{
-		inlineCommandsUserControlWPF1.InitializeTreeViewNodes();
+		inlineCommandsUserControlWPF1.InitializeTreeViewNodes(true);
+		inlineCommandsUserControlWPF1.CloseUsercontrolButton.Click += delegate { this.Close(); };
 	}
 
 	private void InlineCommandsWindowWPF1_Closing(object sender, System.ComponentModel.CancelEventArgs e)

@@ -25,8 +25,8 @@ public class TextFeedbackEventArgs : EventArgs
 		FeedbackText = FeedbackTextIn;
 		FeedbackType = FeedbackTypeIn;
 	}
-	public static void RaiseTextFeedbackEvent_Ifnotnull(TextFeedbackEventHandler textFeedbackEvent, string textMessage, TextFeedbackType FeedbackTypeIn = TextFeedbackType.Subtle)
+	public static void RaiseTextFeedbackEvent_Ifnotnull(object SenderObject, TextFeedbackEventHandler textFeedbackEvent, string textMessage, TextFeedbackType FeedbackTypeIn = TextFeedbackType.Subtle)
 	{
-		if (textFeedbackEvent != null) textFeedbackEvent(null, new TextFeedbackEventArgs(textMessage, FeedbackTypeIn));
+		if (textFeedbackEvent != null) textFeedbackEvent(SenderObject, new TextFeedbackEventArgs(textMessage, FeedbackTypeIn));
 	}
 }

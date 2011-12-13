@@ -18,7 +18,7 @@ public class PhpInterop
 
 	public const string MySQLdateformat = "yyyy-MM-dd HH:mm:ss";
 
-	public static string GetPrivateKey(string ServerAddress, string Username, string Password, TextFeedbackEventHandler textFeedbackEvent = null)
+	public static string GetPrivateKey(Object textfeedbackSenderObject, string ServerAddress, string Username, string Password, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
 		try
 		{
@@ -27,7 +27,7 @@ public class PhpInterop
 
 			ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 			{
-				tmpkey = PhpInterop.PostPHP(ServerAddress + "/generateprivatekey.php", "username=" + Username + "&password=" + Password, textFeedbackEvent);
+				tmpkey = PhpInterop.PostPHP(textfeedbackSenderObject, ServerAddress + "/generateprivatekey.php", "username=" + Username + "&password=" + Password, textFeedbackEvent);
 			});
 
 			string tmpSuccessKeyString = "Success: Key=";
@@ -40,7 +40,7 @@ public class PhpInterop
 		}
 		catch (Exception exc)
 		{
-			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Obtain private key exception: " + exc.Message);
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Obtain private key exception: " + exc.Message);
 			//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Obtain private key exception: " + exc.Message);
 			return null;
 		}
@@ -52,7 +52,7 @@ public class PhpInterop
 	/// <param name="url">The url of the php, do not include the ?</param>
 	/// <param name="data">The data, i.e. "name=koos&surname=koekemoer". Note to not include the ?</param>
 	/// <returns>Returns the data received from the php (usually the "echo" statements in the php.</returns>
-	public static string PostPHP(string url, string data, TextFeedbackEventHandler textFeedbackEvent = null)
+	public static string PostPHP(Object textfeedbackSenderObject, string url, string data, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
 		string vystup = "";
 		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
@@ -94,11 +94,11 @@ public class PhpInterop
 			catch (Exception exc)
 			{
 				if (!exc.Message.ToUpper().StartsWith("The remote name could not be resolved:".ToUpper()))
-					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Post php: " + exc.Message);
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Post php: " + exc.Message);
 				//LoggingClass.AddToLogList(UserMessages.MessageTypes.PostPHP, exc.Message);
 				//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Post php: " + exc.Message);
 				else //LoggingClass.AddToLogList(UserMessages.MessageTypes.PostPHPremotename, exc.Message);
-					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Post php remote name: " + exc.Message);
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Post php remote name: " + exc.Message);
 					//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Post php remote name: " + exc.Message);
 				//SysWinForms.MessageBox.Show("Error (092892): " + Environment.NewLine + exc.Message, "Exception error", SysWinForms.MessageBoxButtons.OK, SysWinForms.MessageBoxIcon.Error);
 			}
@@ -106,61 +106,62 @@ public class PhpInterop
 		return vystup;
 	}
 
-	public static void AddTodoItemFirepuma(string ServerAddress, string doWorkAddress, string Username, string Password, string Category, string Subcat, string Items, string Description, bool Completed, DateTime Due, DateTime Created, int RemindedCount, bool StopSnooze, int AutosnoozeInterval, TextFeedbackEventHandler textFeedbackEvent = null)
+	public static void AddTodoItemFirepuma(Object textfeedbackSenderObject, string ServerAddress, string doWorkAddress, string Username, string Password, string Category, string Subcat, string Items, string Description, bool Completed, DateTime Due, DateTime Created, int RemindedCount, bool StopSnooze, int AutosnoozeInterval, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
-		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Adding new item, please wait...");
+		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Adding new item, please wait...");
 		//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Adding new item, please wait...");
 		bool successfulAdd = PerformDesktopAppDoTask(
-				ServerAddress,
-				doWorkAddress,
-				Username,
-				Password,
-				"addtolist",
-				new List<string>()
-                {
-                    Category,
-                    Subcat,
-                    Items,
-                    Description,
-                    Due.ToString(MySQLdateformat),
-                    StopSnooze ? "1" : "0",
-                    AutosnoozeInterval.ToString()
-                },
-				true,
-				"1",
-				false,
-				textFeedbackEvent);
+			textfeedbackSenderObject,
+			ServerAddress,
+			doWorkAddress,
+			Username,
+			Password,
+			"addtolist",
+			new List<string>()
+              {
+                  Category,
+                  Subcat,
+                  Items,
+                  Description,
+                  Due.ToString(MySQLdateformat),
+                  StopSnooze ? "1" : "0",
+                  AutosnoozeInterval.ToString()
+              },
+			true,
+			"1",
+			false,
+			textFeedbackEvent);
 		if (successfulAdd)
 		{
-			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Successfully added todo item.");
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Successfully added todo item.");
 			//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Successfully added todo item.");
 			//textBox1.Text = "";
 		}
 	}
 
-	public static bool AddBtwTextFirepuma(string btwtext, TextFeedbackEventHandler textFeedbackEvent)
+	public static bool AddBtwTextFirepuma(Object textfeedbackSenderObject, string btwtext, TextFeedbackEventHandler textFeedbackEvent)
 	{
-		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Sending btw text, please wait...");
-		string responsestr  = PhpInterop.PostPHP("http://firepuma.com/btw/directadd/f/" + PhpInterop.PhpEncryption.StringToHex(btwtext), "");
+		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Sending btw text, please wait...");
+		string responsestr  = PhpInterop.PostPHP(textfeedbackSenderObject, "http://firepuma.com/btw/directadd/f/" + PhpInterop.PhpEncryption.StringToHex(btwtext), "");
 
-		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, responsestr);
+		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, responsestr);
 		return responsestr.ToLower().StartsWith("success:");
 		//form1.textBox1.Text = "";
 		//textBox1.Text = "";
 	}
 
-	private static bool PerformDesktopAppDoTask(string ServerAddress, string doWorkAddress, string UsernameIn, string Password, string TaskName, List<string> ArgumentList, bool CheckForSpecificResult = false, string SuccessSpecificResult = "", bool MustWriteResultToLogsTextbox = false, TextFeedbackEventHandler textFeedbackEvent = null)
+	private static bool PerformDesktopAppDoTask(Object textfeedbackSenderObject, string ServerAddress, string doWorkAddress, string UsernameIn, string Password, string TaskName, List<string> ArgumentList, bool CheckForSpecificResult = false, string SuccessSpecificResult = "", bool MustWriteResultToLogsTextbox = false, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
-		string result = GetResultOfPerformingDesktopAppDoTask(ServerAddress, doWorkAddress, UsernameIn, Password, TaskName, ArgumentList, MustWriteResultToLogsTextbox, textFeedbackEvent);
+		string result = GetResultOfPerformingDesktopAppDoTask(textfeedbackSenderObject, ServerAddress, doWorkAddress, UsernameIn, Password, TaskName, ArgumentList, MustWriteResultToLogsTextbox, textFeedbackEvent);
 		if (CheckForSpecificResult && result == SuccessSpecificResult)
 			return true;
 		return false;
 	}
 
-	private static string GetResultOfPerformingDesktopAppDoTask(string ServerAddress, string doWorkAddress, string Username, string Password, string TaskName, List<string> ArgumentList, bool MustWriteResultToLogsTextbox = false, TextFeedbackEventHandler textFeedbackEvent = null)
+	private static string GetResultOfPerformingDesktopAppDoTask(Object textfeedbackSenderObject, string ServerAddress, string doWorkAddress, string Username, string Password, string TaskName, List<string> ArgumentList, bool MustWriteResultToLogsTextbox = false, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
-		string tmpkey = GetPrivateKey(ServerAddress, Username, Password, textFeedbackEvent);
-		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Obtained private key");
+		string tmpkey = GetPrivateKey(textfeedbackSenderObject, ServerAddress, Username, Password, textFeedbackEvent);
+		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Obtained private key");
 
 		if (tmpkey != null)
 		{
@@ -199,7 +200,7 @@ public class PhpInterop
 							//appendLogTextbox("Decrypted response: " + decryptedstring);
 							decryptedstring = decryptedstring.Replace("\0", "").Trim();
 							//MessageBox.Show(this, decryptedstring);
-							if (MustWriteResultToLogsTextbox) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Result for " + TaskName + ": " + decryptedstring);
+							if (MustWriteResultToLogsTextbox) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Result for " + TaskName + ": " + decryptedstring);
 							mustreturn = true;
 						}
 						catch (Exception exc) { MessageBox.Show("Exception:" + exc.Message, "Exception", MessageBoxButtons.OK, MessageBoxIcon.Error); }
@@ -209,7 +210,7 @@ public class PhpInterop
 			}
 			catch (Exception exc)
 			{
-				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Obtain php: " + exc.Message);
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Obtain php: " + exc.Message);
 			}
 			finally
 			{

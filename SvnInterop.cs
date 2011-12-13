@@ -10,7 +10,7 @@ public class SvnInterop
 {
 	public enum SvnCommand { Commit, Update, Status, StatusLocal };
 
-	public static void PerformSvn(string svnargs, SvnCommand svnCommand, TextFeedbackEventHandler textFeedbackEvent = null)
+	public static void PerformSvn(Object textfeedbackSenderObject, string svnargs, SvnCommand svnCommand, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
 		string projnameOrDir = svnargs.Split(';')[0];//projnameAndlogmessage.Split(';')[0];
 		string logmessage = null;
@@ -37,8 +37,8 @@ public class SvnInterop
 					listOfDirectoriesToCheckLocalStatusses.Add(workingDir);
 			}
 
-			if (!File.Exists(svnpath)) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Error: svn.exe does not exists: " + svnpath);
-			else if (!Directory.Exists(projDir) && listOfDirectoriesToCheckLocalStatusses == null) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Error: folder not found: " + projDir);
+			if (!File.Exists(svnpath)) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Error: svn.exe does not exists: " + svnpath);
+			else if (!Directory.Exists(projDir) && listOfDirectoriesToCheckLocalStatusses == null) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Error: folder not found: " + projDir);
 			else
 			{
 				ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
@@ -70,14 +70,14 @@ public class SvnInterop
 						svnproc.OutputDataReceived += delegate(object sendingProcess, DataReceivedEventArgs outLine)
 						{
 							if (outLine.Data != null && outLine.Data.Trim().Length > 0)
-								TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, string.Format("Svn output for {0}: {1}", projnameOrDir, outLine.Data));
+								TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, string.Format("Svn output for {0}: {1}", projnameOrDir, outLine.Data));
 							//else appendLogTextbox("Svn output empty");
 						};
 						svnproc.ErrorDataReceived += delegate(object sendingProcess, DataReceivedEventArgs outLine)
 						{
 							if (outLine.Data != null && outLine.Data.Trim().Length > 0
 								&& !outLine.Data.ToLower().Contains("not a working copy"))
-								TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, string.Format("Svn error for {0}: {1}", projnameOrDir, outLine.Data));
+								TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, string.Format("Svn error for {0}: {1}", projnameOrDir, outLine.Data));
 							//else appendLogTextbox("Svn error empty");
 						};
 						svnproc.StartInfo = start;
@@ -89,11 +89,11 @@ public class SvnInterop
 							: svnCommand == SvnCommand.StatusLocal ? "Check status of svn (local), please wait..."
 							: "";
 						if (!svnproc.Start())
-							TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Error: Could not start SVN process for " + projnameOrDir);
+							TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Error: Could not start SVN process for " + projnameOrDir);
 						else if (!pleaseWaitAlreadyDisplayed)
 						{
 							pleaseWaitAlreadyDisplayed = true;
-							TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, performingPleasewaitMsg);
+							TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, performingPleasewaitMsg);
 						}
 
 						svnproc.BeginOutputReadLine();
@@ -106,7 +106,7 @@ public class SvnInterop
 		}
 		catch (Exception exc)
 		{
-			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Exception on running svn: " + exc.Message);
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Exception on running svn: " + exc.Message);
 		}
 	}
 

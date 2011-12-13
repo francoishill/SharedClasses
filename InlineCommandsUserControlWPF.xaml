@@ -1114,6 +1114,56 @@
 						</Setter>
 					</Style>
 				</ResourceDictionary>-->
+				<ResourceDictionary>
+					<Style x:Key="BaseButtonStyle"
+								 TargetType="{x:Type ButtonBase}">
+						<Setter Property="Template">
+							<Setter.Value>
+								<ControlTemplate TargetType="{x:Type ButtonBase}">
+									<theme:ButtonChrome Name="Chrome"
+																			Background="{TemplateBinding Background}"
+																			BorderBrush="{TemplateBinding BorderBrush}"
+																			RenderDefaulted="{TemplateBinding Button.IsDefaulted}"
+																			RenderMouseOver="{TemplateBinding IsMouseOver}"
+																			RenderPressed="{TemplateBinding IsPressed}"
+																			SnapsToDevicePixels="true">
+										<ContentPresenter Margin="{TemplateBinding Padding}"
+																			VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+																			HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+																			RecognizesAccessKey="True"
+																			SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+									</theme:ButtonChrome>
+									<ControlTemplate.Triggers>
+
+                    <Trigger Property="IsKeyboardFocused" Value="true">
+                        <Setter TargetName="Chrome" Property="RenderDefaulted" Value="true" />
+                    </Trigger>
+										<Trigger Property="ToggleButton.IsChecked"
+														 Value="true">
+											<Setter TargetName="Chrome"
+															Property="RenderPressed"
+															Value="true" />
+										</Trigger>
+										<Trigger Property="IsEnabled"
+														 Value="false">
+											<Setter Property="Foreground"
+															Value="#ADADAD" />
+										</Trigger>
+									</ControlTemplate.Triggers>
+								</ControlTemplate>
+							</Setter.Value>
+						</Setter>
+					</Style>
+					<Style x:Key="{x:Type ToggleButton}"
+								 BasedOn="{StaticResource BaseButtonStyle}"
+								 TargetType="{x:Type ToggleButton}" />
+					<Style x:Key="{x:Type RepeatButton}"
+								 BasedOn="{StaticResource BaseButtonStyle}"
+								 TargetType="{x:Type RepeatButton}" />
+					<Style x:Key="{x:Type Button}"
+								 BasedOn="{StaticResource BaseButtonStyle}"
+								 TargetType="{x:Type Button}" />
+				</ResourceDictionary>
 			</ResourceDictionary.MergedDictionaries>
 		</ResourceDictionary>
 	</UserControl.Resources>
@@ -1132,6 +1182,68 @@
 					 HorizontalAlignment="Left"
 					 VerticalAlignment="Top"
 					 Foreground="Gray" />
+		<Button x:Name='CloseUsercontrolButton'
+						Grid.Row='0'
+						HorizontalAlignment='Right'
+						VerticalAlignment='Center'
+						BorderBrush='#ddd'
+						BorderThickness='1'
+						Background='Transparent'
+						Foreground='#777'
+						Padding='3,0'
+						Content='quit'
+						Visibility='Collapsed'
+						ToolTip="Quit Quick Access" />
+		<!--<Border x:Name='CloseUsercontrolButton'
+						Grid.Row='0'
+						HorizontalAlignment='Right'
+						CornerRadius='5'
+						BorderBrush='#ddd'
+						BorderThickness='1'
+						Background='Transparent'>
+			<Border.Triggers>
+				<EventTrigger RoutedEvent='MouseEnter'
+											SourceName='CloseUsercontrolButton'>
+					<BeginStoryboard>
+						<Storyboard Duration='0:0:0.2'>
+							<ColorAnimation BeginTime='0:0:0'
+															Duration='0:0:0.2'
+															Storyboard.TargetName='CloseUsercontrolButton'
+															Storyboard.TargetProperty='(Background).(SolidColorBrush.Color)'
+															From='Transparent'
+															To='#333'></ColorAnimation>
+							<ColorAnimation BeginTime='0:0:0'
+															Duration='0:0:0.2'
+															Storyboard.TargetName='LabelofCloseUsercontrolButton'
+															Storyboard.TargetProperty='(Foreground).(SolidColorBrush.Color)'
+															From='#000'
+															To='#fff'></ColorAnimation>
+						</Storyboard>
+					</BeginStoryboard>
+				</EventTrigger>
+				<EventTrigger RoutedEvent='MouseLeave'
+											SourceName='CloseUsercontrolButton'>
+					<BeginStoryboard>
+						<Storyboard Duration='0:0:1'>
+							<ColorAnimation BeginTime='0:0:0'
+															Duration='0:0:1'
+															Storyboard.TargetName='CloseUsercontrolButton'
+															Storyboard.TargetProperty='(Background).(SolidColorBrush.Color)'
+															From='#333'
+															To='Transparent'></ColorAnimation>
+							<ColorAnimation BeginTime='0:0:0'
+															Duration='0:0:1'
+															Storyboard.TargetName='LabelofCloseUsercontrolButton'
+															Storyboard.TargetProperty='(Foreground).(SolidColorBrush.Color)'
+															From='#fff'
+															To='#000'></ColorAnimation>
+						</Storyboard>
+					</BeginStoryboard>
+				</EventTrigger>
+			</Border.Triggers>
+			<Label x:Name='LabelofCloseUsercontrolButton'
+						 Foreground='#000'>Exit</Label>
+		</Border>-->
 		<TextBox Name='MainAutoCompleteTextbox'
 						 Grid.Row="1"
 						 FontSize="36"
@@ -1140,12 +1252,15 @@
 						 PreviewKeyDown='MainAutoCompleteTextbox_PreviewKeyDown'>
 			<TextBox.Template>
 				<ControlTemplate>
-					<Border BorderBrush='#bbb' BorderThickness='1' CornerRadius='10' Padding='5'>
+					<Border BorderBrush='#bbb'
+									BorderThickness='1'
+									CornerRadius='10'
+									Padding='5'>
 						<DockPanel LastChildFill='True'
 											 Background='Transparent'>
 							<TextBox Name='TextBoxWithButtons'
 											 DockPanel.Dock='Left'
-											 Template='{StaticResource TextBoxBaseControlTemplate}'/>
+											 Template='{StaticResource TextBoxBaseControlTemplate}' />
 							<!--<input:AutoCompleteBox x:Name="textBox_CommandLine"
 																	 MinimumPrefixLength='0'
 																	 Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type TextBlock}, Mode=FindAncestor}}"
@@ -1160,7 +1275,7 @@
 																		 PreviewKeyDown="textBox_CommandLine_PreviewKeyDown"
 																		 TextChanged="textBox_CommandLine_TextChanged_1"
 																		 IsTextCompletionEnabled='True'
-																		 BorderBrush='Transparent'/>
+																		 BorderBrush='Transparent' />
 						</DockPanel>
 					</Border>
 				</ControlTemplate>
@@ -1352,7 +1467,7 @@
 									 MinWidth="50"
 									 PreviewMouseLeftButtonDown='textBox_Messages_PreviewMouseLeftButtonDown'
 									 ScrollViewer.HorizontalScrollBarVisibility='Auto'
-									 ScrollViewer.VerticalScrollBarVisibility='Auto'									 
+									 ScrollViewer.VerticalScrollBarVisibility='Auto'
 									 Foreground="Green"
 									 Padding='10,0'
 									 IsReadOnly='True'>

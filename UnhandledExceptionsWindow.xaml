@@ -1,0 +1,74 @@
+﻿<Window x:Class='UnhandledExceptions.UnhandledExceptionsWindow'
+				xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
+				xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
+				xmlns:local='clr-namespace:UnhandledExceptions'
+				Title='Unhandled Exception'
+				Name='UnhandledExceptionsWindow1'
+				WindowStartupLocation='CenterScreen'
+				Width='800'
+				SizeToContent='Height'>
+	<Window.Background>
+		<LinearGradientBrush EndPoint="0.5,1"
+												 MappingMode="RelativeToBoundingBox"
+												 StartPoint="0.5,0">
+			<GradientStop Color="#123"
+										Offset="0.678" />
+			<GradientStop Color="#234" />
+		</LinearGradientBrush>
+	</Window.Background>
+	<DockPanel LastChildFill='True'>
+		<Label DockPanel.Dock='Top'
+					 Content='Quick Access has crashed with the following details available'
+					 FontSize='16'
+					 Foreground='#FFAEC4FD' />
+		<Label DockPanel.Dock='Top'
+					 Margin='0,10,0,0'
+					 Content='Error message:'
+					 Foreground='#ddd' />
+		<TextBox DockPanel.Dock='Top'
+						 FontSize='20'
+						 Margin='20,0'
+						 Foreground='Red'
+						 HorizontalAlignment="Stretch"
+						 TextWrapping="Wrap"
+						 Text="{Binding Message, Mode=OneWay}"
+						 IsReadOnly="True"
+						 IsReadOnlyCaretVisible="True"
+						 HorizontalScrollBarVisibility="Auto"
+						 VerticalScrollBarVisibility="Auto" />
+		<!--<TextBlock local:NavigationService.Text="http://firepuma.com/ownapplications/quickaccess/reporterror"
+							 DockPanel.Dock='Bottom'
+							 Height='20'
+							 Margin='0,0,20,0'
+							 HorizontalAlignment='Right' />-->
+		<TextBlock DockPanel.Dock='Bottom'
+							 TextDecorations='Underline'
+							 TextBlock.FontStyle='Italic'
+							 Cursor='Hand'
+							 MouseLeftButtonDown='TextBlock_MouseLeftButtonDown'
+							 Margin='0,10,5,10'
+							 HorizontalAlignment='Right'
+							 Text='Click here to report error to developer'
+							 Foreground="#FFAEC4FD" />
+		<Expander DockPanel.Dock='Bottom'
+							Margin='0,20,0,0'
+							HorizontalAlignment='Stretch'
+							IsExpanded='False'>
+			<Expander.Header>
+				<TextBlock Foreground='#ddd'
+									 Text='Additional error details (StackTrace)'/>
+			</Expander.Header>
+			<TextBox DockPanel.Dock='Bottom'
+							 Foreground='#555'
+							 FontSize='24'
+							 Margin='20,0'
+							 HorizontalAlignment='Stretch'
+							 Text="{Binding StackTrace, Mode=OneWay}"
+							 TextWrapping='Wrap'
+							 IsReadOnly="True"
+							 IsReadOnlyCaretVisible="True"
+							 HorizontalScrollBarVisibility="Auto"
+							 VerticalScrollBarVisibility="Auto" />
+		</Expander>
+	</DockPanel>
+</Window>

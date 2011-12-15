@@ -20,13 +20,14 @@
 		<Label DockPanel.Dock='Top'
 					 Content='Quick Access has crashed with the following details available'
 					 FontSize='16'
-					 Foreground='#FFAEC4FD' />
+					 Foreground='#fff' />
 		<Label DockPanel.Dock='Top'
 					 Margin='0,10,0,0'
 					 Content='Error message:'
-					 Foreground='#ddd' />
+					 Foreground='#aaa' />
 		<TextBox DockPanel.Dock='Top'
 						 FontSize='20'
+						 FontWeight='Bold'
 						 Margin='20,0'
 						 Foreground='Red'
 						 HorizontalAlignment="Stretch"
@@ -55,12 +56,13 @@
 							HorizontalAlignment='Stretch'
 							IsExpanded='False'>
 			<Expander.Header>
-				<TextBlock Foreground='#ddd'
+				<TextBlock Foreground='#aaa'
+									 Focusable='False'
 									 Text='Additional error details (StackTrace)'/>
 			</Expander.Header>
 			<TextBox DockPanel.Dock='Bottom'
-							 Foreground='#555'
-							 FontSize='24'
+							 Foreground='Red'
+							 FontSize='22'
 							 Margin='20,0'
 							 HorizontalAlignment='Stretch'
 							 Text="{Binding StackTrace, Mode=OneWay}"

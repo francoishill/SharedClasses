@@ -29,8 +29,12 @@ public partial class InlineCommandsWindowWPF : Window
 
 	private void InlineCommandsWindowWPF1_Loaded(object sender, RoutedEventArgs e)
 	{
-		inlineCommandsUserControlWPF1.InitializeTreeViewNodes(true);
-		inlineCommandsUserControlWPF1.CloseUsercontrolButton.Click += delegate { this.Close(); };
+		inlineCommandsUserControlWPF1.InitializeTreeViewNodes(
+			true,
+			delegate { this.Hide(); },
+			delegate { this.Close(); },
+			"hide/close",
+			"Left-click hides. Right-click closes");
 	}
 
 	private void InlineCommandsWindowWPF1_Closing(object sender, System.ComponentModel.CancelEventArgs e)

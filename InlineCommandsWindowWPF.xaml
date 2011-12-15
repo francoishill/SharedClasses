@@ -15,7 +15,7 @@
 				Background='Transparent'
 				Closing='InlineCommandsWindowWPF1_Closing'
 				MouseLeftButtonDown='InlineCommandsWindowWPF1_MouseLeftButtonDown'
-				MouseRightButtonDown='InlineCommandsWindowWPF1_MouseRightButtonDown'
+				MouseRightButtonUp='InlineCommandsWindowWPF1_MouseRightButtonDown'
 				Height="650">
 	<!--<Window.Background>
         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">

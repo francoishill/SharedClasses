@@ -581,6 +581,17 @@ public class NsisInterop
 				tmpList.Add(@"SectionEnd"); tmpList.Add("");
 			}
 
+			//TODO: Should look at incorporating the kill process plugin to ask user weather to kill process or quit
+			tmpList.Add(";Section -CheckMutexOpen");
+			tmpList.Add(Spacer + ";System::Call 'kernel32::OpenMutex(i 0x100000, b 0, t \"QuickAccess-{6EBAC5AC-BCF2-4263-A82C-F189930AEA30}\") i .R0'");
+			tmpList.Add(Spacer + ";IntCmp $R0 0 notRunning");
+		  tmpList.Add(Spacer + ";System::Call 'kernel32::CloseHandle(i $R0)'");
+			tmpList.Add(Spacer + ";MessageBox MB_YESNO|MB_ICONQUESTION \"QuickAccess is running. Please close it first then click YES.\" IDYES tryAgain");
+			tmpList.Add(Spacer + ";Abort");
+			tmpList.Add(Spacer + ";tryAgain:");
+			tmpList.Add(Spacer + ";notRunning:");
+			tmpList.Add(";SectionEnd");
+
 			if (AllSectionAndGroupDescriptions != null && AllSectionAndGroupDescriptions.Count > 0)
 			{
 				tmpList.Add(@"; Section descriptions");

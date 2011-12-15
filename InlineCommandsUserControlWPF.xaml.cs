@@ -40,13 +40,19 @@ namespace SharedClasses
 
 		//private FlowDocument messagesFlowDocument = new FlowDocument();
 		private bool textFeedbackEventInitialized = false;
-		public void InitializeTreeViewNodes(bool ShowExitButton = false)
+		public void InitializeTreeViewNodes(bool ShowExitButton = false, Action MethodOnLeftClick = null, Action MethodOnRightClick = null, string ButtonText = null, string ButtonToolTip = null)
 		{
-			if (ShowExitButton)
-				CloseUsercontrolButton.Visibility = System.Windows.Visibility.Visible;
-
 			if (!textFeedbackEventInitialized)
 			{
+				if (ShowExitButton)
+				{
+					CloseUsercontrolButton.Visibility = System.Windows.Visibility.Visible;
+					CloseUsercontrolButton.PreviewMouseLeftButtonDown += delegate { MethodOnLeftClick(); };
+					CloseUsercontrolButton.MouseRightButtonUp += delegate { MethodOnRightClick(); };
+					CloseUsercontrolButton.Content = ButtonText;
+					CloseUsercontrolButton.ToolTip = ButtonToolTip;
+				}
+
 				//TODO: Should eventually keep track of which messages goes with which command (keep track of Paragraphs).
 				textFeedbackEvent += (snder, evtargs) =>
 				{

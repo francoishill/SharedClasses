@@ -44,6 +44,12 @@ namespace UnhandledExceptions
 			//TODO: Should still actually report error to developer here
 			System.Windows.Forms.MessageBox.Show("This function is soon to be incorporated.");
 		}
+
+		private void TextBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+		{
+			if (e.ChangedButton != MouseButton.Left) return;
+			(sender as TextBox).SelectAll();
+		}
 	}
 
 	public static class NavigationService

@@ -50,9 +50,15 @@ public class SettingsInterop
 
 	public static T GetSettings<T>(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
 	{
-		string fileName = typeof(T).Name.Split('+')[typeof(T).Name.Split('+').Length - 1];
+		return (T)GetSettings(typeof(T), ApplicationName, SubfolderNameInApplication, CompanyName);
+	}
+
+	public static object GetSettings(Type ObjectType, string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+	{
+		string fileName = ObjectType.Name.Split('+')[ObjectType.Name.Split('+').Length - 1];
 		fileName += SettingsFileExtension;
-		return DeserializeFromFile<T>(
+		return DeserializeFromFile(
+			ObjectType,
 			GetFullFilePathInLocalAppdata(fileName, ApplicationName, SubfolderNameInApplication, CompanyName));
 	}
 
@@ -108,12 +114,17 @@ public class SettingsInterop
 
 	private static T DeserializeFromFile<T>(string file)
 	{
-		if (!File.Exists(file)) return default(T);
+		return (T)DeserializeFromFile(typeof(T), file);
+	}
+
+	private static object DeserializeFromFile(Type ObjectType, string file)
+	{
+		if (!File.Exists(file)) return ObjectType.GetConstructor(new Type[] { }).Invoke(new object[] { });
 		System.Xml.Serialization.XmlSerializer xs 
             = new System.Xml.Serialization.XmlSerializer(
-					typeof(T));
+					ObjectType);
 		StreamReader reader = File.OpenText(file);
-		T c = (T)xs.Deserialize(reader);
+		object c = xs.Deserialize(reader);
 		reader.Close();
 		return c;
 	}

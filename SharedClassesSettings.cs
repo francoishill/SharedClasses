@@ -9,9 +9,9 @@ public class SharedClassesSettings
 {
 	private static string RootApplicationNameForSharedClasses = "SharedClasses";
 
-	public static VisualStudioInteropSettings visualStudioInterop;// { get; set; }
-	public static NetworkInteropSettings networkInteropSettings;// { get; set; }
-	public static TracXmlRpcInteropSettings tracXmlRpcInteropSettings;
+	public static VisualStudioInteropSettings visualStudioInterop = new VisualStudioInteropSettings();// { get; set; }
+	public static NetworkInteropSettings networkInteropSettings = new NetworkInteropSettings();// { get; set; }
+	public static TracXmlRpcInteropSettings tracXmlRpcInteropSettings = new TracXmlRpcInteropSettings();
 
 	private static bool WasAlreadyCalledEnsureAllSharedClassesSettingsNotNullCreateDefault = false;
 
@@ -19,6 +19,8 @@ public class SharedClassesSettings
 	{
 		if (WasAlreadyCalledEnsureAllSharedClassesSettingsNotNullCreateDefault)
 			return;
+
+		//VisualStudioInteropSettings.LoadFromFile(typeof(VisualStudioInteropSettings)RootApplicationNameForSharedClasses);
 		SetObjectDefaultIfNull<VisualStudioInteropSettings>(ref visualStudioInterop);
 		SetObjectDefaultIfNull<NetworkInteropSettings>(ref networkInteropSettings);
 		SetObjectDefaultIfNull<TracXmlRpcInteropSettings>(ref tracXmlRpcInteropSettings);
@@ -40,8 +42,32 @@ public class SharedClassesSettings
 	}
 }
 
+//interface IGenericSettings
+//{
+//	bool LoadFromFile();
+//	void SetDefaultValues();
+//}
+
+public class GenericSettings// : IGenericSettings
+{
+	public static object LoadFromFile(Type ObjectType, string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+	{
+		return SettingsInterop.GetSettings(
+			ObjectType,
+			ApplicationName,
+			SubfolderNameInApplication,
+			CompanyName);
+	}
+
+	public void SetDefaultValues()
+	{
+		throw new NotImplementedException();
+	}
+}
+
 //TODO: Check out INotifyPropertyChanged (in System.ComponentModel)
-public class VisualStudioInteropSettings
+[Serializable]
+public class VisualStudioInteropSettings : GenericSettings
 {
 	public enum UriProtocol { Http, Ftp }
 
@@ -153,7 +179,8 @@ public class VisualStudioInteropSettings
 	}
 }
 
-public class NetworkInteropSettings
+[Serializable]
+public class NetworkInteropSettings : GenericSettings
 {
 	public short ServerSocket_Ttl { get; set; }
 	public bool ServerSocket_NoDelay { get; set; }
@@ -173,7 +200,8 @@ public class NetworkInteropSettings
 	}
 }
 
-public class TracXmlRpcInteropSettings
+[Serializable]
+public class TracXmlRpcInteropSettings : GenericSettings
 {
 	private string username;
 	public string Username

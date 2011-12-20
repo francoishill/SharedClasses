@@ -136,6 +136,9 @@
     <Compile Include="..\PickItemForm.Designer.cs">
       <Link>PickItemForm.Designer.cs</Link>
     </Compile>
+    <Compile Include="..\PropertyInterceptor.cs">
+      <Link>PropertyInterceptor.cs</Link>
+    </Compile>
     <Compile Include="..\SerializationInterop.cs">
       <Link>SerializationInterop.cs</Link>
     </Compile>

@@ -74,7 +74,7 @@ public class DynamicCodeInvoking
 	{
 		try
 		{
-			SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
+			//SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
 			Iclientside_DynamicCodeInvokingServerClass proxy = XmlRpcProxyGen.Create<Iclientside_DynamicCodeInvokingServerClass>();
 			proxy.Url = TracXmlRpcInteropSettings.Instance.GetCominedUrlForDynamicInvokationServer();
 			//XmlRpcInterop.Tracer tracer = new XmlRpcInterop.Tracer();
@@ -120,7 +120,7 @@ public class DynamicCodeInvoking
 	{
 		try
 		{
-			SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
+			//SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
 			Iclientside_DynamicCodeInvokingServerClass proxy = XmlRpcProxyGen.Create<Iclientside_DynamicCodeInvokingServerClass>();
 			proxy.Url = TracXmlRpcInteropSettings.Instance.GetCominedUrlForDynamicInvokationServer();
 			//XmlRpcInterop.Tracer tracer = new XmlRpcInterop.Tracer();

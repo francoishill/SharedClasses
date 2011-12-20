@@ -10,7 +10,7 @@ public class TracXmlRpcInterop
 
 	public static List<string> GetFieldLables(string xmlRpcUrl, string Username = null, string Password = null)
 	{
-		SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
+		//SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
 		ITracServerFunctions tracMonitorSystem;
 		tracMonitorSystem = XmlRpcProxyGen.Create<ITracServerFunctions>();
 		tracMonitorSystem.Url = xmlRpcUrl;
@@ -41,7 +41,7 @@ public class TracXmlRpcInterop
 
 	public static int[] GetTicketIds(string xmlRpcUrl, string Username = null, string Password = null)
 	{
-		SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
+		//SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
 		ITracServerFunctions tracMonitorSystem;
 		tracMonitorSystem = XmlRpcProxyGen.Create<ITracServerFunctions>();
 		tracMonitorSystem.Url = xmlRpcUrl;
@@ -67,7 +67,7 @@ public class TracXmlRpcInterop
 	{
 		Dictionary<string, object> tmpDict = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
-		SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
+		//SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
 		ITracServerFunctions tracMonitorSystem;
 		tracMonitorSystem = XmlRpcProxyGen.Create<ITracServerFunctions>();
 		tracMonitorSystem.Url = xmlRpcUrl;
@@ -101,7 +101,7 @@ public class TracXmlRpcInterop
 	{
 		List<ChangeLogStruct> tmpList = new List<ChangeLogStruct>();
 
-		SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
+		//SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
 		ITracServerFunctions tracMonitorSystem;
 		tracMonitorSystem = XmlRpcProxyGen.Create<ITracServerFunctions>();
 		tracMonitorSystem.Url = xmlRpcUrl;

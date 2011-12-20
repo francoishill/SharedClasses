@@ -33,13 +33,13 @@
 		// 
 		// comboBox_ItemPicked
 		// 
-		this.comboBox_ItemPicked.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+		this.comboBox_ItemPicked.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)
 					| System.Windows.Forms.AnchorStyles.Right)));
 		this.comboBox_ItemPicked.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
 		this.comboBox_ItemPicked.FormattingEnabled = true;
 		this.comboBox_ItemPicked.Location = new System.Drawing.Point(12, 37);
 		this.comboBox_ItemPicked.Name = "comboBox_ItemPicked";
-		this.comboBox_ItemPicked.Size = new System.Drawing.Size(178, 21);
+		this.comboBox_ItemPicked.Size = new System.Drawing.Size(300, 21);
 		this.comboBox_ItemPicked.TabIndex = 0;
 		// 
 		// label_Message
@@ -54,7 +54,8 @@
 		// 
 		// button_OK
 		// 
-		this.button_OK.Location = new System.Drawing.Point(274, 35);
+		this.button_OK.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right))));
+		this.button_OK.Location = new System.Drawing.Point(413, 35);
 		this.button_OK.Name = "button_OK";
 		this.button_OK.Size = new System.Drawing.Size(75, 23);
 		this.button_OK.TabIndex = 2;
@@ -66,13 +67,14 @@
 		// 
 		this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 		this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-		this.ClientSize = new System.Drawing.Size(361, 70);
+		this.ClientSize = new System.Drawing.Size(500, 70);
 		this.Controls.Add(this.button_OK);
 		this.Controls.Add(this.label_Message);
 		this.Controls.Add(this.comboBox_ItemPicked);
 		this.DoubleBuffered = true;
 		this.MaximizeBox = false;
 		this.MinimizeBox = false;
+		this.MinimumSize = new System.Drawing.Size(400, 70);
 		this.Name = "PickItemForm";
 		this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
 		this.Text = "Pick an item";

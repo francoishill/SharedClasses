@@ -41,9 +41,18 @@ public class SettingsInterop
 	
 	public static void FlushSettings<T>(T settingsObject, string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
 	{
-		string fileName = typeof(T).Name.Split('+')[typeof(T).Name.Split('+').Length - 1];
+		//string fileName = typeof(T).Name.Split('+')[typeof(T).Name.Split('+').Length - 1];
+		//fileName += SettingsFileExtension;
+		//SerializeToFile<T>(
+		//	GetFullFilePathInLocalAppdata(fileName, ApplicationName, SubfolderNameInApplication, CompanyName, true),
+		//	settingsObject);
+		FlushSettings(typeof(T), settingsObject, ApplicationName, SubfolderNameInApplication, CompanyName);
+	}
+	public static void FlushSettings(Type ObjectType, object settingsObject, string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+	{
+		string fileName = ObjectType.Name.Split('+')[ObjectType.Name.Split('+').Length - 1];
 		fileName += SettingsFileExtension;
-		SerializeToFile<T>(
+		SerializeToFile(
 			GetFullFilePathInLocalAppdata(fileName, ApplicationName, SubfolderNameInApplication, CompanyName, true),
 			settingsObject);
 	}
@@ -105,11 +114,25 @@ public class SettingsInterop
 
 	private static void SerializeToFile<T>(string file, T settingsObject)
 	{
-		System.Xml.Serialization.XmlSerializer xs = new System.Xml.Serialization.XmlSerializer(settingsObject.GetType());
-		StreamWriter writer = File.CreateText(file);
-		xs.Serialize(writer, settingsObject);
-		writer.Flush();
-		writer.Close();
+		//System.Xml.Serialization.XmlSerializer xs = new System.Xml.Serialization.XmlSerializer(settingsObject.GetType());
+		//StreamWriter writer = File.CreateText(file);
+		//xs.Serialize(writer, settingsObject);
+		//writer.Flush();
+		//writer.Close();
+		SerializeToFile(file, settingsObject);
+	}
+
+	private static object LockObject = new object();
+	private static void SerializeToFile(string file, object settingsObject)
+	{
+		lock (LockObject)
+		{
+			System.Xml.Serialization.XmlSerializer xs = new System.Xml.Serialization.XmlSerializer(settingsObject.GetType());
+			StreamWriter writer = File.CreateText(file);
+			xs.Serialize(writer, settingsObject);
+			writer.Flush();
+			writer.Close();
+		}
 	}
 
 	private static T DeserializeFromFile<T>(string file)
@@ -119,13 +142,16 @@ public class SettingsInterop
 
 	private static object DeserializeFromFile(Type ObjectType, string file)
 	{
-		if (!File.Exists(file)) return ObjectType.GetConstructor(new Type[] { }).Invoke(new object[] { });
-		System.Xml.Serialization.XmlSerializer xs 
+		lock (LockObject)
+		{
+			if (!File.Exists(file)) return ObjectType.GetConstructor(new Type[] { }).Invoke(new object[] { });
+			System.Xml.Serialization.XmlSerializer xs 
             = new System.Xml.Serialization.XmlSerializer(
-					ObjectType);
-		StreamReader reader = File.OpenText(file);
-		object c = xs.Deserialize(reader);
-		reader.Close();
-		return c;
+						ObjectType);
+			StreamReader reader = File.OpenText(file);
+			object c = xs.Deserialize(reader);
+			reader.Close();
+			return c;
+		}
 	}
 }

@@ -35,7 +35,7 @@ public class XmlRpcInterop
 	{
 		return new ListDictionary()
 		{
-			{ "port", SharedClassesSettings.tracXmlRpcInteropSettings.DynamicInvokationServer_PortNumber },//5678 }
+			{ "port", TracXmlRpcInteropSettings.Instance.DynamicInvokationServer_PortNumber },//5678 }
 		};
 	}
 
@@ -59,7 +59,7 @@ public class XmlRpcInterop
 
 	private static string GetDefaultRelativeUri()
 	{
-		string tmpUri = SharedClassesSettings.tracXmlRpcInteropSettings.DynamicInvokationServer_RelativePath;
+		string tmpUri = TracXmlRpcInteropSettings.Instance.DynamicInvokationServer_RelativePath;
 		while (tmpUri.StartsWith("/")) tmpUri = tmpUri.Substring(1);
 		return tmpUri;
 	}

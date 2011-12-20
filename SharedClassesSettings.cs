@@ -1,17 +1,65 @@
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Reflection;
 using System.Windows.Forms;
-
 using UriProtocol = VisualStudioInteropSettings.UriProtocol;
 
-public class SharedClassesSettings
+public sealed class SharedClassesSettings
 {
-	private static string RootApplicationNameForSharedClasses = "SharedClasses";
+	public static string RootApplicationNameForSharedClasses = "SharedClasses";
 
-	public static VisualStudioInteropSettings visualStudioInterop = new VisualStudioInteropSettings();// { get; set; }
-	public static NetworkInteropSettings networkInteropSettings = new NetworkInteropSettings();// { get; set; }
-	public static TracXmlRpcInteropSettings tracXmlRpcInteropSettings = new TracXmlRpcInteropSettings();
+	//private static VisualStudioInteropSettings _visualStudioInterop;
+	//private static object syncRootVisualStudioInterop = new Object();
+	//public static VisualStudioInteropSettings VisualStudioInterop
+	//{
+	//	get
+	//	{
+	//		if (_visualStudioInterop == null)
+	//		{
+	//			lock (syncRootVisualStudioInterop)
+	//			{
+	//				if (_visualStudioInterop == null)
+	//					_visualStudioInterop = new VisualStudioInteropSettings();
+	//			}
+	//		}
+	//		return _visualStudioInterop;
+	//	}
+	//}
+	//public static NetworkInteropSettings _networkInteropSettings;
+	//private static object syncRootNetworkInteropSettings = new Object();
+	//public static NetworkInteropSettings NetworkInteropSettings
+	//{
+	//	get
+	//	{
+	//		if (_networkInteropSettings == null)
+	//		{
+	//			lock (syncRootNetworkInteropSettings)
+	//			{
+	//				if (_networkInteropSettings == null)
+	//					_networkInteropSettings = new NetworkInteropSettings();
+	//			}
+	//		}
+	//		return _networkInteropSettings;
+	//	}
+	//}
+	//public static TracXmlRpcInteropSettings _tracXmlRpcInteropSettings;
+	//private static object syncRootTracXmlRpcInteropSettings = new Object();
+	//public static TracXmlRpcInteropSettings TracXmlRpcInteropSettings
+	//{
+	//	get
+	//	{
+	//		if (_tracXmlRpcInteropSettings == null)
+	//		{
+	//			lock (syncRootTracXmlRpcInteropSettings)
+	//			{
+	//				if (_tracXmlRpcInteropSettings == null)
+	//					_tracXmlRpcInteropSettings = new TracXmlRpcInteropSettings();
+	//			}
+	//		}
+	//		return _tracXmlRpcInteropSettings;
+	//	}
+	//}
 
 	private static bool WasAlreadyCalledEnsureAllSharedClassesSettingsNotNullCreateDefault = false;
 
@@ -20,26 +68,39 @@ public class SharedClassesSettings
 		if (WasAlreadyCalledEnsureAllSharedClassesSettingsNotNullCreateDefault)
 			return;
 
-		//VisualStudioInteropSettings.LoadFromFile(typeof(VisualStudioInteropSettings)RootApplicationNameForSharedClasses);
-		SetObjectDefaultIfNull<VisualStudioInteropSettings>(ref visualStudioInterop);
-		SetObjectDefaultIfNull<NetworkInteropSettings>(ref networkInteropSettings);
-		SetObjectDefaultIfNull<TracXmlRpcInteropSettings>(ref tracXmlRpcInteropSettings);
+		//typeof(Sha
 
-		foreach (FieldInfo fi in typeof(SharedClassesSettings).GetFields(BindingFlags.Public | BindingFlags.Static))
-			if (fi.GetValue(null) == null)
-				UserMessages.ShowWarningMessage("SharedClassesSettings does not have value for field: " + fi.Name);
+		//PropertyInfo[] propertyInfos = typeof(SharedClassesSettings).GetProperties(BindingFlags.Public | BindingFlags.Static);
+		//foreach (PropertyInfo pi in propertyInfos)
+		//	if (pi.PropertyType.BaseType == typeof(GenericSettings))
+		//		(pi.GetValue(null) as GenericSettings).LoadFromFile(RootApplicationNameForSharedClasses);
+
+		//FieldInfo[] fieldInfos = typeof(SharedClassesSettings).GetFields(BindingFlags.Public | BindingFlags.Static);
+		//foreach (FieldInfo fi in fieldInfos)
+		//	if (fi.FieldType.BaseType == typeof(GenericSettings))
+		//		(fi.GetValue(null) as GenericSettings).LoadFromFile(null, "Appname");
+
+		//VisualStudioInteropSettings.LoadFromFile(typeof(VisualStudioInteropSettings)RootApplicationNameForSharedClasses);
+		//SetObjectDefaultIfNull<VisualStudioInteropSettings>(ref _visualStudioInterop);
+		//SetObjectDefaultIfNull<NetworkInteropSettings>(ref _networkInteropSettings);
+		//SetObjectDefaultIfNull<TracXmlRpcInteropSettings>(ref _tracXmlRpcInteropSettings);
+
+		//foreach (FieldInfo fi in typeof(SharedClassesSettings).GetFields(BindingFlags.Public | BindingFlags.Static))
+		//	if (fi.GetValue(null) == null)
+		//		UserMessages.ShowWarningMessage("SharedClassesSettings does not have value for field: " + fi.Name);
+
 		WasAlreadyCalledEnsureAllSharedClassesSettingsNotNullCreateDefault = true;
 	}
 
-	private static object obj = new object();
-	private static void SetObjectDefaultIfNull<T>(ref T Obj)
-	{
-		if (Obj == null) Obj = SettingsInterop.GetSettings<T>(RootApplicationNameForSharedClasses);
-		if (Obj == null)//When the file does not exist
-			Obj = (T)typeof(T).GetConstructor(new Type[] { }).Invoke(new object[] { });
-		lock (obj)
-			SettingsInterop.FlushSettings<T>(Obj, RootApplicationNameForSharedClasses);
-	}
+	//private static object obj = new object();
+	//private static void SetObjectDefaultIfNull<T>(ref T Obj)
+	//{
+	//	if (Obj == null) Obj = SettingsInterop.GetSettings<T>(RootApplicationNameForSharedClasses);
+	//	if (Obj == null)//When the file does not exist
+	//		Obj = (T)typeof(T).GetConstructor(new Type[] { }).Invoke(new object[] { });
+	//	lock (obj)
+	//		SettingsInterop.FlushSettings<T>(Obj, RootApplicationNameForSharedClasses);
+	//}
 }
 
 //interface IGenericSettings
@@ -48,16 +109,23 @@ public class SharedClassesSettings
 //	void SetDefaultValues();
 //}
 
-public class GenericSettings// : IGenericSettings
+internal sealed partial class Settings : ApplicationSettingsBase
 {
-	public static object LoadFromFile(Type ObjectType, string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+	private static Settings defaultInstance = (
+			(Settings)(ApplicationSettingsBase.Synchronized(new Settings()))
+			);
+	public static Settings Default
 	{
-		return SettingsInterop.GetSettings(
-			ObjectType,
-			ApplicationName,
-			SubfolderNameInApplication,
-			CompanyName);
+		get
+		{
+			return defaultInstance;
+		}
 	}
+}
+
+public abstract class GenericSettings// : IGenericSettings
+{
+	public abstract void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH");
 
 	public void SetDefaultValues()
 	{
@@ -67,8 +135,30 @@ public class GenericSettings// : IGenericSettings
 
 //TODO: Check out INotifyPropertyChanged (in System.ComponentModel)
 [Serializable]
-public class VisualStudioInteropSettings : GenericSettings
+public sealed class VisualStudioInteropSettings : GenericSettings
 {
+	private static volatile VisualStudioInteropSettings instance;
+	private static object syncRoot = new Object();
+
+	public static VisualStudioInteropSettings Instance
+	{
+		get
+		{
+			if (instance == null)
+			{
+				lock (syncRoot)
+				{
+					if (instance == null)
+					{
+						instance = new VisualStudioInteropSettings();
+						instance.LoadFromFile(SharedClassesSettings.RootApplicationNameForSharedClasses);
+					}
+				}
+			}
+			return instance;
+		}
+	}
+
 	public enum UriProtocol { Http, Ftp }
 
 	private string baseUri;
@@ -149,7 +239,7 @@ public class VisualStudioInteropSettings : GenericSettings
 		set { ftpPassword = value; }
 	}
 
-	public VisualStudioInteropSettings()
+	internal VisualStudioInteropSettings()
 	{
 		BaseUri = null;//"fjh.dyndns.org";//"127.0.0.1";
 		RelativeRootUriAFTERvspublishing = null;//"/ownapplications";
@@ -159,7 +249,7 @@ public class VisualStudioInteropSettings : GenericSettings
 		FtpUsername = null;
 		FtpPassword = null;
 	}
-	public VisualStudioInteropSettings(string BaseUriIn, string RelativeRootUriAFTERvspublishingIn, UriProtocol UriProtocolForAFTERvspublishingIn, string RelativeRootUriForVsPublishingIn, UriProtocol UriProtocolForVsPublishingIn)
+	private VisualStudioInteropSettings(string BaseUriIn, string RelativeRootUriAFTERvspublishingIn, UriProtocol UriProtocolForAFTERvspublishingIn, string RelativeRootUriForVsPublishingIn, UriProtocol UriProtocolForVsPublishingIn)
 	{
 		BaseUri = BaseUriIn;
 		RelativeRootUriAFTERvspublishing = RelativeRootUriAFTERvspublishingIn;
@@ -177,11 +267,38 @@ public class VisualStudioInteropSettings : GenericSettings
 	{
 		return UriProtocolForVsPublishing.ToString().ToLower() + "://" + BaseUri + RelativeRootUriForVsPublishing;
 	}
+
+	public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+	{
+		instance = SettingsInterop.GetSettings<VisualStudioInteropSettings>(ApplicationName, SubfolderNameInApplication, CompanyName);
+	}
 }
 
 [Serializable]
 public class NetworkInteropSettings : GenericSettings
 {
+	private static volatile NetworkInteropSettings instance;
+	private static object syncRoot = new Object();
+
+	public static NetworkInteropSettings Instance
+	{
+		get
+		{
+			if (instance == null)
+			{
+				lock (syncRoot)
+				{
+					if (instance == null)
+					{
+						instance = new NetworkInteropSettings();
+						instance.LoadFromFile(SharedClassesSettings.RootApplicationNameForSharedClasses);
+					}
+				}
+			}
+			return instance;
+		}
+	}
+
 	public short ServerSocket_Ttl { get; set; }
 	public bool ServerSocket_NoDelay { get; set; }
 	public int ServerSocket_ReceiveBufferSize { get; set; }
@@ -189,7 +306,7 @@ public class NetworkInteropSettings : GenericSettings
 	public int ServerSocket_MaxNumberPendingConnections { get; set; }
 	public int ServerSocket_ListeningPort { get; set; }
 
-	public NetworkInteropSettings()
+	internal NetworkInteropSettings()
 	{
 		ServerSocket_Ttl = 112;
 		ServerSocket_NoDelay = true;
@@ -198,11 +315,38 @@ public class NetworkInteropSettings : GenericSettings
 		ServerSocket_MaxNumberPendingConnections = 100;
 		ServerSocket_ListeningPort = 11000;
 	}
+
+	public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+	{
+		instance = SettingsInterop.GetSettings<NetworkInteropSettings>(ApplicationName, SubfolderNameInApplication, CompanyName);
+	}
 }
 
 [Serializable]
 public class TracXmlRpcInteropSettings : GenericSettings
 {
+	private static volatile TracXmlRpcInteropSettings instance;
+	private static object syncRoot = new Object();
+
+	public static TracXmlRpcInteropSettings Instance
+	{
+		get
+		{
+			if (instance == null)
+			{
+				lock (syncRoot)
+				{
+					if (instance == null)
+					{
+						instance = new TracXmlRpcInteropSettings();
+						instance.LoadFromFile(SharedClassesSettings.RootApplicationNameForSharedClasses);
+					}
+				}
+			}
+			return instance;
+		}
+	}
+
 	private string username;
 	public string Username
 	{
@@ -299,5 +443,10 @@ public class TracXmlRpcInteropSettings : GenericSettings
 	public string GetCominedUrlForDynamicInvokationServer()
 	{
 		return DynamicInvokationServer_BasePath + ":" + DynamicInvokationServer_PortNumber + DynamicInvokationServer_RelativePath;
+	}
+
+	public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+	{
+		instance = SettingsInterop.GetSettings<TracXmlRpcInteropSettings>(ApplicationName, SubfolderNameInApplication, CompanyName);
 	}
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -17,6 +18,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using InlineCommands;
+using PropertyInterceptor;
 //using dragonz.actb.core;
 //using dragonz.actb.provider;
 using ICommandWithHandler = InlineCommands.CommandsManagerClass.ICommandWithHandler;
@@ -1078,6 +1080,51 @@ namespace SharedClasses
 			//	activeCommand.CurrentArguments[0].CurrentValue = 
 		}
 
+		private void listBoxUnsetProperties_SelectionChanged(object sender, SelectionChangedEventArgs e)
+		{
+			if (e.AddedItems.Count == 1)
+			{
+				if (e.AddedItems[0] is UnsetPropertyDetail)
+				{
+					UnsetPropertyDetail uspd = e.AddedItems[0] as PropertyInterceptor.UnsetPropertyDetail;
+
+					PropertyInfo[] declaredClassProperties = uspd.PropertyInfo.DeclaringType.GetProperties(BindingFlags.Static | BindingFlags.Public);
+					foreach (PropertyInfo dcp in declaredClassProperties)
+					{
+						if (uspd.PropertyInfo.DeclaringType == dcp.PropertyType)
+							uspd.PropertyInfo.GetValue(dcp.GetValue(null));
+					}
+
+					ListBoxItem lbi = listBoxUnsetProperties.ItemContainerGenerator.ContainerFromItem(e.AddedItems[0]) as ListBoxItem;
+					if (lbi != null)
+						lbi.IsSelected = false;
+				}
+				//ListBoxItem lbi = listBoxUnsetProperties.ItemContainerGenerator.ContainerFromItem(e.AddedItems[0]) as ListBoxItem;
+				//if (lbi is 
+			}
+		}
 		//private bool IsTreeViewDragBusy = false;
+	}
+
+	public class ZeroCollapsedNonZeroVisible : System.Windows.Data.IValueConverter
+	{
+
+		public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			var rv = Visibility.Visible;
+			var val = 0;
+			int.TryParse(value.ToString(), out val);
+			if (val == 0)
+			{
+				rv = Visibility.Collapsed;
+			}
+			return rv;
+		}
+
+		public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			throw new NotImplementedException();
+		}
+
 	}
 }

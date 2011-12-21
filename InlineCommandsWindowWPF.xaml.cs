@@ -54,4 +54,10 @@ public partial class InlineCommandsWindowWPF : Window
 	{
 		this.Hide();
 	}
+
+	private void ThumbButtonInfo_Click(object sender, EventArgs e)
+	{
+		this.TaskbarItemInfo.ProgressState = System.Windows.Shell.TaskbarItemProgressState.Error;
+		this.TaskbarItemInfo.ProgressValue = 0.8;		
+	}
 }

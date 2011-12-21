@@ -389,7 +389,9 @@ public class VisualStudioInterop
 			//TODO: this (ServicePointManager.DefaultConnectionLimit) is actually very annoying, is there no other workaround?
 			ServicePointManager.DefaultConnectionLimit = 10000;
 			//System.Net.ServicePointManager.DefaultConnectionLimit = 1;
+//#pragma warning disable
 			bool ThereIsNoProperItemsForBugsFixedEtcInNextFunction;
+//#pragma warning restore
 			string htmlFilePath = CreateHtmlPageReturnFilename(projName, versionString, publishedSetupPath,
 				new List<string>() { "Bug 1 fixed", "Bug 2 fixed" },
 				new List<string>() { "Improvement 1", "Improvement 2", "Improvement 3" },

@@ -17,6 +17,73 @@
 				MouseLeftButtonDown='InlineCommandsWindowWPF1_MouseLeftButtonDown'
 				MouseRightButtonUp='InlineCommandsWindowWPF1_MouseRightButtonDown'
 				Height="650">
+	<Window.Resources>
+		<DrawingImage x:Key="Button1Image">
+			<DrawingImage.Drawing>
+				<DrawingGroup>
+					<DrawingGroup.Children>
+						<GeometryDrawing Brush="Red">
+							<GeometryDrawing.Geometry>
+								<RectangleGeometry Rect="0 0 24 24"
+																	 RadiusX="4"
+																	 RadiusY="4" />
+							</GeometryDrawing.Geometry>
+						</GeometryDrawing>
+					</DrawingGroup.Children>
+				</DrawingGroup>
+			</DrawingImage.Drawing>
+		</DrawingImage>
+		<DrawingImage x:Key="Button2Image">
+			<DrawingImage.Drawing>
+				<DrawingGroup>
+					<DrawingGroup.Children>
+						<GeometryDrawing Brush="Green">
+							<GeometryDrawing.Geometry>
+								<RectangleGeometry Rect="0 0 24 24"
+																	 RadiusX="4"
+																	 RadiusY="4" />
+							</GeometryDrawing.Geometry>
+						</GeometryDrawing>
+					</DrawingGroup.Children>
+				</DrawingGroup>
+			</DrawingImage.Drawing>
+		</DrawingImage>
+		<DrawingImage x:Key="Button3Image">
+			<DrawingImage.Drawing>
+				<DrawingGroup>
+					<DrawingGroup.Children>
+						<GeometryDrawing Brush="Blue">
+							<GeometryDrawing.Geometry>
+								<RectangleGeometry Rect="0 0 24 24"
+																	 RadiusX="4"
+																	 RadiusY="4" />
+							</GeometryDrawing.Geometry>
+						</GeometryDrawing>
+					</DrawingGroup.Children>
+				</DrawingGroup>
+			</DrawingImage.Drawing>
+		</DrawingImage>
+	</Window.Resources>
+	<Window.TaskbarItemInfo>
+		<TaskbarItemInfo>
+			<TaskbarItemInfo.Overlay>
+				<DrawingImage>
+					<DrawingImage.Drawing>
+						<ImageDrawing Rect="0,0,32,32"/>
+					</DrawingImage.Drawing >
+				</DrawingImage >
+			</TaskbarItemInfo.Overlay>
+			<TaskbarItemInfo.ThumbButtonInfos>
+				<ThumbButtonInfo ImageSource="{StaticResource Button1Image}"
+												 Description="Button 1"
+												 Click='ThumbButtonInfo_Click'/>
+				<ThumbButtonInfo ImageSource="{StaticResource Button2Image}"
+												 Description="Button 2" />
+				<ThumbButtonInfo ImageSource="{StaticResource Button3Image}"
+												 Description="Button 3" />
+			</TaskbarItemInfo.ThumbButtonInfos>
+		</TaskbarItemInfo>
+	</Window.TaskbarItemInfo>
 	<!--<Window.Background>
         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
             <GradientStop Color="#fff"

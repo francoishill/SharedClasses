@@ -6,13 +6,18 @@
 						 xmlns:theme="clr-namespace:Microsoft.Windows.Themes;assembly=PresentationFramework.Aero"
 						 xmlns:input="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls.Input.Toolkit"
 						 xmlns:system="clr-namespace:System;assembly=mscorlib"
+						 xmlns:propertyinterceptor='clr-namespace:PropertyInterceptor;assembly=NetworkInteropSerializedClasses'
 						 x:Class="SharedClasses.InlineCommandsUserControlWPF"
+						 xmlns:sharedclasses='clr-namespace:SharedClasses'
 						 mc:Ignorable="d"
 						 d:DesignHeight="300"
 						 d:DesignWidth="600">
 	<UserControl.Resources>
 		<ResourceDictionary>
 			<ResourceDictionary.MergedDictionaries>
+				<ResourceDictionary>
+					<sharedclasses:ZeroCollapsedNonZeroVisible x:Key="hideListBox" />
+				</ResourceDictionary>
 				<!--<ResourceDictionary Source='/PresentationFrameawork.Aero,Version=3.0.0.0,Culture=neutral,PublicKeyToken=31bf3856ad364e35,ProcessorArchitecture=MSIL;component/themes/aero.normalcolor.xaml' />-->
 				<!--<ResourceDictionary Source='/PresentationFramework.Classic,Version=3.0.0.0,Culture=neutral,PublicKeyToken=31bf3856ad364e35;component/themes/Classic.xaml' />-->
 				<!--<ResourceDictionary Source='/PresentationFramework.Royale,Version=3.0.0.0,Culture=neutral,PublicKeyToken=31bf3856ad364e35;component/themes/royale.normalcolor.xaml' />-->
@@ -1134,10 +1139,12 @@
 																			SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
 									</theme:ButtonChrome>
 									<ControlTemplate.Triggers>
-
-                    <Trigger Property="IsKeyboardFocused" Value="true">
-                        <Setter TargetName="Chrome" Property="RenderDefaulted" Value="true" />
-                    </Trigger>
+										<Trigger Property="IsKeyboardFocused"
+														 Value="true">
+											<Setter TargetName="Chrome"
+															Property="RenderDefaulted"
+															Value="true" />
+										</Trigger>
 										<Trigger Property="ToggleButton.IsChecked"
 														 Value="true">
 											<Setter TargetName="Chrome"
@@ -1164,6 +1171,24 @@
 								 BasedOn="{StaticResource BaseButtonStyle}"
 								 TargetType="{x:Type Button}" />
 				</ResourceDictionary>
+				<!--<ResourceDictionary>
+					<Style TargetType="{x:Type ListBoxItem}">
+						<Style.Resources>
+							<SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
+															 Color="Transparent" />
+							<SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}"
+															 Color="Transparent" />
+						</Style.Resources>
+					</Style>
+					<Style TargetType="{x:Type ListBox}">
+						<Style.Resources>
+							<SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
+															 Color="Transparent" />
+							<SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}"
+															 Color="Transparent" />
+						</Style.Resources>
+					</Style>
+				</ResourceDictionary>-->
 			</ResourceDictionary.MergedDictionaries>
 		</ResourceDictionary>
 	</UserControl.Resources>
@@ -1298,6 +1323,10 @@
 				<ColumnDefinition />
 				<!--<ColumnDefinition />-->
 			</Grid.ColumnDefinitions>
+			<Grid.RowDefinitions>
+				<RowDefinition />
+				<RowDefinition Height='Auto' />
+			</Grid.RowDefinitions>
 			<!--<TextBox
 				VerticalAlignment="Top"
 							 Grid.Column="2"
@@ -1503,6 +1532,44 @@
 										PreviewMouseLeftButtonDown='textBox_Messages_PreviewMouseLeftButtonDown'
 										Foreground="Green"
 										Padding='10,0' />-->
+			<ListBox Grid.Row='1'
+							 Grid.ColumnSpan='2'
+							 Name='listBoxUnsetProperties'
+							 ItemsSource='{x:Static propertyinterceptor:StaticPropertyInterceptor.UnsetProperties}'
+							 SelectionChanged='listBoxUnsetProperties_SelectionChanged'
+							 SelectionMode='Single'
+							 Visibility="{Binding ElementName=listBoxUnsetProperties, Path=Items.Count, Converter={StaticResource hideListBox}}">
+				<ListBox.ItemsPanel>
+					<ItemsPanelTemplate>
+						<WrapPanel Orientation='Horizontal'
+											 IsItemsHost="True" />
+					</ItemsPanelTemplate>
+				</ListBox.ItemsPanel>
+				<ListBox.ItemTemplate>
+					<DataTemplate>
+						<Border Padding='3,0'
+										BorderBrush='#999'
+										BorderThickness='1'
+										CornerRadius='5'
+										ToolTip='{Binding UserPrompt}'>
+							<StackPanel Orientation='Horizontal'>
+								<TextBlock Text='{Binding DeclaringClassName}'
+													 FontSize='12'
+													 Margin='0'
+													 Padding='0'
+													 VerticalAlignment='Center'
+													 Foreground='#678'/>
+								<TextBlock Text='{Binding PropertyName}'
+													 FontSize='16'
+													 Padding='0'
+													 VerticalAlignment='Center'
+													 Margin='4,0,0,0'
+													 Foreground='Red'/>
+							</StackPanel>
+						</Border>
+					</DataTemplate>
+				</ListBox.ItemTemplate>
+			</ListBox>
 		</Grid>
 	</Grid>
 	<!--</Border>-->

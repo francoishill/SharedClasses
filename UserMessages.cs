@@ -164,9 +164,10 @@ public class UserMessages
 		return result;
 	}
 
-	public static string Prompt(string Message, string Title = "Prompt", string DefaultResponse = "")
+	public static string Prompt(string Message, string Title = "Prompt", string DefaultResponse = "", bool IsPassword = false)
 	{
-		return Microsoft.VisualBasic.Interaction.InputBox(Message, Title, DefaultResponse);
+		//return Microsoft.VisualBasic.Interaction.InputBox(Message, Title, DefaultResponse);
+		return InputBoxWPF.Prompt(Message, Title, IsPassword);
 	}
 
 	public static T PickItem<T>(Array itemArray, string Message, T defaultItem)

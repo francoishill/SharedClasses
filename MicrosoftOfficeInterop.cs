@@ -39,7 +39,9 @@ public class MicrosoftOfficeInterop
 					mic.Display(true);
 					break;
 				case OutlookMessageActionEnum.SendAutomatically:
+#pragma warning disable
 					mic.Send();
+#pragma warning restore
 					break;
 				default:
 					mic.Display(true);

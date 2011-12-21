@@ -398,11 +398,11 @@ public class VisualStudioInterop
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent,
 				"Attempting Ftp Uploading of Setup file and index file for " + projName);
 			await NetworkInterop.FtpUploadFiles(
-				VisualStudioInteropSettings.Instance.GetCombinedUriForVsPublishing() + "/" + validatedUrlsectionForProjname,
-				VisualStudioInteropSettings.Instance.FtpUsername,//NetworkInterop.ftpUsername,
-				VisualStudioInteropSettings.Instance.FtpPassword,//NetworkInterop.ftpPassword,
+				GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForVsPublishing() + "/" + validatedUrlsectionForProjname,
+				GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,//NetworkInterop.ftpUsername,
+				GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,//NetworkInterop.ftpPassword,
 				new string[] { publishedSetupPath, htmlFilePath },
-				VisualStudioInteropSettings.Instance.GetCombinedUriForAFTERvspublishing() + "/" + validatedUrlsectionForProjname,
+				GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForAFTERvspublishing() + "/" + validatedUrlsectionForProjname,
 				textFeedbackEvent: textFeedbackEvent,
 				progressChanged: progressChanged);
 		}

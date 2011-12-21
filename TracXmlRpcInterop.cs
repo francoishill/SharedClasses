@@ -17,8 +17,8 @@ public class TracXmlRpcInterop
 		tracMonitorSystem.PreAuthenticate = true;
 
 		tracMonitorSystem.Credentials = new System.Net.NetworkCredential(
-			Username ?? TracXmlRpcInteropSettings.Instance.Username,
-			Password ?? TracXmlRpcInteropSettings.Instance.Password);
+			Username ?? GlobalSettings.TracXmlRpcInteropSettings.Instance.Username,
+			Password ?? GlobalSettings.TracXmlRpcInteropSettings.Instance.Password);
 
 		List<string> returnList = new List<string>();
 		try
@@ -48,8 +48,8 @@ public class TracXmlRpcInterop
 		tracMonitorSystem.PreAuthenticate = true;
 
 		tracMonitorSystem.Credentials = new System.Net.NetworkCredential(
-			Username ?? TracXmlRpcInteropSettings.Instance.Username,
-			Password ?? TracXmlRpcInteropSettings.Instance.Password);
+			Username ?? GlobalSettings.TracXmlRpcInteropSettings.Instance.Username,
+			Password ?? GlobalSettings.TracXmlRpcInteropSettings.Instance.Password);
 
 		try
 		{
@@ -74,8 +74,8 @@ public class TracXmlRpcInterop
 		tracMonitorSystem.PreAuthenticate = true;
 
 		tracMonitorSystem.Credentials = new System.Net.NetworkCredential(
-			Username ?? TracXmlRpcInteropSettings.Instance.Username,
-			Password ?? TracXmlRpcInteropSettings.Instance.Password);
+			Username ?? GlobalSettings.TracXmlRpcInteropSettings.Instance.Username,
+			Password ?? GlobalSettings.TracXmlRpcInteropSettings.Instance.Password);
 
 		try
 		{
@@ -108,8 +108,8 @@ public class TracXmlRpcInterop
 		tracMonitorSystem.PreAuthenticate = true;
 
 		tracMonitorSystem.Credentials = new System.Net.NetworkCredential(
-			Username ?? TracXmlRpcInteropSettings.Instance.Username,
-			Password ?? TracXmlRpcInteropSettings.Instance.Password);
+			Username ?? GlobalSettings.TracXmlRpcInteropSettings.Instance.Username,
+			Password ?? GlobalSettings.TracXmlRpcInteropSettings.Instance.Password);
 
 		//time, author, field, oldvalue, newvalue, permanent
 		object[] changelogArray = tracMonitorSystem.Ticket_ChangeLog(ticketId);

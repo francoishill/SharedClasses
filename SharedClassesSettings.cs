@@ -3,23 +3,23 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Reflection;
 using System.Windows.Forms;
-using UriProtocol = VisualStudioInteropSettings.UriProtocol;
+using UriProtocol = GlobalSettings.VisualStudioInteropSettings.UriProtocol;
 
 [AttributeUsage(AttributeTargets.All)]
 public class SettingAttribute : Attribute
 {
 	// Private fields.
 	private string userPrompt;
+	private bool passwordPromptEveryTime;
 
-	public SettingAttribute(string userPrompt)
+	public SettingAttribute(string userPrompt, bool passwordPromptEveryTime = false)
 	{
 		this.userPrompt = userPrompt;
+		this.passwordPromptEveryTime = passwordPromptEveryTime;
 	}
 
-	public virtual string UserPrompt
-	{
-		get { return userPrompt; }
-	}
+	public string UserPrompt { get { return userPrompt; } }//public virtual string UserPrompt { get { return userPrompt; } }
+	public bool PasswordPromptEveryTime { get { return passwordPromptEveryTime; } }
 }
 
 public sealed class SharedClassesSettings
@@ -163,218 +163,226 @@ public abstract class GenericSettings : MarshalByRefObject, IInterceptorNotifiab
 	}
 }
 
-//TODO: Check out INotifyPropertyChanged (in System.ComponentModel)
-[Serializable]
-public sealed class VisualStudioInteropSettings : GenericSettings
+public class GlobalSettings
 {
-	private static volatile VisualStudioInteropSettings instance;
-	private static object lockingObject = new Object();
-
-	public static VisualStudioInteropSettings Instance
+	//TODO: Check out INotifyPropertyChanged (in System.ComponentModel)
+	[Serializable]
+	public sealed class VisualStudioInteropSettings : GenericSettings
 	{
-		get
+		private static volatile VisualStudioInteropSettings instance;
+		private static object lockingObject = new Object();
+
+		public static VisualStudioInteropSettings Instance
 		{
-			if (instance == null)
+			get
 			{
-				lock (lockingObject)
+				if (instance == null)
 				{
-					if (instance == null)
+					lock (lockingObject)
 					{
-						instance = Interceptor<VisualStudioInteropSettings>.Create();//new VisualStudioInteropSettings();
-						instance.LoadFromFile(SharedClassesSettings.RootApplicationNameForSharedClasses);
+						if (instance == null)
+						{
+							instance = Interceptor<VisualStudioInteropSettings>.Create();//new VisualStudioInteropSettings();
+							instance.LoadFromFile(SharedClassesSettings.RootApplicationNameForSharedClasses);
+						}
 					}
 				}
+				return instance;
 			}
-			return instance;
+		}
+
+		public enum UriProtocol { Http, Ftp }
+
+		[SettingAttribute("Please enter the base Uri for Visual Studio publishing, ie. code.google.com")]
+		public string BaseUri { get; set; }
+
+		public string RelativeRootUriAFTERvspublishing { get; set; }
+
+		public UriProtocol? UriProtocolForAFTERvspublishing { get; set; }
+
+		public string RelativeRootUriForVsPublishing { get; set; }
+
+		[SettingAttribute("Please enter Uri protocol for Visual Studio Publishing")]
+		public UriProtocol? UriProtocolForVsPublishing { get; set; }
+
+		public string FtpUsername { get; set; }
+
+		[Setting("Please enter ftp password user for Visual Studio publishing", true)]
+		public string FtpPassword { get; set; }
+
+		[Obsolete("Do not use constructor otherwise getting/setting of properties does not go through Interceptor. Use Interceptor<VisualStudioInteropSettings>.Create(); ")]
+		public VisualStudioInteropSettings()
+		{
+			BaseUri = null;//"fjh.dyndns.org";//"127.0.0.1";
+			RelativeRootUriAFTERvspublishing = null;//"/ownapplications";
+			UriProtocolForAFTERvspublishing = null;//UriProtocol.Http;
+			RelativeRootUriForVsPublishing = null;//"/francois/websites/firepuma/ownapplications";
+			UriProtocolForVsPublishing = null;//UriProtocol.Ftp;
+			FtpUsername = null;
+			FtpPassword = null;
+		}
+
+		public string GetCombinedUriForAFTERvspublishing()
+		{
+			return UriProtocolForAFTERvspublishing.ToString().ToLower() + "://" + BaseUri + RelativeRootUriAFTERvspublishing;
+		}
+
+		public string GetCombinedUriForVsPublishing()
+		{
+			return UriProtocolForVsPublishing.ToString().ToLower() + "://" + BaseUri + RelativeRootUriForVsPublishing;
+		}
+
+		public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+		{
+			instance = Interceptor<VisualStudioInteropSettings>.Create(SettingsInterop.GetSettings<VisualStudioInteropSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
+		}
+
+		public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+		{
+			SettingsInterop.FlushSettings<VisualStudioInteropSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
 		}
 	}
 
-	public enum UriProtocol { Http, Ftp }
-
-	[SettingAttribute("Please enter the base Uri for Visual Studio publishing, ie. code.google.com")]
-	public string BaseUri { get; set; }
-
-	public string RelativeRootUriAFTERvspublishing { get; set; }
-
-	public UriProtocol? UriProtocolForAFTERvspublishing { get; set; }
-
-	public string RelativeRootUriForVsPublishing { get; set; }
-
-	[SettingAttribute("Please enter Uri protocol for Visual Studio Publishing")]
-	public UriProtocol? UriProtocolForVsPublishing { get; set; }
-		
-	public string FtpUsername { get; set; }
-
-	public string FtpPassword { get; set; }
-
-	[Obsolete("Do not use constructor otherwise getting/setting of properties does not go through Interceptor. Use Interceptor<VisualStudioInteropSettings>.Create(); ")]
-	public VisualStudioInteropSettings()
+	[Serializable]
+	public class NetworkInteropSettings : GenericSettings
 	{
-		BaseUri = null;//"fjh.dyndns.org";//"127.0.0.1";
-		RelativeRootUriAFTERvspublishing = null;//"/ownapplications";
-		UriProtocolForAFTERvspublishing = null;//UriProtocol.Http;
-		RelativeRootUriForVsPublishing = null;//"/francois/websites/firepuma/ownapplications";
-		UriProtocolForVsPublishing = null;//UriProtocol.Ftp;
-		FtpUsername = null;
-		FtpPassword = null;
-	}
+		private static volatile NetworkInteropSettings instance;
+		private static object lockingObject = new Object();
 
-	public string GetCombinedUriForAFTERvspublishing()
-	{
-		return UriProtocolForAFTERvspublishing.ToString().ToLower() + "://" + BaseUri + RelativeRootUriAFTERvspublishing;
-	}
-
-	public string GetCombinedUriForVsPublishing()
-	{
-		return UriProtocolForVsPublishing.ToString().ToLower() + "://" + BaseUri + RelativeRootUriForVsPublishing;
-	}
-
-	public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
-	{
-		instance = Interceptor<VisualStudioInteropSettings>.Create(SettingsInterop.GetSettings<VisualStudioInteropSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
-	}
-
-	public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
-	{
-		SettingsInterop.FlushSettings<VisualStudioInteropSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
-	}
-}
-
-[Serializable]
-public class NetworkInteropSettings : GenericSettings
-{
-	private static volatile NetworkInteropSettings instance;
-	private static object lockingObject = new Object();
-
-	public static NetworkInteropSettings Instance
-	{
-		get
+		public static NetworkInteropSettings Instance
 		{
-			if (instance == null)
+			get
 			{
-				lock (lockingObject)
+				if (instance == null)
 				{
-					if (instance == null)
+					lock (lockingObject)
 					{
-						instance = Interceptor<NetworkInteropSettings>.Create();//new NetworkInteropSettings();
-						instance.LoadFromFile(SharedClassesSettings.RootApplicationNameForSharedClasses);
+						if (instance == null)
+						{
+							instance = Interceptor<NetworkInteropSettings>.Create();//new NetworkInteropSettings();
+							instance.LoadFromFile(SharedClassesSettings.RootApplicationNameForSharedClasses);
+						}
 					}
 				}
+				return instance;
 			}
-			return instance;
+		}
+
+		[Setting("Please enter value for the time-to-live (Ttl) of the server socket")]
+		public short? ServerSocket_Ttl { get; set; }
+
+		[Setting("Enable NoDelay for the server socket?")]
+		public bool? ServerSocket_NoDelay { get; set; }
+
+		public int? ServerSocket_ReceiveBufferSize { get; set; }
+		public int? ServerSocket_SendBufferSize { get; set; }
+		public int? ServerSocket_MaxNumberPendingConnections { get; set; }
+		public int? ServerSocket_ListeningPort { get; set; }
+
+		[Obsolete("Do not use constructor otherwise getting/setting of properties does not go through Interceptor. Use Interceptor<NetworkInteropSettings>.Create(); ")]
+		public NetworkInteropSettings()
+		{
+			//ServerSocket_Ttl = 112;
+			//ServerSocket_NoDelay = true;
+			//ServerSocket_ReceiveBufferSize = 1024 * 1024 * 10;
+			//ServerSocket_SendBufferSize = 1024 * 1024 * 10;
+			//ServerSocket_MaxNumberPendingConnections = 100;
+			//ServerSocket_ListeningPort = 11000;
+		}
+
+		public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+		{
+			instance = Interceptor<NetworkInteropSettings>.Create(SettingsInterop.GetSettings<NetworkInteropSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
+		}
+
+		public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+		{
+			SettingsInterop.FlushSettings<NetworkInteropSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
 		}
 	}
 
-	public short? ServerSocket_Ttl { get; set; }
-	public bool? ServerSocket_NoDelay { get; set; }
-	public int? ServerSocket_ReceiveBufferSize { get; set; }
-	public int? ServerSocket_SendBufferSize { get; set; }
-	public int? ServerSocket_MaxNumberPendingConnections { get; set; }
-	public int? ServerSocket_ListeningPort { get; set; }
-
-	[Obsolete("Do not use constructor otherwise getting/setting of properties does not go through Interceptor. Use Interceptor<NetworkInteropSettings>.Create(); ")]
-	public NetworkInteropSettings()
+	[Serializable]
+	public class TracXmlRpcInteropSettings : GenericSettings
 	{
-		//ServerSocket_Ttl = 112;
-		//ServerSocket_NoDelay = true;
-		//ServerSocket_ReceiveBufferSize = 1024 * 1024 * 10;
-		//ServerSocket_SendBufferSize = 1024 * 1024 * 10;
-		//ServerSocket_MaxNumberPendingConnections = 100;
-		//ServerSocket_ListeningPort = 11000;
-	}
+		private static volatile TracXmlRpcInteropSettings instance;
+		private static object lockingObject = new Object();
 
-	public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
-	{
-		instance = Interceptor<NetworkInteropSettings>.Create(SettingsInterop.GetSettings<NetworkInteropSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
-	}
-
-	public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
-	{
-		SettingsInterop.FlushSettings<NetworkInteropSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
-	}
-}
-
-[Serializable]
-public class TracXmlRpcInteropSettings : GenericSettings
-{
-	private static volatile TracXmlRpcInteropSettings instance;
-	private static object lockingObject = new Object();
-
-	public static TracXmlRpcInteropSettings Instance
-	{
-		get
+		public static TracXmlRpcInteropSettings Instance
 		{
-			if (instance == null)
+			get
 			{
-				lock (lockingObject)
+				if (instance == null)
 				{
-					if (instance == null)
+					lock (lockingObject)
 					{
-						instance = Interceptor<TracXmlRpcInteropSettings>.Create();//new TracXmlRpcInteropSettings();
-						instance.LoadFromFile(SharedClassesSettings.RootApplicationNameForSharedClasses);
+						if (instance == null)
+						{
+							instance = Interceptor<TracXmlRpcInteropSettings>.Create();//new TracXmlRpcInteropSettings();
+							instance.LoadFromFile(SharedClassesSettings.RootApplicationNameForSharedClasses);
+						}
 					}
 				}
+				return instance;
 			}
-			return instance;
 		}
-	}
 
-	[Setting("Please enter ftp username for Trac XmlRpc")]
-	public string Username { get; set; }
+		[Setting("Please enter ftp username for Trac XmlRpc")]
+		public string Username { get; set; }
 
-	//TODO: Implement Username in UserPrompt message [Setting("Please enter ftp password for Trac XmlRpc, username " + Username)]
-	[Setting("Please enter ftp password for Trac XmlRpc, username ")]
-	public string Password { get; set; }
+		//TODO: Implement Username in UserPrompt message [Setting("Please enter ftp password for Trac XmlRpc, username " + Username)]
+		[Setting("Please enter ftp password for Trac XmlRpc, username ", true)]
+		public string Password { get; set; }
 
-	[Setting("Please enter the Base url of the Dynamic Invokation Server")]
-	public string DynamicInvokationServer_BasePath { get; set; }
+		[Setting("Please enter the Base url of the Dynamic Invokation Server")]
+		public string DynamicInvokationServer_BasePath { get; set; }
 
-	[Setting("Please enter the Relative url of the Dynamic Invokation Server")]
-	public string DynamicInvokationServer_RelativePath { get; set; }
+		[Setting("Please enter the Relative url of the Dynamic Invokation Server")]
+		public string DynamicInvokationServer_RelativePath { get; set; }
 
-	[Setting("Please enter the Port number of the Dynamic Invokation Server")]
-	public int? DynamicInvokationServer_PortNumber { get; set; }
+		[Setting("Please enter the Port number of the Dynamic Invokation Server")]
+		public int? DynamicInvokationServer_PortNumber { get; set; }
 
-	//TODO: Sort out how this list to string will work inside the PropertyInterceptor
-	private List<string> listedXmlRpcUrls;
-	public string ListedXmlRpcUrls
-	{
-		get
+		//TODO: Sort out how this list to string will work inside the PropertyInterceptor
+		private List<string> listedXmlRpcUrls;
+		public string ListedXmlRpcUrls
 		{
-			if (listedXmlRpcUrls == null || listedXmlRpcUrls.Count == 0)
-				listedXmlRpcUrls = new List<string>(UserMessages.Prompt("Please enter a list of XmlRpc urls (comma separated)").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
-			return listedXmlRpcUrls == null ? null : string.Join(",", listedXmlRpcUrls);
+			get
+			{
+				if (listedXmlRpcUrls == null || listedXmlRpcUrls.Count == 0)
+					listedXmlRpcUrls = new List<string>(UserMessages.Prompt("Please enter a list of XmlRpc urls (comma separated)").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
+				return listedXmlRpcUrls == null ? null : string.Join(",", listedXmlRpcUrls);
+			}
+			set { listedXmlRpcUrls = value == null ? null : new List<string>(value.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)); }
 		}
-		set { listedXmlRpcUrls = value == null ? null : new List<string>(value.Split(new char[]{','}, StringSplitOptions.RemoveEmptyEntries)); }
-	}
 
-	[Obsolete("Do not use constructor otherwise getting/setting of properties does not go through Interceptor. Use Interceptor<TracXmlRpcInteropSettings>.Create(); ")]
-	public TracXmlRpcInteropSettings()
-	{
-		//Username = null;
-		//Password = null;
-		//ListedXmlRpcUrls = null;
-	}
+		[Obsolete("Do not use constructor otherwise getting/setting of properties does not go through Interceptor. Use Interceptor<TracXmlRpcInteropSettings>.Create(); ")]
+		public TracXmlRpcInteropSettings()
+		{
+			//Username = null;
+			//Password = null;
+			//ListedXmlRpcUrls = null;
+		}
 
-	//public TracXmlRpcInteropSettings(string UsernameIn, string PasswordIn, List<string> ListedXmlRpcUrlsIn)
-	//{
-	//	Username = UsernameIn;
-	//	Password = PasswordIn;
-	//	listedXmlRpcUrls = ListedXmlRpcUrlsIn;
-	//}
+		//public TracXmlRpcInteropSettings(string UsernameIn, string PasswordIn, List<string> ListedXmlRpcUrlsIn)
+		//{
+		//	Username = UsernameIn;
+		//	Password = PasswordIn;
+		//	listedXmlRpcUrls = ListedXmlRpcUrlsIn;
+		//}
 
-	public string GetCominedUrlForDynamicInvokationServer()
-	{
-		return DynamicInvokationServer_BasePath + ":" + DynamicInvokationServer_PortNumber + DynamicInvokationServer_RelativePath;
-	}
+		public string GetCominedUrlForDynamicInvokationServer()
+		{
+			return DynamicInvokationServer_BasePath + ":" + DynamicInvokationServer_PortNumber + DynamicInvokationServer_RelativePath;
+		}
 
-	public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
-	{
-		instance = Interceptor<TracXmlRpcInteropSettings>.Create(SettingsInterop.GetSettings<TracXmlRpcInteropSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
-	}
+		public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+		{
+			instance = Interceptor<TracXmlRpcInteropSettings>.Create(SettingsInterop.GetSettings<TracXmlRpcInteropSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
+		}
 
-	public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
-	{
-		SettingsInterop.FlushSettings<TracXmlRpcInteropSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
+		public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+		{
+			SettingsInterop.FlushSettings<TracXmlRpcInteropSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
+		}
 	}
 }

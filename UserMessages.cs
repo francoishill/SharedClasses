@@ -88,6 +88,45 @@ public class UserMessages
 	}
 	public static bool Confirm(IWin32Window owner, string Message, string Title = "Confirm", bool DefaultYesButton = false, bool AlwaysOnTop = true)
 	{
+		return ConfirmNullable(owner, Message, Title, DefaultYesButton, AlwaysOnTop, false) == true;
+		////DialogResult result = MessageBox.Show(topmostForm, Message, Title, MessageBoxButtons.YesNo, MessageBoxIcon.Question, DefaultYesButton ? MessageBoxDefaultButton.Button1 : MessageBoxDefaultButton.Button2);
+		////topmostForm.Dispose(); // clean it up all the way
+
+		//if (owner == null && Form.ActiveForm != null) owner = Form.ActiveForm;
+		//bool useTempForm = false;
+		////Form tempForm = null;
+		//Form topmostForm = null;
+		//if (owner == null)
+		//{
+		//	useTempForm = true;
+		//	//tempForm = new Form();
+		//	topmostForm = GetTopmostForm();
+		//	owner = topmostForm;
+		//}
+
+		//bool result = false;
+		//Action showConfirmAction = delegate
+		//{
+		//	bool ownerOriginalTopmostState = ((Form)owner).TopMost; 
+		//	((Form)owner).TopMost = AlwaysOnTop;
+		//	result = MessageBox.Show(owner, Message, Title, IsAnswerNullable ? MessageBoxButtons.YesNoCancel : MessageBoxButtons.YesNo, MessageBoxIcon.Question, DefaultYesButton ? MessageBoxDefaultButton.Button1 : MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+		//	if (useTempForm && topmostForm != null && !topmostForm.IsDisposed) topmostForm.Dispose();
+		//	((Form)owner).TopMost = ownerOriginalTopmostState;
+		//};
+
+		//if (((Form)owner).InvokeRequired)
+		//	((Form)owner).Invoke(showConfirmAction, new object[] { });
+		//else showConfirmAction();
+		//return result;
+	}
+
+	public static bool? ConfirmNullable(string Message, string Title = "Confirm", bool DefaultYesButton = false, bool AlwaysOnTop = true, bool AnswerIsNullable = true)
+	{
+		return ConfirmNullable(null, Message, Title, DefaultYesButton, AlwaysOnTop, AnswerIsNullable);
+	}
+
+	public static bool? ConfirmNullable(IWin32Window owner, string Message, string Title = "Confirm", bool DefaultYesButton = false, bool AlwaysOnTop = true, bool AnswerIsNullable = true)
+	{
 		//DialogResult result = MessageBox.Show(topmostForm, Message, Title, MessageBoxButtons.YesNo, MessageBoxIcon.Question, DefaultYesButton ? MessageBoxDefaultButton.Button1 : MessageBoxDefaultButton.Button2);
 		//topmostForm.Dispose(); // clean it up all the way
 
@@ -103,12 +142,18 @@ public class UserMessages
 			owner = topmostForm;
 		}
 
-		bool result = false;
+		bool? result = false;
 		Action showConfirmAction = delegate
 		{
-			bool ownerOriginalTopmostState = ((Form)owner).TopMost; 
+			bool ownerOriginalTopmostState = ((Form)owner).TopMost;
 			((Form)owner).TopMost = AlwaysOnTop;
-			result = MessageBox.Show(owner, Message, Title, MessageBoxButtons.YesNo, MessageBoxIcon.Question, DefaultYesButton ? MessageBoxDefaultButton.Button1 : MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+			DialogResult tmpDialogResult = MessageBox.Show(owner, Message, Title, AnswerIsNullable ? MessageBoxButtons.YesNoCancel : MessageBoxButtons.YesNo, MessageBoxIcon.Question, DefaultYesButton ? MessageBoxDefaultButton.Button1 : MessageBoxDefaultButton.Button2);
+			if (tmpDialogResult == DialogResult.Yes)
+				result = true;
+			else if (tmpDialogResult == DialogResult.No)
+				result = false;
+			else
+				result = null;
 			if (useTempForm && topmostForm != null && !topmostForm.IsDisposed) topmostForm.Dispose();
 			((Form)owner).TopMost = ownerOriginalTopmostState;
 		};

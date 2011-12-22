@@ -24,7 +24,7 @@ public class SettingAttribute : Attribute
 
 public sealed class SharedClassesSettings
 {
-	public static string RootApplicationNameForSharedClasses = "SharedClasses";
+	//public static string RootApplicationNameForSharedClasses = "SharedClasses";
 
 	//private static VisualStudioInteropSettings _visualStudioInterop;
 	//private static object syncRootVisualStudioInterop = new Object();
@@ -140,8 +140,62 @@ public sealed class SharedClassesSettings
 //	}
 //}
 
+//public sealed class TempClass
+//{
+//	private static bool settingsAlreadyInitialized = false;
+//	public TempClass()
+//	{
+//		if (!settingsAlreadyInitialized)
+//		{
+//			settingsAlreadyInitialized = true;
+//			EnsureAllSettingsAreInitialized();
+//		}
+//	}
+
+//	public static void EnsureAllSettingsAreInitialized()
+//	{
+//		foreach (Type type in typeof(GlobalSettings).GetNestedTypes(BindingFlags.Public))
+//			if (!type.IsAbstract && type.BaseType == typeof(GenericSettings))
+//			{
+//				PropertyInfo[] staticProperties = type.GetProperties(BindingFlags.Static | BindingFlags.Public);
+//				foreach (PropertyInfo spi in staticProperties)
+//					if (type == spi.PropertyType)
+//					{
+//						//MessageBox.Show("Static = " + spi.Name + ", of type = " + spi.PropertyType.Name);
+//						PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Instance);
+//						foreach (PropertyInfo pi in properties)
+//							pi.GetValue(spi.GetValue(null));
+//						//MessageBox.Show(pi.Name + " = " + pi.GetValue(spi.GetValue(null)).ToString());
+//					}
+//			}
+//	}
+//}
+
 public abstract class GenericSettings : MarshalByRefObject, IInterceptorNotifiable// : IGenericSettings
 {
+	//private TempClass tc = new TempClass();//Leave this here as it ensures all settings are initialized
+
+	public static void EnsureAllSettingsAreInitialized()
+	{
+		foreach (Type type in typeof(GlobalSettings).GetNestedTypes(BindingFlags.Public))
+			if (!type.IsAbstract && type.BaseType == typeof(GenericSettings))
+			{
+				PropertyInfo[] staticProperties = type.GetProperties(BindingFlags.Static | BindingFlags.Public);
+				foreach (PropertyInfo spi in staticProperties)
+					if (type == spi.PropertyType)
+					{
+						//MessageBox.Show("Static = " + spi.Name + ", of type = " + spi.PropertyType.Name);
+						PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Instance);
+						foreach (PropertyInfo pi in properties)
+							pi.GetValue(spi.GetValue(null));
+						//MessageBox.Show(pi.Name + " = " + pi.GetValue(spi.GetValue(null)).ToString());
+					}
+			}
+	}
+
+	public static string RootApplicationNameForSharedClasses = "SharedClasses";
+
+	//TODO: Have a look at Lazy<> in c#, being able to initialize an object the first time it is used.
 	public abstract void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH");
 
 	public abstract void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH");
@@ -154,7 +208,7 @@ public abstract class GenericSettings : MarshalByRefObject, IInterceptorNotifiab
 	public virtual void OnPropertySet(string propertyName)
 	{
 		PropertyInfo pi = this.GetType().GetProperty(propertyName);
-		SettingsInterop.FlushSettings(this.GetType(), this, SharedClassesSettings.RootApplicationNameForSharedClasses);
+		SettingsInterop.FlushSettings(this.GetType(), this, RootApplicationNameForSharedClasses);
 	}
 
 	public virtual void OnPropertyGet(string propertyName)
@@ -183,7 +237,7 @@ public class GlobalSettings
 						if (instance == null)
 						{
 							instance = Interceptor<VisualStudioInteropSettings>.Create();//new VisualStudioInteropSettings();
-							instance.LoadFromFile(SharedClassesSettings.RootApplicationNameForSharedClasses);
+							instance.LoadFromFile(RootApplicationNameForSharedClasses);
 						}
 					}
 				}
@@ -260,7 +314,7 @@ public class GlobalSettings
 						if (instance == null)
 						{
 							instance = Interceptor<NetworkInteropSettings>.Create();//new NetworkInteropSettings();
-							instance.LoadFromFile(SharedClassesSettings.RootApplicationNameForSharedClasses);
+							instance.LoadFromFile(RootApplicationNameForSharedClasses);
 						}
 					}
 				}
@@ -318,7 +372,7 @@ public class GlobalSettings
 						if (instance == null)
 						{
 							instance = Interceptor<TracXmlRpcInteropSettings>.Create();//new TracXmlRpcInteropSettings();
-							instance.LoadFromFile(SharedClassesSettings.RootApplicationNameForSharedClasses);
+							instance.LoadFromFile(RootApplicationNameForSharedClasses);
 						}
 					}
 				}

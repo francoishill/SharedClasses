@@ -69,6 +69,7 @@ public class XmlRpcInterop
 		//HttpServerChannel httpServerChannel = new HttpServerChannel(
 		//	CreateDefaultChannelProperties(),
 		//	CreateDefaultServerProviderChain();
+		Lazy<HttpChannel> http = new Lazy<HttpChannel>(() => new HttpChannel());
 		HttpChannel httpChannel = new HttpChannel(
 			CreateDefaultChannelProperties(),
 			CreateDefaultClientProviderChain(),

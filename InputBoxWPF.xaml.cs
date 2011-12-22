@@ -38,19 +38,9 @@ public partial class InputBoxWPF : Window
 		}
 	}
 
-	private void ButtonClose_Click(object sender, RoutedEventArgs e)
-	{
-		Cancel();
-	}
-
 	private void Cancel()
 	{
 		this.DialogResult = false;
-	}
-
-	private void ButtonAccept_Click(object sender, RoutedEventArgs e)
-	{
-		Accept();
 	}
 
 	private void Accept()
@@ -78,5 +68,26 @@ public partial class InputBoxWPF : Window
 			ResponseTextBox.Focus();
 		else if (ResponsePasswordBox.Visibility == System.Windows.Visibility.Visible)
 			ResponsePasswordBox.Focus();
+	}
+
+	private void InputBox_Loaded(object sender, RoutedEventArgs e)
+	{
+		DragCanvas.DragCanvas.SetCanBeDragged(ButtonAccept, false);
+		DragCanvas.DragCanvas.SetCanBeDragged(ButtonClose, false);
+
+		double centreX = (dragCanvas1.ActualWidth - MainBorder.ActualWidth) / 2;
+		double centreY = (dragCanvas1.ActualHeight - MainBorder.ActualHeight) / 2;
+		DragCanvas.DragCanvas.SetLeft(MainBorder, centreX);
+		DragCanvas.DragCanvas.SetTop(MainBorder, centreY);
+	}
+
+	private void ButtonClose_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+	{
+		Cancel();
+	}
+
+	private void ButtonAccept_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+	{
+		Accept();
 	}
 }

@@ -166,6 +166,9 @@
     <Compile Include="..\UserMessages.cs">
       <Link>UserMessages.cs</Link>
     </Compile>
+    <Compile Include="..\WPFdraggableCanvas.cs">
+      <Link>WPFdraggableCanvas.cs</Link>
+    </Compile>
     <Compile Include="..\XmlRpcInterop.cs">
       <Link>XmlRpcInterop.cs</Link>
     </Compile>

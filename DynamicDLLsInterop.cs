@@ -1,9 +1,15 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
+using InterfaceForQuickAccessPlugin;
+
 namespace DynamicDLLsInterop
 {
 	public class DynamicDLLs
 	{
+		public static List<IQuickAccessPluginInterface> PluginList = new List<IQuickAccessPluginInterface>();
+
 		public static object InvokeDllMethodGetReturnObject(string FullPathToDll, string ClassName, string MethodName, object[] parameters)
 		{
 			Assembly u = Assembly.LoadFile(FullPathToDll);
@@ -50,6 +56,28 @@ namespace DynamicDLLsInterop
 					"Dll path: " + FullPathToDll + Environment.NewLine +
 					"Class name: " + ClassName);
 			return null;
+		}
+
+		public static void LoadPluginsInDirectory(string DirectoryFullPath)
+		{
+			foreach (string dllFile in Directory.GetFiles(DirectoryFullPath, "*.dll"))
+				LoadPlugin(dllFile);
+		}
+
+		public static void LoadPlugin(string PluginPath)
+		{
+			if (!File.Exists(PluginPath))
+				UserMessages.ShowWarningMessage("Could not load plugin, file not found: " + PluginPath);
+			else
+			{
+				Assembly assembly = Assembly.LoadFile(PluginPath);
+				foreach (Type type in assembly.DefinedTypes)
+					if (!type.IsInterface && type.GetInterface(typeof(IQuickAccessPluginInterface).Name) != null)//Must not include the actual interface IQuickAccessPluginInterface
+					{
+						IQuickAccessPluginInterface interf = (IQuickAccessPluginInterface)type.GetConstructor(new Type[0]).Invoke(new object[0]);
+						PluginList.Add(interf);
+					}
+			}
 		}
 	}
 }

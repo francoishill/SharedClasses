@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Diagnostics;
 using System.IO;
-using System.Windows.Forms;
+//using System.Windows.Forms;
 
 public class SvnInterop
 {
@@ -115,7 +115,7 @@ public class SvnInterop
 		string svnPath = @"c:\program files\TortoiseSVN\bin\svn.exe";
 		if (!File.Exists(svnPath))
 		{
-			MessageBox.Show("Svn excecutable not found: " + svnPath);
+			UserMessages.ShowWarningMessage("Svn excecutable not found: " + svnPath);
 			return;
 		}
 		string baseFolder = @"C:\Users\francois\Documents\Visual Studio 2010\Projects";//\SharedClasses";

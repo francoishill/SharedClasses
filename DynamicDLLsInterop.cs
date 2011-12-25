@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Windows.Forms;
 using InterfaceForQuickAccessPlugin;
 
 namespace DynamicDLLsInterop
@@ -58,10 +59,28 @@ namespace DynamicDLLsInterop
 			return null;
 		}
 
-		public static void LoadPluginsInDirectory(string DirectoryFullPath)
+		public static void LoadPluginsInDirectory(string DirectoryFullPath, int DelayLoadDurationMilliseconds = 0)
 		{
-			foreach (string dllFile in Directory.GetFiles(DirectoryFullPath, "*.dll"))
-				LoadPlugin(dllFile);
+			Action LoadAction = new Action(delegate
+			{
+				foreach (string dllFile in Directory.GetFiles(DirectoryFullPath, "*.dll"))
+					LoadPlugin(dllFile);
+			});
+
+			if (DelayLoadDurationMilliseconds != 0)
+			{
+				Timer timer = new Timer();
+				timer.Interval = DelayLoadDurationMilliseconds;
+				timer.Tick += delegate
+				{
+					timer.Stop();
+					timer.Dispose(); timer = null;
+					LoadAction();
+				};
+				timer.Start();
+			}
+			else
+				LoadAction();
 		}
 
 		public static void LoadPlugin(string PluginPath)
@@ -70,14 +89,35 @@ namespace DynamicDLLsInterop
 				UserMessages.ShowWarningMessage("Could not load plugin, file not found: " + PluginPath);
 			else
 			{
-				Assembly assembly = Assembly.LoadFile(PluginPath);
-				foreach (Type type in assembly.DefinedTypes)
-					if (!type.IsInterface && type.GetInterface(typeof(IQuickAccessPluginInterface).Name) != null)//Must not include the actual interface IQuickAccessPluginInterface
-					{
-						IQuickAccessPluginInterface interf = (IQuickAccessPluginInterface)type.GetConstructor(new Type[0]).Invoke(new object[0]);
-						PluginList.Add(interf);
-					}
+				ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+				{
+					Assembly assembly = Assembly.LoadFile(PluginPath);
+					foreach (Type type in assembly.GetTypes())//.DefinedTypes)
+						if (!type.IsInterface && type.GetInterface(typeof(IQuickAccessPluginInterface).Name) != null)//Must not include the actual interface IQuickAccessPluginInterface
+						{
+							IQuickAccessPluginInterface interf = (IQuickAccessPluginInterface)type.GetConstructor(new Type[0]).Invoke(new object[0]);
+							PluginList.Add(interf);
+						}
+				},
+				ThreadName: "Load plugins thread");
 			}
 		}
+
+		//public void Test()
+		//{
+		//	//TODO: Check out dynamic unloading assemblies using another AppDomain (http://www.codeproject.com/KB/cs/DotNet.aspx)
+		//	// Construct and initialize settings for a second AppDomain.
+		//	AppDomainSetup ads = new AppDomainSetup ();
+		//	ads.ApplicationBase = System.Environment.CurrentDirectory; ads.DisallowBindingRedirects = false;
+		//	ads.DisallowCodeDownload = true;
+		//	ads.ConfigurationFile = AppDomain.CurrentDomain.SetupInformation.ConfigurationFile;
+		//	// create the second AppDomain.
+		//	AppDomain ad2 = AppDomain.CreateDomain ("AD #2", null, ads);
+		//	System.Threading.mar MarshalByRefType marts = (MarshalByRefType) ad2.CreateInstanceAndUnwrap (exeAssembly, type of(MarshalByRefType).FullName );
+		//	// Call a method on the object via the proxy, passing the // default AppDomain's friendly name in as a parameter.
+		//	mbrt.SomeMethod (callingDomainName);
+		//	// unload the second AppDomain. This deletes its object and // invalidates the proxy object.
+		//	AppDomain.Unload (ad2);
+		//}
 	}
 }

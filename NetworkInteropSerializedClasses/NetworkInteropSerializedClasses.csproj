@@ -119,15 +119,8 @@
     <Compile Include="..\DynamicCodeInvoking.cs">
       <Link>DynamicCodeInvoking.cs</Link>
     </Compile>
-    <Compile Include="..\EventHandlers.cs">
-      <Link>EventHandlers.cs</Link>
-    </Compile>
     <Compile Include="..\FileSystemInterop.cs">
       <Link>FileSystemInterop.cs</Link>
-    </Compile>
-    <Compile Include="..\InputBoxWPF.xaml.cs">
-      <Link>InputBoxWPF.xaml.cs</Link>
-      <DependentUpon>InputBoxWPF.xaml</DependentUpon>
     </Compile>
     <Compile Include="..\Logging.cs">
       <Link>Logging.cs</Link>
@@ -137,13 +130,6 @@
     </Compile>
     <Compile Include="..\NetworkInterop.cs">
       <Link>NetworkInterop.cs</Link>
-    </Compile>
-    <Compile Include="..\PickItemForm.cs">
-      <Link>PickItemForm.cs</Link>
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="..\PickItemForm.Designer.cs">
-      <Link>PickItemForm.Designer.cs</Link>
     </Compile>
     <Compile Include="..\PropertyInterceptor.cs">
       <Link>PropertyInterceptor.cs</Link>
@@ -163,12 +149,6 @@
     <Compile Include="..\TracXmlRpcInterop.cs">
       <Link>TracXmlRpcInterop.cs</Link>
     </Compile>
-    <Compile Include="..\UserMessages.cs">
-      <Link>UserMessages.cs</Link>
-    </Compile>
-    <Compile Include="..\WPFdraggableCanvas.cs">
-      <Link>WPFdraggableCanvas.cs</Link>
-    </Compile>
     <Compile Include="..\XmlRpcInterop.cs">
       <Link>XmlRpcInterop.cs</Link>
     </Compile>
@@ -176,15 +156,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="..\PickItemForm.resx">
-      <Link>PickItemForm.resx</Link>
-    </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <Page Include="..\InputBoxWPF.xaml">
-      <Link>InputBoxWPF.xaml</Link>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
+    <ProjectReference Include="C:\Users\francois\Documents\Visual Studio 2010\Projects\QuickAccessPlugins\InlineCommandToolkit\InlineCommandToolkit.csproj">
+      <Project>{3f73ece5-851e-4c02-ac70-37c0f92783ad}</Project>
+      <Name>InlineCommandToolkit</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

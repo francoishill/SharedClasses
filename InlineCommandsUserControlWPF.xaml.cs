@@ -17,11 +17,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using DynamicDLLsInterop;
 using InlineCommands;
+using InlineCommandToolkit;//InlineCommands.CommandsManagerClass.OverrideToStringClass;
+using InterfaceForQuickAccessPlugin;
 using PropertyInterceptor;
 //using dragonz.actb.core;
 //using dragonz.actb.provider;
-using ICommandWithHandler = InlineCommands.CommandsManagerClass.ICommandWithHandler;
+using ICommandWithHandler = InlineCommandToolkit.InlineCommands.ICommandWithHandler;//InlineCommands.CommandsManagerClass.ICommandWithHandler;
+using OverrideToStringClass = InlineCommandToolkit.InlineCommands.OverrideToStringClass;
 
 namespace SharedClasses
 {
@@ -105,11 +109,32 @@ namespace SharedClasses
 			}
 
 			label_ArgumentsExample.Content = "";
-			treeView_CommandList.Items.Clear();
-			List<ICommandWithHandler> tmplist = CommandsManagerClass.ListOfInitializedCommandInterfaces;
-			textBox_CommandLine.ItemsSource = new ObservableCollection<string>();
-			foreach (ICommandWithHandler comm in tmplist)
-				treeView_CommandList.Items.Add(comm);
+
+			//System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
+			//timer.Interval = 5000;
+			//timer.Tick += delegate
+			//{
+			//	timer.Stop();
+				DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(@"D:\Francois\Dev\VSprojects\QuickAccessPlugins\bin\Debug");
+				treeView_CommandList.Items.Clear();
+				//List<OverrideToStringClass> tmplist = new List<OverrideToStringClass>();//CommandsManagerClass.ListOfInitializedCommandInterfaces;
+				foreach (IQuickAccessPluginInterface qai in DynamicDLLs.PluginList)
+					if (qai.GetType().GetInterface(typeof(ICommandWithHandler).Name) != null)
+					{
+						InlineCommandToolkit.InlineCommands.OverrideToStringClass comm =
+							(InlineCommandToolkit.InlineCommands.OverrideToStringClass)qai.GetType().GetConstructor(new Type[0]).Invoke(new object[0]);
+						//MessageBox.Show(comm.DisplayName);
+						//tmplist.Add(comm);
+						CommandsManagerClass.ListOfInitializedCommandInterfaces.Add(comm);
+					}
+				textBox_CommandLine.ItemsSource = new ObservableCollection<string>();
+				//foreach (ICommandWithHandler comm in tmplist)
+				//foreach (OverrideToStringClass comm in tmplist)
+				foreach (InlineCommandToolkit.InlineCommands.OverrideToStringClass comm in CommandsManagerClass.ListOfInitializedCommandInterfaces)
+					treeView_CommandList.Items.Add(comm);
+			//	timer.Dispose(); timer = null;
+			//};
+			//timer.Start();
 
 			//ControlTemplate ct = this.FindResource("TextBoxBaseControlTemplate") as ControlTemplate;
 			//GetActualTextBoxOfAutocompleteControl().Template = ct;
@@ -132,7 +157,8 @@ namespace SharedClasses
 		private void ResetAutocompleteToCommandNamesList()
 		{
 			textBox_CommandLine.ItemsSource = new ObservableCollection<string>();
-			List<ICommandWithHandler> tmplist = CommandsManagerClass.ListOfInitializedCommandInterfaces;
+			//List<ICommandWithHandler> tmplist = CommandsManagerClass.ListOfInitializedCommandInterfaces;
+			List<InlineCommandToolkit.InlineCommands.OverrideToStringClass> tmplist = CommandsManagerClass.ListOfInitializedCommandInterfaces;
 			foreach (ICommandWithHandler comm in tmplist)
 				(textBox_CommandLine.ItemsSource as ObservableCollection<string>).Add(comm.CommandName);
 		}
@@ -329,7 +355,7 @@ namespace SharedClasses
 
 		private bool CommandNameExistOfTextboxText(out string CommandName)
 		{
-			foreach (InlineCommands.CommandsManagerClass.ICommandWithHandler comm in treeView_CommandList.Items)
+			foreach (ICommandWithHandler comm in treeView_CommandList.Items)
 				if (textBox_CommandLine.Text.Equals(comm.CommandName, StringComparison.InvariantCultureIgnoreCase))
 				{
 					CommandName = comm.DisplayName;
@@ -661,11 +687,11 @@ namespace SharedClasses
 			return false;
 		}
 
-		private bool GetActiveCommand(out InlineCommands.CommandsManagerClass.ICommandWithHandler activeCommand)
+		private bool GetActiveCommand(out ICommandWithHandler activeCommand)
 		{
 			if (treeView_CommandList.SelectedItem != null && treeView_CommandList.SelectedItem is ICommandWithHandler)
 			{
-				activeCommand = treeView_CommandList.SelectedItem as InlineCommands.CommandsManagerClass.ICommandWithHandler; ;
+				activeCommand = treeView_CommandList.SelectedItem as ICommandWithHandler; ;
 				return true;
 			}
 			activeCommand = null;
@@ -877,7 +903,8 @@ namespace SharedClasses
 
 		private void PressEnterKeyInsideArgumentTextbox()
 		{
-			InlineCommands.CommandsManagerClass.ICommandWithHandler activeCommand;
+			//InlineCommands.CommandsManagerClass.ICommandWithHandler activeCommand;
+			ICommandWithHandler activeCommand;
 			if (GetActiveCommand(out activeCommand))
 			{
 				TextBox actualTextBox = GetActualTextBoxOfAutocompleteControl();

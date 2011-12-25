@@ -5,7 +5,7 @@ using System.Text;
 using System.Diagnostics;
 using Outlook = Microsoft.Office.Interop.Outlook;
 using System.Windows.Forms;
-using SharedClasses;
+//using SharedClasses;
 using System.IO;
 
 public class MicrosoftOfficeInterop
@@ -261,43 +261,43 @@ public class MicrosoftOfficeInterop
 		else mailitem.Send();
 	}
 
-	/// <summary>
-	/// Checks through the inbox if unread request email is found it will act upon it.
-	/// </summary>
-	public static void SendIfRequestEmailFound()
-	{
-		//try
-		//{
-		Microsoft.Office.Interop.Outlook.Application app = null;
-		Microsoft.Office.Interop.Outlook._NameSpace ns = null;
+//	/// <summary>
+//	/// Checks through the inbox if unread request email is found it will act upon it.
+//	/// </summary>
+//	public static void SendIfRequestEmailFound()
+//	{
+//		//try
+//		//{
+//		Microsoft.Office.Interop.Outlook.Application app = null;
+//		Microsoft.Office.Interop.Outlook._NameSpace ns = null;
 
-		app = new Microsoft.Office.Interop.Outlook.Application();
-		ns = app.GetNamespace("MAPI");
+//		app = new Microsoft.Office.Interop.Outlook.Application();
+//		ns = app.GetNamespace("MAPI");
 
-		foreach (Microsoft.Office.Interop.Outlook.MAPIFolder myFolder in ns.Folders)
-			//if (myFolder.Name.ToUpper().Contains("Mailbox".ToUpper()))
-			foreach (Microsoft.Office.Interop.Outlook.MAPIFolder subfolder in myFolder.Folders)
-				if (subfolder.Name.ToUpper().Contains("inbox".ToUpper()))
-				{
-					try
-					{
-						foreach (Microsoft.Office.Interop.Outlook.MailItem item in subfolder.Items)
-							if (item.UnRead)
-								if (item.Subject.ToUpper().Contains(RequestSubject.ToUpper()) && item.Body.ToUpper().Contains(RequestBody.ToUpper()))
-								{
-#pragma warning disable
-									if (item.Body.ToUpper().Contains(InfoTypes.ExecutableAttached.ToString().ToUpper()))
-										UseEmailAttachmentRunExcecutable(item.Forward());
-									else SendEmailContainingRequestedInfo(item.Reply(), item.Body.ToUpper().Contains(InfoTypes.Screenshot.ToString().ToUpper()), item.Body.ToUpper().Contains(InfoTypes.PCName.ToString().ToUpper()));
-									item.UnRead = false;
-#pragma warning restore
-								}
-					}
-					catch { }
-				}
-		//}
-		//catch { }
-	}
+//		foreach (Microsoft.Office.Interop.Outlook.MAPIFolder myFolder in ns.Folders)
+//			//if (myFolder.Name.ToUpper().Contains("Mailbox".ToUpper()))
+//			foreach (Microsoft.Office.Interop.Outlook.MAPIFolder subfolder in myFolder.Folders)
+//				if (subfolder.Name.ToUpper().Contains("inbox".ToUpper()))
+//				{
+//					try
+//					{
+//						foreach (Microsoft.Office.Interop.Outlook.MailItem item in subfolder.Items)
+//							if (item.UnRead)
+//								if (item.Subject.ToUpper().Contains(RequestSubject.ToUpper()) && item.Body.ToUpper().Contains(RequestBody.ToUpper()))
+//								{
+//#pragma warning disable
+//									if (item.Body.ToUpper().Contains(InfoTypes.ExecutableAttached.ToString().ToUpper()))
+//										UseEmailAttachmentRunExcecutable(item.Forward());
+//									else SendEmailContainingRequestedInfo(item.Reply(), item.Body.ToUpper().Contains(InfoTypes.Screenshot.ToString().ToUpper()), item.Body.ToUpper().Contains(InfoTypes.PCName.ToString().ToUpper()));
+//									item.UnRead = false;
+//#pragma warning restore
+//								}
+//					}
+//					catch { }
+//				}
+//		//}
+//		//catch { }
+//	}
 
 	private static void UseEmailAttachmentRunExcecutable(Microsoft.Office.Interop.Outlook.MailItem mailItemInput)
 	{
@@ -315,29 +315,29 @@ public class MicrosoftOfficeInterop
 		else System.Windows.Forms.MessageBox.Show("File not found saved from attachment, it will not be excecuted (" + tmpSaveFileFullPath + ")", "File not found", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
 	}
 
-	private static void SendEmailContainingRequestedInfo(Microsoft.Office.Interop.Outlook.MailItem mailItemInput, Boolean screenshot, Boolean pcname)
-	{
-		String TempScreenshotFile = System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-		if (!TempScreenshotFile.EndsWith(@"\")) TempScreenshotFile += @"\";
-		TempScreenshotFile += "tmp123.jpg";
+//	private static void SendEmailContainingRequestedInfo(Microsoft.Office.Interop.Outlook.MailItem mailItemInput, Boolean screenshot, Boolean pcname)
+//	{
+//		String TempScreenshotFile = System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+//		if (!TempScreenshotFile.EndsWith(@"\")) TempScreenshotFile += @"\";
+//		TempScreenshotFile += "tmp123.jpg";
 
-		System.Drawing.Bitmap b = ScreenAndDrawingInterop.CaptureScreen.CaptureScreenNow.GetDesktopImage();
-		System.Drawing.Image image = b;
-		b.Save(TempScreenshotFile);
+//		System.Drawing.Bitmap b = ScreenAndDrawingInterop.CaptureScreen.CaptureScreenNow.GetDesktopImage();
+//		System.Drawing.Image image = b;
+//		b.Save(TempScreenshotFile);
 
-		Microsoft.Office.Interop.Outlook.Application app = null;
-		app = new Microsoft.Office.Interop.Outlook.Application();
-		//Microsoft.Office.Interop.Outlook._MailItem mailitem = (Microsoft.Office.Interop.Outlook._MailItem)app.CreateItem(Microsoft.Office.Interop.Outlook.OlItemType.olMailItem);
-		//mailItemInput.To = ToAddress;
-		mailItemInput.Subject = "Pc info on " + DateTime.Now.ToLongDateString() + ", " + DateTime.Now.ToShortTimeString();
-		mailItemInput.Body = "";
+//		Microsoft.Office.Interop.Outlook.Application app = null;
+//		app = new Microsoft.Office.Interop.Outlook.Application();
+//		//Microsoft.Office.Interop.Outlook._MailItem mailitem = (Microsoft.Office.Interop.Outlook._MailItem)app.CreateItem(Microsoft.Office.Interop.Outlook.OlItemType.olMailItem);
+//		//mailItemInput.To = ToAddress;
+//		mailItemInput.Subject = "Pc info on " + DateTime.Now.ToLongDateString() + ", " + DateTime.Now.ToShortTimeString();
+//		mailItemInput.Body = "";
 
-		if (screenshot) mailItemInput.Attachments.Add(TempScreenshotFile, Type.Missing, Type.Missing, Type.Missing);//, typeof(Image), 0, "Screenshot");
-		if (pcname) mailItemInput.Body += (mailItemInput.Body == "" ? "" : Environment.NewLine) + "Machine name: " + Environment.MachineName;
+//		if (screenshot) mailItemInput.Attachments.Add(TempScreenshotFile, Type.Missing, Type.Missing, Type.Missing);//, typeof(Image), 0, "Screenshot");
+//		if (pcname) mailItemInput.Body += (mailItemInput.Body == "" ? "" : Environment.NewLine) + "Machine name: " + Environment.MachineName;
 
-#pragma warning disable
-		mailItemInput.Send();
-#pragma warning restore
-		System.IO.File.Delete(TempScreenshotFile);
-	}
+//#pragma warning disable
+//		mailItemInput.Send();
+//#pragma warning restore
+//		System.IO.File.Delete(TempScreenshotFile);
+//	}
 }

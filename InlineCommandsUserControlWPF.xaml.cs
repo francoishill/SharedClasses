@@ -115,23 +115,33 @@ namespace SharedClasses
 			//timer.Tick += delegate
 			//{
 			//	timer.Stop();
-				DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(@"D:\Francois\Dev\VSprojects\QuickAccessPlugins\bin\Debug");
-				treeView_CommandList.Items.Clear();
-				//List<OverrideToStringClass> tmplist = new List<OverrideToStringClass>();//CommandsManagerClass.ListOfInitializedCommandInterfaces;
-				foreach (IQuickAccessPluginInterface qai in DynamicDLLs.PluginList)
-					if (qai.GetType().GetInterface(typeof(ICommandWithHandler).Name) != null)
-					{
-						InlineCommandToolkit.InlineCommands.OverrideToStringClass comm =
+			//DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(@"D:\Francois\Dev\VSprojects\QuickAccess\QuickAccess\bin\Release\Plugins");
+			//DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(@"D:\Francois\Dev\VSprojects\QuickAccess\QuickAccess\bin\Release\Plugins");
+
+			if (!AppDomain.CurrentDomain.BaseDirectory.ToLower().Contains(@"QuickAccess\QuickAccess\bin".ToLower()))
+				DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(System.AppDomain.CurrentDomain.BaseDirectory + @"Plugins");
+			else
+			{
+				foreach (string pluginProjectBaseDir in Directory.GetDirectories(@"D:\Francois\Dev\VSprojects\QuickAccess", "*Plugin"))
+					DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(pluginProjectBaseDir + @"\bin\Release");
+			}
+			
+			treeView_CommandList.Items.Clear();
+			//List<OverrideToStringClass> tmplist = new List<OverrideToStringClass>();//CommandsManagerClass.ListOfInitializedCommandInterfaces;
+			foreach (IQuickAccessPluginInterface qai in DynamicDLLs.PluginList)
+				if (qai.GetType().GetInterface(typeof(ICommandWithHandler).Name) != null)
+				{
+					InlineCommandToolkit.InlineCommands.OverrideToStringClass comm =
 							(InlineCommandToolkit.InlineCommands.OverrideToStringClass)qai.GetType().GetConstructor(new Type[0]).Invoke(new object[0]);
-						//MessageBox.Show(comm.DisplayName);
-						//tmplist.Add(comm);
-						CommandsManagerClass.ListOfInitializedCommandInterfaces.Add(comm);
-					}
-				textBox_CommandLine.ItemsSource = new ObservableCollection<string>();
-				//foreach (ICommandWithHandler comm in tmplist)
-				//foreach (OverrideToStringClass comm in tmplist)
-				foreach (InlineCommandToolkit.InlineCommands.OverrideToStringClass comm in CommandsManagerClass.ListOfInitializedCommandInterfaces)
-					treeView_CommandList.Items.Add(comm);
+					//MessageBox.Show(comm.DisplayName);
+					//tmplist.Add(comm);
+					CommandsManagerClass.ListOfInitializedCommandInterfaces.Add(comm);
+				}
+			textBox_CommandLine.ItemsSource = new ObservableCollection<string>();
+			//foreach (ICommandWithHandler comm in tmplist)
+			//foreach (OverrideToStringClass comm in tmplist)
+			foreach (InlineCommandToolkit.InlineCommands.OverrideToStringClass comm in CommandsManagerClass.ListOfInitializedCommandInterfaces)
+				treeView_CommandList.Items.Add(comm);
 			//	timer.Dispose(); timer = null;
 			//};
 			//timer.Start();

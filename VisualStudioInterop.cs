@@ -183,7 +183,7 @@ public class VisualStudioInterop
 	}
 
 	//TODO: Start building own publishing platform (FTP, the html page, etc)
-	public static string PerformPublish(Object textfeedbackSenderObject, string projName, out string versionString, bool AutomaticallyUpdateRevision = false, bool OpenFolderAndSetupFileAfterSuccessfullNSIS = true, TextFeedbackEventHandler textFeedbackEvent = null)
+	public static string PerformPublish(Object textfeedbackSenderObject, string projName, out string versionString, bool HasPlugins, bool AutomaticallyUpdateRevision = false, bool OpenFolderAndSetupFileAfterSuccessfullNSIS = true, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
 		versionString = "";
 		string projDir =
@@ -250,7 +250,8 @@ public class VisualStudioInterop
 					null,
 					true,
 					NsisInterop.NSISclass.DotnetFrameworkTargetedEnum.DotNet4client,
-					true);
+					true,
+					HasPlugins);
 					foreach (string line in list)
 						sw1.WriteLine(line);
 					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Successfully created NSIS file: " + nsisFileName);
@@ -378,10 +379,10 @@ public class VisualStudioInterop
 		return tempFilename;
 	}
 
-	public async static void PerformPublishOnline(Object textfeedbackSenderObject, string projName, bool AutomaticallyUpdateRevision = false, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
+	public async static void PerformPublishOnline(Object textfeedbackSenderObject, string projName, bool HasPlugins, bool AutomaticallyUpdateRevision = false, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
 	{
 		string versionString;
-		string publishedSetupPath = PerformPublish(textfeedbackSenderObject, projName, out versionString, AutomaticallyUpdateRevision, false, textFeedbackEvent);
+		string publishedSetupPath = PerformPublish(textfeedbackSenderObject, projName, out versionString, HasPlugins, AutomaticallyUpdateRevision, false, textFeedbackEvent);
 		if (publishedSetupPath != null)
 		{
 			string validatedUrlsectionForProjname = HttpUtility.UrlPathEncode(projName).ToLower();

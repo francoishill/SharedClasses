@@ -156,9 +156,13 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="C:\Users\francois\Documents\Visual Studio 2010\Projects\QuickAccessPlugins\InlineCommandToolkit\InlineCommandToolkit.csproj">
+    <ProjectReference Include="..\..\QuickAccess\InlineCommandToolkit\InlineCommandToolkit.csproj">
       <Project>{3f73ece5-851e-4c02-ac70-37c0f92783ad}</Project>
       <Name>InlineCommandToolkit</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\QuickAccess\InterfaceForQuickAccessPlugins\InterfaceForQuickAccessPlugins.csproj">
+      <Project>{41c40712-1592-4f20-8e14-05f2d3e9a85a}</Project>
+      <Name>InterfaceForQuickAccessPlugins</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -31,7 +31,8 @@ public class NsisInterop
 		//List<NSISclass.SectionGroupClass.SectionClass> sections,
 		bool InstallForAllUsers,
 		NSISclass.DotnetFrameworkTargetedEnum DotnetFrameworkTargetedIn,
-		bool WriteIntoRegistryForWindowsAutostartup)
+		bool WriteIntoRegistryForWindowsAutostartup,
+		bool HasPlugins)
 	{
 		NSISclass nsis = new NSISclass(
 			ProductPublishedNameIn,
@@ -67,10 +68,94 @@ public class NsisInterop
 		if (WriteIntoRegistryForWindowsAutostartup) SectionGroupLines.Add(@"  WriteRegStr HKCU ""SOFTWARE\Microsoft\Windows\CurrentVersion\Run"" '${PRODUCT_NAME}' '$INSTDIR\${PRODUCT_EXE_NAME}'");
 		SectionGroupLines.Add(@"SectionEnd");
 
+		//Section "Plugins" SEC002
+		//	SetShellVarContext all
+		//	SetOverwrite ifnewer
+		//	SetOutPath "$INSTDIR\Plugins"
+		//	SetOverwrite ifnewer
+		//	File /a "C:\Users\francois\Documents\Visual Studio 2010\Projects\QuickAccess\QuickAccess\bin\Release\Plugins\*.*"
+		//SectionEnd
+		if (HasPlugins)
+		{
+			int startSectionNumber = 2;//SEC002
+			string SolutionBaseDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) +	@"\Visual Studio 2010\Projects\" + VsProjectName;
+
+			SectionGroupLines.Add("");
+			SectionGroupLines.Add(@"SectionGroup ""Plugins""");
+			foreach (string baseDirForEachPluginProjects in Directory.GetDirectories(SolutionBaseDir, "*Plugin"))
+			{
+				string baseFolderNameForPlugin = Path.GetFileName(baseDirForEachPluginProjects);
+				string pluginDllPath = baseDirForEachPluginProjects + @"\bin\Release";
+				string pluginName = 
+					VisualStudioInterop.InsertSpacesBeforeCamelCase(
+						baseFolderNameForPlugin.ToLower().EndsWith("plugin")
+						? baseFolderNameForPlugin.Substring(0, baseFolderNameForPlugin.Length - 6)
+						: baseFolderNameForPlugin);
+				
+				//SectionGroupLines.Add("");
+				//foreach (string dllfile in Directory.GetFiles(PluginsDir, "*.dll"))
+				//{
+				//	string filenameWithoutExtension = Path.GetFileNameWithoutExtension(dllfile);
+				//	string filenameExcludingLastPluginWord =
+				//	VisualStudioInterop.InsertSpacesBeforeCamelCase(
+				//		filenameWithoutExtension.ToLower().EndsWith("plugin")
+				//		? filenameWithoutExtension.Substring(0, filenameWithoutExtension.Length - 6)
+				//		: filenameWithoutExtension);
+					//SectionGroupLines.Add("");
+				SectionGroupLines.Add(NSISclass.Spacer + @"Section """ + pluginName + @""" SEC" + startSectionNumber++.ToString("000"));
+				SectionGroupLines.Add(NSISclass.Spacer + @"  SetShellVarContext all");
+				SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite ifnewer");
+				SectionGroupLines.Add(NSISclass.Spacer + @"	SetOutPath ""$INSTDIR\Plugins""");
+				SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite ifnewer");
+				SectionGroupLines.Add(NSISclass.Spacer + @"  File /a /x *Toolkit* /x *InterfaceFor* """ + pluginDllPath + @"\*.*""");
+				SectionGroupLines.Add(NSISclass.Spacer + @"SectionEnd");
+				SectionGroupLines.Add("");
+				//}
+			}
+			if (SectionGroupLines[SectionGroupLines.Count - 1].Trim() == "")
+				SectionGroupLines.RemoveAt(SectionGroupLines.Count - 1);
+			SectionGroupLines.Add("SectionGroupEnd");
+
+			//string PluginsDir = PublishedDir + @"\Plugins";
+			//SectionGroupLines.Add("");
+			//SectionGroupLines.Add(@"SectionGroup ""Plugins""");
+			////SectionGroupLines.Add("");
+			//foreach (string dllfile in Directory.GetFiles(PluginsDir, "*.dll"))
+			//{
+			//	string filenameWithoutExtension = Path.GetFileNameWithoutExtension(dllfile);
+			//	string filenameExcludingLastPluginWord =
+			//		VisualStudioInterop.InsertSpacesBeforeCamelCase(
+			//		filenameWithoutExtension.ToLower().EndsWith("plugin")
+			//		? filenameWithoutExtension.Substring(0, filenameWithoutExtension.Length - 6)
+			//		: filenameWithoutExtension);
+			//	//SectionGroupLines.Add("");
+			//	SectionGroupLines.Add(NSISclass.Spacer + @"Section """ + filenameExcludingLastPluginWord + @""" SEC" + startSectionNumber++.ToString("000"));
+			//	SectionGroupLines.Add(NSISclass.Spacer + @"  SetShellVarContext all");
+			//	SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite ifnewer");
+			//	SectionGroupLines.Add(NSISclass.Spacer + @"	SetOutPath ""$INSTDIR\Plugins""");
+			//	SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite ifnewer");
+			//	SectionGroupLines.Add(NSISclass.Spacer + @"  File /a """ + PluginsDir + @"\" + filenameWithoutExtension + @".*""");
+			//	SectionGroupLines.Add(NSISclass.Spacer + @"SectionEnd");
+			//	SectionGroupLines.Add("");
+			//}
+			//if (SectionGroupLines[SectionGroupLines.Count - 1].Trim() == "")
+			//	SectionGroupLines.RemoveAt(SectionGroupLines.Count - 1);
+			//SectionGroupLines.Add("SectionGroupEnd");
+
+			//SectionGroupLines.Add(@"Section ""Plugins"" SEC002");
+			//SectionGroupLines.Add(@"  SetShellVarContext all");
+			//SectionGroupLines.Add(@"  SetOverwrite ifnewer");
+			//SectionGroupLines.Add(@"	SetOutPath ""$INSTDIR\Plugins""");
+			//SectionGroupLines.Add(@"  SetOverwrite ifnewer");
+			//SectionGroupLines.Add(@"  File /a """ + PublishedDir + @"\Plugins\*.*""");
+			//SectionGroupLines.Add(@"SectionEnd");
+		}
+
 		return nsis.GetAllLinesForNSISfile(
 			SectionGroupLines,
 			null,
-			WriteIntoRegistryForWindowsAutostartup);//SectionDescriptions);
+			WriteIntoRegistryForWindowsAutostartup,
+			HasPlugins);//SectionDescriptions);
 	}
 
 	public static string DotNetChecker_NSH_file
@@ -208,7 +293,7 @@ public class NsisInterop
 		//  All = DotNet1_0 | DotNet1_1 | DotNet2_0 | DotNet3_0 | DotNet3_5 | DotNet4client | DotNet4full
 		//}
 
-		private static string Spacer = "  ";
+		public static string Spacer = "  ";
 		public string Empty = "";
 		public string ProductName;
 		public string ProductVersion;
@@ -404,7 +489,7 @@ public class NsisInterop
 			}
 		}
 
-		public List<string> GetAllLinesForNSISfile(List<string> AllSectionGroupLines, List<string> AllSectionAndGroupDescriptions, bool UninstallWillDeleteProgramAutoRunInRegistry_CurrentUser)
+		public List<string> GetAllLinesForNSISfile(List<string> AllSectionGroupLines, List<string> AllSectionAndGroupDescriptions, bool UninstallWillDeleteProgramAutoRunInRegistry_CurrentUser, bool HasPlugins)
 		{
 			List<string> tmpList = new List<string>();
 
@@ -489,7 +574,7 @@ public class NsisInterop
 
 
 			tmpList.Add(@"; Finish page");
-			if (FilePathToRunOnFinish.Length > 0) tmpList.Add(@"!define MUI_FINISHPAGE_RUN ""${PRODUCT_EXE_NAME}""");
+			if (FilePathToRunOnFinish.Length > 0) tmpList.Add(@"!define MUI_FINISHPAGE_RUN ""$INSTDIR\${PRODUCT_EXE_NAME}""");
 			tmpList.Add(@"!insertmacro MUI_PAGE_FINISH"); tmpList.Add("");
 
 			if (UseUninstaller)
@@ -614,7 +699,10 @@ public class NsisInterop
 			//tmpList.Add(Spacer + @"Delete ""$INSTDIR\${PRODUCT_NAME}.url""");
 			//tmpList.Add(Spacer + @"Delete ""$INSTDIR\uninst.exe""");
 			//tmpList.Add(Spacer + @"Delete ""$INSTDIR\${PRODUCT_EXE_NAME}"""); tmpList.Add("");
-			tmpList.Add(Spacer + @"Delete ""$INSTDIR\*.*"""); tmpList.Add("");
+			
+			tmpList.Add(Spacer + @"Delete ""$INSTDIR\*.*""");
+			if (HasPlugins) tmpList.Add(Spacer + @"Delete ""$INSTDIR\Plugins\*.*""");
+			tmpList.Add("");
 
 			tmpList.Add(Spacer + @"SetShellVarContext all");
 			tmpList.Add(Spacer + @"!insertmacro MUI_STARTMENU_GETFOLDER ""Application"" $ICONS_GROUP");
@@ -628,6 +716,7 @@ public class NsisInterop
 			tmpList.Add(Spacer + @"Delete ""$DESKTOP\${PRODUCT_NAME}.lnk""");
 			tmpList.Add(Spacer + @"RMDir ""$SMPROGRAMS\$ICONS_GROUP"""); tmpList.Add("");
 
+			if (HasPlugins) tmpList.Add(Spacer + @"RMDir ""$INSTDIR\Plugins""");
 			tmpList.Add(Spacer + @"RMDir ""$INSTDIR"""); tmpList.Add("");
 
 			tmpList.Add(Spacer + @"DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} ""${PRODUCT_UNINST_KEY}""");
@@ -992,7 +1081,7 @@ public class NsisInterop
 					foreach (string line in GetDescriptionOfNode(subnode))
 						tmpSectionDescriptionLines.Add(line);
 
-				return ((NSISclass)NodeIn.Tag).GetAllLinesForNSISfile(tmpSectionGroupLines, tmpSectionDescriptionLines, false);
+				return ((NSISclass)NodeIn.Tag).GetAllLinesForNSISfile(tmpSectionGroupLines, tmpSectionDescriptionLines, false, false);
 
 				//foreach (string line in ((NSISclass)NodeIn.Tag).GetAllLinesForNSISfile(tmpSectionGroupLines, tmpSectionDescriptionLines))
 				//    textBox_CURRENTNODETEXTBLOCK.Text += (textBox_CURRENTNODETEXTBLOCK.Text.Length > 0 ? Environment.NewLine : "") + line;

@@ -926,10 +926,11 @@ namespace SharedClasses
 				foreach (object lbo in lb.Items)
 				{
 					//GetAutocompleteBoxOfArgument(lbo).IsDropDownOpen = false;
-					TextBox t = GetActualTextboxOfArgument(lbo);
-					t.SelectionLength = 0;
-					t.SelectionStart = t.Text.Length;
-					BindingExpression be = t.GetBindingExpression(TextBox.TextProperty);
+					//TextBox t = GetActualTextboxOfArgument(lbo);
+					//t.SelectionLength = 0;
+					//t.SelectionStart = t.Text.Length;
+					AutoCompleteBox t = GetAutocompleteBoxOfArgument(lbo);
+					BindingExpression be = t.GetBindingExpression(AutoCompleteBox.TextProperty);//TextBox.TextProperty);
 					be.UpdateSource();
 				}
 

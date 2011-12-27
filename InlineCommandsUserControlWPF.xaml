@@ -579,19 +579,49 @@
 																									 BorderBrush='Transparent'
 																									 Margin='0,3,0,0'
 																									 MinimumPrefixLength='0'
-																									 Text='{Binding CurrentValue, UpdateSourceTrigger=PropertyChanged}'
+																									 Text='{Binding CurrentValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}'
 																									 Tag='{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}'
 																									 ItemsSource='{Binding PredefinedAutocompleteList, UpdateSourceTrigger=PropertyChanged}'
 																									 HorizontalAlignment='Stretch'
 																									 FontSize='16'
 																									 GotFocus='ArgumentText_GotFocus'
 																									 IsTextCompletionEnabled='True'
-																									 Style='{DynamicResource AutoCompleteBox_InlineCommands}'
 																									 PreviewKeyDown='AutoCompleteActualTextBox_PreviewKeyDown'
 																									 AllowDrop='True'
 																									 PreviewDragOver='ArgumentText_DragOver'
 																									 PreviewDrop='ArgumentText_Drop'
-																									 Width='auto' />
+																									 Width='auto'>
+															<input:AutoCompleteBox.ContextMenu>
+																<ContextMenu Background="White">
+																	<MenuItem Command="ApplicationCommands.Copy" />
+																	<MenuItem Command="ApplicationCommands.Cut" />
+																	<MenuItem Command="ApplicationCommands.Paste" />
+																</ContextMenu>
+															</input:AutoCompleteBox.ContextMenu>
+															<input:AutoCompleteBox.ItemContainerStyle>
+																<Style TargetType="ListBoxItem">
+																	<Setter Property="Background"
+																					Value="White" />
+																	<Setter Property="Foreground"
+																					Value="Black" />
+																	<Setter Property="Margin"
+																					Value="0" />
+																	<Setter Property='Padding'
+																					Value='4' />
+																	<Setter Property="FontSize"
+																					Value="14" />
+																	<Setter Property="BorderThickness"
+																					Value="0" />
+																</Style>
+															</input:AutoCompleteBox.ItemContainerStyle>
+															<!--<input:AutoCompleteBox.ItemTemplate>
+																<DataTemplate>
+																		<TextBlock Text="{Binding}"
+																							 Background='White'
+																							 VerticalAlignment="Center" />
+																</DataTemplate>
+															</input:AutoCompleteBox.ItemTemplate>-->
+														</input:AutoCompleteBox>
 														<!--<input:AutoCompleteBox x:Name='ArgumentText'
 																									 DockPanel.Dock='Top'
 																									 Foreground="#f0f0f0"
@@ -849,7 +879,7 @@
 					</LinearGradientBrush>
 				</ResourceDictionary>
 				<ResourceDictionary>
-					<Style x:Key='AutoCompleteBox_InlineCommands'
+					<!--<Style x:Key='AutoCompleteBox_InlineCommands'
 								 TargetType="{x:Type input:AutoCompleteBox}">
 						<Setter Property="IsTabStop"
 										Value="False" />
@@ -882,7 +912,6 @@
 							<Setter.Value>
 								<ControlTemplate TargetType="{x:Type input:AutoCompleteBox}">
 									<Grid Opacity="{TemplateBinding Opacity}">
-										<!--<SharedClasses:FilterTextBox Text='Hallo' />-->
 										<TextBox Padding="{TemplateBinding Padding}"
 														 Background="{TemplateBinding Background}"
 														 IsTabStop="True"
@@ -1004,43 +1033,6 @@
 													 AllowsTransparency='True'
 													 Opened='Popup_Opened'
 													 Closed='Popup_Closed'>
-											<!--<Popup x:Name="Popup"
-													 Width='{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type Grid}, Mode=FindAncestor}}'
-													 VerticalOffset='1'
-													 AllowsTransparency='True'>-->
-											<!--<Grid Opacity="{TemplateBinding Opacity}" >
-												<Border x:Name="PopupBorder"
-																HorizontalAlignment="Stretch"
-																Opacity="1"
-																BorderThickness="0">
-													<Border.RenderTransform>
-														<TranslateTransform X="1"
-																								Y="1" />
-													</Border.RenderTransform>
-													<Border.Background>
-														<SolidColorBrush Color="#11000000" />
-													</Border.Background>
-													<Border HorizontalAlignment="Stretch"
-																	Opacity="1.0"
-																	Padding="0"
-																	BorderThickness="{TemplateBinding BorderThickness}"
-																	BorderBrush="{TemplateBinding BorderBrush}"
-																	CornerRadius="5">
-														<Border.RenderTransform>
-															<TransformGroup>
-																<TranslateTransform X="-1"
-																										Y="-1" />
-															</TransformGroup>
-														</Border.RenderTransform>
-														<Border.Background>
-															<LinearGradientBrush EndPoint="0.5,1"
-																									 StartPoint="0.5,0">
-																<GradientStop Color="#FFDDDDDD"
-																							Offset="0" />
-																<GradientStop Color="#AADDDDDD"
-																							Offset="1" />
-															</LinearGradientBrush>
-														</Border.Background>-->
 											<Border CornerRadius='3'
 															BorderBrush='#aaa'
 															BorderThickness='1'
@@ -1051,13 +1043,11 @@
 																 ScrollViewer.VerticalScrollBarVisibility="Auto"
 																 ItemContainerStyle="{TemplateBinding ItemContainerStyle}"
 																 Background="{TemplateBinding Background}"
-																 Foreground="#000"
+																 Foreground="#579"
 																 BorderThickness="0"
-																 ItemTemplate='{TemplateBinding ItemTemplate}' />
+																 ItemTemplate='{TemplateBinding ItemTemplate}' >
+												</ListBox>
 											</Border>
-											<!--</Border>
-												</Border>
-											</Grid>-->
 										</Popup>
 									</Grid>
 									<ControlTemplate.Triggers>
@@ -1087,7 +1077,7 @@
 								</ControlTemplate>
 							</Setter.Value>
 						</Setter>
-					</Style>
+					</Style>-->
 				</ResourceDictionary>
 				<!--<ResourceDictionary>
 					<Style x:Key="autoCompleteTextBox"

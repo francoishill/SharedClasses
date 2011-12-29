@@ -90,4 +90,9 @@ public partial class InputBoxWPF : Window
 	{
 		Accept();
 	}
+
+	private void InputBox_PreviewMouseRightButtonUp(object sender, MouseButtonEventArgs e)
+	{
+		Cancel();
+	}
 }

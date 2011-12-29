@@ -395,6 +395,38 @@
 					</Style>-->
 				</ResourceDictionary>
 				<ResourceDictionary>
+					<LinearGradientBrush x:Key='HoverBackground'
+															 StartPoint='0.5,0'
+															 EndPoint='0.5,1'>
+						<GradientStop Offset='0'
+													Color='#66bababa' />
+						<GradientStop Offset='1'
+													Color='#66707070' />
+					</LinearGradientBrush>
+					<LinearGradientBrush x:Key='HoverBorderBrush'
+															 StartPoint='0.5,0'
+															 EndPoint='0.5,1'>
+						<GradientStop Offset='0'
+													Color='#bbfafafa' />
+						<GradientStop Offset='1'
+													Color='#bb707070' />
+					</LinearGradientBrush>
+					<LinearGradientBrush x:Key='PressedBackground'
+															 StartPoint='0.5,0'
+															 EndPoint='0.5,1'>
+						<GradientStop Offset='0'
+													Color='#66ffffff' />
+						<GradientStop Offset='1'
+													Color='#66dddddd' />
+					</LinearGradientBrush>
+					<LinearGradientBrush x:Key='PressedBorderBrush'
+															 StartPoint='0.5,0'
+															 EndPoint='0.5,1'>
+						<GradientStop Offset='0'
+													Color='#bbffffff' />
+						<GradientStop Offset='1'
+													Color='#bbdddddd' />
+					</LinearGradientBrush>
 					<ControlTemplate x:Key="CommonValidationToolTipTemplate"
 													 TargetType="ToolTip">
 						<Grid x:Name="Root"
@@ -566,90 +598,95 @@
 														</LinearGradientBrush>
 													</Border.Background>
 													<DockPanel>
-														<!--<TextBlock DockPanel.Dock='Top'
-																			 Foreground="#f0f0f0"
-																			 Text='{Binding CurrentValue}'
-																			 HorizontalAlignment='Center'
-																			 FontSize='20'/>-->
-														<input:AutoCompleteBox x:Name='ArgumentText'
-																									 DockPanel.Dock='Top'
-																									 Foreground="#f0f0f0"
-																									 DataContext='{Binding}'
-																									 Background='Transparent'
-																									 BorderBrush='Transparent'
-																									 Margin='0,3,0,0'
-																									 MinimumPrefixLength='0'
-																									 Text='{Binding CurrentValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}'
-																									 Tag='{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}'
-																									 ItemsSource='{Binding PredefinedAutocompleteList, UpdateSourceTrigger=PropertyChanged}'
-																									 HorizontalAlignment='Stretch'
-																									 FontSize='16'
-																									 GotFocus='ArgumentText_GotFocus'
-																									 IsTextCompletionEnabled='True'
-																									 PreviewKeyDown='AutoCompleteActualTextBox_PreviewKeyDown'
-																									 AllowDrop='True'
-																									 PreviewDragOver='ArgumentText_DragOver'
-																									 PreviewDrop='ArgumentText_Drop'
-																									 Width='auto'>
-															<input:AutoCompleteBox.ContextMenu>
-																<ContextMenu Background="White">
-																	<MenuItem Command="ApplicationCommands.Copy" />
-																	<MenuItem Command="ApplicationCommands.Cut" />
-																	<MenuItem Command="ApplicationCommands.Paste" />
-																</ContextMenu>
-															</input:AutoCompleteBox.ContextMenu>
-															<input:AutoCompleteBox.ItemContainerStyle>
-																<Style TargetType="ListBoxItem">
-																	<Setter Property="Background"
-																					Value="White" />
-																	<Setter Property="Foreground"
-																					Value="Black" />
-																	<Setter Property="Margin"
-																					Value="0" />
-																	<Setter Property='Padding'
-																					Value='4' />
-																	<Setter Property="FontSize"
-																					Value="14" />
-																	<Setter Property="BorderThickness"
-																					Value="0" />
-																</Style>
-															</input:AutoCompleteBox.ItemContainerStyle>
-															<!--<input:AutoCompleteBox.ItemTemplate>
-																<DataTemplate>
-																		<TextBlock Text="{Binding}"
-																							 Background='White'
-																							 VerticalAlignment="Center" />
-																</DataTemplate>
-															</input:AutoCompleteBox.ItemTemplate>-->
-														</input:AutoCompleteBox>
-														<!--<input:AutoCompleteBox x:Name='ArgumentText'
-																									 DockPanel.Dock='Top'
-																									 Foreground="#f0f0f0"
-																									 Background='Transparent'
-																									 BorderBrush='Transparent'
-																									 Margin='0,3,0,0'
-																									 MinimumPrefixLength='0'
-																									 Text='{Binding CurrentValue, UpdateSourceTrigger=PropertyChanged}'
-																									 Tag='{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}'
-																									 ItemsSource='{Binding PredefinedAutocompleteList, UpdateSourceTrigger=PropertyChanged}'
-																									 HorizontalAlignment='Stretch'
-																									 FontSize='16'
-																									 GotFocus='ArgumentText_GotFocus'
-																									 IsTextCompletionEnabled='True'
-																									 Style='{DynamicResource AutoCompleteBox_InlineCommands}'
-																									 PreviewKeyDown='AutoCompleteActualTextBox_PreviewKeyDown'
-																									 Width='auto' />-->
-														<!--<input:AutoCompleteBox x:Name="ArgumentText"
-																									 DockPanel.Dock='Top'
-																									 FontSize="36"
-																									 Margin='5'
-																									 HorizontalAlignment="Stretch"
-																									 Text='{Binding CurrentValue, UpdateSourceTrigger=PropertyChanged}'
-																									 Tag='{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}'
-																									 MinimumPrefixLength='0'
-																									 Style='{StaticResource AutoCompleteBox_InlineCommands}'
-																									 IsTextCompletionEnabled='True'
-																									 BorderBrush='#777' />-->
+														<DockPanel DockPanel.Dock='Top'
+																			 LastChildFill='True'
+																			 Background='White'
+																			 Margin='0,3,0,0'>
+															<Button DockPanel.Dock='Right'
+																			Name='ButtonClose'
+																			HorizontalAlignment='Right'
+																			VerticalAlignment='Center'
+																			Content='X'
+																			FontSize='12'
+																			Foreground='#300'
+																			BorderBrush='#333'
+																			PreviewMouseLeftButtonUp='ClearTextboxTextButton_MouseLeftButtonDown'>
+																<Button.Template>
+																	<ControlTemplate TargetType='Button'>
+																		<Border Name='ButtonBorder'
+																						CornerRadius='3'
+																						BorderThickness='1'
+																						BorderBrush='Transparent'
+																						Background='Transparent'
+																						Padding='2'>
+																			<ContentPresenter Content='{TemplateBinding Content}'
+																												HorizontalAlignment='Center'
+																												VerticalAlignment='Center' />
+																		</Border>
+																		<ControlTemplate.Triggers>
+																			<Trigger Property='IsMouseOver'
+																							 Value='True'>
+																				<Setter TargetName='ButtonBorder'
+																								Property='Background'
+																								Value='{StaticResource HoverBackground}' />
+																				<Setter TargetName='ButtonBorder'
+																								Property='BorderBrush'
+																								Value='{StaticResource HoverBorderBrush}' />
+																			</Trigger>
+																			<Trigger Property='IsPressed'
+																							 Value='True'>
+																				<Setter TargetName='ButtonBorder'
+																								Property='Background'
+																								Value='{StaticResource PressedBackground}' />
+																				<Setter TargetName='ButtonBorder'
+																								Property='BorderBrush'
+																								Value='{StaticResource PressedBorderBrush}' />
+																			</Trigger>
+																		</ControlTemplate.Triggers>
+																	</ControlTemplate>
+																</Button.Template>
+															</Button>
+															<input:AutoCompleteBox x:Name='ArgumentText'
+																										 BorderThickness='0'
+																										 MinimumPrefixLength='0'
+																										 MinimumPopulateDelay='0'
+																										 Text='{Binding CurrentValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}'
+																										 Tag='{Binding DisplayName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}'
+																										 ItemsSource='{Binding PredefinedAutocompleteList, UpdateSourceTrigger=PropertyChanged}'
+																										 SelectionChanged='ArgumentText_SelectionChanged'
+																										 HorizontalAlignment='Stretch'
+																										 FontSize='20'
+																										 GotFocus='ArgumentText_GotFocus'
+																										 IsTextCompletionEnabled='True'
+																										 PreviewKeyDown='AutoCompleteActualTextBox_PreviewKeyDown'
+																										 AllowDrop='True'
+																										 PreviewDragOver='ArgumentText_DragOver'
+																										 PreviewDrop='ArgumentText_Drop'
+																										 Width='auto'>
+																<input:AutoCompleteBox.ContextMenu>
+																	<ContextMenu Background="White">
+																		<MenuItem Command="ApplicationCommands.Copy" />
+																		<MenuItem Command="ApplicationCommands.Cut" />
+																		<MenuItem Command="ApplicationCommands.Paste" />
+																	</ContextMenu>
+																</input:AutoCompleteBox.ContextMenu>
+																<input:AutoCompleteBox.ItemTemplate>
+																	<DataTemplate>
+																		<DockPanel LastChildFill='True'
+																							 HorizontalAlignment='Stretch'>
+																			<!--<Button DockPanel.Dock='Left'
+																							Content='X' />-->
+																			<TextBlock DockPanel.Dock='Right'
+																								 Padding='3,0'
+																								 FontSize='14'
+																								 Foreground='#678'
+																								 Text="{Binding}"
+																								 VerticalAlignment="Center" />
+																		</DockPanel>
+																	</DataTemplate>
+																</input:AutoCompleteBox.ItemTemplate>
+															</input:AutoCompleteBox>
+														</DockPanel>
 														<TextBlock DockPanel.Dock='Bottom'
 																			 Text='{Binding DisplayName}'
 																			 Foreground='#ddd'
@@ -661,7 +698,7 @@
 										</ListBox.ItemTemplate>
 									</ListBox>
 								</Border>
-								<Button x:Name='GoButton'
+								<!--<Button x:Name='GoButton'
 												DockPanel.Dock='Right'
 												FontFamily="Marlett"
 												Focusable='False'
@@ -694,7 +731,7 @@
 											</BeginStoryboard>
 										</EventTrigger>
 									</Button.Triggers>
-								</Button>
+								</Button>-->
 								<!--<Border x:Name="EmbeddedButton2"
 												DockPanel.Dock="Right"
 												BorderBrush="#ccc"
@@ -1275,15 +1312,7 @@
 											 Background='Transparent'>
 							<TextBox Name='TextBoxWithButtons'
 											 DockPanel.Dock='Left'
-											 Template='{StaticResource TextBoxBaseControlTemplate}' />
-							<!--<input:AutoCompleteBox x:Name="textBox_CommandLine"
-																	 MinimumPrefixLength='0'
-																	 Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type TextBlock}, Mode=FindAncestor}}"
-																	 PreviewKeyDown="textBox_CommandLine_PreviewKeyDown"
-																	 TextChanged="textBox_CommandLine_TextChanged_1"
-																	 Style='{StaticResource AutoCompleteBox_InlineCommands}'
-																	 IsTextCompletionEnabled='True'
-																	 BorderBrush='#777' />-->
+											 Template='{StaticResource TextBoxBaseControlTemplate}'/>
 							<input:AutoCompleteBox x:Name="textBox_CommandLine"
 																		 MinimumPrefixLength='0'
 																		 Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type TextBlock}, Mode=FindAncestor}}"
@@ -1548,13 +1577,13 @@
 													 Margin='0'
 													 Padding='0'
 													 VerticalAlignment='Center'
-													 Foreground='#678'/>
+													 Foreground='#678' />
 								<TextBlock Text='{Binding PropertyName}'
 													 FontSize='16'
 													 Padding='0'
 													 VerticalAlignment='Center'
 													 Margin='4,0,0,0'
-													 Foreground='Red'/>
+													 Foreground='Red' />
 							</StackPanel>
 						</Border>
 					</DataTemplate>

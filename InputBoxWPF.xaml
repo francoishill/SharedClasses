@@ -8,6 +8,7 @@
 				WindowState='Maximized'
 				AllowsTransparency='True'
 				Background='#99000000'
+				PreviewMouseRightButtonUp='InputBox_PreviewMouseRightButtonUp'
 				PreviewKeyDown='InputBox_PreviewKeyDown'
 				GotKeyboardFocus='InputBox_GotKeyboardFocus'
 				Topmost='True'

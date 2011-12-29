@@ -122,7 +122,7 @@ namespace SharedClasses
 				DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(System.AppDomain.CurrentDomain.BaseDirectory + @"Plugins");
 			else
 			{
-				foreach (string pluginProjectBaseDir in Directory.GetDirectories(@"D:\Francois\Dev\VSprojects\QuickAccess", "*Plugin"))
+				foreach (string pluginProjectBaseDir in Directory.GetDirectories(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\\Visual Studio 2010\Projects\QuickAccess", "*Plugin"))
 					DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(pluginProjectBaseDir + @"\bin\Release");
 			}
 			
@@ -131,8 +131,9 @@ namespace SharedClasses
 			foreach (IQuickAccessPluginInterface qai in DynamicDLLs.PluginList)
 				if (qai.GetType().GetInterface(typeof(ICommandWithHandler).Name) != null)
 				{
-					InlineCommandToolkit.InlineCommands.OverrideToStringClass comm =
-							(InlineCommandToolkit.InlineCommands.OverrideToStringClass)qai.GetType().GetConstructor(new Type[0]).Invoke(new object[0]);
+					ICommandWithHandler comm = (ICommandWithHandler)qai.GetType().GetConstructor(new Type[0]).Invoke(new object[0]);
+					//OverrideToStringClass comm =
+					//		(OverrideToStringClass)qai.GetType().GetConstructor(new Type[0]).Invoke(new object[0]);
 					//MessageBox.Show(comm.DisplayName);
 					//tmplist.Add(comm);
 					CommandsManagerClass.ListOfInitializedCommandInterfaces.Add(comm);
@@ -151,7 +152,8 @@ namespace SharedClasses
 			//GetActualTextBoxOfAutocompleteControl().ApplyTemplate();
 			GetActualTextBoxOfAutocompleteControl().HorizontalContentAlignment = System.Windows.HorizontalAlignment.Left;
 			ResetAutocompleteToCommandNamesList();
-			HideEmbeddedButton();
+			//HideEmbeddedButton();
+			SetVisibilityOfExtraControls();
 
 			if (!GetActualTextBoxOfAutocompleteControl().IsFocused) GetActualTextBoxOfAutocompleteControl().Focus();
 		}
@@ -167,8 +169,7 @@ namespace SharedClasses
 		private void ResetAutocompleteToCommandNamesList()
 		{
 			textBox_CommandLine.ItemsSource = new ObservableCollection<string>();
-			//List<ICommandWithHandler> tmplist = CommandsManagerClass.ListOfInitializedCommandInterfaces;
-			List<InlineCommandToolkit.InlineCommands.OverrideToStringClass> tmplist = CommandsManagerClass.ListOfInitializedCommandInterfaces;
+			List<ICommandWithHandler> tmplist = CommandsManagerClass.ListOfInitializedCommandInterfaces;
 			foreach (ICommandWithHandler comm in tmplist)
 				(textBox_CommandLine.ItemsSource as ObservableCollection<string>).Add(comm.CommandName);
 		}
@@ -245,6 +246,7 @@ namespace SharedClasses
 					//tmpTextBlock.Text = command.DisplayName;
 					//tmpTextBlock.ToolTip = command.Description + Environment.NewLine + "For example:" + Environment.NewLine + command.ArgumentsExample;
 					//Border tmpBorder = (Border)textBox_CommandLine.Template.FindName("EmbeddedButton", textBox_CommandLine);
+
 					Border tmpBorder = GetEmbeddedButton();
 					tmpBorder.Tag = command;
 					if (tmpBorder.Visibility != System.Windows.Visibility.Visible)
@@ -350,6 +352,21 @@ namespace SharedClasses
 			textBox_Messages.UpdateLayout();
 			textBox_Messages.Document.Blocks.Clear();
 			if (command != null) textBox_Messages.Document.Blocks.AddRange(command.ParagraphListForMessages);
+
+			SetVisibilityOfExtraControls();
+		}
+
+		private void SetVisibilityOfExtraControls()
+		{
+			ControlTemplate controlTemplate = MainAutoCompleteTextbox.Template;
+			Border controlTemplateBorder = VisualTreeHelper.GetChild(MainAutoCompleteTextbox, 0) as Border;
+			DockPanel dp = controlTemplateBorder.Child as DockPanel;
+			
+			TextBox tb = dp.Children[0] as TextBox;//controlTemplate.FindName("TextBoxWithButtons", dp) as TextBox;
+			tb.Visibility = textBox_CommandLine.DataContext != null ? Visibility.Visible : Visibility.Collapsed; ;
+			
+			AutoCompleteBox acb = dp.Children[1] as AutoCompleteBox;
+			acb.Visibility = textBox_CommandLine.DataContext == null ? Visibility.Visible : Visibility.Collapsed; ;
 		}
 
 		private void HideEmbeddedButton()
@@ -762,12 +779,16 @@ namespace SharedClasses
 
 		private void ClearTextboxTextButton_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
 		{
-			DependencyObject dp = (sender as Border).Parent;
+			DependencyObject dp = (sender as Button).Parent;//Border).Parent;
 			if (dp != null)
 			{
-				TextBox actualtextbox = ((dp as DockPanel).Children[1] as TextBox);
-				actualtextbox.Text = "";
-				if (!actualtextbox.IsFocused) actualtextbox.Focus();
+				//TextBox actualtextbox = ((dp as DockPanel).Children[1] as TextBox);
+				AutoCompleteBox autocompleteBox = (dp as DockPanel).Children[1] as AutoCompleteBox;
+				autocompleteBox.Text = "";
+				autocompleteBox.SelectedItem = null;
+				autocompleteBox.UpdateLayout();
+				autocompleteBox.IsDropDownOpen = true;
+				if (!autocompleteBox.IsFocused) autocompleteBox.Focus();
 			}
 		}
 
@@ -925,13 +946,20 @@ namespace SharedClasses
 				if (lb.Items.Count == 0) return;
 				foreach (object lbo in lb.Items)
 				{
+					ListBoxItem lbi = (ListBoxItem)lb.ItemContainerGenerator.ContainerFromItem(lbo);
+					DataTemplate dataTemplate = lbi.ContentTemplate;
+					Border dataTemplateBorder = VisualTreeHelper.GetChild(lbi, 0) as Border;
+					ContentPresenter contentPresenter = dataTemplateBorder.Child as ContentPresenter;
+					AutoCompleteBox acb = dataTemplate.FindName("ArgumentText", contentPresenter) as AutoCompleteBox;
+					acb.IsDropDownOpen = false;
 					//GetAutocompleteBoxOfArgument(lbo).IsDropDownOpen = false;
 					//TextBox t = GetActualTextboxOfArgument(lbo);
 					//t.SelectionLength = 0;
 					//t.SelectionStart = t.Text.Length;
-					AutoCompleteBox t = GetAutocompleteBoxOfArgument(lbo);
-					BindingExpression be = t.GetBindingExpression(AutoCompleteBox.TextProperty);//TextBox.TextProperty);
-					be.UpdateSource();
+
+					//AutoCompleteBox t = GetAutocompleteBoxOfArgument(lbo);
+					//BindingExpression be = t.GetBindingExpression(AutoCompleteBox.TextProperty);//TextBox.TextProperty);
+					//be.UpdateSource();
 				}
 
 				if (CommandsManagerClass.PerformCommandFromCurrentArguments(
@@ -993,6 +1021,7 @@ namespace SharedClasses
 				{
 					e.Handled = true;
 					ClearCommandSelection();
+					if (!GetActualTextBoxOfAutocompleteControl().IsFocused) GetActualTextBoxOfAutocompleteControl().Focus();
 				}
 				else
 				{
@@ -1005,6 +1034,38 @@ namespace SharedClasses
 				e.Handled = true;
 				textBox_CommandLine.IsDropDownOpen = true;
 			}
+			else if (e.Key == Key.Down || e.SystemKey == Key.Down)
+			{
+				if (Keyboard.Modifiers == ModifierKeys.Alt)
+				{
+					e.Handled = true;
+					MoveWindowVertical(PixelsToMove);
+				}
+			}
+			else if (e.Key == Key.Up || e.SystemKey == Key.Up)
+			{
+				if (Keyboard.Modifiers == ModifierKeys.Alt)
+				{
+					e.Handled = true;
+					MoveWindowVertical(-PixelsToMove);
+				}
+			}
+			else if (e.Key == Key.Left || e.SystemKey == Key.Left)
+			{
+				if (Keyboard.Modifiers == ModifierKeys.Alt)
+				{
+					e.Handled = true;
+					MoveWindowHorizontal(-PixelsToMove);
+				}
+			}
+			else if (e.Key == Key.Right || e.SystemKey == Key.Right)
+			{
+				if (Keyboard.Modifiers == ModifierKeys.Alt)
+				{
+					e.Handled = true;
+					MoveWindowHorizontal(PixelsToMove);
+				}
+			}
 			//else if (e.Key == Key.Down)
 			//{
 			//	//e.Handled = true;
@@ -1013,6 +1074,50 @@ namespace SharedClasses
 			//	//ListBox listboxAutocomplete =	(popupAutocomplete.Child as Border).Child as ListBox;
 			//	//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, listboxAutocomplete.SelectedIndex.ToString());
 			//}
+		}
+
+		const int PixelsToMove = 20;
+		private void MoveWindowHorizontal(int pixels)
+		{
+			Window parentWindow = Window.GetWindow(this);
+			if (pixels < 0)
+			{
+				double workingAreaLeftBound = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point((int)parentWindow.Left, (int)parentWindow.Top)).WorkingArea.Left;
+				if (parentWindow.Left + pixels >= workingAreaLeftBound)
+					parentWindow.Left += pixels;
+				else
+					parentWindow.Left = workingAreaLeftBound;
+			}
+			else
+			{
+				double workingAreaRightBound = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point((int)parentWindow.Left, (int)parentWindow.Top)).WorkingArea.Right;
+				if (parentWindow.Left + parentWindow.ActualWidth + pixels <= workingAreaRightBound)
+					parentWindow.Left += pixels;
+				else
+					parentWindow.Left = workingAreaRightBound - parentWindow.ActualWidth;
+			}
+		}
+
+		private void MoveWindowVertical(int pixels)
+		{
+			Window parentWindow = Window.GetWindow(this);
+
+			if (pixels < 0)
+			{
+				double workingAreaTopBound = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point((int)parentWindow.Left, (int)parentWindow.Top)).WorkingArea.Top;
+				if (parentWindow.Top + pixels >= workingAreaTopBound)
+					parentWindow.Top += pixels;
+				else
+					parentWindow.Top = workingAreaTopBound;
+			}
+			else
+			{
+				double workingAreaBottomBound = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point((int)parentWindow.Left, (int)parentWindow.Top)).WorkingArea.Bottom;
+				if (parentWindow.Top + parentWindow.ActualHeight + pixels <= workingAreaBottomBound)
+					parentWindow.Top += pixels;
+				else
+					parentWindow.Top = workingAreaBottomBound - parentWindow.ActualHeight;
+			}
 		}
 
 		private void ArgumentText_DragOver(object sender, DragEventArgs e)
@@ -1141,6 +1246,15 @@ namespace SharedClasses
 				//if (lbi is 
 			}
 		}
+
+		private void ArgumentText_SelectionChanged(object sender, SelectionChangedEventArgs e)
+		{
+			if (Mouse.LeftButton == MouseButtonState.Pressed)
+				(sender as AutoCompleteBox).IsDropDownOpen = false;
+			//BindingExpression be = (sender as AutoCompleteBox).GetBindingExpression(AutoCompleteBox.TextProperty);
+			//be.UpdateSource();
+			//be.UpdateTarget();
+		}
 		//private bool IsTreeViewDragBusy = false;
 	}
 
@@ -1163,6 +1277,5 @@ namespace SharedClasses
 		{
 			throw new NotImplementedException();
 		}
-
 	}
 }

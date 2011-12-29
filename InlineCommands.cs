@@ -14,13 +14,14 @@ using System.ComponentModel;
 using System.Windows.Documents;
 using InlineCommandToolkit;
 using ICommandWithHandler = InlineCommandToolkit.InlineCommands.ICommandWithHandler;
+//using OverrideToStringClass = InlineCommandToolkit.InlineCommands.OverrideToStringClass;
 
 namespace InlineCommands
 {
 	public class CommandsManagerClass
 	{
-		private static List<InlineCommandToolkit.InlineCommands.OverrideToStringClass> listOfInitializedCommandInterfaces = new List<InlineCommandToolkit.InlineCommands.OverrideToStringClass>();
-		public static List<InlineCommandToolkit.InlineCommands.OverrideToStringClass> ListOfInitializedCommandInterfaces
+		private static List<ICommandWithHandler> listOfInitializedCommandInterfaces = new List<ICommandWithHandler>();
+		public static List<ICommandWithHandler> ListOfInitializedCommandInterfaces
 		{
 			get { return listOfInitializedCommandInterfaces; }
 			set { listOfInitializedCommandInterfaces = value; }

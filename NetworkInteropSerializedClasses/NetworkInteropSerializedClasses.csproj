@@ -119,9 +119,6 @@
     <Compile Include="..\DynamicCodeInvoking.cs">
       <Link>DynamicCodeInvoking.cs</Link>
     </Compile>
-    <Compile Include="..\FileSystemInterop.cs">
-      <Link>FileSystemInterop.cs</Link>
-    </Compile>
     <Compile Include="..\Logging.cs">
       <Link>Logging.cs</Link>
     </Compile>
@@ -131,20 +128,8 @@
     <Compile Include="..\NetworkInterop.cs">
       <Link>NetworkInterop.cs</Link>
     </Compile>
-    <Compile Include="..\PropertyInterceptor.cs">
-      <Link>PropertyInterceptor.cs</Link>
-    </Compile>
     <Compile Include="..\SerializationInterop.cs">
       <Link>SerializationInterop.cs</Link>
-    </Compile>
-    <Compile Include="..\SettingsInterop.cs">
-      <Link>SettingsInterop.cs</Link>
-    </Compile>
-    <Compile Include="..\SharedClassesSettings.cs">
-      <Link>SharedClassesSettings.cs</Link>
-    </Compile>
-    <Compile Include="..\ThreadingInterop.cs">
-      <Link>ThreadingInterop.cs</Link>
     </Compile>
     <Compile Include="..\TracXmlRpcInterop.cs">
       <Link>TracXmlRpcInterop.cs</Link>
@@ -159,10 +144,6 @@
     <ProjectReference Include="..\..\QuickAccess\InlineCommandToolkit\InlineCommandToolkit.csproj">
       <Project>{3f73ece5-851e-4c02-ac70-37c0f92783ad}</Project>
       <Name>InlineCommandToolkit</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\QuickAccess\InterfaceForQuickAccessPlugins\InterfaceForQuickAccessPlugins.csproj">
-      <Project>{41c40712-1592-4f20-8e14-05f2d3e9a85a}</Project>
-      <Name>InterfaceForQuickAccessPlugins</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

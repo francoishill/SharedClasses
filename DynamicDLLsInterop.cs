@@ -13,7 +13,7 @@ namespace DynamicDLLsInterop
 
 		public static object InvokeDllMethodGetReturnObject(string FullPathToDll, string ClassName, string MethodName, object[] parameters)
 		{
-			Assembly u = Assembly.LoadFile(FullPathToDll);
+			Assembly u = Assembly.LoadFrom(FullPathToDll);//.LoadFile(FullPathToDll);
 			Type t = u.GetType(ClassName);
 			if (t == null)
 			{
@@ -59,12 +59,28 @@ namespace DynamicDLLsInterop
 			return null;
 		}
 
+		private static List<string> DllNameExclusionList = new List<string>()
+		{
+			"InlineCommandToolkit.dll"
+		};
+
+		private static bool IsFileValid(string filePath)
+		{
+			foreach (string s in DllNameExclusionList)
+				//This check is very important as this DLL is already loaded in the QuickAccess.exe and should not be loaded AGAIN via a plugin
+				if (filePath.ToLower().EndsWith(s.ToLower()))
+					return false;
+			return true;
+		}
+
 		public static void LoadPluginsInDirectory(string DirectoryFullPath, int DelayLoadDurationMilliseconds = 0)
 		{
 			Action LoadAction = new Action(delegate
 			{
 				foreach (string dllFile in Directory.GetFiles(DirectoryFullPath, "*.dll"))
-					LoadPlugin(dllFile);
+					if (IsFileValid(dllFile))
+						LoadPlugin(dllFile);
+					//else MessageBox.Show(dllFile);
 			});
 
 			if (DelayLoadDurationMilliseconds != 0)
@@ -91,7 +107,7 @@ namespace DynamicDLLsInterop
 			{
 				ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 				{
-					Assembly assembly = Assembly.LoadFile(PluginPath);
+					Assembly assembly = Assembly.LoadFrom(PluginPath);//.LoadFile(PluginPath);
 					foreach (Type type in assembly.GetTypes())//.DefinedTypes)
 						if (!type.IsInterface && type.GetInterface(typeof(IQuickAccessPluginInterface).Name) != null)//Must not include the actual interface IQuickAccessPluginInterface
 						{

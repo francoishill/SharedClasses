@@ -67,10 +67,34 @@
 			<TextBox DockPanel.Dock='Bottom'
 							 Foreground='Red'
 							 Background='#ccc'
-							 FontSize='22'
+							 FontSize='14'
 							 Margin='20,0'
 							 HorizontalAlignment='Stretch'
 							 Text="{Binding StackTrace, Mode=OneWay}"
+							 TextWrapping='Wrap'
+							 IsReadOnly="True"
+							 IsReadOnlyCaretVisible="True"
+							 HorizontalScrollBarVisibility="Auto"
+							 VerticalScrollBarVisibility="Auto"
+							 MouseDoubleClick='TextBox_MouseDoubleClick' />
+		</Expander>
+		<Expander DockPanel.Dock='Bottom'
+							Margin='0,20,0,0'
+							HorizontalAlignment='Stretch'
+							IsExpanded='False'>
+			<Expander.Header>
+				<TextBlock Foreground='#bbb'
+									 Focusable='False'
+									 FontSize='14'
+									 Text='Additional error details (TargetSite-method name)' />
+			</Expander.Header>
+			<TextBox DockPanel.Dock='Bottom'
+							 Foreground='Red'
+							 Background='#ccc'
+							 FontSize='22'
+							 Margin='20,0'
+							 HorizontalAlignment='Stretch'
+							 Text="{Binding TargetSite.Name, Mode=OneWay}"
 							 TextWrapping='Wrap'
 							 IsReadOnly="True"
 							 IsReadOnlyCaretVisible="True"

@@ -6,7 +6,7 @@
 						 xmlns:theme="clr-namespace:Microsoft.Windows.Themes;assembly=PresentationFramework.Aero"
 						 xmlns:input="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls.Input.Toolkit"
 						 xmlns:system="clr-namespace:System;assembly=mscorlib"
-						 xmlns:propertyinterceptor='clr-namespace:PropertyInterceptor;assembly=NetworkInteropSerializedClasses'
+						 xmlns:propertyinterceptor='clr-namespace:PropertyInterceptor'
 						 x:Class="SharedClasses.InlineCommandsUserControlWPF"
 						 xmlns:sharedclasses='clr-namespace:SharedClasses'
 						 mc:Ignorable="d"

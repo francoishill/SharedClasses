@@ -11,7 +11,7 @@ using CookComputing.XmlRpc;
 
 public class VisualStudioInterop
 {
-//private const string defaultBaseUri = "fjh.dyndns.org/";
+	//private const string defaultBaseUri = "fjh.dyndns.org/";
 	//private const string defaultBaseUri = "127.0.0.1";
 	//private const string defaultRootUriForVsPublishing = "ftp://" + defaultBaseUri + "/francois/websites/firepuma/ownapplications";
 	//private const string defaultRootUriAFTERvspublishing = "http://" + defaultBaseUri + "/ownapplications";
@@ -212,7 +212,7 @@ public class VisualStudioInterop
 				ProjectConfiguration.Release,
 				PlatformTarget.x86,//.x64,
 				AutomaticallyUpdateRevision,
-				textfeedbackSenderObject, 
+				textfeedbackSenderObject,
 				textFeedbackEvent);
 			if (newversionstring == null)
 			{
@@ -258,14 +258,19 @@ public class VisualStudioInterop
 				}
 
 				//DONE TODO: Must make provision if pc (to do building and compiling of NSIS scripts), does not have the DotNetChecker.dll plugin for NSIS
+				bool DotNetCheckerDllFileFound = false;
+				string DotNetCheckerFilenameEndswith = "dotnetchecker.dll";
 				string dotnetCheckerDllPath = @"C:\Program Files (x86)\NSIS\Plugins\DotNetChecker.dll";
-				if (!File.Exists(dotnetCheckerDllPath))
-				{
-					System.Reflection.Assembly objAssembly = System.Reflection.Assembly.GetExecutingAssembly();
-					string[] myResources = objAssembly.GetManifestResourceNames();
-					foreach (string reso in myResources)
-						if (reso.ToLower().EndsWith("dotnetchecker.dll"))
+
+				System.Reflection.Assembly objAssembly = System.Reflection.Assembly.GetExecutingAssembly();
+				string[] myResources = objAssembly.GetManifestResourceNames();
+				foreach (string reso in myResources)
+					if (reso.ToLower().EndsWith(DotNetCheckerFilenameEndswith))
+					{
+						DotNetCheckerDllFileFound = true;
+						if (!File.Exists(dotnetCheckerDllPath))
 						{
+							DotNetCheckerDllFileFound = true;
 							Stream stream = objAssembly.GetManifestResourceStream(reso);
 							int length = (int)stream.Length;
 							byte[] bytesOfDotnetCheckerDLL = new byte[length];
@@ -276,8 +281,10 @@ public class VisualStudioInterop
 							fileStream.Close();
 							bytesOfDotnetCheckerDLL = null;
 						}
-				}
+					}
 
+				if (!DotNetCheckerDllFileFound)
+					UserMessages.ShowWarningMessage("Could not find DotNetChecker.dll in resources");
 
 				string MakeNsisFilePath = @"C:\Program Files (x86)\NSIS\makensis.exe";
 				if (!File.Exists(MakeNsisFilePath)) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not find MakeNsis.exe: " + MakeNsisFilePath);
@@ -325,11 +332,14 @@ public class VisualStudioInterop
 		if (Imporvements != null) foreach (string improvement in Imporvements) improvements += "<li>" + improvement + "</li>";
 		if (NewFeatures != null) foreach (string newfeature in NewFeatures) newfeatures += "<li>" + newfeature + "</li>";
 
+		bool HtmlFileFound = false;
+		string HtmlFileName = "VisualStudioInterop (publish page).html";
 		System.Reflection.Assembly objAssembly = System.Reflection.Assembly.GetExecutingAssembly();
 		string[] myResources = objAssembly.GetManifestResourceNames();
 		foreach (string reso in myResources)
-			if (reso.ToLower().EndsWith("VisualStudioInterop (publish page).html".ToLower()))
+			if (reso.ToLower().EndsWith(HtmlFileName.ToLower()))
 			{
+				HtmlFileFound = true;
 				Stream stream = objAssembly.GetManifestResourceStream(reso);
 				int length = (int)stream.Length;
 				byte[] bytesOfPublishHtmlTemplateDLL = new byte[length];
@@ -339,6 +349,7 @@ public class VisualStudioInterop
 				fileStream.Write(bytesOfPublishHtmlTemplateDLL, 0, length);
 				fileStream.Close();
 				string textOfFile = File.ReadAllText(tempFilename);
+				textOfFile = textOfFile.Replace("{PageGeneratedDate}", DateTime.Now.ToString(@"dddd, dd MMMM yyyy \a\t HH:mm:ss"));
 				textOfFile = textOfFile.Replace("{ProjectName}", projectName);
 				textOfFile = textOfFile.Replace("{ProjectVersion}", projectVersion);
 				textOfFile = textOfFile.Replace("{SetupFilename}", Path.GetFileName(setupFilename));
@@ -350,7 +361,9 @@ public class VisualStudioInterop
 				File.WriteAllText(tempFilename, textOfFile);
 				bytesOfPublishHtmlTemplateDLL = null;
 			}
-		
+
+		if (!HtmlFileFound)
+			UserMessages.ShowWarningMessage("Could not find Html file in resources: " + HtmlFileName);
 		//using (StreamWriter sw = new StreamWriter(tempFilename, false))
 		//{
 		//	sw.WriteLine("<html>");
@@ -390,9 +403,9 @@ public class VisualStudioInterop
 			//TODO: this (ServicePointManager.DefaultConnectionLimit) is actually very annoying, is there no other workaround?
 			ServicePointManager.DefaultConnectionLimit = 10000;
 			//System.Net.ServicePointManager.DefaultConnectionLimit = 1;
-//#pragma warning disable
+			//#pragma warning disable
 			bool ThereIsNoProperItemsForBugsFixedEtcInNextFunction;
-//#pragma warning restore
+			//#pragma warning restore
 			string htmlFilePath = CreateHtmlPageReturnFilename(projName, versionString, publishedSetupPath,
 				GetListOfBugs("https://francoishill.devguard.com/trac/quickaccess/login/xmlrpc"),//new List<string>() { "Bug 1 fixed", "Bug 2 fixed" },
 				new List<string>() { "Improvement 1", "Improvement 2", "Improvement 3" },
@@ -402,6 +415,7 @@ public class VisualStudioInterop
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent,
 				"Attempting Ftp Uploading of Setup file and index file for " + projName);
 			await NetworkInterop.FtpUploadFiles(
+				textfeedbackSenderObject,
 				GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForVsPublishing() + "/" + validatedUrlsectionForProjname,
 				GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,//NetworkInterop.ftpUsername,
 				GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,//NetworkInterop.ftpPassword,

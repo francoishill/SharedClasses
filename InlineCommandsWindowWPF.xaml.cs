@@ -22,14 +22,18 @@ using InlineCommands;
 /// </summary>
 public partial class InlineCommandsWindowWPF : Window
 {
-	public InlineCommandsWindowWPF()
+	System.Windows.Forms.Form MainFormUsedForShuttingDownServers;
+
+	public InlineCommandsWindowWPF(System.Windows.Forms.Form mainFormUsedForShuttingDownServers)
 	{
 		InitializeComponent();
+		MainFormUsedForShuttingDownServers = mainFormUsedForShuttingDownServers;
 	}
 
 	private void InlineCommandsWindowWPF1_Loaded(object sender, RoutedEventArgs e)
 	{
 		inlineCommandsUserControlWPF1.InitializeTreeViewNodes(
+			MainFormUsedForShuttingDownServers,
 			true,
 			delegate { this.Hide(); },
 			delegate { this.Close(); },

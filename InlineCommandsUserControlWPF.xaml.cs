@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -36,18 +37,27 @@ namespace SharedClasses
 	{
 		public TextFeedbackEventHandler textFeedbackEvent;
 		public ProgressChangedEventHandler progressChangedEvent;
+		public System.Windows.Forms.Form MainFormUsedForShuttingDownServers;
+		Socket listeningSocket;
 		//AutoCompleteManager autcompleteManager;
 		//AutocompleteProvider autocompleteProvider;
-
+		
 		public InlineCommandsUserControlWPF()
 		{
 			InitializeComponent();
 		}
 
+		//public InlineCommandsUserControlWPF(System.Windows.Forms.Form mainFormUsedForShuttingDownServers)
+		//{
+		//	InitializeComponent();
+		//	MainFormUsedForShuttingDownServers = mainFormUsedForShuttingDownServers;
+		//}
+
 		//private FlowDocument messagesFlowDocument = new FlowDocument();
 		private bool textFeedbackEventInitialized = false;
-		public void InitializeTreeViewNodes(bool ShowExitButton = false, Action MethodOnLeftClick = null, Action MethodOnRightClick = null, string ButtonText = null, string ButtonToolTip = null)
+		public void InitializeTreeViewNodes(System.Windows.Forms.Form mainFormUsedForShuttingDownServers, bool ShowExitButton = false, Action MethodOnLeftClick = null, Action MethodOnRightClick = null, string ButtonText = null, string ButtonToolTip = null)
 		{
+			MainFormUsedForShuttingDownServers = mainFormUsedForShuttingDownServers;
 			if (!textFeedbackEventInitialized)
 			{
 				if (ShowExitButton)
@@ -85,7 +95,13 @@ namespace SharedClasses
 							if (tmpCommand != activeCommand) SetDataContext(tmpCommand);
 							textBox_Messages.Document.Blocks.Add(tmpParagraph);
 						}
-						else UserMessages.ShowWarningMessage("Text feedback did not have a command linked to it, not written into messages list: " + evtargs.FeedbackText);
+						else
+						{
+							//UserMessages.ShowWarningMessage("Text feedback did not have a command linked to it, not written into messages list: " + evtargs.FeedbackText);
+							textBox1.Text +=
+								(textBox1.Text.Length > 0 ? Environment.NewLine : "")
+								+ "(" + DateTime.Now.ToString("ddd, dd MM yyyy HH:mm:ss") + ")  " + evtargs.FeedbackText;
+						}
 
 						//textBox_Messages.Text += (textBox_Messages.Text.Length > 0 ? Environment.NewLine : "")
 						////textBox_Messages.Content += (textBox_Messages.Content.ToString().Length > 0 ? Environment.NewLine : "")
@@ -107,57 +123,76 @@ namespace SharedClasses
 						//textBox_Messages.ScrollToEnd();//.ScrollToBottom();
 					});
 				};
+
+				label_ArgumentsExample.Content = "";
+
+				//System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
+				//timer.Interval = 5000;
+				//timer.Tick += delegate
+				//{
+				//	timer.Stop();
+				//DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(@"D:\Francois\Dev\VSprojects\QuickAccess\QuickAccess\bin\Release\Plugins");
+				//DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(@"D:\Francois\Dev\VSprojects\QuickAccess\QuickAccess\bin\Release\Plugins");
+
+				if (!AppDomain.CurrentDomain.BaseDirectory.ToLower().Contains(@"QuickAccess\QuickAccess\bin".ToLower()))
+					DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(System.AppDomain.CurrentDomain.BaseDirectory + @"Plugins");
+				else
+				{
+					foreach (string pluginProjectBaseDir in Directory.GetDirectories(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\\Visual Studio 2010\Projects\QuickAccess", "*Plugin"))
+						DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(pluginProjectBaseDir + @"\bin\Release");
+				}
+
+				treeView_CommandList.Items.Clear();
+				//List<OverrideToStringClass> tmplist = new List<OverrideToStringClass>();//CommandsManagerClass.ListOfInitializedCommandInterfaces;
+				foreach (IQuickAccessPluginInterface qai in DynamicDLLs.PluginList)
+					if (qai.GetType().GetInterface(typeof(ICommandWithHandler).Name) != null)
+					{
+						ICommandWithHandler comm = (ICommandWithHandler)qai.GetType().GetConstructor(new Type[0]).Invoke(new object[0]);
+						//OverrideToStringClass comm =
+						//		(OverrideToStringClass)qai.GetType().GetConstructor(new Type[0]).Invoke(new object[0]);
+						//MessageBox.Show(comm.DisplayName);
+						//tmplist.Add(comm);
+						CommandsManagerClass.ListOfInitializedCommandInterfaces.Add(comm);
+					}
+				textBox_CommandLine.ItemsSource = new ObservableCollection<string>();
+				//foreach (ICommandWithHandler comm in tmplist)
+				//foreach (OverrideToStringClass comm in tmplist)
+				foreach (InlineCommandToolkit.InlineCommands.OverrideToStringClass comm in CommandsManagerClass.ListOfInitializedCommandInterfaces)
+					treeView_CommandList.Items.Add(comm);
+				//	timer.Dispose(); timer = null;
+				//};
+				//timer.Start();
+
+				//ControlTemplate ct = this.FindResource("TextBoxBaseControlTemplate") as ControlTemplate;
+				//GetActualTextBoxOfAutocompleteControl().Template = ct;
+				//GetActualTextBoxOfAutocompleteControl().ApplyTemplate();
+				GetActualTextBoxOfAutocompleteControl().HorizontalContentAlignment = System.Windows.HorizontalAlignment.Left;
+				ResetAutocompleteToCommandNamesList();
+				//HideEmbeddedButton();
+				SetVisibilityOfExtraControls();
+
+				if (!GetActualTextBoxOfAutocompleteControl().IsFocused) GetActualTextBoxOfAutocompleteControl().Focus();
+
+				ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+				{
+					//ICommandWithHandler Command = null;
+					//foreach (IQuickAccessPluginInterface qai in DynamicDLLs.PluginList)
+					//	if (qai.GetType().GetInterface(typeof(ICommandWithHandler).Name) != null)
+					//		tmpCommand = (ICommandWithHandler)qai.GetType().GetConstructor(new Type[0]).Invoke(new object[0]);
+					//TODO: There is some issue with the second time a file is sent (on the server side).
+					NetworkInterop.StartServer_FileStream(
+						null,//tmpCommand,
+						out listeningSocket,
+						MainFormUsedForShuttingDownServers,
+						TextFeedbackEvent: textFeedbackEvent,
+						ProgressChangedEvent: progressChangedEvent);
+				}, false);
+
+				//XmlRpcInterop.SampleServer();
+				XmlRpcInterop.StartDynamicCodeInvokingServer_XmlRpc();
+
 				textFeedbackEventInitialized = true;
 			}
-
-			label_ArgumentsExample.Content = "";
-
-			//System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
-			//timer.Interval = 5000;
-			//timer.Tick += delegate
-			//{
-			//	timer.Stop();
-			//DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(@"D:\Francois\Dev\VSprojects\QuickAccess\QuickAccess\bin\Release\Plugins");
-			//DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(@"D:\Francois\Dev\VSprojects\QuickAccess\QuickAccess\bin\Release\Plugins");
-
-			if (!AppDomain.CurrentDomain.BaseDirectory.ToLower().Contains(@"QuickAccess\QuickAccess\bin".ToLower()))
-				DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(System.AppDomain.CurrentDomain.BaseDirectory + @"Plugins");
-			else
-			{
-				foreach (string pluginProjectBaseDir in Directory.GetDirectories(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\\Visual Studio 2010\Projects\QuickAccess", "*Plugin"))
-					DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(pluginProjectBaseDir + @"\bin\Release");
-			}
-			
-			treeView_CommandList.Items.Clear();
-			//List<OverrideToStringClass> tmplist = new List<OverrideToStringClass>();//CommandsManagerClass.ListOfInitializedCommandInterfaces;
-			foreach (IQuickAccessPluginInterface qai in DynamicDLLs.PluginList)
-				if (qai.GetType().GetInterface(typeof(ICommandWithHandler).Name) != null)
-				{
-					ICommandWithHandler comm = (ICommandWithHandler)qai.GetType().GetConstructor(new Type[0]).Invoke(new object[0]);
-					//OverrideToStringClass comm =
-					//		(OverrideToStringClass)qai.GetType().GetConstructor(new Type[0]).Invoke(new object[0]);
-					//MessageBox.Show(comm.DisplayName);
-					//tmplist.Add(comm);
-					CommandsManagerClass.ListOfInitializedCommandInterfaces.Add(comm);
-				}
-			textBox_CommandLine.ItemsSource = new ObservableCollection<string>();
-			//foreach (ICommandWithHandler comm in tmplist)
-			//foreach (OverrideToStringClass comm in tmplist)
-			foreach (InlineCommandToolkit.InlineCommands.OverrideToStringClass comm in CommandsManagerClass.ListOfInitializedCommandInterfaces)
-				treeView_CommandList.Items.Add(comm);
-			//	timer.Dispose(); timer = null;
-			//};
-			//timer.Start();
-
-			//ControlTemplate ct = this.FindResource("TextBoxBaseControlTemplate") as ControlTemplate;
-			//GetActualTextBoxOfAutocompleteControl().Template = ct;
-			//GetActualTextBoxOfAutocompleteControl().ApplyTemplate();
-			GetActualTextBoxOfAutocompleteControl().HorizontalContentAlignment = System.Windows.HorizontalAlignment.Left;
-			ResetAutocompleteToCommandNamesList();
-			//HideEmbeddedButton();
-			SetVisibilityOfExtraControls();
-
-			if (!GetActualTextBoxOfAutocompleteControl().IsFocused) GetActualTextBoxOfAutocompleteControl().Focus();
 		}
 
 		private AutoCompleteBox textBox_CommandLine
@@ -1252,7 +1287,11 @@ namespace SharedClasses
 		private void ArgumentText_SelectionChanged(object sender, SelectionChangedEventArgs e)
 		{
 			if (Mouse.LeftButton == MouseButtonState.Pressed)
+			{
 				(sender as AutoCompleteBox).IsDropDownOpen = false;
+				//TODO: Figure out why this next commented line does not focus next argument when selecting a dropdownitem with the mouse
+				//FocusNextCommandArgument();
+			}
 			//BindingExpression be = (sender as AutoCompleteBox).GetBindingExpression(AutoCompleteBox.TextProperty);
 			//be.UpdateSource();
 			//be.UpdateTarget();

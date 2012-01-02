@@ -110,34 +110,15 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\ApplicationRecoveryAndRestart.cs">
-      <Link>ApplicationRecoveryAndRestart.cs</Link>
-    </Compile>
-    <Compile Include="..\DictionaryPropertyGridAdapter.cs">
-      <Link>DictionaryPropertyGridAdapter.cs</Link>
-    </Compile>
-    <Compile Include="..\DynamicCodeInvoking.cs">
-      <Link>DynamicCodeInvoking.cs</Link>
-    </Compile>
     <Compile Include="..\Logging.cs">
       <Link>Logging.cs</Link>
     </Compile>
     <Compile Include="..\MemoryManagement.cs">
       <Link>MemoryManagement.cs</Link>
     </Compile>
-    <Compile Include="..\NetworkInterop.cs">
-      <Link>NetworkInterop.cs</Link>
-    </Compile>
-    <Compile Include="..\SerializationInterop.cs">
-      <Link>SerializationInterop.cs</Link>
-    </Compile>
     <Compile Include="..\TracXmlRpcInterop.cs">
       <Link>TracXmlRpcInterop.cs</Link>
     </Compile>
-    <Compile Include="..\XmlRpcInterop.cs">
-      <Link>XmlRpcInterop.cs</Link>
-    </Compile>
-    <Compile Include="InfoTransferred.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

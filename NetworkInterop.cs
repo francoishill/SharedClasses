@@ -91,10 +91,10 @@ public class NetworkInterop
 	private static int lengthOfFirstConstantBuffer { get { return lengthOfGuid + lengthOfInfoSize + lengthOfFilesize; } }
 	private const SerializationInterop.SerializationFormat defaultSerializationFormat = SerializationInterop.SerializationFormat.Binary;
 
-	private static void RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEventHandler textFeedbackEvent, string textMessage)
-	{
-		if (textFeedbackEvent != null) textFeedbackEvent(null, new TextFeedbackEventArgs(textMessage));
-	}
+	//private static void RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEventHandler textFeedbackEvent, string textMessage)
+	//{
+	//	if (textFeedbackEvent != null) textFeedbackEvent(null, new TextFeedbackEventArgs(textMessage));
+	//}
 
 	private static void RaiseProgressChangedEvent_Ifnotnull(ref ProgressChangedEventHandler progressChangedEvent, int currentValue, int maximumValue, double bytesPerSecond = -1)
 	{
@@ -401,6 +401,7 @@ public class NetworkInterop
 	}
 
 	public static void StartServer_FileStream(
+		Object textfeedbackSenderObject,
 		out Socket serverListeningSocketToUse,
 		Form formToHookSocketClosingIntoFormDisposedEvent = null,
 		int listeningPort = defaultListeningPort,
@@ -418,7 +419,7 @@ public class NetworkInterop
 
 		SetupServerSocketSettings(serverListeningSocketToUse, listeningPort, maxBufferPerTransfer, maxNumberPendingConnections);
 
-		RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEvent, "Server started, waiting for clients...");
+		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, TextFeedbackEvent, "Server started, waiting for clients...");
 
 		while (true)
 		{
@@ -496,7 +497,7 @@ public class NetworkInterop
 							totalBytesProcessed,
 							lengthOfFirstConstantBuffer + totalFileSizeToRead + totalInfoSizeToRead);
 
-					RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEvent, "Successfully received file = " + localFileName
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, TextFeedbackEvent, "Successfully received file = " + localFileName
 						+ Environment.NewLine + "size of " + (infoToTransferToClient_Completed.TotalNumberofBytesToTransfer / 1024).ToString("0,0.00") + "kB"
 						+ Environment.NewLine + "in " + infoToTransferToClient_Completed.DurationOfTransferInSeconds.ToString("0.0#") + " seconds"
 						+ Environment.NewLine + "at " + (infoToTransferToClient_Completed.AverageBytesPerSecond / 1024).ToString("0,0.00") + "kB/s");
@@ -572,6 +573,7 @@ public class NetworkInterop
 	}
 
 	public static void TransferFile_FileStream(
+		Object textfeedbackSenderObject,
 		string filePath,
 		out Socket senderSocketToUse,
 		IPAddress ipAddress = null,
@@ -684,7 +686,9 @@ public class NetworkInterop
 							CloseAndDisposeMemoryStream(ref memoryStreamForInfo);
 							if (info.SuccessfullyReceiveComplete)
 							{
-								RaiseTextFeedbackEvent_Ifnotnull(ref TextFeedbackEvent,
+								TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(
+								textfeedbackSenderObject,
+								TextFeedbackEvent,
 								"Successfully transferred file = " + filePath
 								+ Environment.NewLine + "size of " + (info.TotalNumberofBytesToTransfer / 1024).ToString("0,0.00") + "kB"
 								+ Environment.NewLine + "in " + info.DurationOfTransferInSeconds.ToString("0.0#") + " seconds"
@@ -828,7 +832,7 @@ public class NetworkInterop
 		//MessageBox.Show(this, "File assebled successfully");
 	}
 
-	public async static Task FtpUploadFiles(string ftpRootUri, string userName, string password, string[] localFilenames, string urlWhenSuccessullyUploaded = null, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
+	public async static Task FtpUploadFiles(Object textfeedbackSenderObject, string ftpRootUri, string userName, string password, string[] localFilenames, string urlWhenSuccessullyUploaded = null, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
 	{
 		try
 		{
@@ -869,7 +873,7 @@ public class NetworkInterop
 							}
 						};
 						await client.UploadFileTaskAsync(dirOnFtpServer, "STOR", localFilename);
-						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackEvent, "Successfully uploaded " + fileNameOnServer);
+						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Successfully uploaded " + fileNameOnServer);
 					}
 					if (urlWhenSuccessullyUploaded != null) Process.Start(urlWhenSuccessullyUploaded);
 					client.Dispose();

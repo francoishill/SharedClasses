@@ -394,9 +394,10 @@ public class VisualStudioInterop
 			bool ThereIsNoProperItemsForBugsFixedEtcInNextFunction;
 //#pragma warning restore
 			string htmlFilePath = CreateHtmlPageReturnFilename(projName, versionString, publishedSetupPath,
-				new List<string>() { "Bug 1 fixed", "Bug 2 fixed" },
+				GetListOfBugs("https://francoishill.devguard.com/trac/quickaccess/login/xmlrpc"),//new List<string>() { "Bug 1 fixed", "Bug 2 fixed" },
 				new List<string>() { "Improvement 1", "Improvement 2", "Improvement 3" },
-				new List<string>() { "New feature 1" });
+				new List<string>() { "New feature 1" }
+				);
 
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent,
 				"Attempting Ftp Uploading of Setup file and index file for " + projName);
@@ -409,6 +410,19 @@ public class VisualStudioInterop
 				textFeedbackEvent: textFeedbackEvent,
 				progressChanged: progressChanged);
 		}
+	}
+
+	public static List<string> GetListOfBugs(string ProjectXmlRpcTracUri, string Username = null, string Password = null)
+	{
+		List<string> tmpList = new List<string>();
+		int[] ids = TracXmlRpcInterop.GetTicketIds(ProjectXmlRpcTracUri, Username, Password);
+		foreach (int i in ids)
+		{
+			List<TracXmlRpcInterop.ChangeLogStruct> changelogs = TracXmlRpcInterop.ChangeLogs(i, ProjectXmlRpcTracUri);
+			foreach (TracXmlRpcInterop.ChangeLogStruct cl in changelogs)
+				tmpList.Add(cl.NewValue);
+		}
+		return tmpList;
 	}
 
 	//TODO: Continue with implementing this XmlRpc of Trac into the projects that uses Trac

@@ -98,7 +98,9 @@ namespace SharedClasses
 					Dispatcher.BeginInvoke(DispatcherPriority.Background,
 					(Action)delegate
 					{
-						textBox_Messages.Document.Blocks.Add(new Paragraph(new Run(evtargs.CurrentValue + "/" + evtargs.MaximumValue)) { Foreground = Brushes.Blue });
+						//textBox_Messages.Document.Blocks.Add(new Paragraph(new Run(evtargs.CurrentValue + "/" + evtargs.MaximumValue)) { Foreground = Brushes.Blue });
+						progressBar1.Maximum = evtargs.MaximumValue;
+						progressBar1.Value = evtargs.CurrentValue;
 						//textBox_Messages.Text += (textBox_Messages.Text.Length > 0 ? Environment.NewLine : "")
 						////textBox_Messages.Content += (textBox_Messages.Content.ToString().Length > 0 ? Environment.NewLine : "")
 						//	+ evtargs.CurrentValue + "/" + evtargs.MaximumValue;

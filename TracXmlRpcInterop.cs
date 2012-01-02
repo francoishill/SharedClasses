@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Windows.Forms;
 using CookComputing.XmlRpc;
 
@@ -8,17 +9,29 @@ public class TracXmlRpcInterop
 	//public const string MonitorSystemXmlRpcUrl = "https://francoishill.devguard.com/trac/monitorsystem/login/xmlrpc";
 	//public const string QuickAccessXmlRpcUrl = "https://francoishill.devguard.com/trac/quickaccess/login/xmlrpc";
 
+	public static object Wiki_GetRecentChanges(DateTime sinceDate, string xmlRpcUrl, string Username = null, string Password = null)
+	{
+		ITracServerFunctions tracMonitorSystem = InitializeTracServer(xmlRpcUrl, Username, Password);
+
+		DateTime dt;
+		if (!DateTime8601.TryParseDateTime8601(sinceDate.ToString("s", CultureInfo.InvariantCulture), out dt))
+		{
+			MessageBox.Show("Could not parse string of datetime to DateTime8601: " + sinceDate.ToString());
+			return null;
+		}
+		return tracMonitorSystem.Wiki_GetRecentChanges(sinceDate);
+	}
+
+	public static object[] PerformSearch(string SearchQuery, string xmlRpcUrl, string[] SearchFilters = null, string Username = null, string Password = null)
+	{
+		ITracServerFunctions tracMonitorSystem = InitializeTracServer(xmlRpcUrl, Username, Password);
+		return tracMonitorSystem.PerformSearch(SearchQuery, SearchFilters ?? new string[0]);
+	}
+
 	public static List<string> GetFieldLables(string xmlRpcUrl, string Username = null, string Password = null)
 	{
 		//SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
-		ITracServerFunctions tracMonitorSystem;
-		tracMonitorSystem = XmlRpcProxyGen.Create<ITracServerFunctions>();
-		tracMonitorSystem.Url = xmlRpcUrl;
-		tracMonitorSystem.PreAuthenticate = true;
-
-		tracMonitorSystem.Credentials = new System.Net.NetworkCredential(
-			Username ?? GlobalSettings.TracXmlRpcInteropSettings.Instance.Username,
-			Password ?? GlobalSettings.TracXmlRpcInteropSettings.Instance.Password);
+		ITracServerFunctions tracMonitorSystem = InitializeTracServer(xmlRpcUrl, Username, Password);
 
 		List<string> returnList = new List<string>();
 		try
@@ -42,14 +55,7 @@ public class TracXmlRpcInterop
 	public static int[] GetTicketIds(string xmlRpcUrl, string Username = null, string Password = null)
 	{
 		//SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
-		ITracServerFunctions tracMonitorSystem;
-		tracMonitorSystem = XmlRpcProxyGen.Create<ITracServerFunctions>();
-		tracMonitorSystem.Url = xmlRpcUrl;
-		tracMonitorSystem.PreAuthenticate = true;
-
-		tracMonitorSystem.Credentials = new System.Net.NetworkCredential(
-			Username ?? GlobalSettings.TracXmlRpcInteropSettings.Instance.Username,
-			Password ?? GlobalSettings.TracXmlRpcInteropSettings.Instance.Password);
+		ITracServerFunctions tracMonitorSystem = InitializeTracServer(xmlRpcUrl, Username, Password);
 
 		try
 		{
@@ -68,14 +74,7 @@ public class TracXmlRpcInterop
 		Dictionary<string, object> tmpDict = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
 		//SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
-		ITracServerFunctions tracMonitorSystem;
-		tracMonitorSystem = XmlRpcProxyGen.Create<ITracServerFunctions>();
-		tracMonitorSystem.Url = xmlRpcUrl;
-		tracMonitorSystem.PreAuthenticate = true;
-
-		tracMonitorSystem.Credentials = new System.Net.NetworkCredential(
-			Username ?? GlobalSettings.TracXmlRpcInteropSettings.Instance.Username,
-			Password ?? GlobalSettings.TracXmlRpcInteropSettings.Instance.Password);
+		ITracServerFunctions tracMonitorSystem = InitializeTracServer(xmlRpcUrl, Username, Password);
 
 		try
 		{
@@ -102,14 +101,7 @@ public class TracXmlRpcInterop
 		List<ChangeLogStruct> tmpList = new List<ChangeLogStruct>();
 
 		//SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
-		ITracServerFunctions tracMonitorSystem;
-		tracMonitorSystem = XmlRpcProxyGen.Create<ITracServerFunctions>();
-		tracMonitorSystem.Url = xmlRpcUrl;
-		tracMonitorSystem.PreAuthenticate = true;
-
-		tracMonitorSystem.Credentials = new System.Net.NetworkCredential(
-			Username ?? GlobalSettings.TracXmlRpcInteropSettings.Instance.Username,
-			Password ?? GlobalSettings.TracXmlRpcInteropSettings.Instance.Password);
+		ITracServerFunctions tracMonitorSystem = InitializeTracServer(xmlRpcUrl, Username, Password);
 
 		//time, author, field, oldvalue, newvalue, permanent
 		object[] changelogArray = tracMonitorSystem.Ticket_ChangeLog(ticketId);
@@ -141,9 +133,31 @@ public class TracXmlRpcInterop
 		return tmpList;
 	}
 
+	public static string[] GetListOfMethods(string xmlRpcUrl, string Username = null, string Password = null)
+	{
+		ITracServerFunctions tracMonitorSystem = InitializeTracServer(xmlRpcUrl, Username, Password);
+		return tracMonitorSystem.ListMethods();
+	}
+
+	private static ITracServerFunctions InitializeTracServer(string xmlRpcUrl, string Username, string Password)
+	{
+		ITracServerFunctions tracMonitorSystem;
+		tracMonitorSystem = XmlRpcProxyGen.Create<ITracServerFunctions>();
+		tracMonitorSystem.Url = xmlRpcUrl;
+		tracMonitorSystem.PreAuthenticate = true;
+
+		tracMonitorSystem.Credentials = new System.Net.NetworkCredential(
+			Username ?? GlobalSettings.TracXmlRpcInteropSettings.Instance.Username,
+			Password ?? GlobalSettings.TracXmlRpcInteropSettings.Instance.Password);
+		return tracMonitorSystem;
+	}
+
 	//[XmlRpcUrl("https://francoishill.devguard.com/trac/quickaccess/login/xmlrpc")]
 	public interface ITracServerFunctions : IXmlRpcProxy
 	{
+		[XmlRpcMethod("wiki.getRecentChanges")]
+		object Wiki_GetRecentChanges(DateTime sinceDate);//DateTime8601 since);
+
 		[XmlRpcMethod("wiki.getRPCVersionSupported")]
 		int GetRPCVersionSupported();
 
@@ -155,6 +169,9 @@ public class TracXmlRpcInterop
 
 		[XmlRpcMethod("wiki.getAllPages")]
 		string[] GetAllPages();
+
+		[XmlRpcMethod("search.performSearch")]
+		object[] PerformSearch(string query, string[] filters = null);
 
 		[XmlRpcMethod("ticket.query")]
 		int[] Query(string qstr = "status!=closed");
@@ -170,6 +187,9 @@ public class TracXmlRpcInterop
 
 		[XmlRpcMethod("ticket.changeLog")]
 		object[] Ticket_ChangeLog(int id, int when = 0);
+
+		[XmlRpcMethod("system.listMethods")]
+		string[] System_ListMethods();
 	}
 
 	public struct ChangeLogStruct

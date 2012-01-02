@@ -1312,7 +1312,7 @@
 											 Background='Transparent'>
 							<TextBox Name='TextBoxWithButtons'
 											 DockPanel.Dock='Left'
-											 Template='{StaticResource TextBoxBaseControlTemplate}'/>
+											 Template='{StaticResource TextBoxBaseControlTemplate}' />
 							<input:AutoCompleteBox x:Name="textBox_CommandLine"
 																		 MinimumPrefixLength='0'
 																		 Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type TextBlock}, Mode=FindAncestor}}"
@@ -1345,21 +1345,10 @@
 			<Grid.RowDefinitions>
 				<RowDefinition />
 				<RowDefinition Height='Auto' />
+				<RowDefinition Height='Auto' />
 			</Grid.RowDefinitions>
-			<!--<TextBox
-				VerticalAlignment="Top"
-							 Grid.Column="2"
-							 Style='{StaticResource autoCompleteTextBox}' />-->
-			<!--<input:AutoCompleteBox Name="autoCompleteTextbox"
-														 VerticalAlignment="Top"
-														 Grid.Column="2"
-														 IsTextCompletionEnabled='True'
-														 BorderBrush='#777' />-->
-			<!--<Expander Grid.Column="0"
-                      IsExpanded="False"
-                      Margin="0,5,0,0"
-                      ExpandDirection="Right">-->
 			<TreeView x:Name="treeView_CommandList"
+								Grid.RowSpan='2'
 								HorizontalAlignment="Stretch"
 								VerticalAlignment="Stretch"
 								BorderBrush="Transparent"
@@ -1498,17 +1487,8 @@
 										BorderThickness="1"
 										BorderBrush="#e0e0e0"
 										Focusable='False' />
-			<!--<TextBlock Grid.Column="1"
-									 x:Name="textBox_Messages"
-									 HorizontalAlignment="Stretch"
-									 Margin="0,0,5,0"
-									 MinWidth="50"
-									 Text=""
-									 ScrollViewer.HorizontalScrollBarVisibility='Visible'
-									 ScrollViewer.VerticalScrollBarVisibility='Visible'
-									 Foreground="Green"
-									 Padding='10,0' />-->
 			<RichTextBox Grid.Column="1"
+									 Grid.RowSpan='1'
 									 x:Name="textBox_Messages"
 									 HorizontalAlignment="Stretch"
 									 Margin="0,0,5,0"
@@ -1529,29 +1509,11 @@
 					</FlowDocument.Resources>
 				</FlowDocument>
 			</RichTextBox>
-			<!--<TextBox Grid.Column="1"
-							 x:Name="textBox_Messages"
-							 HorizontalAlignment="Stretch"
-							 ScrollViewer.HorizontalScrollBarVisibility='Auto'
-							 ScrollViewer.VerticalScrollBarVisibility='Auto'
-							 Margin="0,0,5,0"
-							 MinWidth="50"
-							 PreviewMouseLeftButtonDown='textBox_Messages_PreviewMouseLeftButtonDown'
-							 Foreground="Green"
-							 Padding='10,0'
-							 IsReadOnly='True' />-->
-			<!--<ScrollViewer Grid.Column="1"
-										x:Name="textBox_Messages"
-										HorizontalAlignment="Stretch"
-										Margin="0,0,5,0"
-										MinWidth="50"
-										Content=""
-										ScrollViewer.HorizontalScrollBarVisibility='Auto'
-										ScrollViewer.VerticalScrollBarVisibility='Auto'
-										PreviewMouseLeftButtonDown='textBox_Messages_PreviewMouseLeftButtonDown'
-										Foreground="Green"
-										Padding='10,0' />-->
-			<ListBox Grid.Row='1'
+			<ProgressBar x:Name='progressBar1'
+									 Grid.Row='1'
+									 Grid.Column='1'
+									 Height='5' />
+			<ListBox Grid.Row='2'
 							 Grid.ColumnSpan='2'
 							 Name='listBoxUnsetProperties'
 							 ItemsSource='{x:Static propertyinterceptor:StaticPropertyInterceptor.UnsetProperties}'

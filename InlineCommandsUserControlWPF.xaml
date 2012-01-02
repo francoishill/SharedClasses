@@ -1494,9 +1494,24 @@
 			<!--</Expander>-->
 			<GridSplitter Width="5"
 										Grid.RowSpan='10'
-										BorderThickness="1"
-										BorderBrush="#e0e0e0"
-										Focusable='False' />
+										BorderThickness="2"
+										BorderBrush='Transparent'
+										Focusable='False'>
+				<GridSplitter.Background>
+					<LinearGradientBrush StartPoint='0,0' EndPoint='0,1'>
+						<GradientStop Color='Transparent'
+													Offset='0' />
+						<GradientStop Color='#770000ee'
+													Offset='0.2' />
+						<GradientStop Color='#ff0000ee'
+													Offset='0.5' />
+						<GradientStop Color='#770000ee'
+													Offset='0.8' />
+						<GradientStop Color='Transparent'
+													Offset='1' />
+					</LinearGradientBrush>
+				</GridSplitter.Background>
+			</GridSplitter>
 			<RichTextBox Grid.Column="1"
 									 Grid.Row='1'
 									 Grid.RowSpan='1'

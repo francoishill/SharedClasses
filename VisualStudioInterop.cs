@@ -407,7 +407,7 @@ public class VisualStudioInterop
 			bool ThereIsNoProperItemsForBugsFixedEtcInNextFunction;
 			//#pragma warning restore
 			string htmlFilePath = CreateHtmlPageReturnFilename(projName, versionString, publishedSetupPath,
-				GetListOfBugs("https://francoishill.devguard.com/trac/quickaccess/login/xmlrpc"),//new List<string>() { "Bug 1 fixed", "Bug 2 fixed" },
+				GetListOfBugs(projName),//new List<string>() { "Bug 1 fixed", "Bug 2 fixed" },
 				new List<string>() { "Improvement 1", "Improvement 2", "Improvement 3" },
 				new List<string>() { "New feature 1" }
 				);
@@ -426,15 +426,29 @@ public class VisualStudioInterop
 		}
 	}
 
-	public static List<string> GetListOfBugs(string ProjectXmlRpcTracUri, string Username = null, string Password = null)
+	public static string GetTracXmlRpcHttpPathFromProjectName(string projectName)
 	{
+		foreach (string tmpuri in GlobalSettings.TracXmlRpcInteropSettings.Instance.ListedXmlRpcUrls.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+			if (tmpuri.ToLower().Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries).Contains(projectName.ToLower()))
+				return tmpuri;
+		return null;
+	}
+
+	public static List<string> GetListOfBugs(string ProjectName, string Username = null, string Password = null)
+	{
+		string ProjectXmlRpcTracUri = GetTracXmlRpcHttpPathFromProjectName(ProjectName);
+		if (string.IsNullOrWhiteSpace(ProjectXmlRpcTracUri))
+			return new List<string>() { "No trac xmlrpc url specified for project " + ProjectName + ", no bugs found."};
 		List<string> tmpList = new List<string>();
 		int[] ids = TracXmlRpcInterop.GetTicketIds(ProjectXmlRpcTracUri, Username, Password);
 		foreach (int i in ids)
 		{
 			List<TracXmlRpcInterop.ChangeLogStruct> changelogs = TracXmlRpcInterop.ChangeLogs(i, ProjectXmlRpcTracUri);
 			foreach (TracXmlRpcInterop.ChangeLogStruct cl in changelogs)
-				tmpList.Add(cl.NewValue);
+				if (cl.Field == "comment" && !string.IsNullOrWhiteSpace(cl.NewValue))
+					//TODO: This can be greatly improved
+					tmpList.Add("Ticket #" + i + ": " + cl.NewValue);
+					//tmpList.Add("Ticket #" + i + ": '" + cl.Field + "' new value = " + cl.NewValue + ", old value = " + cl.OldValue);
 		}
 		return tmpList;
 	}

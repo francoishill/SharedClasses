@@ -134,6 +134,7 @@ namespace SharedClasses
 				//DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(@"D:\Francois\Dev\VSprojects\QuickAccess\QuickAccess\bin\Release\Plugins");
 				//DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(@"D:\Francois\Dev\VSprojects\QuickAccess\QuickAccess\bin\Release\Plugins");
 
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackEvent, "Busy loading plugins...", TextFeedbackType.Subtle);
 				if (!AppDomain.CurrentDomain.BaseDirectory.ToLower().Contains(@"QuickAccess\QuickAccess\bin".ToLower()))
 					DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(System.AppDomain.CurrentDomain.BaseDirectory + @"Plugins");
 				else
@@ -162,6 +163,7 @@ namespace SharedClasses
 				//	timer.Dispose(); timer = null;
 				//};
 				//timer.Start();
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackEvent, "Done loading plugins.", TextFeedbackType.Noteworthy);
 
 				//ControlTemplate ct = this.FindResource("TextBoxBaseControlTemplate") as ControlTemplate;
 				//GetActualTextBoxOfAutocompleteControl().Template = ct;

@@ -16,16 +16,28 @@ public class TracXmlRpcInterop
 		DateTime dt;
 		if (!DateTime8601.TryParseDateTime8601(sinceDate.ToString("s", CultureInfo.InvariantCulture), out dt))
 		{
-			MessageBox.Show("Could not parse string of datetime to DateTime8601: " + sinceDate.ToString());
+			UserMessages.ShowWarningMessage("Could not parse string of datetime to DateTime8601: " + sinceDate.ToString());
 			return null;
 		}
-		return tracMonitorSystem.Wiki_GetRecentChanges(sinceDate);
+		object obj = null;
+		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+		{
+			obj = tracMonitorSystem.Wiki_GetRecentChanges(sinceDate);
+		},
+		ThreadName: "Wiki_GetRecentChanges");
+		return obj;
 	}
 
 	public static object[] PerformSearch(string SearchQuery, string xmlRpcUrl, string[] SearchFilters = null, string Username = null, string Password = null)
 	{
 		ITracServerFunctions tracMonitorSystem = InitializeTracServer(xmlRpcUrl, Username, Password);
-		return tracMonitorSystem.PerformSearch(SearchQuery, SearchFilters ?? new string[0]);
+		object[] objarray = null;
+		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+		{
+			objarray = tracMonitorSystem.PerformSearch(SearchQuery, SearchFilters ?? new string[0]);
+		},
+		ThreadName: "PerformSearch");
+		return objarray;
 	}
 
 	public static List<string> GetFieldLables(string xmlRpcUrl, string Username = null, string Password = null)
@@ -36,7 +48,12 @@ public class TracXmlRpcInterop
 		List<string> returnList = new List<string>();
 		try
 		{
-			object[] fields = tracMonitorSystem.GetTicketFields();
+			object[] fields = new object[0];//
+			ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+			{
+				fields = tracMonitorSystem.GetTicketFields();
+			},
+			ThreadName: "GetFieldLables");
 			foreach (object field in fields)
 				if (field is XmlRpcStruct)
 				{
@@ -47,7 +64,7 @@ public class TracXmlRpcInterop
 		}
 		catch (Exception exc)
 		{
-			MessageBox.Show("Error: " + exc.Message);
+			UserMessages.ShowErrorMessage("Error: " + exc.Message);
 		}
 		return returnList;
 	}
@@ -59,12 +76,13 @@ public class TracXmlRpcInterop
 
 		try
 		{
-			int[] ticketIDs = tracMonitorSystem.Query();
+			int[] ticketIDs = new int[0];//
+			ThreadingInterop.PerformVoidFunctionSeperateThread(() => { ticketIDs = tracMonitorSystem.Query(); }, ThreadName: "GetTicketIds");
 			return ticketIDs;
 		}
 		catch (Exception exc)
 		{
-			MessageBox.Show("Error: " + exc.Message);
+			UserMessages.ShowErrorMessage("Error: " + exc.Message);
 		}
 		return new int[0];
 	}
@@ -78,7 +96,8 @@ public class TracXmlRpcInterop
 
 		try
 		{
-			object[] IdTimecreatedTimechangedAttributes = tracMonitorSystem.TicketGet(ticketId);
+			object[] IdTimecreatedTimechangedAttributes = new object[0];
+			ThreadingInterop.PerformVoidFunctionSeperateThread(() => { IdTimecreatedTimechangedAttributes = tracMonitorSystem.TicketGet(ticketId); }, ThreadName: "GetFieldValuesOfTicket");
 			foreach (object obj in IdTimecreatedTimechangedAttributes)
 			{
 				if ((obj is XmlRpcStruct))
@@ -91,8 +110,24 @@ public class TracXmlRpcInterop
 		}
 		catch (Exception ex)
 		{
-			MessageBox.Show("Error: " + ex.Message);
+			UserMessages.ShowErrorMessage("Error: " + ex.Message);
 		}
+		return tmpDict;
+	}
+
+	public static Dictionary<int, string> GetAllTicketDescriptions(string xmlRpcUrl, string Username = null, string Password = null)
+	{
+		Dictionary<int, string> tmpDict = new Dictionary<int, string>();
+
+		int[] ticketIDs = GetTicketIds(xmlRpcUrl, Username, Password);
+		foreach (int id in ticketIDs)
+		{
+			Dictionary<string, object> fieldvalues = GetFieldValuesOfTicket(id, xmlRpcUrl, Username, Password);
+			if (!fieldvalues.ContainsKey("description"))
+				UserMessages.ShowWarningMessage("Could not find description for ticket #" + id);
+			else tmpDict.Add(id, fieldvalues["description"].ToString());
+		}
+
 		return tmpDict;
 	}
 
@@ -104,7 +139,8 @@ public class TracXmlRpcInterop
 		ITracServerFunctions tracMonitorSystem = InitializeTracServer(xmlRpcUrl, Username, Password);
 
 		//time, author, field, oldvalue, newvalue, permanent
-		object[] changelogArray = tracMonitorSystem.Ticket_ChangeLog(ticketId);
+		object[] changelogArray = new object[0];
+		ThreadingInterop.PerformVoidFunctionSeperateThread(() => { changelogArray = tracMonitorSystem.Ticket_ChangeLog(ticketId); }, ThreadName: "ChangeLogs");
 		foreach (object obj in changelogArray)
 		{
 			if (obj is object[]
@@ -136,7 +172,9 @@ public class TracXmlRpcInterop
 	public static string[] GetListOfMethods(string xmlRpcUrl, string Username = null, string Password = null)
 	{
 		ITracServerFunctions tracMonitorSystem = InitializeTracServer(xmlRpcUrl, Username, Password);
-		return tracMonitorSystem.ListMethods();
+		string[] listmethods = new string[0];
+		ThreadingInterop.PerformVoidFunctionSeperateThread(() => { listmethods = tracMonitorSystem.ListMethods(); }, ThreadName: "GetListOfMethods");
+		return listmethods;
 	}
 
 	private static ITracServerFunctions InitializeTracServer(string xmlRpcUrl, string Username, string Password)

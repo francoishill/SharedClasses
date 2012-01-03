@@ -28,5 +28,13 @@ namespace SharedClasses
 				(typeof(System.ComponentModel.DescriptionAttribute), false);
 			return (attributes.Length > 0) ? attributes[0].Description : value.ToString();
 		}
+
+		public static List<string> GetStringListOfEnumNames(Type EnumType)
+		{
+			List<string> tmplist = new List<string>();
+			foreach (string s in Enum.GetNames(EnumType))
+				tmplist.Add(s);
+			return tmplist;
+		}
 	}
 }

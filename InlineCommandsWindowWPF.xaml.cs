@@ -32,13 +32,21 @@ public partial class InlineCommandsWindowWPF : Window
 
 	private void InlineCommandsWindowWPF1_Loaded(object sender, RoutedEventArgs e)
 	{
-		inlineCommandsUserControlWPF1.InitializeTreeViewNodes(
-			MainFormUsedForShuttingDownServers,
-			true,
-			delegate { this.Hide(); },
-			delegate { this.Close(); },
-			"hide/close",
-			"Left-click hides. Right-click closes");
+		System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
+		timer.Interval = 1;
+		timer.Tick += delegate
+		{
+			timer.Stop();
+			timer.Dispose(); timer = null;
+			inlineCommandsUserControlWPF1.InitializeTreeViewNodes(
+				MainFormUsedForShuttingDownServers,
+				true,
+				delegate { this.Hide(); },
+				delegate { this.Close(); },
+				"hide/close",
+				"Left-click hides. Right-click closes");
+		};
+		timer.Start();
 	}
 
 	private void InlineCommandsWindowWPF1_Closing(object sender, System.ComponentModel.CancelEventArgs e)

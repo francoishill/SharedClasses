@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Windows.Forms;
 using CookComputing.XmlRpc;
+using SharedClasses;
 
 public class TracXmlRpcInterop
 {
@@ -126,6 +127,59 @@ public class TracXmlRpcInterop
 			if (!fieldvalues.ContainsKey("description"))
 				UserMessages.ShowWarningMessage("Could not find description for ticket #" + id);
 			else tmpDict.Add(id, fieldvalues["description"].ToString());
+		}
+
+		return tmpDict;
+	}
+
+	public enum TicketTypeEnum { Bug, Improvement, NewFeature }
+	private static bool CanParseStringToTicketTypeEnum(string ticketTypeString)
+	{
+		foreach (string name in Enum.GetNames(typeof(TicketTypeEnum)))
+			if (name.ToLower() == ticketTypeString.ToLower())
+				return true;
+		return false;
+	}
+
+	public static TicketTypeEnum? ParseTicketTypeFromString(string ticketTypeString)
+	{
+		foreach (TicketTypeEnum ticketType in Enum.GetValues(typeof(TicketTypeEnum)))
+			if (ticketType.ToString().ToLower() == ticketTypeString.ToLower())
+				return ticketType;
+		return null;
+	}
+
+	public class DescriptionAndTicketType
+	{
+		public string Description;
+		public TicketTypeEnum TicketType;
+		public DescriptionAndTicketType(string Description, TicketTypeEnum TicketType)
+		{
+			this.Description = Description;
+			this.TicketType = TicketType;
+		}
+	}
+
+	public static Dictionary<int, DescriptionAndTicketType> GetAllTicketDescriptionsAndTypes(string xmlRpcUrl, string Username = null, string Password = null)
+	{
+		Dictionary<int, DescriptionAndTicketType> tmpDict = new Dictionary<int, DescriptionAndTicketType>();
+
+		int[] ticketIDs = GetTicketIds(xmlRpcUrl, Username, Password);
+		foreach (int id in ticketIDs)
+		{
+			Dictionary<string, object> fieldvalues = GetFieldValuesOfTicket(id, xmlRpcUrl, Username, Password);
+			if (!fieldvalues.ContainsKey("description"))
+				UserMessages.ShowWarningMessage("Could not find description for ticket #" + id);
+			else if (!fieldvalues.ContainsKey("type"))
+				UserMessages.ShowWarningMessage("Could not find type for ticket #" + id);
+			else if (!CanParseStringToTicketTypeEnum(fieldvalues["type"].ToString()))
+				UserMessages.ShowWarningMessage("Could not parse Trac ticket type from string: " + fieldvalues["type"].ToString());
+			else
+			{
+				TicketTypeEnum? tempNullableTicketType = ParseTicketTypeFromString(fieldvalues["type"].ToString());
+				if (tempNullableTicketType != null)
+					tmpDict.Add(id, new DescriptionAndTicketType(fieldvalues["description"].ToString(), (TicketTypeEnum)tempNullableTicketType));
+			}
 		}
 
 		return tmpDict;

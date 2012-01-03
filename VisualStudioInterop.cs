@@ -320,7 +320,7 @@ public class VisualStudioInterop
 		return string.Format("<{0}{2}>{1}</{0}>", tagName, textToSurround, className == null ? "" : " class='" + className + "'");
 	}
 
-	public static string CreateHtmlPageReturnFilename(string projectName, string projectVersion, string setupFilename, List<string> BugsFixed = null, List<string> Imporvements = null, List<string> NewFeatures = null)
+	public static string CreateHtmlPageReturnFilename(string projectName, string projectVersion, string setupFilename, List<string> BugsFixed, List<string> Improvements, List<string> NewFeatures)
 	{
 		string tempFilename = Path.GetTempPath() + "index.html";
 
@@ -329,7 +329,7 @@ public class VisualStudioInterop
 		string improvements = "";
 		string newfeatures = "";
 		if (BugsFixed != null) foreach (string bug in BugsFixed) bugsfixed += "<li>" + bug + "</li>";
-		if (Imporvements != null) foreach (string improvement in Imporvements) improvements += "<li>" + improvement + "</li>";
+		if (Improvements != null) foreach (string improvement in Improvements) improvements += "<li>" + improvement + "</li>";
 		if (NewFeatures != null) foreach (string newfeature in NewFeatures) newfeatures += "<li>" + newfeature + "</li>";
 
 		bool HtmlFileFound = false;
@@ -406,11 +406,13 @@ public class VisualStudioInterop
 			//#pragma warning disable
 			bool ThereIsNoProperItemsForBugsFixedEtcInNextFunction;
 			//#pragma warning restore
-			string htmlFilePath = CreateHtmlPageReturnFilename(projName, versionString, publishedSetupPath,
-				GetListOfBugs(projName),//new List<string>() { "Bug 1 fixed", "Bug 2 fixed" },
-				new List<string>() { "Improvement 1", "Improvement 2", "Improvement 3" },
-				new List<string>() { "New feature 1" }
-				);
+
+			List<string> BugsFixed;
+			List<string> Improvements;
+			List<string> NewFeatures;
+			GetChangeLogs(projName, out BugsFixed, out Improvements, out NewFeatures);
+
+			string htmlFilePath = CreateHtmlPageReturnFilename(projName, versionString, publishedSetupPath, BugsFixed, Improvements, NewFeatures);
 
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent,
 				"Attempting Ftp Uploading of Setup file and index file for " + projName);
@@ -434,23 +436,37 @@ public class VisualStudioInterop
 		return null;
 	}
 
-	public static List<string> GetListOfBugs(string ProjectName, string Username = null, string Password = null)
+	public static void GetChangeLogs(string ProjectName, out List<string> BugsFixed, out List<string> Improvements, out List<string> NewFeatures, string Username = null, string Password = null)
 	{
+		BugsFixed = new List<string>();
+		Improvements = new List<string>();
+		NewFeatures = new List<string>();
 		string ProjectXmlRpcTracUri = GetTracXmlRpcHttpPathFromProjectName(ProjectName);
 		if (string.IsNullOrWhiteSpace(ProjectXmlRpcTracUri))
-			return new List<string>() { "No trac xmlrpc url specified for project " + ProjectName + ", no bugs found."};
-		List<string> tmpList = new List<string>();
-		int[] ids = TracXmlRpcInterop.GetTicketIds(ProjectXmlRpcTracUri, Username, Password);
-		foreach (int i in ids)
+		{
+			//BugsFixed = Improvements = NewFeatures = new List<string>() { "No trac xmlrpc url specified for project " + ProjectName + ", no bugs found." };
+			BugsFixed = new List<string>() { "No trac xmlrpc url specified for project " + ProjectName + ", no bugs found." };
+			return;//return new List<string>() { "No trac xmlrpc url specified for project " + ProjectName + ", no bugs found." };
+		}
+
+		Dictionary<int, TracXmlRpcInterop.DescriptionAndTicketType> tmpIdsAndDescriptionsAndTicketTypes = TracXmlRpcInterop.GetAllTicketDescriptionsAndTypes(ProjectXmlRpcTracUri, Username, Password);
+
+		//List<string> tmpList = new List<string>();
+		//int[] ids = TracXmlRpcInterop.GetTicketIds(ProjectXmlRpcTracUri, Username, Password);
+		foreach (int i in tmpIdsAndDescriptionsAndTicketTypes.Keys)
 		{
 			List<TracXmlRpcInterop.ChangeLogStruct> changelogs = TracXmlRpcInterop.ChangeLogs(i, ProjectXmlRpcTracUri);
 			foreach (TracXmlRpcInterop.ChangeLogStruct cl in changelogs)
 				if (cl.Field == "comment" && !string.IsNullOrWhiteSpace(cl.NewValue))
 					//TODO: This can be greatly improved
-					tmpList.Add("Ticket #" + i + ": " + cl.NewValue);
+					if (tmpIdsAndDescriptionsAndTicketTypes[i].TicketType == TracXmlRpcInterop.TicketTypeEnum.Bug)
+						BugsFixed.Add("Ticket #" + i + ": " + cl.NewValue + "  (" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + ")");
+					else if (tmpIdsAndDescriptionsAndTicketTypes[i].TicketType == TracXmlRpcInterop.TicketTypeEnum.Improvement)
+						Improvements.Add("Ticket #" + i + ": " + cl.NewValue + "  (" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + ")");
+					else if (tmpIdsAndDescriptionsAndTicketTypes[i].TicketType == TracXmlRpcInterop.TicketTypeEnum.NewFeature)
+						NewFeatures.Add("Ticket #" + i + ": " + cl.NewValue + "  (" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + ")");
 					//tmpList.Add("Ticket #" + i + ": '" + cl.Field + "' new value = " + cl.NewValue + ", old value = " + cl.OldValue);
 		}
-		return tmpList;
 	}
 
 	//TODO: Continue with implementing this XmlRpc of Trac into the projects that uses Trac

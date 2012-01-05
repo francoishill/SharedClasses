@@ -200,6 +200,21 @@ public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable
 									UserPrompt = propName + "?";
 								tmpUserAnswer = Nullable.GetUnderlyingType(pi.PropertyType) != null ? UserMessages.ConfirmNullable(UserPrompt) : UserMessages.Confirm(UserPrompt);
 							}
+							/*
+							//TODO: This works but when flushing to file (serializing), it fails as it is a custom dictionary
+							else if (IsOfTypeOrNullableType(pi.PropertyType, typeof(Dictionary<string, List<GlobalSettings.MouseGesturesSettings.GestureDirection>>)))
+							{
+								string tmpString;
+								List<GlobalSettings.MouseGesturesSettings.GestureDirection> tmpList;
+								while (UserMessages.EnterStringAndListOfEnums<GlobalSettings.MouseGesturesSettings.GestureDirection>("Enter message which will be shown when the MouseGesture is performed.", out tmpString, out tmpList))
+								{
+									if (tmpUserAnswer == null)
+										tmpUserAnswer = new Dictionary<string, List<GlobalSettings.MouseGesturesSettings.GestureDirection>>();
+									(tmpUserAnswer as Dictionary<string, List<GlobalSettings.MouseGesturesSettings.GestureDirection>>)
+										.Add(tmpString, tmpList);
+								}
+								//UserMessages.ShowMessage("Dictionary hook type");
+							}*/
 							else
 								UserMessages.ShowWarningMessage("No hook method is defined for a property of type = "
 									+ (Nullable.GetUnderlyingType(pi.PropertyType) != null ? Nullable.GetUnderlyingType(pi.PropertyType).Name : pi.PropertyType.Name));

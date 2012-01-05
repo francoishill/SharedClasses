@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
+using InlineCommandToolkit;
 
 public class UserMessages
 {
@@ -195,6 +196,11 @@ public class UserMessages
 	public static T PickItem<T>(IWin32Window owner, List<T> itemList, string Message, T defaultItem)
 	{
 		return PickItemForm.PickItem<T>(itemList.ToArray(), Message, defaultItem, owner);
+	}
+
+	public static bool EnterStringAndListOfEnums<T>(string Message, out string OutString, out List<T> ListOfEnums)
+	{
+		return EnterStringAndListOfEnumsForm.EnterStringAndListOfEnums<T>(Message, out OutString, out ListOfEnums);
 	}
 
 	private static Form GetTopmostForm()

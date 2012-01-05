@@ -441,4 +441,88 @@ public class GlobalSettings
 			SettingsInterop.FlushSettings<TracXmlRpcInteropSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
 		}
 	}
+
+	[Serializable]
+	public class MouseGesturesSettings : GenericSettings
+	{
+		private static volatile MouseGesturesSettings instance;
+		private static object lockingObject = new Object();
+
+		public static MouseGesturesSettings Instance
+		{
+			get
+			{
+				if (instance == null)
+				{
+					lock (lockingObject)
+					{
+						if (instance == null)
+						{
+							instance = Interceptor<MouseGesturesSettings>.Create();//new TracXmlRpcInteropSettings();
+							instance.LoadFromFile(RootApplicationNameForSharedClasses);
+						}
+					}
+				}
+				return instance;
+			}
+		}
+
+		//public enum GestureDirection { Up, Down, Left, Right };
+		//[Setting("Please define the list of gestures to use")]
+		//public Dictionary<string, List<GestureDirection>> ListOfGesturesAndMessages { get; set; }
+		private Dictionary<string, string> gestureAndMessageDictionary;
+		public string GesturesWithMessages
+		{
+			get
+			{
+				if (gestureAndMessageDictionary == null)
+					return null;
+
+				string tmpstr = "";
+				foreach (string key in gestureAndMessageDictionary.Keys)
+					tmpstr += (!string.IsNullOrWhiteSpace(tmpstr) ? "|" : "") + key + "=" + gestureAndMessageDictionary[key];
+				return tmpstr;
+			}
+			set
+			{
+				if (string.IsNullOrWhiteSpace(value))
+					return;
+				string[] pairs = value.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+				foreach (string pair in pairs)
+				{
+					if (!pair.Contains("=") || pair.Split('=').Length != 2)
+					{
+						UserMessages.ShowWarningMessage("Cannot get gesture and message from: " + pair);
+						continue;
+					}
+					string[] keyvalue = pair.Split('=');
+					bool AllCharsIsUDLR = true;
+					foreach (char chr in keyvalue[0].ToUpper().ToCharArray())
+						if (chr != 'U' && chr != 'D' && chr != 'L' && chr != 'R')
+						{
+							AllCharsIsUDLR = false;
+							UserMessages.ShowWarningMessage("Gesture may only consist of characters U, D, L, R. For example URDL (this means up-right-down-left: " + Environment.NewLine + keyvalue);
+							break;
+						}
+					if (!AllCharsIsUDLR)
+						continue;
+
+					if (gestureAndMessageDictionary == null)
+						gestureAndMessageDictionary = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+					gestureAndMessageDictionary.Add(keyvalue[0].ToUpper(), keyvalue[1]);
+				}
+			}
+		}
+		public Dictionary<string, string> GetGesturesWithMessagesDictionary() { return gestureAndMessageDictionary; }
+
+		public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+		{
+			instance = Interceptor<MouseGesturesSettings>.Create(SettingsInterop.GetSettings<MouseGesturesSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
+		}
+
+		public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+		{
+			SettingsInterop.FlushSettings<MouseGesturesSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
+		}
+	}
 }

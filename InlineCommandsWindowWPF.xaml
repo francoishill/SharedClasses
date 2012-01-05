@@ -14,9 +14,10 @@
 				WindowStyle='None'
 				Background='Transparent'
 				Closing='InlineCommandsWindowWPF1_Closing'
+				UseLayoutRounding='True'
 				MouseLeftButtonDown='InlineCommandsWindowWPF1_MouseLeftButtonDown'
 				MouseRightButtonUp='InlineCommandsWindowWPF1_MouseRightButtonDown'
-				Height="650">
+				Height="700">
 	<Window.Resources>
 		<DrawingImage x:Key="Button1Image">
 			<DrawingImage.Drawing>

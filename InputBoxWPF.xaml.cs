@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 
 /// <summary>
 /// Interaction logic for tmpUserControl.xaml
@@ -75,8 +76,9 @@ public partial class InputBoxWPF : Window
 		DragCanvas.DragCanvas.SetCanBeDragged(ButtonAccept, false);
 		DragCanvas.DragCanvas.SetCanBeDragged(ButtonClose, false);
 
-		double centreX = (dragCanvas1.ActualWidth - MainBorder.ActualWidth) / 2;
-		double centreY = (dragCanvas1.ActualHeight - MainBorder.ActualHeight) / 2;
+		double scale = MainBorder.LayoutTransform is ScaleTransform ? (MainBorder.LayoutTransform as ScaleTransform).ScaleX : 1;
+		double centreX = (dragCanvas1.ActualWidth - MainBorder.ActualWidth * scale) / 2;
+		double centreY = (dragCanvas1.ActualHeight - MainBorder.ActualHeight * scale) / 2;
 		DragCanvas.DragCanvas.SetLeft(MainBorder, centreX);
 		DragCanvas.DragCanvas.SetTop(MainBorder, centreY);
 	}

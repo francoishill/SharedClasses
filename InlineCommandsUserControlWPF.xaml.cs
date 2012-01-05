@@ -41,7 +41,7 @@ namespace SharedClasses
 		Socket listeningSocket;
 		//AutoCompleteManager autcompleteManager;
 		//AutocompleteProvider autocompleteProvider;
-		
+
 		public InlineCommandsUserControlWPF()
 		{
 			InitializeComponent();
@@ -401,10 +401,10 @@ namespace SharedClasses
 			ControlTemplate controlTemplate = MainAutoCompleteTextbox.Template;
 			Border controlTemplateBorder = VisualTreeHelper.GetChild(MainAutoCompleteTextbox, 0) as Border;
 			DockPanel dp = controlTemplateBorder.Child as DockPanel;
-			
+
 			TextBox tb = dp.Children[0] as TextBox;//controlTemplate.FindName("TextBoxWithButtons", dp) as TextBox;
 			tb.Visibility = textBox_CommandLine.DataContext != null ? Visibility.Visible : Visibility.Collapsed; ;
-			
+
 			AutoCompleteBox acb = dp.Children[1] as AutoCompleteBox;
 			acb.Visibility = textBox_CommandLine.DataContext == null ? Visibility.Visible : Visibility.Collapsed; ;
 		}
@@ -1250,6 +1250,54 @@ namespace SharedClasses
 						tvi.Focus();
 					}
 				}
+
+
+				try { ScrollIfNeeded(e.GetPosition(treeView_CommandList)); }
+				catch { }
+			}
+		}
+
+		ScrollViewer t_scrollViewer;
+		private ScrollViewer ScrollViewer
+		{
+			get
+			{
+				if (t_scrollViewer == null)
+				{
+					DependencyObject border = VisualTreeHelper.GetChild(treeView_CommandList, 0);
+					if (border != null)
+					{
+						t_scrollViewer = VisualTreeHelper.GetChild(border, 0) as ScrollViewer;
+					}
+				}
+
+				return t_scrollViewer;
+			}
+		}
+
+		internal int scrollOffsetIncrement = 7;
+		internal void ScrollIfNeeded(Point mouseLocation)
+		{
+			if (this.ScrollViewer != null)
+			{
+				double scrollOffset = 0.0;
+
+				// See if we need to scroll down 
+				if (this.ScrollViewer.ViewportHeight - mouseLocation.Y < 20.0)
+					scrollOffset = scrollOffsetIncrement;
+				else if (mouseLocation.Y < 20.0)
+					scrollOffset = -scrollOffsetIncrement;
+
+				// Scroll the tree down or up 
+				if (scrollOffset != 0.0)
+				{
+					scrollOffset += this.ScrollViewer.VerticalOffset;
+					if (scrollOffset < 0.0)
+						scrollOffset = 0.0;
+					else if (scrollOffset > this.ScrollViewer.ScrollableHeight)
+						scrollOffset = this.ScrollViewer.ScrollableHeight;
+					this.ScrollViewer.ScrollToVerticalOffset(scrollOffset);
+				}
 			}
 		}
 
@@ -1299,6 +1347,7 @@ namespace SharedClasses
 			//be.UpdateSource();
 			//be.UpdateTarget();
 		}
+
 		//private bool IsTreeViewDragBusy = false;
 	}
 

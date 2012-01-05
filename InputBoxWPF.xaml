@@ -12,6 +12,7 @@
 				PreviewKeyDown='InputBox_PreviewKeyDown'
 				GotKeyboardFocus='InputBox_GotKeyboardFocus'
 				Topmost='True'
+				UseLayoutRounding='True'
 				Loaded='InputBox_Loaded'>
 	<Window.Resources>
 		<LinearGradientBrush x:Key='HoverBackground'
@@ -99,6 +100,10 @@
 						Height='120'
 						BorderBrush='#999'
 						BorderThickness='1'>
+			<Border.LayoutTransform>
+				<ScaleTransform ScaleX='2.1'
+												ScaleY='2.1' />
+			</Border.LayoutTransform>
 			<Border.Background>
 				<LinearGradientBrush StartPoint='0,0'
 														 EndPoint='0,1'>

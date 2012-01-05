@@ -605,7 +605,16 @@ public class NsisInterop
 			tmpList.Add(@"InstallDir ""$PROGRAMFILES\${PRODUCT_NAME}""");
 			tmpList.Add(@"InstallDirRegKey HKLM ""${PRODUCT_DIR_REGKEY}"" """"");
 			tmpList.Add(@"ShowInstDetails show");
-			if (UseUninstaller) tmpList.Add(@"ShowUnInstDetails show"); tmpList.Add("");
+			if (UseUninstaller) tmpList.Add(@"ShowUnInstDetails show");
+			tmpList.Add("");
+
+			tmpList.Add(@"VIProductVersion ${PRODUCT_VERSION}");
+			tmpList.Add(@"VIAddVersionKey ProductName ""${PRODUCT_NAME}""");
+			tmpList.Add(@"VIAddVersionKey LegalCopyright francoishill.com");
+			tmpList.Add(@"VIAddVersionKey FileDescription ""${PRODUCT_NAME} Application""");
+			tmpList.Add(@"VIAddVersionKey FileVersion ${PRODUCT_VERSION}");
+			tmpList.Add(@"VIAddVersionKey ProductVersion ${PRODUCT_VERSION}");
+			tmpList.Add("");
 
 			if (InstTypes != null)
 				foreach (String instType in InstTypes)

@@ -245,6 +245,8 @@ public class GlobalSettings
 			}
 		}
 
+		//TODO: Inside the InputBox (dialogs shown to enter passwords, etc), must have a link for the user to click to "update" all unset properties of the settings.
+		//TODO: User must be able to have a look at all settings used and change them (passwords must not be shown, only allow user to change it).
 		public enum UriProtocol { Http, Ftp }
 
 		[SettingAttribute("Please enter the base Uri for Visual Studio publishing, ie. code.google.com")]

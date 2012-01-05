@@ -410,6 +410,7 @@ public class VisualStudioInterop
 			List<string> BugsFixed;
 			List<string> Improvements;
 			List<string> NewFeatures;
+			//TODO: When pulling buglist/improvement etc from Trac repository for a project, must also check in the project's .csproj file whether it uses/references SharedClasses. Then it must also pull the changes from the SharedClasses Trac repository.
 			GetChangeLogs(projName, out BugsFixed, out Improvements, out NewFeatures);
 
 			string htmlFilePath = CreateHtmlPageReturnFilename(projName, versionString, publishedSetupPath, BugsFixed, Improvements, NewFeatures);

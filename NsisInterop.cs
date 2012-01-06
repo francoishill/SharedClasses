@@ -64,7 +64,7 @@ public class NsisInterop
 		SectionGroupLines.Add(@"  SetOverwrite ifnewer");
 		SectionGroupLines.Add(@"	SetOutPath ""$INSTDIR""");
 		SectionGroupLines.Add(@"  SetOverwrite ifnewer");
-		SectionGroupLines.Add(@"  File /a /x *.application /x *.vshost.* /x *.manifest """ + PublishedDir + @"\*.*""");
+		SectionGroupLines.Add(@"  File /a /x *.pdb /x *.application /x *.vshost.* /x *.manifest """ + PublishedDir + @"\*.*""");
 		if (WriteIntoRegistryForWindowsAutostartup) SectionGroupLines.Add(@"  WriteRegStr HKCU ""SOFTWARE\Microsoft\Windows\CurrentVersion\Run"" '${PRODUCT_NAME}' '$INSTDIR\${PRODUCT_EXE_NAME}'");
 		SectionGroupLines.Add(@"SectionEnd");
 
@@ -107,7 +107,7 @@ public class NsisInterop
 				SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite ifnewer");
 				SectionGroupLines.Add(NSISclass.Spacer + @"	SetOutPath ""$INSTDIR\Plugins""");
 				SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite ifnewer");
-				SectionGroupLines.Add(NSISclass.Spacer + @"  File /a /x *Toolkit* /x *InterfaceFor* """ + pluginDllPath + @"\*.*""");
+				SectionGroupLines.Add(NSISclass.Spacer + @"  File /a /x *.pdb /x *Toolkit* /x *InterfaceFor* """ + pluginDllPath + @"\*.*""");
 				SectionGroupLines.Add(NSISclass.Spacer + @"SectionEnd");
 				SectionGroupLines.Add("");
 				//}

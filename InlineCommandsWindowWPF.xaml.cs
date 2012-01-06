@@ -17,12 +17,14 @@ using System.Reflection;
 using System.IO;
 using System.Diagnostics;
 using InlineCommands;
+using SharedClasses;
 /// <summary>
 /// Interaction logic for InlineCommandsWindowWPF.xaml
 /// </summary>
 public partial class InlineCommandsWindowWPF : Window
 {
 	System.Windows.Forms.Form MainFormUsedForShuttingDownServers;
+	public InlineCommandsUserControlWPF GetInlineCommandsUserControl() { return inlineCommandsUserControlWPF1; }
 
 	public InlineCommandsWindowWPF(System.Windows.Forms.Form mainFormUsedForShuttingDownServers)
 	{
@@ -38,6 +40,7 @@ public partial class InlineCommandsWindowWPF : Window
 		{
 			timer.Stop();
 			timer.Dispose(); timer = null;
+			
 			inlineCommandsUserControlWPF1.InitializeTreeViewNodes(
 				MainFormUsedForShuttingDownServers,
 				true,

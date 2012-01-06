@@ -470,17 +470,17 @@ public class GlobalSettings
 		//public enum GestureDirection { Up, Down, Left, Right };
 		//[Setting("Please define the list of gestures to use")]
 		//public Dictionary<string, List<GestureDirection>> ListOfGesturesAndMessages { get; set; }
-		private Dictionary<string, string> gestureAndMessageDictionary;
-		public string GesturesWithMessages
+		private Dictionary<string, string> gesturesWithGesturePluginName;
+		public string GesturesWithGesturePluginName
 		{
 			get
 			{
-				if (gestureAndMessageDictionary == null)
+				if (gesturesWithGesturePluginName == null)
 					return null;
 
 				string tmpstr = "";
-				foreach (string key in gestureAndMessageDictionary.Keys)
-					tmpstr += (!string.IsNullOrWhiteSpace(tmpstr) ? "|" : "") + key + "=" + gestureAndMessageDictionary[key];
+				foreach (string key in gesturesWithGesturePluginName.Keys)
+					tmpstr += (!string.IsNullOrWhiteSpace(tmpstr) ? "|" : "") + key + "=" + gesturesWithGesturePluginName[key];
 				return tmpstr;
 			}
 			set
@@ -507,13 +507,13 @@ public class GlobalSettings
 					if (!AllCharsIsUDLR)
 						continue;
 
-					if (gestureAndMessageDictionary == null)
-						gestureAndMessageDictionary = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-					gestureAndMessageDictionary.Add(keyvalue[0].ToUpper(), keyvalue[1]);
+					if (gesturesWithGesturePluginName == null)
+						gesturesWithGesturePluginName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+					gesturesWithGesturePluginName.Add(keyvalue[0].ToUpper(), keyvalue[1]);
 				}
 			}
 		}
-		public Dictionary<string, string> GetGesturesWithMessagesDictionary() { return gestureAndMessageDictionary; }
+		public Dictionary<string, string> GetGesturesWithGesturePluginName() { return gesturesWithGesturePluginName ?? new Dictionary<string, string>(); }
 
 		public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
 		{

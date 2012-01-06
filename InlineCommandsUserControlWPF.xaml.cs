@@ -42,9 +42,20 @@ namespace SharedClasses
 		//AutoCompleteManager autcompleteManager;
 		//AutocompleteProvider autocompleteProvider;
 
+		public void LoadAllPlugins()
+		{
+			System.Windows.Forms.Application.DoEvents();
+			if (!AppDomain.CurrentDomain.BaseDirectory.ToLower().Contains(@"QuickAccess\QuickAccess\bin".ToLower()))
+				DynamicDLLs.LoadPluginsInDirectory(System.AppDomain.CurrentDomain.BaseDirectory + @"Plugins");
+			else
+				foreach (string pluginProjectBaseDir in Directory.GetDirectories(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\\Visual Studio 2010\Projects\QuickAccess", "*Plugin"))
+					DynamicDLLs.LoadPluginsInDirectory(pluginProjectBaseDir + @"\bin\Release");
+		}
+
 		public InlineCommandsUserControlWPF()
 		{
 			InitializeComponent();
+			//LoadPlugins();
 		}
 
 		//public InlineCommandsUserControlWPF(System.Windows.Forms.Form mainFormUsedForShuttingDownServers)
@@ -134,16 +145,9 @@ namespace SharedClasses
 				//DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(@"D:\Francois\Dev\VSprojects\QuickAccess\QuickAccess\bin\Release\Plugins");
 				//DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(@"D:\Francois\Dev\VSprojects\QuickAccess\QuickAccess\bin\Release\Plugins");
 
-				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackEvent, "Busy loading plugins...", TextFeedbackType.Subtle);
-				System.Windows.Forms.Application.DoEvents();
-				if (!AppDomain.CurrentDomain.BaseDirectory.ToLower().Contains(@"QuickAccess\QuickAccess\bin".ToLower()))
-					DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(System.AppDomain.CurrentDomain.BaseDirectory + @"Plugins");
-				else
-				{
-					foreach (string pluginProjectBaseDir in Directory.GetDirectories(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\\Visual Studio 2010\Projects\QuickAccess", "*Plugin"))
-						DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(pluginProjectBaseDir + @"\bin\Release");
-				}
+				LoadAllPlugins();
 
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackEvent, "Refreshing command plugins...", TextFeedbackType.Subtle);
 				treeView_CommandList.Items.Clear();
 				//List<OverrideToStringClass> tmplist = new List<OverrideToStringClass>();//CommandsManagerClass.ListOfInitializedCommandInterfaces;
 				foreach (IQuickAccessPluginInterface qai in DynamicDLLs.PluginList)
@@ -164,17 +168,22 @@ namespace SharedClasses
 				//	timer.Dispose(); timer = null;
 				//};
 				//timer.Start();
-				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackEvent, "Done loading plugins.", TextFeedbackType.Noteworthy);
+				treeView_CommandList.UpdateLayout();
+				this.UpdateLayout();
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackEvent, "Done refreshing command plugins.", TextFeedbackType.Noteworthy);
 
 				//ControlTemplate ct = this.FindResource("TextBoxBaseControlTemplate") as ControlTemplate;
 				//GetActualTextBoxOfAutocompleteControl().Template = ct;
 				//GetActualTextBoxOfAutocompleteControl().ApplyTemplate();
-				GetActualTextBoxOfAutocompleteControl().HorizontalContentAlignment = System.Windows.HorizontalAlignment.Left;
+				TextBox actualTextbox = GetActualTextBoxOfAutocompleteControl();
+				if (actualTextbox != null)
+					actualTextbox.HorizontalContentAlignment = System.Windows.HorizontalAlignment.Left;
 				ResetAutocompleteToCommandNamesList();
 				//HideEmbeddedButton();
 				SetVisibilityOfExtraControls();
 
-				if (!GetActualTextBoxOfAutocompleteControl().IsFocused) GetActualTextBoxOfAutocompleteControl().Focus();
+				//if (!GetActualTextBoxOfAutocompleteControl().IsFocused) GetActualTextBoxOfAutocompleteControl().Focus();
+				FocusActualTextboxOfAutocompleteControl();
 
 				ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 				{
@@ -224,10 +233,19 @@ namespace SharedClasses
 
 		private TextBox GetActualTextBoxOfAutocompleteControl()
 		{
+			if (textBox_CommandLine.Template == null)
+				return null;
 			TextBox actualTextBoxOfAutocompleteControl = (TextBox)textBox_CommandLine.Template.FindName("Text", textBox_CommandLine);
 			if (actualTextBoxOfAutocompleteControl == null)
 				UserMessages.ShowWarningMessage("Could not find Text in template");
 			return actualTextBoxOfAutocompleteControl;
+		}
+
+		private void FocusActualTextboxOfAutocompleteControl()
+		{
+			TextBox tmptxtbox = GetActualTextBoxOfAutocompleteControl();
+			if (tmptxtbox != null && !tmptxtbox.IsFocused)
+				tmptxtbox.Focus();
 		}
 
 		private TextBlock GetEmbeddedButtonTextBlock()
@@ -294,7 +312,8 @@ namespace SharedClasses
 
 					TextBox actualTextbox = GetActualTextBoxOfAutocompleteControl();
 					//					if (!actualTextbox.IsFocused) actualTextbox.Focus();
-					actualTextbox.Text = "";
+					if (actualTextbox != null)
+						actualTextbox.Text = "";
 					//textBox_CommandLine.Focus();
 					//textBox_CommandLine.Text = "";
 
@@ -375,7 +394,8 @@ namespace SharedClasses
 				//	tmpBorder2.Visibility = System.Windows.Visibility.Collapsed;
 
 				//textBox_CommandLine.Focus();
-				if (!GetActualTextBoxOfAutocompleteControl().IsFocused) GetActualTextBoxOfAutocompleteControl().Focus();
+				//if (!GetActualTextBoxOfAutocompleteControl().IsFocused) GetActualTextBoxOfAutocompleteControl().Focus();
+				FocusActualTextboxOfAutocompleteControl();
 				//autocompleteProvider.activeCommand = null;
 			}
 		}
@@ -407,6 +427,7 @@ namespace SharedClasses
 
 			AutoCompleteBox acb = dp.Children[1] as AutoCompleteBox;
 			acb.Visibility = textBox_CommandLine.DataContext == null ? Visibility.Visible : Visibility.Collapsed; ;
+			MainAutoCompleteTextbox.UpdateLayout();
 		}
 
 		private void HideEmbeddedButton()
@@ -979,8 +1000,11 @@ namespace SharedClasses
 			if (GetActiveCommand(out activeCommand))
 			{
 				TextBox actualTextBox = GetActualTextBoxOfAutocompleteControl();
-				actualTextBox.SelectionLength = 0;
-				actualTextBox.SelectionStart = actualTextBox.Text.Length;
+				if (activeCommand != null)
+				{
+					actualTextBox.SelectionLength = 0;
+					actualTextBox.SelectionStart = actualTextBox.Text.Length;
+				}
 
 				ListBox lb = GetEmbeddedListbox();
 				if (lb.Items.Count == 0) return;
@@ -1038,8 +1062,11 @@ namespace SharedClasses
 			else if (e.Key == Key.Escape)
 			{
 				TextBox actualTextBox = GetActualTextBoxOfAutocompleteControl();
-				actualTextBox.SelectionLength = 0;
-				actualTextBox.SelectionStart = actualTextBox.Text.Length;
+				if (actualTextBox != null)
+				{
+					actualTextBox.SelectionLength = 0;
+					actualTextBox.SelectionStart = actualTextBox.Text.Length;
+				}
 
 				if (textBox_CommandLine.IsDropDownOpen)
 				{
@@ -1061,7 +1088,8 @@ namespace SharedClasses
 				{
 					e.Handled = true;
 					ClearCommandSelection();
-					if (!GetActualTextBoxOfAutocompleteControl().IsFocused) GetActualTextBoxOfAutocompleteControl().Focus();
+					//if (!GetActualTextBoxOfAutocompleteControl().IsFocused) GetActualTextBoxOfAutocompleteControl().Focus();
+					FocusActualTextboxOfAutocompleteControl();
 				}
 				else
 				{

@@ -1,4 +1,4 @@
-﻿namespace QuickAccess
+﻿namespace SharedClasses
 {
 	partial class OverlayGesturesForm
 	{

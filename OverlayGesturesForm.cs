@@ -11,7 +11,7 @@ using DynamicDLLsInterop;
 using InlineCommands;
 using InterfaceForQuickAccessPlugin;
 
-namespace QuickAccess
+namespace SharedClasses
 {
 	public partial class OverlayGesturesForm : Form
 	{
@@ -22,7 +22,7 @@ namespace QuickAccess
 			InitializeComponent();
 		}
 
-		private void RunMethodAfterMilliseconds(Action method, int milliseconds)
+		public static void RunMethodAfterMilliseconds(Action method, int milliseconds)
 		{
 			System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
 			timer.Interval = milliseconds;
@@ -50,9 +50,9 @@ namespace QuickAccess
 		private bool FindGestureMathcAndPerformIt(string gestureText)//like URD or LURD
 		{
 			foreach (IQuickAccessPluginInterface qai in DynamicDLLs.PluginList)
-				if (qai.GetType().GetInterface(typeof(MouseGesturePlugins.IMouseGestures).Name) != null)
+				if (qai.GetType().GetInterface(typeof(MouseGesturePlugins.IMouseGesture).Name) != null)
 				{
-					MouseGesturePlugins.IMouseGestures gesture = (MouseGesturePlugins.IMouseGestures)qai.GetType().GetConstructor(new Type[0]).Invoke(new object[0]);
+					MouseGesturePlugins.IMouseGesture gesture = (MouseGesturePlugins.IMouseGesture)qai.GetType().GetConstructor(new Type[0]).Invoke(new object[0]);
 					if (gesture.GestureString.ToLower() == gestureText.ToLower())
 					{
 						string tmpErrorMessage;

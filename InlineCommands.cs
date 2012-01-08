@@ -83,6 +83,15 @@ namespace InlineCommandToolkit
 		}
 	}
 
+	public class MessagesParagraph : Paragraph
+	{
+		public bool Unread { get; set; }
+		public TextFeedbackType FeedbackType;
+
+		public MessagesParagraph(TextFeedbackType FeedbackType) : base() { Unread = true; this.FeedbackType = FeedbackType; }
+		public MessagesParagraph(Inline inline, TextFeedbackType FeedbackType) : base(inline) { Unread = true; this.FeedbackType = FeedbackType; }
+	}
+
 	public class InlineCommands
 	{
 		public static bool CanParseToInt(string str)
@@ -165,7 +174,9 @@ namespace InlineCommandToolkit
 			int CurrentArgumentCount { get; }
 			void RemoveCurrentArgument(int Index);
 			ObservableCollectionWithValidationOnAdd<CommandArgument> CurrentArguments { get; }
-			ObservableCollection<Paragraph> ParagraphListForMessages { get; set; }
+			void NotifyPropertyChanged(string propertyName);
+			ObservableCollection<MessagesParagraph> ParagraphListForMessages { get; set; }
+		 	Dictionary<TextFeedbackType, int> NumberUnreadMessages { get; }
 			//ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair { get; }
 		}
 
@@ -315,23 +326,41 @@ namespace InlineCommandToolkit
 			//public abstract ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair { get; set; }
 
 			public event PropertyChangedEventHandler PropertyChanged;
-			private void NotifyPropertyChanged(String info)
+			public void NotifyPropertyChanged(string propertyName)
 			{
 				if (PropertyChanged != null)
 				{
-					PropertyChanged(this, new PropertyChangedEventArgs(info));
+					PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
 				}
 			}
 
-			private ObservableCollection<Paragraph> paragraphListForMessages;
-			public virtual ObservableCollection<Paragraph> ParagraphListForMessages
+			private ObservableCollection<MessagesParagraph> paragraphListForMessages;
+			public virtual ObservableCollection<MessagesParagraph> ParagraphListForMessages
 			{
 				get
 				{
-					if (paragraphListForMessages == null) paragraphListForMessages = new ObservableCollection<Paragraph>();
+					if (paragraphListForMessages == null) paragraphListForMessages = new ObservableCollection<MessagesParagraph>();
 					return paragraphListForMessages;
 				}
 				set { paragraphListForMessages = value; }
+			}
+
+			public Dictionary<TextFeedbackType, int> NumberUnreadMessages
+			{
+				get
+				{
+					Dictionary<TextFeedbackType, int> tmpDict = new Dictionary<TextFeedbackType, int>();
+					foreach (TextFeedbackType feedbackType in Enum.GetValues(typeof(TextFeedbackType)))
+					{
+						//var tmpunread = 
+						//	from n in ParagraphListForMessages
+						//	where n.FeedbackType == feedbackType
+						//	select n;
+						tmpDict.Add(feedbackType, ParagraphListForMessages.Count(m => m.Unread && m.FeedbackType == feedbackType));
+					}
+					//return ParagraphListForMessages.Count(m => m.Unread);
+					return tmpDict;
+				}
 			}
 		}
 	}

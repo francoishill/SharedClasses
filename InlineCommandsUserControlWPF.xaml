@@ -3,10 +3,12 @@
 						 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 						 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 						 xmlns:inlinecommands='clr-namespace:InlineCommands'
+						 xmlns:inlinecommandtoolkit='clr-namespace:InlineCommandToolkit'
 						 xmlns:theme="clr-namespace:Microsoft.Windows.Themes;assembly=PresentationFramework.Aero"
 						 xmlns:input="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls.Input.Toolkit"
 						 xmlns:system="clr-namespace:System;assembly=mscorlib"
 						 xmlns:propertyinterceptor='clr-namespace:PropertyInterceptor'
+						 xmlns:wpftoolkitextended='clr-namespace:Microsoft.Windows.Controls;assembly=WPFToolkit.Extended'
 						 x:Class="SharedClasses.InlineCommandsUserControlWPF"
 						 xmlns:sharedclasses='clr-namespace:SharedClasses'
 						 mc:Ignorable="d"
@@ -18,6 +20,7 @@
 			<ResourceDictionary.MergedDictionaries>
 				<ResourceDictionary>
 					<sharedclasses:ZeroCollapsedNonZeroVisible x:Key="hideListBox" />
+					<sharedclasses:NumberUnreadItemsToTextConverter x:Key='numberUnreadItemsToTextConverter' />
 				</ResourceDictionary>
 				<!--<ResourceDictionary Source='/PresentationFrameawork.Aero,Version=3.0.0.0,Culture=neutral,PublicKeyToken=31bf3856ad364e35,ProcessorArchitecture=MSIL;component/themes/aero.normalcolor.xaml' />-->
 				<!--<ResourceDictionary Source='/PresentationFramework.Classic,Version=3.0.0.0,Culture=neutral,PublicKeyToken=31bf3856ad364e35;component/themes/Classic.xaml' />-->
@@ -1394,6 +1397,20 @@
 				<TreeView.Template>
 					<StaticResource ResourceKey="TreeviewControlTemplate" />
 				</TreeView.Template>
+				<TreeView.ItemTemplate>
+					<DataTemplate>
+						<DockPanel LastChildFill='True'>
+							<TextBlock DockPanel.Dock='Right'
+												 VerticalAlignment='Top'
+												 Background='Transparent'
+												 FontSize='10'
+												 Foreground='Red'
+												 Text='{Binding NumberUnreadMessages, Mode=OneWay, Converter={StaticResource numberUnreadItemsToTextConverter}}'/>
+							<TextBlock DockPanel.Dock='Left' Background='Transparent'
+												 Text='{Binding}' />
+						</DockPanel>
+					</DataTemplate>
+				</TreeView.ItemTemplate>
 				<TreeView.ItemContainerStyle>
 					<Style TargetType="{x:Type TreeViewItem}">
 						<Style.Resources>
@@ -1525,6 +1542,20 @@
 										Grid.Row='0'
 										Height='3'
 										ShowsPreview="True" />
+			<!--<wpftoolkitextended:RichTextBox Grid.Column="1"
+																			Grid.Row='1'
+																			Grid.RowSpan='1'
+																			x:Name="textBox_Messages"
+																			HorizontalAlignment="Stretch"
+																			Margin="0,0,5,0"
+																			MinWidth="50"
+																			PreviewMouseLeftButtonDown='textBox_Messages_PreviewMouseLeftButtonDown'
+																			ScrollViewer.HorizontalScrollBarVisibility='Auto'
+																			ScrollViewer.VerticalScrollBarVisibility='Auto'
+																			Foreground="Green"
+																			Padding='10,0'
+																			IsReadOnly='True'
+																			Text='{Binding ParagraphListForMessages, Mode=OneWay, Converter={StaticResource messagesParagraphListToText}}'/>-->
 			<RichTextBox Grid.Column="1"
 									 Grid.Row='1'
 									 Grid.RowSpan='1'
@@ -1538,15 +1569,12 @@
 									 Foreground="Green"
 									 Padding='10,0'
 									 IsReadOnly='True'>
-				<FlowDocument>
-					<FlowDocument.Resources>
-						<!-- This style is used to set the margins for all paragraphs in the FlowDocument to 0. -->
-						<Style TargetType="{x:Type Paragraph}">
-							<Setter Property="Margin"
-											Value="0" />
-						</Style>
-					</FlowDocument.Resources>
-				</FlowDocument>
+				<RichTextBox.Resources>
+					<Style TargetType="{x:Type inlinecommandtoolkit:MessagesParagraph}">
+						<Setter Property="Margin"
+										Value="0" />
+					</Style>
+				</RichTextBox.Resources>
 			</RichTextBox>
 			<ProgressBar x:Name='progressBar1'
 									 Grid.Row='2'

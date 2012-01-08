@@ -27,6 +27,7 @@ using PropertyInterceptor;
 //using dragonz.actb.provider;
 using ICommandWithHandler = InlineCommandToolkit.InlineCommands.ICommandWithHandler;//InlineCommands.CommandsManagerClass.ICommandWithHandler;
 using OverrideToStringClass = InlineCommandToolkit.InlineCommands.OverrideToStringClass;
+using MessagesParagraph = InlineCommandToolkit.MessagesParagraph;
 
 namespace SharedClasses
 {
@@ -86,7 +87,7 @@ namespace SharedClasses
 					Dispatcher.BeginInvoke(DispatcherPriority.Background,
 					(Action)delegate
 					{
-						Paragraph tmpParagraph = new Paragraph(new Run(evtargs.FeedbackText))
+						MessagesParagraph tmpParagraph = new MessagesParagraph(new Run(evtargs.FeedbackText), evtargs.FeedbackType)
 						{
 							Foreground = evtargs.FeedbackType == TextFeedbackType.Error ? Brushes.Red
 								: evtargs.FeedbackType == TextFeedbackType.Noteworthy ? Brushes.Purple
@@ -100,11 +101,18 @@ namespace SharedClasses
 						{
 							ICommandWithHandler tmpCommand = snder as ICommandWithHandler;
 							tmpCommand.ParagraphListForMessages.Add(tmpParagraph);
+							
 							//TODO: Handle the messages better
 							//Like if a message is new and the relevant command is not selected, add a "star" to the command
-							if (tmpCommand != activeCommand) SetDataContext(tmpCommand);
-							SelectTreeViewItemBasedOnCommand(tmpCommand);							
-							textBox_Messages.Document.Blocks.Add(tmpParagraph);
+							//if (tmpCommand != activeCommand) SetDataContext(tmpCommand);
+							//SelectTreeViewItemBasedOnCommand(tmpCommand);
+							if (tmpCommand == activeCommand)
+							{
+								tmpParagraph.Unread = false;
+								textBox_Messages.Document.Blocks.Add(tmpParagraph);
+							}
+
+							tmpCommand.NotifyPropertyChanged("NumberUnreadMessages");
 						}
 						else
 						{
@@ -312,6 +320,10 @@ namespace SharedClasses
 					SetDataContext(command);
 					label_ArgumentsExample.Content = label_ArgumentsExample.ToolTip = command.ArgumentsExample.Replace("\n", "  ");
 
+					foreach (MessagesParagraph mp in command.ParagraphListForMessages)
+						mp.Unread = false;
+					command.NotifyPropertyChanged("NumberUnreadMessages");
+
 					//TextBlock tmpTextBlock = (TextBlock)textBox_CommandLine.Template.FindName("EmbeddedButtonTextBlock", textBox_CommandLine);
 					//TextBlock tmpTextBlock = GetEmbeddedButtonTextBlock();
 					//tmpTextBlock.Text = command.DisplayName;
@@ -421,6 +433,8 @@ namespace SharedClasses
 			textBox_CommandLine.UpdateLayout();
 			textBoxWithButtons.DataContext = activeCommand;
 			textBoxWithButtons.UpdateLayout();
+			textBox_Messages.DataContext = activeCommand;
+			textBox_Messages.UpdateLayout();
 
 			textBox_Messages.UpdateLayout();
 			textBox_Messages.Document.Blocks.Clear();
@@ -1412,4 +1426,111 @@ namespace SharedClasses
 			throw new NotImplementedException();
 		}
 	}
+
+	public class NumberUnreadItemsToTextConverter : System.Windows.Data.IValueConverter
+	{
+
+		public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			if (value == null || !(value is Dictionary<TextFeedbackType, int>))
+				return "";
+			Dictionary<TextFeedbackType, int> tmpdict = value as Dictionary<TextFeedbackType, int>;
+			bool NonZeroFound = false;
+			foreach (TextFeedbackType fbt in tmpdict.Keys)
+				if (tmpdict[fbt] > 0)
+				{
+					NonZeroFound = true;
+					break;
+				}
+			if (!NonZeroFound)
+				return "";
+
+			//TODO: The following text will only contain errors, noteworthy, success, subtle. Ensure this always adds other values as well
+			return string.Format("  {0},{1},{2},{3}", tmpdict[TextFeedbackType.Error], tmpdict[TextFeedbackType.Noteworthy], tmpdict[TextFeedbackType.Success], tmpdict[TextFeedbackType.Subtle]);
+		}
+
+		public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			throw new NotImplementedException();
+		}
+	}
+
+	//public class MessagesParagraphListToText : System.Windows.Data.IValueConverter
+	//{
+
+	//	public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+	//	{
+	//		if (!(value is ObservableCollection<MessagesParagraph>))
+	//			return "Cannot convert paragraph list to string";
+
+	//		string tmpstr = "";
+	//		ObservableCollection<MessagesParagraph> tmplist = value as ObservableCollection<MessagesParagraph>;
+	//		foreach (MessagesParagraph s in tmplist)
+	//			foreach (Inline inline in s.Inlines)
+	//				if (inline is Run)
+	//					tmpstr += (tmpstr.Length > 0 ? ";" : "") + (inline as Run).Text;
+	//		return tmpstr;
+	//		//var rv = Visibility.Visible;
+	//		//var val = 0;
+	//		//int.TryParse(value.ToString(), out val);
+	//		//if (val == 0)
+	//		//{
+	//		//	rv = Visibility.Collapsed;
+	//		//}
+	//		//return rv;
+	//	}
+
+	//	public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+	//	{
+	//		throw new NotImplementedException();
+	//	}
+	//}
+
+	//public class RichTextBoxHelper : DependencyObject
+	//{
+	//	public static string GetDocumentXaml(DependencyObject obj)
+	//	{
+	//		return (string)obj.GetValue(DocumentXamlProperty);
+	//	}
+	//	public static void SetDocumentXaml(DependencyObject obj, string value)
+	//	{
+	//		obj.SetValue(DocumentXamlProperty, value);
+	//	}
+	//	public static readonly DependencyProperty DocumentXamlProperty = 
+	//	DependencyProperty.RegisterAttached(
+	//			"DocumentXaml",
+	//			typeof(string),
+	//			typeof(RichTextBoxHelper),
+	//			new FrameworkPropertyMetadata
+	//			{
+	//				BindsTwoWayByDefault = true,
+	//				PropertyChangedCallback = (obj, e) =>
+	//				{
+	//					var richTextBox = (RichTextBox)obj;
+
+	//					// Parse the XAML to a document (or use XamlReader.Parse())
+	//					var xaml = GetDocumentXaml(richTextBox);
+	//					var doc = new FlowDocument();
+	//					var range = new TextRange(doc.ContentStart, doc.ContentEnd);
+
+	//					range.Load(new MemoryStream(Encoding.UTF8.GetBytes(xaml)),
+	//						DataFormats.Xaml);
+
+	//					// Set the document
+	//					richTextBox.Document = doc;
+
+	//					// When the document changes update the source
+	//					range.Changed += (obj2, e2) =>
+	//					{
+	//						if (richTextBox.Document == doc)
+	//						{
+	//							MemoryStream buffer = new MemoryStream();
+	//							range.Save(buffer, DataFormats.Xaml);
+	//							SetDocumentXaml(richTextBox,
+	//								Encoding.UTF8.GetString(buffer.ToArray()));
+	//						}
+	//					};
+	//				}
+	//			});
+	//}
 }

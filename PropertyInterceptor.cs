@@ -200,6 +200,29 @@ public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable
 									UserPrompt = propName + "?";
 								tmpUserAnswer = Nullable.GetUnderlyingType(pi.PropertyType) != null ? UserMessages.ConfirmNullable(UserPrompt) : UserMessages.Confirm(UserPrompt);
 							}
+							else if (IsOfTypeOrNullableType(pi.PropertyType, typeof(string[])))
+							{
+								List<string> tmpList = null;
+								string tmpstr = null;
+								do
+								{
+									tmpstr = UserMessages.Prompt(UserPrompt);
+									if (tmpstr == null) continue;
+									else
+									{
+										if (tmpList == null)
+											tmpList = new List<string>();
+										tmpList.Add(tmpstr);
+									}
+								}
+								while (tmpstr != null);
+								if (tmpList != null)
+								{
+									tmpUserAnswer = tmpList.ToArray();
+									tmpList.Clear();
+									tmpList = null;
+								}
+							}
 							/*
 							//TODO: This works but when flushing to file (serializing), it fails as it is a custom dictionary
 							else if (IsOfTypeOrNullableType(pi.PropertyType, typeof(Dictionary<string, List<GlobalSettings.MouseGesturesSettings.GestureDirection>>)))

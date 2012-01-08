@@ -525,4 +525,44 @@ public class GlobalSettings
 			SettingsInterop.FlushSettings<MouseGesturesSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
 		}
 	}
+
+	[Serializable]
+	public class SubversionSettings : GenericSettings
+	{
+		private static volatile SubversionSettings instance;
+		private static object lockingObject = new Object();
+
+		public static SubversionSettings Instance
+		{
+			get
+			{
+				if (instance == null)
+				{
+					lock (lockingObject)
+					{
+						if (instance == null)
+						{
+							instance = Interceptor<SubversionSettings>.Create();//new TracXmlRpcInteropSettings();
+							instance.LoadFromFile(RootApplicationNameForSharedClasses);
+						}
+					}
+				}
+				return instance;
+			}
+		}
+
+		public string[] ListOfMonitoredSubversionDirectories { get; set; }
+
+		public int? IntervalForMonitoring_Milliseconds { get; set; }
+
+		public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+		{
+			instance = Interceptor<SubversionSettings>.Create(SettingsInterop.GetSettings<SubversionSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
+		}
+
+		public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+		{
+			SettingsInterop.FlushSettings<SubversionSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
+		}
+	}
 }

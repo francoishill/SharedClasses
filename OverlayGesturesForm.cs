@@ -73,7 +73,7 @@ namespace SharedClasses
 		private void mouseGestures1_Gesture(object sender, MouseGestures.MouseGestureEventArgs e)
 		{
 			this.Refresh();
-			this.Close();
+			//this.Close();
 
 			if (e.Gesture.ToString() == "URDLU")
 			{

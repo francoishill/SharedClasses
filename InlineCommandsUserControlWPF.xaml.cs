@@ -102,8 +102,8 @@ namespace SharedClasses
 							tmpCommand.ParagraphListForMessages.Add(tmpParagraph);
 							//TODO: Handle the messages better
 							//Like if a message is new and the relevant command is not selected, add a "star" to the command
-							SelectTreeViewItemBasedOnCommand(tmpCommand);
 							if (tmpCommand != activeCommand) SetDataContext(tmpCommand);
+							SelectTreeViewItemBasedOnCommand(tmpCommand);							
 							textBox_Messages.Document.Blocks.Add(tmpParagraph);
 						}
 						else
@@ -153,7 +153,8 @@ namespace SharedClasses
 				foreach (IQuickAccessPluginInterface qai in DynamicDLLs.PluginList)
 					if (qai.GetType().GetInterface(typeof(ICommandWithHandler).Name) != null)
 					{
-						ICommandWithHandler comm = (ICommandWithHandler)qai.GetType().GetConstructor(new Type[0]).Invoke(new object[0]);
+						ICommandWithHandler comm = qai as ICommandWithHandler;
+						//ICommandWithHandler comm = (ICommandWithHandler)qai.GetType().GetConstructor(new Type[0]).Invoke(new object[0]);
 						//OverrideToStringClass comm =
 						//		(OverrideToStringClass)qai.GetType().GetConstructor(new Type[0]).Invoke(new object[0]);
 						//MessageBox.Show(comm.DisplayName);
@@ -202,6 +203,18 @@ namespace SharedClasses
 
 				//XmlRpcInterop.SampleServer();
 				XmlRpcInterop.StartDynamicCodeInvokingServer_XmlRpc();
+
+				foreach (IQuickAccessPluginInterface iqa in DynamicDLLsInterop.DynamicDLLs.PluginList)
+					if (iqa is ICommandWithHandler)
+					{
+						ICommandWithHandler comm = iqa as ICommandWithHandler;
+						if (comm.CommandName.ToLower() == "svn")
+						{
+							SvnInterop.StartMonitoringSubversionDirectories(textFeedbackEvent, comm);
+							break;
+						}
+					}
+				//SvnInterop.StartMonitoringSubversionDirectories(textFeedbackEvent);
 
 				textFeedbackEventInitialized = true;
 			}

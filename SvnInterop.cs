@@ -166,7 +166,7 @@ public class SvnInterop
 				TextFeedbackSenderObject,
 				TextFeedbackEvent,
 				"Finished checking svn status for: " + subversionDir,
-				TextFeedbackType.Noteworthy);
+				TextFeedbackType.Success);
 		}
 		if (SubversionChangesFound)
 		{

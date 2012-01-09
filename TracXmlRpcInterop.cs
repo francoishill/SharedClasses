@@ -160,7 +160,7 @@ public class TracXmlRpcInterop
 		}
 	}
 
-	public static Dictionary<int, DescriptionAndTicketType> GetAllTicketDescriptionsAndTypes(string xmlRpcUrl, string Username = null, string Password = null)
+	public static Dictionary<int, DescriptionAndTicketType> GetAllTicketDescriptionsAndTypes(string xmlRpcUrl, string Username = null, string Password = null, TextFeedbackEventHandler textFeedbackEvent = null, object textfeedbackSenderObject = null)
 	{
 		Dictionary<int, DescriptionAndTicketType> tmpDict = new Dictionary<int, DescriptionAndTicketType>();
 
@@ -169,11 +169,11 @@ public class TracXmlRpcInterop
 		{
 			Dictionary<string, object> fieldvalues = GetFieldValuesOfTicket(id, xmlRpcUrl, Username, Password);
 			if (!fieldvalues.ContainsKey("description"))
-				UserMessages.ShowWarningMessage("Could not find description for ticket #" + id);
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not find description for ticket #" + id, TextFeedbackType.Noteworthy);
 			else if (!fieldvalues.ContainsKey("type"))
-				UserMessages.ShowWarningMessage("Could not find type for ticket #" + id);
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not find type for ticket #" + id, TextFeedbackType.Noteworthy);
 			else if (!CanParseStringToTicketTypeEnum(fieldvalues["type"].ToString()))
-				UserMessages.ShowWarningMessage("Could not parse Trac ticket type from string: " + fieldvalues["type"].ToString());
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not parse Trac ticket type from string: " + fieldvalues["type"].ToString(), TextFeedbackType.Noteworthy);
 			else
 			{
 				TicketTypeEnum? tempNullableTicketType = ParseTicketTypeFromString(fieldvalues["type"].ToString());
@@ -194,7 +194,12 @@ public class TracXmlRpcInterop
 
 		//time, author, field, oldvalue, newvalue, permanent
 		object[] changelogArray = new object[0];
-		ThreadingInterop.PerformVoidFunctionSeperateThread(() => { changelogArray = tracMonitorSystem.Ticket_ChangeLog(ticketId); }, ThreadName: "ChangeLogs");
+		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+		{
+			changelogArray = tracMonitorSystem.Ticket_ChangeLog(ticketId);
+		},
+		ThreadName: "ChangeLogs");
+
 		foreach (object obj in changelogArray)
 		{
 			if (obj is object[]

@@ -41,7 +41,7 @@ public class VisualStudioInterop
 	private enum BuildType { Rebuild, Build };
 	private enum ProjectConfiguration { Debug, Release };
 	private enum PlatformTarget { x86, x64 };
-	private static string BuildVsProjectReturnNewversionString(string projName, string projectFilename, BuildType buildType, ProjectConfiguration configuration, PlatformTarget platformTarget, bool AutomaticallyUpdateRevision, Object textfeedbackSenderObject, TextFeedbackEventHandler textFeedbackEvent = null)
+	private static string BuildVsProjectReturnNewversionString(string projName, string csprojFilename, string slnFilename, bool SolutionTrueProjectFalse, BuildType buildType, ProjectConfiguration configuration, PlatformTarget platformTarget, bool AutomaticallyUpdateRevision, Object textfeedbackSenderObject, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
 		string msbuildpath;
 		if (!FindMsbuildPath4(out msbuildpath))
@@ -62,25 +62,31 @@ public class VisualStudioInterop
 				" /p:configuration=" + configuration.ToString().ToLower() +
 				" /p:AllowUnsafeBlocks=true" +
 				" /p:PlatformTarget=" + platformTarget.ToString() +
-				" \"" + projectFilename + "\"");
+				" \"" + (SolutionTrueProjectFalse ? slnFilename : csprojFilename) + "\"");
 
+			//startinfo.UseShellExecute = false;
+			//startinfo.CreateNoWindow = false;
 			startinfo.UseShellExecute = false;
-			startinfo.CreateNoWindow = false;
+			startinfo.CreateNoWindow = true;
 			startinfo.RedirectStandardOutput = true;
 			startinfo.RedirectStandardError = true;
+
+			List<string> OutputLog = new List<string>();
 			System.Diagnostics.Process msbuildproc = new Process();
 			msbuildproc.OutputDataReceived += delegate(object sendingProcess, DataReceivedEventArgs outLine)
 			{
 				//if (outLine.Data != null && outLine.Data.Trim().Length > 0)
 				//  Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, "Msbuild output: " + outLine.Data);
 				//else appendLogTextbox("Svn output empty");
+				//Console.WriteLine(outLine.Data);
+				if (outLine.Data != null) OutputLog.Add(outLine.Data);
 			};
-			msbuildproc.ErrorDataReceived += delegate(object sendingProcess, DataReceivedEventArgs outLine)
+			msbuildproc.ErrorDataReceived += delegate(object sendingProcess, DataReceivedEventArgs errorLine)
 			{
-				if (outLine.Data != null && outLine.Data.Trim().Length > 0)
+				if (errorLine.Data != null && errorLine.Data.Trim().Length > 0)
 				{
 					errorOccurred = true;
-					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Msbuild error: " + outLine.Data);
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Msbuild error: " + errorLine.Data);
 				}
 				//else appendLogTextbox("Svn error empty");
 			};
@@ -90,10 +96,48 @@ public class VisualStudioInterop
 				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Started building for " + projName + ", please wait...");
 			else TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Error: Could not start SVN process.");
 
+			msbuildproc.PriorityBoostEnabled = true;
 			msbuildproc.BeginOutputReadLine();
 			msbuildproc.BeginErrorReadLine();
 
 			msbuildproc.WaitForExit();
+
+			string errorscountString = "";
+			string warningscountString = "";
+			foreach (string line in OutputLog)
+				if (line.ToLower().EndsWith("Error(s)".ToLower()))
+					errorscountString = line;
+				else if (line.ToLower().EndsWith("Warning(s)".ToLower()))
+					warningscountString = line;
+			if (errorscountString.Length == 0)
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not find errors count line in output log", TextFeedbackType.Noteworthy);
+			else
+			{
+				int errorcount;
+				if (!int.TryParse(errorscountString.ToLower().Replace("error(s)", "").Trim(), out errorcount))
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not obtain error count from error(s) line = " + errorscountString, TextFeedbackType.Noteworthy);
+				else
+				{
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, errorscountString, TextFeedbackType.Noteworthy);
+					if (errorcount > 0)
+					{
+						errorOccurred = true;
+						if (UserMessages.Confirm(errorscountString + " have occurred with the build process, open the log file now?"))
+						{
+							string tempfile = Path.GetTempPath() + "msbuildOutputLog.txt";
+							File.WriteAllLines(tempfile, OutputLog);
+							System.Diagnostics.Process.Start(tempfile);
+						}
+					}
+				}
+			}
+			if (warningscountString.Length == 0)
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not find warnings count line in output log", TextFeedbackType.Noteworthy);
+			else
+			{
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, warningscountString, TextFeedbackType.Error);
+			}
+			//MessageBox.Show(msbuildproc.ExitCode.ToString());
 		},
 		WaitUntilFinish: true,
 		ThreadName: "MsBuild Thread");
@@ -110,7 +154,7 @@ public class VisualStudioInterop
 			string appversion = "";
 			int appverlinenum = -1;
 			List<string> newFileLines = new List<string>();
-			StreamReader sr = new StreamReader(projectFilename);
+			StreamReader sr = new StreamReader(csprojFilename);
 			try { while (!sr.EndOfStream) newFileLines.Add(sr.ReadLine()); }
 			finally { sr.Close(); }
 
@@ -155,7 +199,7 @@ public class VisualStudioInterop
 							+ newFileLines[appverlinenum].Substring(newFileLines[appverlinenum].IndexOf(appverend));
 					//Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, newFileLines[appverlinenum]);
 
-					StreamWriter sw = new StreamWriter(projectFilename);
+					StreamWriter sw = new StreamWriter(csprojFilename);
 					try
 					{
 						foreach (string line in newFileLines)
@@ -183,7 +227,7 @@ public class VisualStudioInterop
 	}
 
 	//TODO: Start building own publishing platform (FTP, the html page, etc)
-	public static string PerformPublish(Object textfeedbackSenderObject, string projName, out string versionString, bool HasPlugins, bool AutomaticallyUpdateRevision = false, bool OpenFolderAndSetupFileAfterSuccessfullNSIS = true, TextFeedbackEventHandler textFeedbackEvent = null)
+	public static string PerformPublish(Object textfeedbackSenderObject, string projName, out string versionString, bool HasPlugins, bool AutomaticallyUpdateRevision = false, bool OpenFolderAndSetupFileAfterSuccessfullNSIS = true, bool WriteIntoRegistryForWindowsAutostartup = true, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
 		versionString = "";
 		string projDir =
@@ -192,6 +236,10 @@ public class VisualStudioInterop
 		while (projDir.EndsWith("\\")) projDir = projDir.Substring(0, projDir.Length - 1);
 		string projFolderName = projDir.Split('\\')[projDir.Split('\\').Length - 1];
 		string csprojFileName = projDir + "\\" + projFolderName + ".csproj";
+		string slnFileName = projDir + "\\" + projFolderName + ".sln";
+
+		bool SolutionFileFound = false;
+		if (File.Exists(slnFileName)) SolutionFileFound = true;
 
 		bool ProjFileFound = false;
 		if (File.Exists(csprojFileName)) ProjFileFound = true;
@@ -201,13 +249,16 @@ public class VisualStudioInterop
 			if (File.Exists(csprojFileName)) ProjFileFound = true;
 		}
 
-		if (!ProjFileFound) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not find project file (csproj) in dir " + projDir);
+		if (!SolutionFileFound) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not find solution file (sln) in dir " + projDir);
+		else if (!ProjFileFound) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not find project file (csproj) in dir " + projDir);
 		else
 		{
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Attempting to MsBuild project " + projName);
 			string newversionstring = BuildVsProjectReturnNewversionString(
 				projName,
 				csprojFileName,
+				slnFileName,
+				true,
 				BuildType.Rebuild,
 				ProjectConfiguration.Release,
 				PlatformTarget.x86,//.x64,
@@ -250,7 +301,7 @@ public class VisualStudioInterop
 					null,
 					true,
 					NsisInterop.NSISclass.DotnetFrameworkTargetedEnum.DotNet4client,
-					true,
+					WriteIntoRegistryForWindowsAutostartup,
 					HasPlugins);
 					foreach (string line in list)
 						sw1.WriteLine(line);
@@ -392,10 +443,10 @@ public class VisualStudioInterop
 		return tempFilename;
 	}
 
-	public async static void PerformPublishOnline(Object textfeedbackSenderObject, string projName, bool HasPlugins, bool AutomaticallyUpdateRevision = false, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
+	public async static void PerformPublishOnline(Object textfeedbackSenderObject, string projName, bool HasPlugins, bool AutomaticallyUpdateRevision = false, bool WriteIntoRegistryForWindowsAutostartup = true, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
 	{
 		string versionString;
-		string publishedSetupPath = PerformPublish(textfeedbackSenderObject, projName, out versionString, HasPlugins, AutomaticallyUpdateRevision, false, textFeedbackEvent);
+		string publishedSetupPath = PerformPublish(textfeedbackSenderObject, projName, out versionString, HasPlugins, AutomaticallyUpdateRevision, false, WriteIntoRegistryForWindowsAutostartup, textFeedbackEvent);
 		if (publishedSetupPath != null)
 		{
 			string validatedUrlsectionForProjname = HttpUtility.UrlPathEncode(projName).ToLower();
@@ -411,7 +462,7 @@ public class VisualStudioInterop
 			List<string> Improvements;
 			List<string> NewFeatures;
 			//TODO: When pulling buglist/improvement etc from Trac repository for a project, must also check in the project's .csproj file whether it uses/references SharedClasses. Then it must also pull the changes from the SharedClasses Trac repository.
-			GetChangeLogs(projName, out BugsFixed, out Improvements, out NewFeatures);
+			GetChangeLogs(textfeedbackSenderObject, projName, out BugsFixed, out Improvements, out NewFeatures, textFeedbackEvent: textFeedbackEvent);
 
 			string htmlFilePath = CreateHtmlPageReturnFilename(projName, versionString, publishedSetupPath, BugsFixed, Improvements, NewFeatures);
 
@@ -437,7 +488,7 @@ public class VisualStudioInterop
 		return null;
 	}
 
-	public static void GetChangeLogs(string ProjectName, out List<string> BugsFixed, out List<string> Improvements, out List<string> NewFeatures, string Username = null, string Password = null)
+	public static void GetChangeLogs(object textfeedbackSenderObject, string ProjectName, out List<string> BugsFixed, out List<string> Improvements, out List<string> NewFeatures, string Username = null, string Password = null, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
 		BugsFixed = new List<string>();
 		Improvements = new List<string>();
@@ -450,12 +501,16 @@ public class VisualStudioInterop
 			return;//return new List<string>() { "No trac xmlrpc url specified for project " + ProjectName + ", no bugs found." };
 		}
 
-		Dictionary<int, TracXmlRpcInterop.DescriptionAndTicketType> tmpIdsAndDescriptionsAndTicketTypes = TracXmlRpcInterop.GetAllTicketDescriptionsAndTypes(ProjectXmlRpcTracUri, Username, Password);
+		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Obtaining all ticket descriptions and types from Trac server...", TextFeedbackType.Subtle);
+		Dictionary<int, TracXmlRpcInterop.DescriptionAndTicketType> tmpIdsAndDescriptionsAndTicketTypes
+			= TracXmlRpcInterop.GetAllTicketDescriptionsAndTypes(ProjectXmlRpcTracUri, Username, Password);
+		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Finished obtaining all ticket descriptions and types from Trac server.", TextFeedbackType.Subtle);
 
 		//List<string> tmpList = new List<string>();
 		//int[] ids = TracXmlRpcInterop.GetTicketIds(ProjectXmlRpcTracUri, Username, Password);
 		foreach (int i in tmpIdsAndDescriptionsAndTicketTypes.Keys)
 		{
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Obtaining changelogs for ticket " + i.ToString() + "...", TextFeedbackType.Subtle);
 			List<TracXmlRpcInterop.ChangeLogStruct> changelogs = TracXmlRpcInterop.ChangeLogs(i, ProjectXmlRpcTracUri);
 			foreach (TracXmlRpcInterop.ChangeLogStruct cl in changelogs)
 				if (cl.Field == "comment" && !string.IsNullOrWhiteSpace(cl.NewValue))
@@ -467,6 +522,7 @@ public class VisualStudioInterop
 					else if (tmpIdsAndDescriptionsAndTicketTypes[i].TicketType == TracXmlRpcInterop.TicketTypeEnum.NewFeature)
 						NewFeatures.Add("Ticket #" + i + ": " + cl.NewValue + "  (" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + ")");
 					//tmpList.Add("Ticket #" + i + ": '" + cl.Field + "' new value = " + cl.NewValue + ", old value = " + cl.OldValue);
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Finished obtaining changelogs for ticket " + i.ToString() + ".", TextFeedbackType.Subtle);
 		}
 	}
 

@@ -150,12 +150,13 @@ public class SvnInterop
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(
 				TextFeedbackSenderObject,
 				TextFeedbackEvent,
-				"Start checking svn status for: " + subversionDir,
+				"Automatic checking of subversion status for: " + subversionDir,
 				TextFeedbackType.Noteworthy);
 
 			Dictionary<MessagesTypes, List<string>> tmpSubversionMessages =
 				PerformSubversionCommand(TextFeedbackSenderObject, subversionDir, SvnCommand.Status, TextFeedbackEvent);
-			if (tmpSubversionMessages[MessagesTypes.Output].Count > 0 || tmpSubversionMessages[MessagesTypes.Error].Count > 0)
+			if (tmpSubversionMessages[MessagesTypes.Output].Count(s => !s.ToLower().Contains("Status against revision".ToLower())) > 0
+				|| tmpSubversionMessages[MessagesTypes.Error].Count > 0)
 				SubversionChangesFound = true;
 			//foreach (string outmsg in tmpSubversionMessages[MessagesTypes.Output])
 			//	TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, TextFeedbackEvent, "Subversion message: " + outmsg, TextFeedbackType.Noteworthy);

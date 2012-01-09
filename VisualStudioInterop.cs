@@ -118,7 +118,7 @@ public class VisualStudioInterop
 					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not obtain error count from error(s) line = " + errorscountString, TextFeedbackType.Noteworthy);
 				else
 				{
-					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, errorscountString, TextFeedbackType.Noteworthy);
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, errorscountString, errorcount > 0 ? TextFeedbackType.Error : TextFeedbackType.Subtle);
 					if (errorcount > 0)
 					{
 						errorOccurred = true;
@@ -135,7 +135,13 @@ public class VisualStudioInterop
 				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not find warnings count line in output log", TextFeedbackType.Noteworthy);
 			else
 			{
-				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, warningscountString, TextFeedbackType.Error);
+				int warningcount;
+				if (!int.TryParse(warningscountString.ToLower().Replace("warning(s)", "").Trim(), out warningcount))
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not obtain warning count from error(s) line = " + warningscountString, TextFeedbackType.Noteworthy);
+				else
+				{
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, warningscountString, warningcount > 0 ? TextFeedbackType.Noteworthy : TextFeedbackType.Subtle);
+				}
 			}
 			//MessageBox.Show(msbuildproc.ExitCode.ToString());
 		},
@@ -516,7 +522,7 @@ public class VisualStudioInterop
 				if (cl.Field == "comment" && !string.IsNullOrWhiteSpace(cl.NewValue))
 					//TODO: This can be greatly improved
 					if (tmpIdsAndDescriptionsAndTicketTypes[i].TicketType == TracXmlRpcInterop.TicketTypeEnum.Bug)
-						BugsFixed.Add("Ticket #" + i + ": " + cl.NewValue + "  (" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + ")");
+						BugsFixed.Add("Ticket #e" + i + ": " + cl.NewValue + "  (" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + ")");
 					else if (tmpIdsAndDescriptionsAndTicketTypes[i].TicketType == TracXmlRpcInterop.TicketTypeEnum.Improvement)
 						Improvements.Add("Ticket #" + i + ": " + cl.NewValue + "  (" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + ")");
 					else if (tmpIdsAndDescriptionsAndTicketTypes[i].TicketType == TracXmlRpcInterop.TicketTypeEnum.NewFeature)

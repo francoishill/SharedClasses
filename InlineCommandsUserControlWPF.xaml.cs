@@ -95,7 +95,8 @@ namespace SharedClasses
 								: evtargs.FeedbackType == TextFeedbackType.Subtle ? Brushes.LightGray
 								: Brushes.Gold,
 							TextIndent = -25,
-							Margin = new Thickness(25, 0, 0, 0)
+							Margin = new Thickness(25, 0, 0, 0),
+							ToolTip = DateTime.Now.ToString(@"HH\hmm:ss \o\n ddd, dd MM yyyy")
 						};
 						if (snder is ICommandWithHandler)
 						{

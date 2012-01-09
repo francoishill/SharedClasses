@@ -1568,7 +1568,8 @@
 									 ScrollViewer.VerticalScrollBarVisibility='Auto'
 									 Foreground="Green"
 									 Padding='10,0'
-									 IsReadOnly='True'>
+									 IsReadOnly='True'
+									 IsDocumentEnabled='True'>
 				<RichTextBox.Resources>
 					<Style TargetType="{x:Type inlinecommandtoolkit:MessagesParagraph}">
 						<Setter Property="Margin"

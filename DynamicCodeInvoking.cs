@@ -11,6 +11,7 @@ using System.Reflection.Emit;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using CookComputing.XmlRpc;
+using SharedClasses;
 
 public class DynamicCodeInvoking
 {

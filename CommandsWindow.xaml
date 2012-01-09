@@ -1,22 +1,22 @@
-﻿<Window x:Class='InlineCommandsWindowWPF'
+﻿<Window x:Class='CommandsWindow'
 				xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
 				xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
 				xmlns:d='http://schemas.microsoft.com/expression/blend/2008'
 				xmlns:mc='http://schemas.openxmlformats.org/markup-compatibility/2006'
 				mc:Ignorable='d'
 				xmlns:SharedClasses="clr-namespace:SharedClasses"
-				Title='InlineCommandsWindowWPF'
-				Name='InlineCommandsWindowWPF1'
-				Loaded="InlineCommandsWindowWPF1_Loaded"
-				Width="800"
+				Title='CommandsWindow'
+				Name='CommandsWindow1'
+				Loaded="CommandsWindow1_Loaded"
+				Width="1000"
 				MinWidth="150"
 				WindowStartupLocation='CenterScreen'
 				WindowStyle='None'
 				Background='Transparent'
-				Closing='InlineCommandsWindowWPF1_Closing'
+				Closing='CommandsWindow1_Closing'
 				UseLayoutRounding='True'
-				MouseLeftButtonDown='InlineCommandsWindowWPF1_MouseLeftButtonDown'
-				MouseRightButtonUp='InlineCommandsWindowWPF1_MouseRightButtonDown'
+				MouseLeftButtonDown='CommandsWindow1_MouseLeftButtonDown'
+				MouseRightButtonUp='CommandsWindow1_MouseRightButtonDown'
 				Height="700">
 	<Window.Resources>
 		<DrawingImage x:Key="Button1Image">
@@ -96,10 +96,10 @@
         </LinearGradientBrush>
     </Window.Background>-->
 	<Grid>
-		<SharedClasses:InlineCommandsUserControlWPF x:Name="inlineCommandsUserControlWPF1"
+		<SharedClasses:CommandsUsercontrol x:Name="commandsUsercontrol1"
 																								HorizontalAlignment="Stretch"
 																								VerticalAlignment="Stretch">
-			<SharedClasses:InlineCommandsUserControlWPF.Background>
+			<SharedClasses:CommandsUsercontrol.Background>
 				<LinearGradientBrush StartPoint="0,0"
 														 EndPoint="0,1">
 					<GradientStop Color="#fff"
@@ -109,7 +109,7 @@
 					<GradientStop Color="#f0f0f0"
 												Offset="1" />
 				</LinearGradientBrush>
-			</SharedClasses:InlineCommandsUserControlWPF.Background>
-		</SharedClasses:InlineCommandsUserControlWPF>
+			</SharedClasses:CommandsUsercontrol.Background>
+		</SharedClasses:CommandsUsercontrol>
 	</Grid>
 </Window>

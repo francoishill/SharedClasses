@@ -19,7 +19,6 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using DynamicDLLsInterop;
-using InlineCommands;
 using InlineCommandToolkit;//InlineCommands.CommandsManagerClass.OverrideToStringClass;
 using InterfaceForQuickAccessPlugin;
 using PropertyInterceptor;
@@ -34,7 +33,7 @@ namespace SharedClasses
 	/// <summary>
 	/// Interaction logic for InlineCommandsUserControlWPF.xaml
 	/// </summary>
-	public partial class InlineCommandsUserControlWPF : UserControl
+	public partial class CommandsUsercontrol : UserControl
 	{
 		public TextFeedbackEventHandler textFeedbackEvent;
 		public ProgressChangedEventHandler progressChangedEvent;
@@ -53,13 +52,13 @@ namespace SharedClasses
 					DynamicDLLs.LoadPluginsInDirectory(pluginProjectBaseDir + @"\bin\Release");
 		}
 
-		public InlineCommandsUserControlWPF()
+		public CommandsUsercontrol()
 		{
 			InitializeComponent();
 			//LoadPlugins();
 		}
 
-		//public InlineCommandsUserControlWPF(System.Windows.Forms.Form mainFormUsedForShuttingDownServers)
+		//public CommandsUsercontrol(System.Windows.Forms.Form mainFormUsedForShuttingDownServers)
 		//{
 		//	InitializeComponent();
 		//	MainFormUsedForShuttingDownServers = mainFormUsedForShuttingDownServers;
@@ -101,7 +100,7 @@ namespace SharedClasses
 						if (snder is ICommandWithHandler)
 						{
 							ICommandWithHandler tmpCommand = snder as ICommandWithHandler;
-							tmpCommand.ParagraphListForMessages.Add(tmpParagraph);
+							tmpCommand.MessagesList.Add(tmpParagraph);
 							
 							//TODO: Handle the messages better
 							//Like if a message is new and the relevant command is not selected, add a "star" to the command
@@ -111,6 +110,7 @@ namespace SharedClasses
 							{
 								tmpParagraph.Unread = false;
 								textBox_Messages.Document.Blocks.Add(tmpParagraph);
+								textBox_Messages.ScrollToEnd();
 							}
 
 							tmpCommand.NotifyPropertyChanged("NumberUnreadMessages");
@@ -165,6 +165,8 @@ namespace SharedClasses
 					if (qai.GetType().GetInterface(typeof(ICommandWithHandler).Name) != null)
 					{
 						ICommandWithHandler comm = qai as ICommandWithHandler;
+						if (qai is OverrideToStringClass)
+							(qai as OverrideToStringClass).PropertyChanged += new System.ComponentModel.PropertyChangedEventHandler(Command_PropertyChanged);
 						//ICommandWithHandler comm = (ICommandWithHandler)qai.GetType().GetConstructor(new Type[0]).Invoke(new object[0]);
 						//OverrideToStringClass comm =
 						//		(OverrideToStringClass)qai.GetType().GetConstructor(new Type[0]).Invoke(new object[0]);
@@ -229,6 +231,13 @@ namespace SharedClasses
 
 				textFeedbackEventInitialized = true;
 			}
+		}
+
+		private void Command_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+		{
+			if (string.Compare(e.PropertyName, "MessagesList", true) == 0)
+				SetDataContext(activeCommand);
+				//System.Windows.Forms.MessageBox.Show("Prop changed: " + e.PropertyName);
 		}
 
 		private AutoCompleteBox textBox_CommandLine
@@ -323,7 +332,7 @@ namespace SharedClasses
 					SetDataContext(command);
 					label_ArgumentsExample.Content = label_ArgumentsExample.ToolTip = command.ArgumentsExample.Replace("\n", "  ");
 
-					foreach (MessagesParagraph mp in command.ParagraphListForMessages)
+					foreach (MessagesParagraph mp in command.MessagesList)
 						mp.Unread = false;
 					command.NotifyPropertyChanged("NumberUnreadMessages");
 
@@ -441,7 +450,11 @@ namespace SharedClasses
 
 			textBox_Messages.UpdateLayout();
 			textBox_Messages.Document.Blocks.Clear();
-			if (command != null) textBox_Messages.Document.Blocks.AddRange(command.ParagraphListForMessages);
+			if (command != null)
+			{
+				textBox_Messages.Document.Blocks.AddRange(command.MessagesList);
+				textBox_Messages.ScrollToEnd();
+			}
 
 			SetVisibilityOfExtraControls();
 		}
@@ -1406,6 +1419,17 @@ namespace SharedClasses
 			//be.UpdateTarget();
 		}
 
+		private void treeView_CommandList_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+		{
+			e.Handled = true;
+		}
+
+		private void DockPanel_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+		{
+			e.Handled = true;
+			(sender as DockPanel).ContextMenu.IsOpen = true;
+		}
+
 		//private bool IsTreeViewDragBusy = false;
 	}
 
@@ -1430,13 +1454,12 @@ namespace SharedClasses
 		}
 	}
 
-	public class NumberUnreadItemsToTextConverter : System.Windows.Data.IValueConverter
+	public class NumberUnreadItemsToTextConverter : IValueConverter
 	{
-
 		public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
 		{
 			if (value == null || !(value is Dictionary<TextFeedbackType, int>))
-				return "";
+				return null;
 			Dictionary<TextFeedbackType, int> tmpdict = value as Dictionary<TextFeedbackType, int>;
 			bool NonZeroFound = false;
 			foreach (TextFeedbackType fbt in tmpdict.Keys)
@@ -1446,10 +1469,39 @@ namespace SharedClasses
 					break;
 				}
 			if (!NonZeroFound)
-				return "";
+				return null;
 
-			//TODO: The following text will only contain errors, noteworthy, success, subtle. Ensure this always adds other values as well
-			return string.Format("  {0},{1},{2},{3}", tmpdict[TextFeedbackType.Error], tmpdict[TextFeedbackType.Noteworthy], tmpdict[TextFeedbackType.Success], tmpdict[TextFeedbackType.Subtle]);
+			//return "*";
+			//DONE: The following text will only contain errors, noteworthy, success, subtle. Ensure this always adds other values as well
+
+			//List<string> tmplist = new List<string>();
+			//foreach (TextFeedbackType ft in Enum.GetValues(typeof(TextFeedbackType)))
+			//	tmplist.Add(ft.ToString() + " = " + tmpdict[ft].ToString());
+			//return tmplist;
+
+			string tmpstr = "Unread messages count";
+			foreach (TextFeedbackType ft in Enum.GetValues(typeof(TextFeedbackType)))
+				tmpstr += Environment.NewLine + "  " + ft.ToString() + " = " + tmpdict[ft].ToString();
+			return tmpstr;//string.Format("  {0},{1},{2},{3}", tmpdict[TextFeedbackType.Error], tmpdict[TextFeedbackType.Noteworthy], tmpdict[TextFeedbackType.Success], tmpdict[TextFeedbackType.Subtle]);
+		}
+
+		public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			throw new NotImplementedException();
+		}
+	}
+
+	public class UnreadItemsStartVisibilityConverter : IValueConverter
+	{
+		public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			if (value == null || !(value is Dictionary<TextFeedbackType, int>))
+				return Visibility.Collapsed;
+			Dictionary<TextFeedbackType, int> tmpdict = value as Dictionary<TextFeedbackType, int>;
+			foreach (TextFeedbackType fbt in tmpdict.Keys)
+				if (tmpdict[fbt] > 0)
+					return Visibility.Visible;
+			return Visibility.Collapsed;
 		}
 
 		public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)

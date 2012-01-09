@@ -8,7 +8,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using DynamicDLLsInterop;
-using InlineCommands;
 using InterfaceForQuickAccessPlugin;
 
 namespace SharedClasses

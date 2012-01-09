@@ -1,568 +1,600 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Configuration;
 using System.Reflection;
-using System.Windows.Forms;
-using UriProtocol = GlobalSettings.VisualStudioInteropSettings.UriProtocol;
+using System.Windows;
+using SharedClasses;
+//using System.Windows.Forms;
+using UriProtocol = SharedClasses.GlobalSettings.VisualStudioInteropSettings.UriProtocol;
 
-[AttributeUsage(AttributeTargets.All)]
-public class SettingAttribute : Attribute
+namespace SharedClasses
 {
-	// Private fields.
-	private string userPrompt;
-	private bool passwordPromptEveryTime;
-
-	public SettingAttribute(string userPrompt, bool passwordPromptEveryTime = false)
+	[AttributeUsage(AttributeTargets.All)]
+	public class SettingAttribute : Attribute
 	{
-		this.userPrompt = userPrompt;
-		this.passwordPromptEveryTime = passwordPromptEveryTime;
+		// Private fields.
+		private string userPrompt;
+		private bool passwordPromptEveryTime;
+
+		public SettingAttribute(string userPrompt, bool passwordPromptEveryTime = false)
+		{
+			this.userPrompt = userPrompt;
+			this.passwordPromptEveryTime = passwordPromptEveryTime;
+		}
+
+		public string UserPrompt { get { return userPrompt; } }//public virtual string UserPrompt { get { return userPrompt; } }
+		public bool PasswordPromptEveryTime { get { return passwordPromptEveryTime; } }
 	}
 
-	public string UserPrompt { get { return userPrompt; } }//public virtual string UserPrompt { get { return userPrompt; } }
-	public bool PasswordPromptEveryTime { get { return passwordPromptEveryTime; } }
-}
-
-public sealed class SharedClassesSettings
-{
-	//public static string RootApplicationNameForSharedClasses = "SharedClasses";
-
-	//private static VisualStudioInteropSettings _visualStudioInterop;
-	//private static object syncRootVisualStudioInterop = new Object();
-	//public static VisualStudioInteropSettings VisualStudioInterop
-	//{
-	//	get
-	//	{
-	//		if (_visualStudioInterop == null)
-	//		{
-	//			lock (syncRootVisualStudioInterop)
-	//			{
-	//				if (_visualStudioInterop == null)
-	//					_visualStudioInterop = new VisualStudioInteropSettings();
-	//			}
-	//		}
-	//		return _visualStudioInterop;
-	//	}
-	//}
-	//public static NetworkInteropSettings _networkInteropSettings;
-	//private static object syncRootNetworkInteropSettings = new Object();
-	//public static NetworkInteropSettings NetworkInteropSettings
-	//{
-	//	get
-	//	{
-	//		if (_networkInteropSettings == null)
-	//		{
-	//			lock (syncRootNetworkInteropSettings)
-	//			{
-	//				if (_networkInteropSettings == null)
-	//					_networkInteropSettings = new NetworkInteropSettings();
-	//			}
-	//		}
-	//		return _networkInteropSettings;
-	//	}
-	//}
-	//public static TracXmlRpcInteropSettings _tracXmlRpcInteropSettings;
-	//private static object syncRootTracXmlRpcInteropSettings = new Object();
-	//public static TracXmlRpcInteropSettings TracXmlRpcInteropSettings
-	//{
-	//	get
-	//	{
-	//		if (_tracXmlRpcInteropSettings == null)
-	//		{
-	//			lock (syncRootTracXmlRpcInteropSettings)
-	//			{
-	//				if (_tracXmlRpcInteropSettings == null)
-	//					_tracXmlRpcInteropSettings = new TracXmlRpcInteropSettings();
-	//			}
-	//		}
-	//		return _tracXmlRpcInteropSettings;
-	//	}
-	//}
-
-	//private static bool WasAlreadyCalledEnsureAllSharedClassesSettingsNotNullCreateDefault = false;
-
-	//public static void EnsureAllSharedClassesSettingsNotNullCreateDefault()
-	//{
-	//	if (WasAlreadyCalledEnsureAllSharedClassesSettingsNotNullCreateDefault)
-	//		return;
-
-	//	//typeof(Sha
-
-	//	//PropertyInfo[] propertyInfos = typeof(SharedClassesSettings).GetProperties(BindingFlags.Public | BindingFlags.Static);
-	//	//foreach (PropertyInfo pi in propertyInfos)
-	//	//	if (pi.PropertyType.BaseType == typeof(GenericSettings))
-	//	//		(pi.GetValue(null) as GenericSettings).LoadFromFile(RootApplicationNameForSharedClasses);
-
-	//	//FieldInfo[] fieldInfos = typeof(SharedClassesSettings).GetFields(BindingFlags.Public | BindingFlags.Static);
-	//	//foreach (FieldInfo fi in fieldInfos)
-	//	//	if (fi.FieldType.BaseType == typeof(GenericSettings))
-	//	//		(fi.GetValue(null) as GenericSettings).LoadFromFile(null, "Appname");
-
-	//	//VisualStudioInteropSettings.LoadFromFile(typeof(VisualStudioInteropSettings)RootApplicationNameForSharedClasses);
-	//	//SetObjectDefaultIfNull<VisualStudioInteropSettings>(ref _visualStudioInterop);
-	//	//SetObjectDefaultIfNull<NetworkInteropSettings>(ref _networkInteropSettings);
-	//	//SetObjectDefaultIfNull<TracXmlRpcInteropSettings>(ref _tracXmlRpcInteropSettings);
-
-	//	//foreach (FieldInfo fi in typeof(SharedClassesSettings).GetFields(BindingFlags.Public | BindingFlags.Static))
-	//	//	if (fi.GetValue(null) == null)
-	//	//		UserMessages.ShowWarningMessage("SharedClassesSettings does not have value for field: " + fi.Name);
-
-	//	WasAlreadyCalledEnsureAllSharedClassesSettingsNotNullCreateDefault = true;
-	//}
-
-	//private static object obj = new object();
-	//private static void SetObjectDefaultIfNull<T>(ref T Obj)
-	//{
-	//	if (Obj == null) Obj = SettingsInterop.GetSettings<T>(RootApplicationNameForSharedClasses);
-	//	if (Obj == null)//When the file does not exist
-	//		Obj = (T)typeof(T).GetConstructor(new Type[] { }).Invoke(new object[] { });
-	//	lock (obj)
-	//		SettingsInterop.FlushSettings<T>(Obj, RootApplicationNameForSharedClasses);
-	//}
-}
-
-//interface IGenericSettings
-//{
-//	bool LoadFromFile();
-//	void SetDefaultValues();
-//}
-
-//internal sealed partial class Settings : ApplicationSettingsBase
-//{
-//	private static Settings defaultInstance = (
-//			(Settings)(ApplicationSettingsBase.Synchronized(new Settings()))
-//			);
-//	public static Settings Default
-//	{
-//		get
-//		{
-//			return defaultInstance;
-//		}
-//	}
-//}
-
-//public sealed class TempClass
-//{
-//	private static bool settingsAlreadyInitialized = false;
-//	public TempClass()
-//	{
-//		if (!settingsAlreadyInitialized)
-//		{
-//			settingsAlreadyInitialized = true;
-//			EnsureAllSettingsAreInitialized();
-//		}
-//	}
-
-//	public static void EnsureAllSettingsAreInitialized()
-//	{
-//		foreach (Type type in typeof(GlobalSettings).GetNestedTypes(BindingFlags.Public))
-//			if (!type.IsAbstract && type.BaseType == typeof(GenericSettings))
-//			{
-//				PropertyInfo[] staticProperties = type.GetProperties(BindingFlags.Static | BindingFlags.Public);
-//				foreach (PropertyInfo spi in staticProperties)
-//					if (type == spi.PropertyType)
-//					{
-//						//MessageBox.Show("Static = " + spi.Name + ", of type = " + spi.PropertyType.Name);
-//						PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Instance);
-//						foreach (PropertyInfo pi in properties)
-//							pi.GetValue(spi.GetValue(null));
-//						//MessageBox.Show(pi.Name + " = " + pi.GetValue(spi.GetValue(null)).ToString());
-//					}
-//			}
-//	}
-//}
-
-public abstract class GenericSettings : MarshalByRefObject, IInterceptorNotifiable// : IGenericSettings
-{
-	//private TempClass tc = new TempClass();//Leave this here as it ensures all settings are initialized
-
-	public static void EnsureAllSettingsAreInitialized()
+	public sealed class SharedClassesSettings
 	{
-		foreach (Type type in typeof(GlobalSettings).GetNestedTypes(BindingFlags.Public))
-			if (!type.IsAbstract && type.BaseType == typeof(GenericSettings))
-			{
-				PropertyInfo[] staticProperties = type.GetProperties(BindingFlags.Static | BindingFlags.Public);
-				foreach (PropertyInfo spi in staticProperties)
-					if (type == spi.PropertyType)
-					{
-						//MessageBox.Show("Static = " + spi.Name + ", of type = " + spi.PropertyType.Name);
-						PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Instance);
-						foreach (PropertyInfo pi in properties)
-							pi.GetValue(spi.GetValue(null));
-						//MessageBox.Show(pi.Name + " = " + pi.GetValue(spi.GetValue(null)).ToString());
-					}
-			}
-	}
+		//public static string RootApplicationNameForSharedClasses = "SharedClasses";
 
-	public static string RootApplicationNameForSharedClasses = "SharedClasses";
-
-	//TODO: Have a look at Lazy<> in c#, being able to initialize an object the first time it is used.
-	public abstract void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH");
-
-	public abstract void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH");
-
-	//public void SetDefaultValues()
-	//{
-	//	throw new NotImplementedException();
-	//}
-
-	public virtual void OnPropertySet(string propertyName)
-	{
-		PropertyInfo pi = this.GetType().GetProperty(propertyName);
-		SettingsInterop.FlushSettings(this.GetType(), this, RootApplicationNameForSharedClasses);
-	}
-
-	public virtual void OnPropertyGet(string propertyName)
-	{
-		//MessageBox.Show("Get: " + propertyName);
-	}
-}
-
-public class GlobalSettings
-{
-	//TODO: Check out INotifyPropertyChanged (in System.ComponentModel)
-	[Serializable]
-	public sealed class VisualStudioInteropSettings : GenericSettings
-	{
-		private static volatile VisualStudioInteropSettings instance;
-		private static object lockingObject = new Object();
-
-		public static VisualStudioInteropSettings Instance
-		{
-			get
-			{
-				if (instance == null)
-				{
-					lock (lockingObject)
-					{
-						if (instance == null)
-						{
-							instance = Interceptor<VisualStudioInteropSettings>.Create();//new VisualStudioInteropSettings();
-							instance.LoadFromFile(RootApplicationNameForSharedClasses);
-						}
-					}
-				}
-				return instance;
-			}
-		}
-
-		//TODO: Inside the InputBox (dialogs shown to enter passwords, etc), must have a link for the user to click to "update" all unset properties of the settings.
-		//TODO: User must be able to have a look at all settings used and change them (passwords must not be shown, only allow user to change it).
-		public enum UriProtocol { Http, Ftp }
-
-		[SettingAttribute("Please enter the base Uri for Visual Studio publishing, ie. code.google.com")]
-		public string BaseUri { get; set; }
-
-		public string RelativeRootUriAFTERvspublishing { get; set; }
-
-		public UriProtocol? UriProtocolForAFTERvspublishing { get; set; }
-
-		public string RelativeRootUriForVsPublishing { get; set; }
-
-		[SettingAttribute("Please enter Uri protocol for Visual Studio Publishing")]
-		public UriProtocol? UriProtocolForVsPublishing { get; set; }
-
-		public string FtpUsername { get; set; }
-
-		[Setting("Please enter ftp password user for Visual Studio publishing", true)]
-		public string FtpPassword { get; set; }
-
-		[Obsolete("Do not use constructor otherwise getting/setting of properties does not go through Interceptor. Use Interceptor<VisualStudioInteropSettings>.Create(); ")]
-		public VisualStudioInteropSettings()
-		{
-			BaseUri = null;//"fjh.dyndns.org";//"127.0.0.1";
-			RelativeRootUriAFTERvspublishing = null;//"/ownapplications";
-			UriProtocolForAFTERvspublishing = null;//UriProtocol.Http;
-			RelativeRootUriForVsPublishing = null;//"/francois/websites/firepuma/ownapplications";
-			UriProtocolForVsPublishing = null;//UriProtocol.Ftp;
-			FtpUsername = null;
-			FtpPassword = null;
-		}
-
-		public string GetCombinedUriForAFTERvspublishing()
-		{
-			return UriProtocolForAFTERvspublishing.ToString().ToLower() + "://" + BaseUri + RelativeRootUriAFTERvspublishing;
-		}
-
-		public string GetCombinedUriForVsPublishing()
-		{
-			return UriProtocolForVsPublishing.ToString().ToLower() + "://" + BaseUri + RelativeRootUriForVsPublishing;
-		}
-
-		public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
-		{
-			instance = Interceptor<VisualStudioInteropSettings>.Create(SettingsInterop.GetSettings<VisualStudioInteropSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
-		}
-
-		public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
-		{
-			SettingsInterop.FlushSettings<VisualStudioInteropSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
-		}
-	}
-
-	[Serializable]
-	public class NetworkInteropSettings : GenericSettings
-	{
-		private static volatile NetworkInteropSettings instance;
-		private static object lockingObject = new Object();
-
-		public static NetworkInteropSettings Instance
-		{
-			get
-			{
-				if (instance == null)
-				{
-					lock (lockingObject)
-					{
-						if (instance == null)
-						{
-							instance = Interceptor<NetworkInteropSettings>.Create();//new NetworkInteropSettings();
-							instance.LoadFromFile(RootApplicationNameForSharedClasses);
-						}
-					}
-				}
-				return instance;
-			}
-		}
-
-		[Setting("Please enter value for the time-to-live (Ttl) of the server socket")]
-		public short? ServerSocket_Ttl { get; set; }
-
-		[Setting("Enable NoDelay for the server socket?")]
-		public bool? ServerSocket_NoDelay { get; set; }
-
-		public int? ServerSocket_ReceiveBufferSize { get; set; }
-		public int? ServerSocket_SendBufferSize { get; set; }
-		public int? ServerSocket_MaxNumberPendingConnections { get; set; }
-		public int? ServerSocket_ListeningPort { get; set; }
-
-		[Obsolete("Do not use constructor otherwise getting/setting of properties does not go through Interceptor. Use Interceptor<NetworkInteropSettings>.Create(); ")]
-		public NetworkInteropSettings()
-		{
-			//ServerSocket_Ttl = 112;
-			//ServerSocket_NoDelay = true;
-			//ServerSocket_ReceiveBufferSize = 1024 * 1024 * 10;
-			//ServerSocket_SendBufferSize = 1024 * 1024 * 10;
-			//ServerSocket_MaxNumberPendingConnections = 100;
-			//ServerSocket_ListeningPort = 11000;
-		}
-
-		public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
-		{
-			instance = Interceptor<NetworkInteropSettings>.Create(SettingsInterop.GetSettings<NetworkInteropSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
-		}
-
-		public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
-		{
-			SettingsInterop.FlushSettings<NetworkInteropSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
-		}
-	}
-
-	[Serializable]
-	public class TracXmlRpcInteropSettings : GenericSettings
-	{
-		private static volatile TracXmlRpcInteropSettings instance;
-		private static object lockingObject = new Object();
-
-		public static TracXmlRpcInteropSettings Instance
-		{
-			get
-			{
-				if (instance == null)
-				{
-					lock (lockingObject)
-					{
-						if (instance == null)
-						{
-							instance = Interceptor<TracXmlRpcInteropSettings>.Create();//new TracXmlRpcInteropSettings();
-							instance.LoadFromFile(RootApplicationNameForSharedClasses);
-						}
-					}
-				}
-				return instance;
-			}
-		}
-
-		[Setting("Please enter ftp username for Trac XmlRpc")]
-		public string Username { get; set; }
-
-		//TODO: Implement Username in UserPrompt message [Setting("Please enter ftp password for Trac XmlRpc, username " + Username)]
-		[Setting("Please enter ftp password for Trac XmlRpc, username ", true)]
-		public string Password { get; set; }
-
-		[Setting("Please enter the Base url of the Dynamic Invokation Server")]
-		public string DynamicInvokationServer_BasePath { get; set; }
-
-		[Setting("Please enter the Relative url of the Dynamic Invokation Server")]
-		public string DynamicInvokationServer_RelativePath { get; set; }
-
-		[Setting("Please enter the Port number of the Dynamic Invokation Server")]
-		public int? DynamicInvokationServer_PortNumber { get; set; }
-
-		//TODO: Sort out how this list to string will work inside the PropertyInterceptor
-		private List<string> listedXmlRpcUrls;
-		public string ListedXmlRpcUrls
-		{
-			get
-			{
-				if (listedXmlRpcUrls == null || listedXmlRpcUrls.Count == 0)
-					listedXmlRpcUrls = new List<string>(UserMessages.Prompt("Please enter a list of XmlRpc urls (comma separated)").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
-				return listedXmlRpcUrls == null ? null : string.Join(",", listedXmlRpcUrls);
-			}
-			set { listedXmlRpcUrls = value == null ? null : new List<string>(value.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)); }
-		}
-
-		[Obsolete("Do not use constructor otherwise getting/setting of properties does not go through Interceptor. Use Interceptor<TracXmlRpcInteropSettings>.Create(); ")]
-		public TracXmlRpcInteropSettings()
-		{
-			//Username = null;
-			//Password = null;
-			//ListedXmlRpcUrls = null;
-		}
-
-		//public TracXmlRpcInteropSettings(string UsernameIn, string PasswordIn, List<string> ListedXmlRpcUrlsIn)
+		//private static VisualStudioInteropSettings _visualStudioInterop;
+		//private static object syncRootVisualStudioInterop = new Object();
+		//public static VisualStudioInteropSettings VisualStudioInterop
 		//{
-		//	Username = UsernameIn;
-		//	Password = PasswordIn;
-		//	listedXmlRpcUrls = ListedXmlRpcUrlsIn;
+		//	get
+		//	{
+		//		if (_visualStudioInterop == null)
+		//		{
+		//			lock (syncRootVisualStudioInterop)
+		//			{
+		//				if (_visualStudioInterop == null)
+		//					_visualStudioInterop = new VisualStudioInteropSettings();
+		//			}
+		//		}
+		//		return _visualStudioInterop;
+		//	}
+		//}
+		//public static NetworkInteropSettings _networkInteropSettings;
+		//private static object syncRootNetworkInteropSettings = new Object();
+		//public static NetworkInteropSettings NetworkInteropSettings
+		//{
+		//	get
+		//	{
+		//		if (_networkInteropSettings == null)
+		//		{
+		//			lock (syncRootNetworkInteropSettings)
+		//			{
+		//				if (_networkInteropSettings == null)
+		//					_networkInteropSettings = new NetworkInteropSettings();
+		//			}
+		//		}
+		//		return _networkInteropSettings;
+		//	}
+		//}
+		//public static TracXmlRpcInteropSettings _tracXmlRpcInteropSettings;
+		//private static object syncRootTracXmlRpcInteropSettings = new Object();
+		//public static TracXmlRpcInteropSettings TracXmlRpcInteropSettings
+		//{
+		//	get
+		//	{
+		//		if (_tracXmlRpcInteropSettings == null)
+		//		{
+		//			lock (syncRootTracXmlRpcInteropSettings)
+		//			{
+		//				if (_tracXmlRpcInteropSettings == null)
+		//					_tracXmlRpcInteropSettings = new TracXmlRpcInteropSettings();
+		//			}
+		//		}
+		//		return _tracXmlRpcInteropSettings;
+		//	}
 		//}
 
-		public string GetCominedUrlForDynamicInvokationServer()
+		//private static bool WasAlreadyCalledEnsureAllSharedClassesSettingsNotNullCreateDefault = false;
+
+		//public static void EnsureAllSharedClassesSettingsNotNullCreateDefault()
+		//{
+		//	if (WasAlreadyCalledEnsureAllSharedClassesSettingsNotNullCreateDefault)
+		//		return;
+
+		//	//typeof(Sha
+
+		//	//PropertyInfo[] propertyInfos = typeof(SharedClassesSettings).GetProperties(BindingFlags.Public | BindingFlags.Static);
+		//	//foreach (PropertyInfo pi in propertyInfos)
+		//	//	if (pi.PropertyType.BaseType == typeof(GenericSettings))
+		//	//		(pi.GetValue(null) as GenericSettings).LoadFromFile(RootApplicationNameForSharedClasses);
+
+		//	//FieldInfo[] fieldInfos = typeof(SharedClassesSettings).GetFields(BindingFlags.Public | BindingFlags.Static);
+		//	//foreach (FieldInfo fi in fieldInfos)
+		//	//	if (fi.FieldType.BaseType == typeof(GenericSettings))
+		//	//		(fi.GetValue(null) as GenericSettings).LoadFromFile(null, "Appname");
+
+		//	//VisualStudioInteropSettings.LoadFromFile(typeof(VisualStudioInteropSettings)RootApplicationNameForSharedClasses);
+		//	//SetObjectDefaultIfNull<VisualStudioInteropSettings>(ref _visualStudioInterop);
+		//	//SetObjectDefaultIfNull<NetworkInteropSettings>(ref _networkInteropSettings);
+		//	//SetObjectDefaultIfNull<TracXmlRpcInteropSettings>(ref _tracXmlRpcInteropSettings);
+
+		//	//foreach (FieldInfo fi in typeof(SharedClassesSettings).GetFields(BindingFlags.Public | BindingFlags.Static))
+		//	//	if (fi.GetValue(null) == null)
+		//	//		UserMessages.ShowWarningMessage("SharedClassesSettings does not have value for field: " + fi.Name);
+
+		//	WasAlreadyCalledEnsureAllSharedClassesSettingsNotNullCreateDefault = true;
+		//}
+
+		//private static object obj = new object();
+		//private static void SetObjectDefaultIfNull<T>(ref T Obj)
+		//{
+		//	if (Obj == null) Obj = SettingsInterop.GetSettings<T>(RootApplicationNameForSharedClasses);
+		//	if (Obj == null)//When the file does not exist
+		//		Obj = (T)typeof(T).GetConstructor(new Type[] { }).Invoke(new object[] { });
+		//	lock (obj)
+		//		SettingsInterop.FlushSettings<T>(Obj, RootApplicationNameForSharedClasses);
+		//}
+	}
+
+	//interface IGenericSettings
+	//{
+	//	bool LoadFromFile();
+	//	void SetDefaultValues();
+	//}
+
+	//internal sealed partial class Settings : ApplicationSettingsBase
+	//{
+	//	private static Settings defaultInstance = (
+	//			(Settings)(ApplicationSettingsBase.Synchronized(new Settings()))
+	//			);
+	//	public static Settings Default
+	//	{
+	//		get
+	//		{
+	//			return defaultInstance;
+	//		}
+	//	}
+	//}
+
+	//public sealed class TempClass
+	//{
+	//	private static bool settingsAlreadyInitialized = false;
+	//	public TempClass()
+	//	{
+	//		if (!settingsAlreadyInitialized)
+	//		{
+	//			settingsAlreadyInitialized = true;
+	//			EnsureAllSettingsAreInitialized();
+	//		}
+	//	}
+
+	//	public static void EnsureAllSettingsAreInitialized()
+	//	{
+	//		foreach (Type type in typeof(GlobalSettings).GetNestedTypes(BindingFlags.Public))
+	//			if (!type.IsAbstract && type.BaseType == typeof(GenericSettings))
+	//			{
+	//				PropertyInfo[] staticProperties = type.GetProperties(BindingFlags.Static | BindingFlags.Public);
+	//				foreach (PropertyInfo spi in staticProperties)
+	//					if (type == spi.PropertyType)
+	//					{
+	//						//MessageBox.Show("Static = " + spi.Name + ", of type = " + spi.PropertyType.Name);
+	//						PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Instance);
+	//						foreach (PropertyInfo pi in properties)
+	//							pi.GetValue(spi.GetValue(null));
+	//						//MessageBox.Show(pi.Name + " = " + pi.GetValue(spi.GetValue(null)).ToString());
+	//					}
+	//			}
+	//	}
+	//}
+
+	public abstract class GenericSettings : MarshalByRefObject, IInterceptorNotifiable// : IGenericSettings
+	{
+		//private TempClass tc = new TempClass();//Leave this here as it ensures all settings are initialized
+
+		public static void EnsureAllSettingsAreInitialized()
 		{
-			return DynamicInvokationServer_BasePath + ":" + DynamicInvokationServer_PortNumber + DynamicInvokationServer_RelativePath;
+			foreach (Type type in typeof(GlobalSettings).GetNestedTypes(BindingFlags.Public))
+				if (!type.IsAbstract && type.BaseType == typeof(GenericSettings))//Get all settings classes
+				{
+					PropertyInfo[] staticProperties = type.GetProperties(BindingFlags.Static | BindingFlags.Public);
+					foreach (PropertyInfo spi in staticProperties)
+						if (type == spi.PropertyType)//Check to find the static "Instance" of the class
+						{
+							PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Instance);//Find all properties of class
+							foreach (PropertyInfo pi in properties)
+								pi.GetValue(spi.GetValue(null));//This will invoke the _get method which will run through the InterceptorProxy and therefore ask userinput if the value is null
+						}
+				}
 		}
 
-		public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+		public static void ShowAllSettingNames()
 		{
-			instance = Interceptor<TracXmlRpcInteropSettings>.Create(SettingsInterop.GetSettings<TracXmlRpcInteropSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
+			//List<object> objList = new List<object>();
+			foreach (Type type in typeof(GlobalSettings).GetNestedTypes(BindingFlags.Public))
+				if (!type.IsAbstract && type.BaseType == typeof(GenericSettings))//Get all settings classes
+				{
+					PropertyInfo[] staticProperties = type.GetProperties(BindingFlags.Static | BindingFlags.Public);
+					foreach (PropertyInfo spi in staticProperties)
+						if (type == spi.PropertyType)//Check to find the static "Instance" of the class
+						{
+							//object obj = spi.GetValue(null);
+							//objList.Add(spi.GetValue(null));
+							PropertiesEditor pe = new PropertiesEditor(spi.GetValue(null));
+							pe.ShowDialog();
+							//return;
+
+							//PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Instance);//Find all properties of class
+							//foreach (PropertyInfo pi in properties)
+							//	MessageBox.Show(type.Name + "." + pi.Name);
+						}
+				}
 		}
 
-		public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+		public static string RootApplicationNameForSharedClasses = "SharedClasses";
+
+		//TODO: Have a look at Lazy<> in c#, being able to initialize an object the first time it is used.
+		public abstract void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH");
+
+		public abstract void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH");
+
+		//public void SetDefaultValues()
+		//{
+		//	throw new NotImplementedException();
+		//}
+
+		public virtual void OnPropertySet(string propertyName)
 		{
-			SettingsInterop.FlushSettings<TracXmlRpcInteropSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
+			PropertyInfo pi = this.GetType().GetProperty(propertyName);
+			SettingsInterop.FlushSettings(this.GetType(), this, RootApplicationNameForSharedClasses);
+		}
+
+		public virtual void OnPropertyGet(string propertyName)
+		{
+			//MessageBox.Show("Get: " + propertyName);
 		}
 	}
 
-	[Serializable]
-	public class MouseGesturesSettings : GenericSettings
+	public class GlobalSettings
 	{
-		private static volatile MouseGesturesSettings instance;
-		private static object lockingObject = new Object();
-
-		public static MouseGesturesSettings Instance
+		//TODO: Check out INotifyPropertyChanged (in System.ComponentModel)
+		[Serializable]
+		public sealed class VisualStudioInteropSettings : GenericSettings
 		{
-			get
+			private static volatile VisualStudioInteropSettings instance;
+			private static object lockingObject = new Object();
+
+			public static VisualStudioInteropSettings Instance
 			{
-				if (instance == null)
+				get
 				{
-					lock (lockingObject)
+					if (instance == null)
 					{
-						if (instance == null)
+						lock (lockingObject)
 						{
-							instance = Interceptor<MouseGesturesSettings>.Create();//new TracXmlRpcInteropSettings();
-							instance.LoadFromFile(RootApplicationNameForSharedClasses);
+							if (instance == null)
+							{
+								instance = Interceptor<VisualStudioInteropSettings>.Create();//new VisualStudioInteropSettings();
+								instance.LoadFromFile(RootApplicationNameForSharedClasses);
+							}
 						}
 					}
+					return instance;
 				}
-				return instance;
+			}
+
+			//TODO: Inside the InputBox (dialogs shown to enter passwords, etc), must have a link for the user to click to "update" all unset properties of the settings.
+			//TODO: User must be able to have a look at all settings used and change them (passwords must not be shown, only allow user to change it).
+			public enum UriProtocol { Http, Ftp }
+
+			[Category("My temp category")]
+			[Description("The description will be typed here")]
+			[SettingAttribute("Please enter the base Uri for Visual Studio publishing, ie. code.google.com")]
+			public string BaseUri { get; set; }
+
+			public string RelativeRootUriAFTERvspublishing { get; set; }
+
+			public UriProtocol? UriProtocolForAFTERvspublishing { get; set; }
+
+			public string RelativeRootUriForVsPublishing { get; set; }
+
+			[SettingAttribute("Please enter Uri protocol for Visual Studio Publishing")]
+			public UriProtocol? UriProtocolForVsPublishing { get; set; }
+
+			[Browsable(false)]
+			public string FtpUsername { get; set; }
+
+			[Browsable(false)]
+			[Setting("Please enter ftp password user for Visual Studio publishing", true)]
+			public string FtpPassword { get; set; }
+
+			[Obsolete("Do not use constructor otherwise getting/setting of properties does not go through Interceptor. Use Interceptor<VisualStudioInteropSettings>.Create(); ")]
+			public VisualStudioInteropSettings()
+			{
+				BaseUri = null;//"fjh.dyndns.org";//"127.0.0.1";
+				RelativeRootUriAFTERvspublishing = null;//"/ownapplications";
+				UriProtocolForAFTERvspublishing = null;//UriProtocol.Http;
+				RelativeRootUriForVsPublishing = null;//"/francois/websites/firepuma/ownapplications";
+				UriProtocolForVsPublishing = null;//UriProtocol.Ftp;
+				FtpUsername = null;
+				FtpPassword = null;
+			}
+
+			public string GetCombinedUriForAFTERvspublishing()
+			{
+				return UriProtocolForAFTERvspublishing.ToString().ToLower() + "://" + BaseUri + RelativeRootUriAFTERvspublishing;
+			}
+
+			public string GetCombinedUriForVsPublishing()
+			{
+				return UriProtocolForVsPublishing.ToString().ToLower() + "://" + BaseUri + RelativeRootUriForVsPublishing;
+			}
+
+			public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+			{
+				instance = Interceptor<VisualStudioInteropSettings>.Create(SettingsInterop.GetSettings<VisualStudioInteropSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
+			}
+
+			public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+			{
+				SettingsInterop.FlushSettings<VisualStudioInteropSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
 			}
 		}
 
-		//public enum GestureDirection { Up, Down, Left, Right };
-		//[Setting("Please define the list of gestures to use")]
-		//public Dictionary<string, List<GestureDirection>> ListOfGesturesAndMessages { get; set; }
-		private Dictionary<string, string> gesturesWithGesturePluginName;
-		public string GesturesWithGesturePluginName
+		[Serializable]
+		public class NetworkInteropSettings : GenericSettings
 		{
-			get
-			{
-				if (gesturesWithGesturePluginName == null)
-					return null;
+			private static volatile NetworkInteropSettings instance;
+			private static object lockingObject = new Object();
 
-				string tmpstr = "";
-				foreach (string key in gesturesWithGesturePluginName.Keys)
-					tmpstr += (!string.IsNullOrWhiteSpace(tmpstr) ? "|" : "") + key + "=" + gesturesWithGesturePluginName[key];
-				return tmpstr;
-			}
-			set
+			public static NetworkInteropSettings Instance
 			{
-				if (string.IsNullOrWhiteSpace(value))
-					return;
-				string[] pairs = value.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
-				foreach (string pair in pairs)
+				get
 				{
-					if (!pair.Contains("=") || pair.Split('=').Length != 2)
+					if (instance == null)
 					{
-						UserMessages.ShowWarningMessage("Cannot get gesture and message from: " + pair);
-						continue;
-					}
-					string[] keyvalue = pair.Split('=');
-					bool AllCharsIsUDLR = true;
-					foreach (char chr in keyvalue[0].ToUpper().ToCharArray())
-						if (chr != 'U' && chr != 'D' && chr != 'L' && chr != 'R')
+						lock (lockingObject)
 						{
-							AllCharsIsUDLR = false;
-							UserMessages.ShowWarningMessage("Gesture may only consist of characters U, D, L, R. For example URDL (this means up-right-down-left: " + Environment.NewLine + keyvalue);
-							break;
+							if (instance == null)
+							{
+								instance = Interceptor<NetworkInteropSettings>.Create();//new NetworkInteropSettings();
+								instance.LoadFromFile(RootApplicationNameForSharedClasses);
+							}
 						}
-					if (!AllCharsIsUDLR)
-						continue;
+					}
+					return instance;
+				}
+			}
 
+			[Setting("Please enter value for the time-to-live (Ttl) of the server socket")]
+			public short? ServerSocket_Ttl { get; set; }
+
+			[Setting("Enable NoDelay for the server socket?")]
+			public bool? ServerSocket_NoDelay { get; set; }
+
+			public int? ServerSocket_ReceiveBufferSize { get; set; }
+			public int? ServerSocket_SendBufferSize { get; set; }
+			public int? ServerSocket_MaxNumberPendingConnections { get; set; }
+			public int? ServerSocket_ListeningPort { get; set; }
+
+			[Obsolete("Do not use constructor otherwise getting/setting of properties does not go through Interceptor. Use Interceptor<NetworkInteropSettings>.Create(); ")]
+			public NetworkInteropSettings()
+			{
+				//ServerSocket_Ttl = 112;
+				//ServerSocket_NoDelay = true;
+				//ServerSocket_ReceiveBufferSize = 1024 * 1024 * 10;
+				//ServerSocket_SendBufferSize = 1024 * 1024 * 10;
+				//ServerSocket_MaxNumberPendingConnections = 100;
+				//ServerSocket_ListeningPort = 11000;
+			}
+
+			public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+			{
+				instance = Interceptor<NetworkInteropSettings>.Create(SettingsInterop.GetSettings<NetworkInteropSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
+			}
+
+			public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+			{
+				SettingsInterop.FlushSettings<NetworkInteropSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
+			}
+		}
+
+		[Serializable]
+		public class TracXmlRpcInteropSettings : GenericSettings
+		{
+			private static volatile TracXmlRpcInteropSettings instance;
+			private static object lockingObject = new Object();
+
+			public static TracXmlRpcInteropSettings Instance
+			{
+				get
+				{
+					if (instance == null)
+					{
+						lock (lockingObject)
+						{
+							if (instance == null)
+							{
+								instance = Interceptor<TracXmlRpcInteropSettings>.Create();//new TracXmlRpcInteropSettings();
+								instance.LoadFromFile(RootApplicationNameForSharedClasses);
+							}
+						}
+					}
+					return instance;
+				}
+			}
+
+			[Setting("Please enter ftp username for Trac XmlRpc")]
+			public string Username { get; set; }
+
+			//TODO: Implement Username in UserPrompt message [Setting("Please enter ftp password for Trac XmlRpc, username " + Username)]
+			[Browsable(false)]
+			[Setting("Please enter ftp password for Trac XmlRpc, username ", true)]
+			public string Password { get; set; }
+
+			[Setting("Please enter the Base url of the Dynamic Invokation Server")]
+			public string DynamicInvokationServer_BasePath { get; set; }
+
+			[Setting("Please enter the Relative url of the Dynamic Invokation Server")]
+			public string DynamicInvokationServer_RelativePath { get; set; }
+
+			[Setting("Please enter the Port number of the Dynamic Invokation Server")]
+			public int? DynamicInvokationServer_PortNumber { get; set; }
+
+			//TODO: Sort out how this list to string will work inside the PropertyInterceptor
+			private List<string> listedXmlRpcUrls;
+			public string ListedXmlRpcUrls
+			{
+				get
+				{
+					if (listedXmlRpcUrls == null || listedXmlRpcUrls.Count == 0)
+						listedXmlRpcUrls = new List<string>(UserMessages.Prompt("Please enter a list of XmlRpc urls (comma separated)").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
+					return listedXmlRpcUrls == null ? null : string.Join(",", listedXmlRpcUrls);
+				}
+				set { listedXmlRpcUrls = value == null ? null : new List<string>(value.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)); }
+			}
+
+			[Obsolete("Do not use constructor otherwise getting/setting of properties does not go through Interceptor. Use Interceptor<TracXmlRpcInteropSettings>.Create(); ")]
+			public TracXmlRpcInteropSettings()
+			{
+				//Username = null;
+				//Password = null;
+				//ListedXmlRpcUrls = null;
+			}
+
+			//public TracXmlRpcInteropSettings(string UsernameIn, string PasswordIn, List<string> ListedXmlRpcUrlsIn)
+			//{
+			//	Username = UsernameIn;
+			//	Password = PasswordIn;
+			//	listedXmlRpcUrls = ListedXmlRpcUrlsIn;
+			//}
+
+			public string GetCominedUrlForDynamicInvokationServer()
+			{
+				return DynamicInvokationServer_BasePath + ":" + DynamicInvokationServer_PortNumber + DynamicInvokationServer_RelativePath;
+			}
+
+			public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+			{
+				instance = Interceptor<TracXmlRpcInteropSettings>.Create(SettingsInterop.GetSettings<TracXmlRpcInteropSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
+			}
+
+			public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+			{
+				SettingsInterop.FlushSettings<TracXmlRpcInteropSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
+			}
+		}
+
+		[Serializable]
+		public class MouseGesturesSettings : GenericSettings
+		{
+			private static volatile MouseGesturesSettings instance;
+			private static object lockingObject = new Object();
+
+			public static MouseGesturesSettings Instance
+			{
+				get
+				{
+					if (instance == null)
+					{
+						lock (lockingObject)
+						{
+							if (instance == null)
+							{
+								instance = Interceptor<MouseGesturesSettings>.Create();//new TracXmlRpcInteropSettings();
+								instance.LoadFromFile(RootApplicationNameForSharedClasses);
+							}
+						}
+					}
+					return instance;
+				}
+			}
+
+			//public enum GestureDirection { Up, Down, Left, Right };
+			//[Setting("Please define the list of gestures to use")]
+			//public Dictionary<string, List<GestureDirection>> ListOfGesturesAndMessages { get; set; }
+			private Dictionary<string, string> gesturesWithGesturePluginName;
+			public string GesturesWithGesturePluginName
+			{
+				get
+				{
 					if (gesturesWithGesturePluginName == null)
-						gesturesWithGesturePluginName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-					gesturesWithGesturePluginName.Add(keyvalue[0].ToUpper(), keyvalue[1]);
+						return null;
+
+					string tmpstr = "";
+					foreach (string key in gesturesWithGesturePluginName.Keys)
+						tmpstr += (!string.IsNullOrWhiteSpace(tmpstr) ? "|" : "") + key + "=" + gesturesWithGesturePluginName[key];
+					return tmpstr;
 				}
-			}
-		}
-		public Dictionary<string, string> GetGesturesWithGesturePluginName() { return gesturesWithGesturePluginName ?? new Dictionary<string, string>(); }
-
-		public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
-		{
-			instance = Interceptor<MouseGesturesSettings>.Create(SettingsInterop.GetSettings<MouseGesturesSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
-		}
-
-		public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
-		{
-			SettingsInterop.FlushSettings<MouseGesturesSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
-		}
-	}
-
-	[Serializable]
-	public class SubversionSettings : GenericSettings
-	{
-		private static volatile SubversionSettings instance;
-		private static object lockingObject = new Object();
-
-		public static SubversionSettings Instance
-		{
-			get
-			{
-				if (instance == null)
+				set
 				{
-					lock (lockingObject)
+					if (string.IsNullOrWhiteSpace(value))
+						return;
+					string[] pairs = value.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+					foreach (string pair in pairs)
 					{
-						if (instance == null)
+						if (!pair.Contains("=") || pair.Split('=').Length != 2)
 						{
-							instance = Interceptor<SubversionSettings>.Create();//new TracXmlRpcInteropSettings();
-							instance.LoadFromFile(RootApplicationNameForSharedClasses);
+							UserMessages.ShowWarningMessage("Cannot get gesture and message from: " + pair);
+							continue;
 						}
+						string[] keyvalue = pair.Split('=');
+						bool AllCharsIsUDLR = true;
+						foreach (char chr in keyvalue[0].ToUpper().ToCharArray())
+							if (chr != 'U' && chr != 'D' && chr != 'L' && chr != 'R')
+							{
+								AllCharsIsUDLR = false;
+								UserMessages.ShowWarningMessage("Gesture may only consist of characters U, D, L, R. For example URDL (this means up-right-down-left: " + Environment.NewLine + keyvalue);
+								break;
+							}
+						if (!AllCharsIsUDLR)
+							continue;
+
+						if (gesturesWithGesturePluginName == null)
+							gesturesWithGesturePluginName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+						gesturesWithGesturePluginName.Add(keyvalue[0].ToUpper(), keyvalue[1]);
 					}
 				}
-				return instance;
+			}
+			public Dictionary<string, string> GetGesturesWithGesturePluginName() { return gesturesWithGesturePluginName ?? new Dictionary<string, string>(); }
+
+			public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+			{
+				instance = Interceptor<MouseGesturesSettings>.Create(SettingsInterop.GetSettings<MouseGesturesSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
+			}
+
+			public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+			{
+				SettingsInterop.FlushSettings<MouseGesturesSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
 			}
 		}
 
-		public string[] ListOfMonitoredSubversionDirectories { get; set; }
-
-		public int? IntervalForMonitoring_Milliseconds { get; set; }
-
-		public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+		[Serializable]
+		public class SubversionSettings : GenericSettings
 		{
-			instance = Interceptor<SubversionSettings>.Create(SettingsInterop.GetSettings<SubversionSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
-		}
+			private static volatile SubversionSettings instance;
+			private static object lockingObject = new Object();
 
-		public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
-		{
-			SettingsInterop.FlushSettings<SubversionSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
+			public static SubversionSettings Instance
+			{
+				get
+				{
+					if (instance == null)
+					{
+						lock (lockingObject)
+						{
+							if (instance == null)
+							{
+								instance = Interceptor<SubversionSettings>.Create();//new TracXmlRpcInteropSettings();
+								instance.LoadFromFile(RootApplicationNameForSharedClasses);
+							}
+						}
+					}
+					return instance;
+				}
+			}
+
+			public string[] ListOfMonitoredSubversionDirectories { get; set; }
+
+			public int? IntervalForMonitoring_Milliseconds { get; set; }
+
+			public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+			{
+				instance = Interceptor<SubversionSettings>.Create(SettingsInterop.GetSettings<SubversionSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
+			}
+
+			public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+			{
+				SettingsInterop.FlushSettings<SubversionSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
+			}
 		}
 	}
 }

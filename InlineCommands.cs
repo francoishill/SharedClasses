@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Windows.Forms;
+//using System.Windows.Forms;
 using System.IO;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
@@ -14,9 +14,11 @@ using System.ComponentModel;
 using System.Windows.Documents;
 using ICommandWithHandler = InlineCommandToolkit.InlineCommands.ICommandWithHandler;
 using InlineCommandToolkit;
+using System.Windows.Controls;
+using System.Windows;
 //using OverrideToStringClass = InlineCommandToolkit.InlineCommands.OverrideToStringClass;
 
-namespace InlineCommands
+namespace InlineCommandToolkit
 {
 	public class CommandsManagerClass
 	{
@@ -56,10 +58,7 @@ namespace InlineCommands
 			return PerformCommand(command, textfeedbackEvent, progressChangedEvent, tmpList.ToArray());
 		}
 	}
-}
 
-namespace InlineCommandToolkit
-{
 	public class CommandArgument : INotifyPropertyChanged
 	{
 		private string currentValue;
@@ -175,15 +174,18 @@ namespace InlineCommandToolkit
 			void RemoveCurrentArgument(int Index);
 			ObservableCollectionWithValidationOnAdd<CommandArgument> CurrentArguments { get; }
 			void NotifyPropertyChanged(string propertyName);
-			ObservableCollection<MessagesParagraph> ParagraphListForMessages { get; set; }
+			//List<MessagesParagraph> ArchivedMessages { get; set; }
+			void ArchiveReadMessages();
+			ObservableCollection<MessagesParagraph> MessagesList { get; set; }
 		 	Dictionary<TextFeedbackType, int> NumberUnreadMessages { get; }
 			//ObservableCollectionWithValidationOnAdd<KeyAndValuePair> CurrentArgumentsPair { get; }
+			System.Windows.Controls.ContextMenu CommandContextMenu { get; }
 		}
 
 		public abstract class OverrideToStringClass : ICommandWithHandler, INotifyPropertyChanged
 		{
 			//public abstract override string ToString();
-			public override string ToString() { return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(CommandName); }
+			public override string ToString() { return DisplayName; }// CultureInfo.CurrentCulture.TextInfo.ToTitleCase(CommandName); }
 			public abstract string CommandName { get; }
 			public abstract string DisplayName { get; }
 			public abstract string Description { get; }
@@ -334,15 +336,34 @@ namespace InlineCommandToolkit
 				}
 			}
 
-			private ObservableCollection<MessagesParagraph> paragraphListForMessages;
-			public virtual ObservableCollection<MessagesParagraph> ParagraphListForMessages
+			private List<MessagesParagraph> ArchivedMessages { get; set; }
+			public virtual void ArchiveReadMessages()
+			{
+				int msgcount = MessagesList.Count;//Just incase another thread adds messages while we loop through them
+				if (msgcount == 0) return;
+				if (UserMessages.Confirm("Archived messages is currently not retrievable (for this version of the application), so they will be totally lost, continue to archive messages?"))
+				{
+					if (ArchivedMessages == null) ArchivedMessages = new List<MessagesParagraph>();
+					for (int i = 0; i < msgcount; i++)
+						if (!MessagesList[i].Unread)
+							ArchivedMessages.Add(MessagesList[i]);
+					for (int i = msgcount - 1; i >= 0; i--)
+						if (!MessagesList[i].Unread)
+							MessagesList.RemoveAt(i);
+					NotifyPropertyChanged("MessagesList");
+					NotifyPropertyChanged("NumberUnreadMessages");
+				}
+			}
+
+			private ObservableCollection<MessagesParagraph> messagesList;
+			public virtual ObservableCollection<MessagesParagraph> MessagesList
 			{
 				get
 				{
-					if (paragraphListForMessages == null) paragraphListForMessages = new ObservableCollection<MessagesParagraph>();
-					return paragraphListForMessages;
+					if (messagesList == null) messagesList = new ObservableCollection<MessagesParagraph>();
+					return messagesList;
 				}
-				set { paragraphListForMessages = value; }
+				set { messagesList = value; }
 			}
 
 			public Dictionary<TextFeedbackType, int> NumberUnreadMessages
@@ -356,10 +377,27 @@ namespace InlineCommandToolkit
 						//	from n in ParagraphListForMessages
 						//	where n.FeedbackType == feedbackType
 						//	select n;
-						tmpDict.Add(feedbackType, ParagraphListForMessages.Count(m => m.Unread && m.FeedbackType == feedbackType));
+						tmpDict.Add(feedbackType, MessagesList.Count(m => m.Unread && m.FeedbackType == feedbackType));
 					}
 					//return ParagraphListForMessages.Count(m => m.Unread);
 					return tmpDict;
+				}
+			}
+
+
+			private MenuItem GenerateMenuItem(string HeaderText, RoutedEventHandler ClickEventHandler)
+			{
+				MenuItem mi = new MenuItem() { Header = HeaderText };
+				mi.Click += ClickEventHandler;
+				return mi;
+			}
+			public virtual ContextMenu CommandContextMenu
+			{
+				get
+				{
+					ContextMenu cm = new ContextMenu();
+					cm.Items.Add(GenerateMenuItem("Archive read messages", delegate { ArchiveReadMessages(); }));
+					return cm;
 				}
 			}
 		}

@@ -16,23 +16,22 @@ using System.Windows.Media.Animation;
 using System.Reflection;
 using System.IO;
 using System.Diagnostics;
-using InlineCommands;
 using SharedClasses;
 /// <summary>
-/// Interaction logic for InlineCommandsWindowWPF.xaml
+/// Interaction logic for CommandsWindow.xaml
 /// </summary>
-public partial class InlineCommandsWindowWPF : Window
+public partial class CommandsWindow : Window
 {
 	System.Windows.Forms.Form MainFormUsedForShuttingDownServers;
-	public InlineCommandsUserControlWPF GetInlineCommandsUserControl() { return inlineCommandsUserControlWPF1; }
+	public CommandsUsercontrol GetCommandsUsercontrol() { return commandsUsercontrol1; }
 
-	public InlineCommandsWindowWPF(System.Windows.Forms.Form mainFormUsedForShuttingDownServers)
+	public CommandsWindow(System.Windows.Forms.Form mainFormUsedForShuttingDownServers)
 	{
 		InitializeComponent();
 		MainFormUsedForShuttingDownServers = mainFormUsedForShuttingDownServers;
 	}
 
-	private void InlineCommandsWindowWPF1_Loaded(object sender, RoutedEventArgs e)
+	private void CommandsWindow1_Loaded(object sender, RoutedEventArgs e)
 	{
 		System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
 		timer.Interval = 1;
@@ -41,7 +40,7 @@ public partial class InlineCommandsWindowWPF : Window
 			timer.Stop();
 			timer.Dispose(); timer = null;
 			
-			inlineCommandsUserControlWPF1.InitializeTreeViewNodes(
+			commandsUsercontrol1.InitializeTreeViewNodes(
 				MainFormUsedForShuttingDownServers,
 				true,
 				delegate { this.Hide(); },
@@ -52,20 +51,20 @@ public partial class InlineCommandsWindowWPF : Window
 		timer.Start();
 	}
 
-	private void InlineCommandsWindowWPF1_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+	private void CommandsWindow1_Closing(object sender, System.ComponentModel.CancelEventArgs e)
 	{
 		//e.Cancel = true;
 		//this.Hide();
 		//Application.Current.MainWindow.Close();
 	}
 
-	private void InlineCommandsWindowWPF1_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+	private void CommandsWindow1_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
 	{
 		if (e.ChangedButton == System.Windows.Input.MouseButton.Left)
 			DragMove();
 	}
 
-	private void InlineCommandsWindowWPF1_MouseRightButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+	private void CommandsWindow1_MouseRightButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
 	{
 		this.Hide();
 	}

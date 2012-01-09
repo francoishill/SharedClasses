@@ -8,6 +8,7 @@ using System.Windows.Forms;
 using System.Net;
 using System.Web;
 using CookComputing.XmlRpc;
+using SharedClasses;
 
 public class VisualStudioInterop
 {

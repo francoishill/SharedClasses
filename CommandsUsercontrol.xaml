@@ -2,14 +2,13 @@
 						 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 						 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 						 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-						 xmlns:inlinecommands='clr-namespace:InlineCommands'
 						 xmlns:inlinecommandtoolkit='clr-namespace:InlineCommandToolkit'
 						 xmlns:theme="clr-namespace:Microsoft.Windows.Themes;assembly=PresentationFramework.Aero"
 						 xmlns:input="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls.Input.Toolkit"
 						 xmlns:system="clr-namespace:System;assembly=mscorlib"
 						 xmlns:propertyinterceptor='clr-namespace:PropertyInterceptor'
 						 xmlns:wpftoolkitextended='clr-namespace:Microsoft.Windows.Controls;assembly=WPFToolkit.Extended'
-						 x:Class="SharedClasses.InlineCommandsUserControlWPF"
+						 x:Class="SharedClasses.CommandsUsercontrol"
 						 xmlns:sharedclasses='clr-namespace:SharedClasses'
 						 mc:Ignorable="d"
 						 UseLayoutRounding='True'
@@ -21,6 +20,7 @@
 				<ResourceDictionary>
 					<sharedclasses:ZeroCollapsedNonZeroVisible x:Key="hideListBox" />
 					<sharedclasses:NumberUnreadItemsToTextConverter x:Key='numberUnreadItemsToTextConverter' />
+					<sharedclasses:UnreadItemsStartVisibilityConverter x:Key='unreadItemsStartVisibilityConverter' />
 				</ResourceDictionary>
 				<!--<ResourceDictionary Source='/PresentationFrameawork.Aero,Version=3.0.0.0,Culture=neutral,PublicKeyToken=31bf3856ad364e35,ProcessorArchitecture=MSIL;component/themes/aero.normalcolor.xaml' />-->
 				<!--<ResourceDictionary Source='/PresentationFramework.Classic,Version=3.0.0.0,Culture=neutral,PublicKeyToken=31bf3856ad364e35;component/themes/Classic.xaml' />-->
@@ -1341,8 +1341,8 @@
 		<Grid Grid.Row="2"
 					Margin="0,5">
 			<Grid.ColumnDefinitions>
-				<ColumnDefinition MinWidth="150"
-													Width="150" />
+				<ColumnDefinition MinWidth="250"
+													Width="250" />
 				<ColumnDefinition />
 				<!--<ColumnDefinition />-->
 			</Grid.ColumnDefinitions>
@@ -1363,7 +1363,8 @@
 								Focusable='False'
 								AllowDrop='True'
 								PreviewDragOver='treeView_CommandList_DragOver'
-								PreviewDrop='treeView_CommandList_PreviewDrop'>
+								PreviewDrop='treeView_CommandList_PreviewDrop'
+								MouseRightButtonUp='treeView_CommandList_MouseRightButtonUp'>
 				<TreeView.Resources>
 					<SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
 													 Color="#E33232" />
@@ -1399,13 +1400,19 @@
 				</TreeView.Template>
 				<TreeView.ItemTemplate>
 					<DataTemplate>
-						<DockPanel LastChildFill='True'>
+						<!--<DockPanel LastChildFill='True' ContextMenu='{Binding CommandContextMenu}'>-->
+						<DockPanel LastChildFill='True'
+											 MouseRightButtonUp='DockPanel_MouseRightButtonUp'
+											 ContextMenu='{Binding CommandContextMenu}'
+											 ToolTip='{Binding NumberUnreadMessages, Mode=OneWay, Converter={StaticResource numberUnreadItemsToTextConverter}}'>
 							<TextBlock DockPanel.Dock='Right'
 												 VerticalAlignment='Top'
 												 Background='Transparent'
-												 FontSize='10'
+												 FontSize='20'
+												 FontWeight='Bold'
 												 Foreground='Red'
-												 Text='{Binding NumberUnreadMessages, Mode=OneWay, Converter={StaticResource numberUnreadItemsToTextConverter}}'/>
+												 Text='*'
+												 Visibility='{Binding NumberUnreadMessages, Mode=OneWay, Converter={StaticResource unreadItemsStartVisibilityConverter}}'/>
 							<TextBlock DockPanel.Dock='Left' Background='Transparent'
 												 Text='{Binding}' />
 						</DockPanel>
@@ -1555,7 +1562,7 @@
 																			Foreground="Green"
 																			Padding='10,0'
 																			IsReadOnly='True'
-																			Text='{Binding ParagraphListForMessages, Mode=OneWay, Converter={StaticResource messagesParagraphListToText}}'/>-->
+																			Text='{Binding MessagesList, Mode=OneWay, Converter={StaticResource messagesParagraphListToText}}'/>-->
 			<RichTextBox Grid.Column="1"
 									 Grid.Row='1'
 									 Grid.RowSpan='1'

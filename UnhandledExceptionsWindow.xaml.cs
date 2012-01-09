@@ -16,7 +16,6 @@ using System.Windows.Media.Animation;
 using System.Reflection;
 using System.IO;
 using System.Diagnostics;
-using InlineCommands;
 using System.Text.RegularExpressions;
 
 namespace UnhandledExceptions

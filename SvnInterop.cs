@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Diagnostics;
 using System.IO;
+using SharedClasses;
 //using System.Windows.Forms;
 
 public class SvnInterop
@@ -13,9 +14,9 @@ public class SvnInterop
 
 	public static  Dictionary<MessagesTypes, List<string>> PerformSubversionCommand(Object textfeedbackSenderObject, string svnargs, SvnCommand svnCommand, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
-		Dictionary<MessagesTypes, List<string>> tmpMessagesList = new Dictionary<MessagesTypes, List<string>>();
-		tmpMessagesList.Add(MessagesTypes.Output, new List<string>());
-		tmpMessagesList.Add(MessagesTypes.Error, new List<string>());
+		Dictionary<MessagesTypes, List<string>> tmpReturnMessagesList = new Dictionary<MessagesTypes, List<string>>();
+		tmpReturnMessagesList.Add(MessagesTypes.Output, new List<string>());
+		tmpReturnMessagesList.Add(MessagesTypes.Error, new List<string>());
 
 		string projnameOrDir = svnargs.Split(';')[0];//projnameAndlogmessage.Split(';')[0];
 		string logmessage = null;
@@ -31,7 +32,7 @@ public class SvnInterop
 
 			string projDir =
 					Directory.Exists(projnameOrDir) ? projnameOrDir :
-				VS2010projectsFolder + @"\" + projnameOrDir;//"";
+				VS2010projectsFolder + "\\" + projnameOrDir;//"";
 			string svnpath = @"C:\Program Files\TortoiseSVN\bin\svn.exe";// "svn";
 
 			List<string> listOfDirectoriesToCheckLocalStatusses = null;
@@ -58,6 +59,10 @@ public class SvnInterop
 
 					foreach (string tmpFolder in listOfDirectoriesToCheckLocalStatusses)
 					{
+						string humanfriendlyFoldername = tmpFolder;
+						if (humanfriendlyFoldername.Contains('\\'))
+							humanfriendlyFoldername = humanfriendlyFoldername.Split('\\')[humanfriendlyFoldername.Split('\\').Length - 1];
+
 						string processArguments =
 											svnCommand ==
 							SvnCommand.Commit ? "commit -m\"" + logmessage + "\" \"" + tmpFolder + "\""
@@ -76,8 +81,9 @@ public class SvnInterop
 						{
 							if (outputLine.Data != null && outputLine.Data.Trim().Length > 0)
 							{
-								TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, string.Format("Svn output for {0}: {1}", projnameOrDir, outputLine.Data));
-								tmpMessagesList[MessagesTypes.Output].Add(projnameOrDir + ": " + outputLine.Data);
+								string outputText = outputLine.Data.Replace(VS2010projectsFolder, "...");
+								TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, string.Format("Output for {0}: {1}", humanfriendlyFoldername, outputText), outputLine.Data.ToLower().Contains("Status against revision".ToLower()) ? TextFeedbackType.Subtle : TextFeedbackType.Noteworthy);
+								tmpReturnMessagesList[MessagesTypes.Output].Add(humanfriendlyFoldername + ": " + outputText);
 							}
 							//else appendLogTextbox("Svn output empty");
 						};
@@ -86,8 +92,9 @@ public class SvnInterop
 							if (errorLine.Data != null && errorLine.Data.Trim().Length > 0
 								&& !errorLine.Data.ToLower().Contains("not a working copy"))
 							{
-								TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, string.Format("Svn error for {0}: {1}", projnameOrDir, errorLine.Data));
-								tmpMessagesList[MessagesTypes.Error].Add(projnameOrDir + ": " + errorLine.Data);
+								string errorText = errorLine.Data.Replace(VS2010projectsFolder, "...");
+								TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, string.Format("Error for {0}: {1}", humanfriendlyFoldername, errorText));
+								tmpReturnMessagesList[MessagesTypes.Error].Add(humanfriendlyFoldername + ": " + errorText);
 							}
 							//else appendLogTextbox("Svn error empty");
 						};
@@ -100,7 +107,7 @@ public class SvnInterop
 							: svnCommand == SvnCommand.StatusLocal ? "Check status of svn (local), please wait..."
 							: "";
 						if (!svnproc.Start())
-							TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Error: Could not start SVN process for " + projnameOrDir);
+							TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Error: Could not start SVN process for " + humanfriendlyFoldername);
 						else if (!pleaseWaitAlreadyDisplayed)
 						{
 							pleaseWaitAlreadyDisplayed = true;
@@ -119,7 +126,7 @@ public class SvnInterop
 		{
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Exception on running svn: " + exc.Message);
 		}
-		return tmpMessagesList;
+		return tmpReturnMessagesList;
 	}
 
 	private static TextFeedbackEventHandler TextFeedbackEvent;

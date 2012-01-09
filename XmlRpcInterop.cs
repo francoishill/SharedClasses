@@ -11,6 +11,7 @@ using System.Runtime.Remoting.Channels.Http;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Windows.Forms;
 using CookComputing.XmlRpc;
+using SharedClasses;
 
 //Client side settings
 //[XmlRpcUrl("http://fjh.dyndns.org:5678/DynamicCodeInvoking/xmlrpc")]

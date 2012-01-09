@@ -119,6 +119,9 @@
     <Compile Include="StartupbatInterop.cs" />
     <Compile Include="StylingInterop.cs" />
     <Compile Include="SvnInterop.cs" />
+    <Compile Include="TemplateWPFwindow.xaml.cs">
+      <DependentUpon>TemplateWPFwindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="TextFilesInterop.cs" />
     <Compile Include="ThreadingInterop.cs" />
     <Compile Include="UserActivityHook.cs" />
@@ -225,6 +228,9 @@
     <Page Include="OverlayWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="TemplateWPFwindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>

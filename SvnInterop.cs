@@ -7,12 +7,12 @@ using System.IO;
 using SharedClasses;
 //using System.Windows.Forms;
 
-public class SvnInterop
+public class SubversionInterop
 {
-	public enum SvnCommand { Commit, Update, Status, StatusLocal };
+	public enum SubversionCommand { Commit, Update, Status, StatusLocal };
 	public enum MessagesTypes { Output, Error }
 
-	public static  Dictionary<MessagesTypes, List<string>> PerformSubversionCommand(Object textfeedbackSenderObject, string svnargs, SvnCommand svnCommand, TextFeedbackEventHandler textFeedbackEvent = null)
+	public static  Dictionary<MessagesTypes, List<string>> PerformSubversionCommand(Object textfeedbackSenderObject, string svnargs, SubversionCommand svnCommand, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
 		Dictionary<MessagesTypes, List<string>> tmpReturnMessagesList = new Dictionary<MessagesTypes, List<string>>();
 		tmpReturnMessagesList.Add(MessagesTypes.Output, new List<string>());
@@ -20,7 +20,7 @@ public class SvnInterop
 
 		string projnameOrDir = svnargs.Split(';')[0];//projnameAndlogmessage.Split(';')[0];
 		string logmessage = null;
-		if (svnCommand == SvnCommand.Commit)
+		if (svnCommand == SubversionCommand.Commit)
 		{
 			logmessage = svnargs.Split(';')[1];//projnameAndlogmessage.Split(';')[1];
 			logmessage = logmessage.Replace("\\", "\\\\");
@@ -65,10 +65,10 @@ public class SvnInterop
 
 						string processArguments =
 											svnCommand ==
-							SvnCommand.Commit ? "commit -m\"" + logmessage + "\" \"" + tmpFolder + "\""
-							: svnCommand == SvnCommand.Update ? "update \"" + tmpFolder + "\""
-							: svnCommand == SvnCommand.Status ? "status --show-updates \"" + tmpFolder + "\""
-							: svnCommand == SvnCommand.StatusLocal ? "status \"" + tmpFolder + "\""
+							SubversionCommand.Commit ? "commit -m\"" + logmessage + "\" \"" + tmpFolder + "\""
+							: svnCommand == SubversionCommand.Update ? "update \"" + tmpFolder + "\""
+							: svnCommand == SubversionCommand.Status ? "status --show-updates \"" + tmpFolder + "\""
+							: svnCommand == SubversionCommand.StatusLocal ? "status \"" + tmpFolder + "\""
 							: "";
 
 						ProcessStartInfo start = new ProcessStartInfo(svnpath, processArguments);//"commit -m\"" + logmessage + "\" \"" + projDir + "\"");
@@ -101,10 +101,10 @@ public class SvnInterop
 						svnproc.StartInfo = start;
 
 						string performingPleasewaitMsg = 
-							svnCommand == SvnCommand.Commit ? "Performing svn commit, please wait..."
-							: svnCommand == SvnCommand.Update ? "Performing svn update, please wait..."
-							: svnCommand == SvnCommand.Status ? "Check status of svn (local and server), please wait..."
-							: svnCommand == SvnCommand.StatusLocal ? "Check status of svn (local), please wait..."
+							svnCommand == SubversionCommand.Commit ? "Performing svn commit, please wait..."
+							: svnCommand == SubversionCommand.Update ? "Performing svn update, please wait..."
+							: svnCommand == SubversionCommand.Status ? "Check status of svn (local and server), please wait..."
+							: svnCommand == SubversionCommand.StatusLocal ? "Check status of svn (local), please wait..."
 							: "";
 						if (!svnproc.Start())
 							TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Error: Could not start SVN process for " + humanfriendlyFoldername);
@@ -161,7 +161,7 @@ public class SvnInterop
 				TextFeedbackType.Noteworthy);
 
 			Dictionary<MessagesTypes, List<string>> tmpSubversionMessages =
-				PerformSubversionCommand(TextFeedbackSenderObject, subversionDir, SvnCommand.Status, TextFeedbackEvent);
+				PerformSubversionCommand(TextFeedbackSenderObject, subversionDir, SubversionCommand.Status, TextFeedbackEvent);
 			if (tmpSubversionMessages[MessagesTypes.Output].Count(s => !s.ToLower().Contains("Status against revision".ToLower())) > 0
 				|| tmpSubversionMessages[MessagesTypes.Error].Count > 0)
 				SubversionChangesFound = true;

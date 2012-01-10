@@ -222,13 +222,13 @@ namespace SharedClasses
 					if (iqa is ICommandWithHandler)
 					{
 						ICommandWithHandler comm = iqa as ICommandWithHandler;
-						if (comm.CommandName.ToLower() == "svn")
+						if (comm.CommandName.ToLower() == "subversion")
 						{
-							SvnInterop.StartMonitoringSubversionDirectories(textFeedbackEvent, comm);
+							SubversionInterop.StartMonitoringSubversionDirectories(textFeedbackEvent, comm);
 							break;
 						}
 					}
-				//SvnInterop.StartMonitoringSubversionDirectories(textFeedbackEvent);
+				//SubversionInterop.StartMonitoringSubversionDirectories(textFeedbackEvent);
 
 				textFeedbackEventInitialized = true;
 			}

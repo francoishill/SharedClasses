@@ -107,7 +107,7 @@ public class NsisInterop
 				SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite ifnewer");
 				SectionGroupLines.Add(NSISclass.Spacer + @"	SetOutPath ""$INSTDIR\Plugins""");
 				SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite ifnewer");
-				SectionGroupLines.Add(NSISclass.Spacer + @"  File /a /x *.pdb /x *Toolkit* /x *InterfaceFor* """ + pluginDllPath + @"\*.*""");
+				SectionGroupLines.Add(NSISclass.Spacer + @"  File /a /x *.pdb /x *.xml /x *Toolkit* /x *InterfaceFor* /x *CookComputing.XmlRpcV2.dll /x *MouseGestures.dll /x *System.Windows.Controls.WpfPropertyGrid.dll """ + pluginDllPath + @"\*.*""");
 				SectionGroupLines.Add(NSISclass.Spacer + @"SectionEnd");
 				SectionGroupLines.Add("");
 				//}

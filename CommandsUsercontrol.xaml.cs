@@ -1430,6 +1430,12 @@ namespace SharedClasses
 			(sender as DockPanel).ContextMenu.IsOpen = true;
 		}
 
+		private void labelEditSettings_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+		{
+			e.Handled = true;
+			GenericSettings.ShowAndEditAllSettings();
+		}
+
 		//private bool IsTreeViewDragBusy = false;
 	}
 

@@ -22,10 +22,24 @@ namespace SharedClasses
 	/// </summary>
 	public partial class PropertiesEditor : Window
 	{
-		public PropertiesEditor(object selectedObject)
+		public PropertiesEditor(object[] objectsToView)
 		{
 			InitializeComponent();
-			propertyGrid1.SelectedObject = selectedObject;
+
+			//tabControl1.ItemsSource = new ObservableCollection<object>() { selectedObject };
+			propertyGrid1.SelectedObject = null;
+			listBox1.Items.Clear();
+			foreach (object obj in objectsToView)
+				listBox1.Items.Add(obj);
+
+			//propertyGrid1.SelectedObject = selectedObject;
+		}
+
+		private void listBox1_SelectionChanged(object sender, SelectionChangedEventArgs e)
+		{
+			if (e.AddedItems.Count != 1)
+				return;
+			propertyGrid1.SelectedObject = e.AddedItems[0];
 		}
 
 	}

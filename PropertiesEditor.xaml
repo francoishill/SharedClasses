@@ -6,7 +6,7 @@
 				xmlns:System="clr-namespace:System;assembly=mscorlib"
 				Title="PropertiesEditor"
 				Height="300"
-				Width="800"
+				Width="1000"
 				WindowStartupLocation='CenterScreen'>
 	<Window.Resources>
 		<!--<local:TmpClass x:Key='tmpclass' />
@@ -72,29 +72,25 @@
 		</DataTemplate>-->
 	</Window.Resources>
 	<Grid>
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width='auto' />
+			<ColumnDefinition />
+		</Grid.ColumnDefinitions>
+		<ListBox Name='listBox1'
+						 MinWidth='400'
+						 HorizontalAlignment='Stretch'
+						 SelectionChanged="listBox1_SelectionChanged"
+						 SelectionMode='Single' />
+		<GridSplitter Width='5' BorderThickness='2' BorderBrush='Transparent' Background='#777'/>
 		<Custom:PropertyGrid x:Name='propertyGrid1'
+												 Grid.Column='1'
 												 PropertyDisplayMode="All"
 												 HorizontalAlignment="Stretch"
 												 ShowAttachedProperties="False"
 												 ShowReadOnlyProperties="False"
 												 VerticalAlignment="Stretch">
-			<!--SelectedObject='{x:Static local:GlobalSettings+VisualStudioInteropSettings.Instance}'>-->
-			<!--Does not work with theme-->
-			<!--<Custom:PropertyGrid.Resources>
-				<Custom:KaxamlTheme />
-			</Custom:PropertyGrid.Resources>-->
 			<Custom:PropertyGrid.Layout>
 				<Custom:TabbedLayout>
-					<!-- #1.1: Default layout usage -->
-					<!--<Custom:TabbedLayoutItem CanClose="true" Header="Categorized">
-						<Custom:CategorizedLayout />
-						</Custom:TabbedLayoutItem>
-					<Custom:TabbedLayoutItem CanClose="true" Header="Alphabetical">
-						<Custom:AlphabeticalLayout />
-						</Custom:TabbedLayoutItem>-->
-					<!-- #1.2: Alternative layout usage (any Control being powered by attached properties) -->
-					<!--<Custom:CategorizedLayout Custom:TabbedLayout.CanClose="False"
-																		Custom:TabbedLayout.Header="Categorized" />-->
 					<Custom:AlphabeticalLayout Custom:TabbedLayout.CanClose="False"
 																		 Custom:TabbedLayout.Header="Alphabetical" />
 				</Custom:TabbedLayout>
@@ -118,16 +114,6 @@
 				<Custom:TypeEditor EditedType="{x:Type TypeName=System:Nullable`1[[System.Boolean]]}"
 													 InlineTemplate="{StaticResource String_InlineTemplate}"
 													 ExtendedTemplate="{StaticResource String_ExtendedTemplate}" />
-				<!--<Custom:TypeEditor EditedType="{x:Type TypeName=System:Nullable`1[[local:GlobalSettings+VisualStudioInteropSettings.UriProtocol]]}"
-													 InlineTemplate="{StaticResource String_InlineTemplate}"
-													 ExtendedTemplate="{StaticResource String_ExtendedTemplate}" />-->
-				<!--<Custom:PropertyEditor DeclaringType="{x:Type local:TmpClass}"
-															 PropertyName="BaseUri"
-															 InlineTemplate="{StaticResource MyCustomExtendedTemplate_Inline}"
-															 ExtendedTemplate="{StaticResource MyCustomExtendedTemplate_Extended}" />-->
-				<!--<Custom:CategoryEditor DeclaringType="{x:Type System:String}"
-													 CategoryName="Text"
-													 InlineTemplate="{StaticResource TextCategoryEditor}" />-->
 			</Custom:PropertyGrid.Editors>
 		</Custom:PropertyGrid>
 	</Grid>

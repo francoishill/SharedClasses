@@ -196,9 +196,9 @@ namespace SharedClasses
 				}
 		}
 
-		public static void ShowAllSettingNames()
+		public static void ShowAndEditAllSettings()
 		{
-			//List<object> objList = new List<object>();
+			List<object> objList = new List<object>();
 			foreach (Type type in typeof(GlobalSettings).GetNestedTypes(BindingFlags.Public))
 				if (!type.IsAbstract && type.BaseType == typeof(GenericSettings))//Get all settings classes
 				{
@@ -207,9 +207,7 @@ namespace SharedClasses
 						if (type == spi.PropertyType)//Check to find the static "Instance" of the class
 						{
 							//object obj = spi.GetValue(null);
-							//objList.Add(spi.GetValue(null));
-							PropertiesEditor pe = new PropertiesEditor(spi.GetValue(null));
-							pe.ShowDialog();
+							objList.Add(spi.GetValue(null));
 							//return;
 
 							//PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Instance);//Find all properties of class
@@ -217,6 +215,10 @@ namespace SharedClasses
 							//	MessageBox.Show(type.Name + "." + pi.Name);
 						}
 				}
+
+			PropertiesEditor pe = new PropertiesEditor(objList.ToArray());
+			pe.ShowDialog();
+			pe = null;
 		}
 
 		public static string RootApplicationNameForSharedClasses = "SharedClasses";
@@ -518,6 +520,7 @@ namespace SharedClasses
 				{
 					if (string.IsNullOrWhiteSpace(value))
 						return;
+					if (gesturesWithGesturePluginName != null) gesturesWithGesturePluginName.Clear();
 					string[] pairs = value.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
 					foreach (string pair in pairs)
 					{

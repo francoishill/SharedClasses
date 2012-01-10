@@ -15,6 +15,7 @@
 		<local:FontStyleConverter x:Key="FontStyleConverter" />
 		<local:FontWeightConverter x:Key="FontWeightConverter" />-->
 		<!--<local:XmlLanguageList x:Key="XmlLanguageList" />-->
+		<local:PipesToNewlinesConverter x:Key='pipesToNewlinesConverter' />
 		<DataTemplate x:Key="String_InlineTemplate">
 			<Grid>
 				<Grid.ColumnDefinitions>
@@ -38,11 +39,34 @@
 					<RowDefinition Height="*" />
 				</Grid.RowDefinitions>
 				<TextBox Grid.Row="0"
-								 Text="{Binding StringValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+								 Text="{Binding StringValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource pipesToNewlinesConverter}}"
 								 IsReadOnly="{Binding IsReadOnly}"
-								 TextWrapping="Wrap" />
+								 TextWrapping="Wrap"
+								 AcceptsReturn='True'
+								 IsUndoEnabled='True'
+								 UndoLimit='100'/>
 			</Grid>
 		</DataTemplate>
+		<!--<DataTemplate x:Key="StringList_InlineTemplateKey">
+			<Grid>
+				<Grid.RowDefinitions>
+					<RowDefinition Height="*" />
+				</Grid.RowDefinitions>
+				<TextBlock Grid.Row="0"
+									 Text="Click the button to edit"
+									 TextWrapping="Wrap" />
+			</Grid>
+		</DataTemplate>
+		<DataTemplate x:Key="StringList_ExtendedTemplateKey">
+			<Grid>
+				<Grid.RowDefinitions>
+					<RowDefinition Height="*" />
+				</Grid.RowDefinitions>
+				<TextBlock Grid.Row="0"
+									 Text="Click the button to edit"
+									 TextWrapping="Wrap" />
+			</Grid>
+		</DataTemplate>-->
 		<!--<DataTemplate x:Key="TextCategoryEditor">
 			<StackPanel Margin="5">
 				<Grid>
@@ -77,17 +101,107 @@
 			<ColumnDefinition />
 		</Grid.ColumnDefinitions>
 		<ListBox Name='listBox1'
-						 MinWidth='400'
+						 MinWidth='200'
 						 HorizontalAlignment='Stretch'
 						 SelectionChanged="listBox1_SelectionChanged"
-						 SelectionMode='Single' />
-		<GridSplitter Width='5' BorderThickness='2' BorderBrush='Transparent' Background='#777'/>
+						 SelectionMode='Single'
+						 HorizontalContentAlignment='Stretch'>
+			<ListBox.Resources>
+				<SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}"
+												 Color="Transparent" />
+				<SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
+												 Color="Transparent" />
+				<SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"
+												 Color="Black" />
+				<Style TargetType="{x:Type ListBoxItem}">
+					<Setter Property="ContentTemplate">
+						<Setter.Value>
+							<DataTemplate>
+								<Border x:Name='listboxitemBorder'
+												CornerRadius='5'
+												Margin='5,5,5,0'
+												HorizontalAlignment='Stretch'
+												Padding='5,3'>
+									<Border.Background>
+										<LinearGradientBrush StartPoint='0,0'
+																				 EndPoint='0,1'>
+											<GradientStop Color='#fff'
+																		Offset='0' />
+											<GradientStop Color='#ddd'
+																		Offset='0.7' />
+											<GradientStop Color='#ccc'
+																		Offset='1' />
+										</LinearGradientBrush>
+									</Border.Background>
+									<TextBlock x:Name='listboxitemTextBlock'
+														 FontSize='20'
+														 Foreground='#333'
+														 Text='{Binding}' />
+								</Border>
+								<DataTemplate.Triggers>
+									<DataTrigger Binding="{Binding IsMouseOver,RelativeSource={RelativeSource TemplatedParent}}"
+															 Value="True">
+										<Setter Property="Background"
+														TargetName="listboxitemBorder">
+											<Setter.Value>
+												<LinearGradientBrush StartPoint='0,0'
+																						 EndPoint='0,1'>
+													<GradientStop Color='#555'
+																				Offset='0' />
+													<GradientStop Color='#222'
+																				Offset='0.7' />
+													<GradientStop Color='#000'
+																				Offset='1' />
+												</LinearGradientBrush>
+											</Setter.Value>
+										</Setter>
+										<Setter Property="Foreground"
+														TargetName="listboxitemTextBlock"
+														Value='#fff' />
+									</DataTrigger>
+									<DataTrigger Binding="{Binding IsSelected,RelativeSource={RelativeSource TemplatedParent}}"
+															 Value="True">
+										<Setter Property="Background"
+														TargetName="listboxitemBorder">
+											<Setter.Value>
+												<LinearGradientBrush StartPoint='0,0'
+																						 EndPoint='0,1'>
+													<GradientStop Color='#79b'
+																				Offset='0' />
+													<GradientStop Color='#468'
+																				Offset='0.7' />
+													<GradientStop Color='#357'
+																				Offset='1' />
+												</LinearGradientBrush>
+											</Setter.Value>
+										</Setter>
+										<Setter Property="Foreground"
+														TargetName="listboxitemTextBlock"
+														Value='#fff' />
+									</DataTrigger>
+								</DataTemplate.Triggers>
+							</DataTemplate>
+						</Setter.Value>
+					</Setter>
+				</Style>
+			</ListBox.Resources>
+			<!--<ListBox.Items>
+				<ListBoxItem>1. lkjsdf</ListBoxItem>
+				<ListBoxItem>2. lkjsdf</ListBoxItem>
+				<ListBoxItem IsSelected='True'>3. lkjsdf</ListBoxItem>
+				<ListBoxItem>4. lkjsdf</ListBoxItem>
+			</ListBox.Items>-->
+		</ListBox>
+		<GridSplitter Width='5'
+									BorderThickness='2'
+									BorderBrush='Transparent'
+									Background='#777' />
 		<Custom:PropertyGrid x:Name='propertyGrid1'
 												 Grid.Column='1'
 												 PropertyDisplayMode="All"
 												 HorizontalAlignment="Stretch"
 												 ShowAttachedProperties="False"
-												 ShowReadOnlyProperties="False"
+												 ShowReadOnlyProperties="True"
 												 VerticalAlignment="Stretch">
 			<Custom:PropertyGrid.Layout>
 				<Custom:TabbedLayout>
@@ -96,24 +210,7 @@
 				</Custom:TabbedLayout>
 			</Custom:PropertyGrid.Layout>
 			<Custom:PropertyGrid.Editors>
-				<Custom:TypeEditor EditedType="{x:Type System:String}"
-													 InlineTemplate="{StaticResource String_InlineTemplate}"
-													 ExtendedTemplate="{StaticResource String_ExtendedTemplate}" />
-				<Custom:TypeEditor EditedType="{x:Type TypeName=System:Nullable`1[[System.Int16]]}"
-													 InlineTemplate="{StaticResource String_InlineTemplate}"
-													 ExtendedTemplate="{StaticResource String_ExtendedTemplate}" />
-				<Custom:TypeEditor EditedType="{x:Type TypeName=System:Nullable`1[[System.Int32]]}"
-													 InlineTemplate="{StaticResource String_InlineTemplate}"
-													 ExtendedTemplate="{StaticResource String_ExtendedTemplate}" />
-				<Custom:TypeEditor EditedType="{x:Type TypeName=System:Nullable`1[[System.Int64]]}"
-													 InlineTemplate="{StaticResource String_InlineTemplate}"
-													 ExtendedTemplate="{StaticResource String_ExtendedTemplate}" />
-				<Custom:TypeEditor EditedType="{x:Type TypeName=System:Nullable`1[[System.Double]]}"
-													 InlineTemplate="{StaticResource String_InlineTemplate}"
-													 ExtendedTemplate="{StaticResource String_ExtendedTemplate}" />
-				<Custom:TypeEditor EditedType="{x:Type TypeName=System:Nullable`1[[System.Boolean]]}"
-													 InlineTemplate="{StaticResource String_InlineTemplate}"
-													 ExtendedTemplate="{StaticResource String_ExtendedTemplate}" />
+				<!--See code for the added Editors-->
 			</Custom:PropertyGrid.Editors>
 		</Custom:PropertyGrid>
 	</Grid>

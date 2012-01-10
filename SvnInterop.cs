@@ -152,7 +152,7 @@ public class SvnInterop
 	{
 		bool SubversionChangesFound = false;
 		//System.Windows.Forms.MessageBox.Show("Test");
-		foreach (string subversionDir in GlobalSettings.SubversionSettings.Instance.ListOfMonitoredSubversionDirectories)
+		foreach (string subversionDir in GlobalSettings.SubversionSettings.Instance.GetListOfMonitoredSubversionDirectories())
 		{
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(
 				TextFeedbackSenderObject,

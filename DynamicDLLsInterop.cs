@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
 using InterfaceForQuickAccessPlugin;
@@ -10,6 +11,7 @@ namespace DynamicDLLsInterop
 	public class DynamicDLLs
 	{
 		public static List<IQuickAccessPluginInterface> PluginList = new List<IQuickAccessPluginInterface>();
+		public static List<string> AllSuccessfullyLoadedDllFiles = new List<string>();
 
 		public static object InvokeDllMethodGetReturnObject(string FullPathToDll, string ClassName, string MethodName, object[] parameters)
 		{
@@ -61,7 +63,9 @@ namespace DynamicDLLsInterop
 
 		private static List<string> DllNameExclusionList = new List<string>()
 		{
-			"InlineCommandToolkit.dll"
+			"InlineCommandToolkit.dll",
+			"System.Windows.Controls.Input.Toolkit.dll",
+			"System.Windows.Controls.WpfPropertyGrid.dll"
 		};
 
 		private static bool IsFileValid(string filePath)
@@ -107,13 +111,24 @@ namespace DynamicDLLsInterop
 			{
 				ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 				{
-					Assembly assembly = Assembly.LoadFrom(PluginPath);//.LoadFile(PluginPath);
-					foreach (Type type in assembly.GetTypes())//.DefinedTypes)
-						if (!type.IsInterface && type.GetInterface(typeof(IQuickAccessPluginInterface).Name) != null)//Must not include the actual interface IQuickAccessPluginInterface
+					try
+					{
+						if (AllSuccessfullyLoadedDllFiles.Count(s => Path.GetFileName(s.ToLower()) == Path.GetFileName(PluginPath.ToLower())) == 0)
 						{
-							IQuickAccessPluginInterface interf = (IQuickAccessPluginInterface)type.GetConstructor(new Type[0]).Invoke(new object[0]);
-							PluginList.Add(interf);
+							Assembly assembly = Assembly.LoadFrom(PluginPath);//.LoadFile(PluginPath);
+							AllSuccessfullyLoadedDllFiles.Add(PluginPath);
+							foreach (Type type in assembly.GetTypes())//.DefinedTypes)
+								if (!type.IsInterface && type.GetInterface(typeof(IQuickAccessPluginInterface).Name) != null)//Must not include the actual interface IQuickAccessPluginInterface
+								{
+									IQuickAccessPluginInterface interf = (IQuickAccessPluginInterface)type.GetConstructor(new Type[0]).Invoke(new object[0]);
+									PluginList.Add(interf);
+								}
 						}
+					}
+					catch (Exception exc)
+					{
+						UserMessages.ShowErrorMessage("Error trying to load plugin (dll file): " + PluginPath + Environment.NewLine + exc.Message);
+					}
 				},
 				ThreadName: "Load plugins thread");
 			}

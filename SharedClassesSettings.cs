@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Configuration;
 using System.Reflection;
 using System.Windows;
+using DynamicDLLsInterop;
 using SharedClasses;
 //using System.Windows.Forms;
 using UriProtocol = SharedClasses.GlobalSettings.VisualStudioInteropSettings.UriProtocol;
@@ -216,7 +218,8 @@ namespace SharedClasses
 						}
 				}
 
-			PropertiesEditor pe = new PropertiesEditor(objList.ToArray());
+			objList.Add(TempClass.Instance);
+			PropertiesEditor pe = new PropertiesEditor(objList);
 			pe.ShowDialog();
 			pe = null;
 		}
@@ -243,6 +246,19 @@ namespace SharedClasses
 		{
 			//MessageBox.Show("Get: " + propertyName);
 		}
+
+		public override string ToString()
+		{
+			return this.GetType().Name;
+		}
+	}
+
+	public class TempClass
+	{
+		public static readonly TempClass Instance = new TempClass();
+
+		public string LoadedPlugins { get { return string.Join(Environment.NewLine, DynamicDLLs.AllSuccessfullyLoadedDllFiles); } }
+		public TempClass() { }
 	}
 
 	public class GlobalSettings
@@ -438,11 +454,12 @@ namespace SharedClasses
 				get
 				{
 					if (listedXmlRpcUrls == null || listedXmlRpcUrls.Count == 0)
-						listedXmlRpcUrls = new List<string>(UserMessages.Prompt("Please enter a list of XmlRpc urls (comma separated)").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
-					return listedXmlRpcUrls == null ? null : string.Join(",", listedXmlRpcUrls);
+						listedXmlRpcUrls = new List<string>(UserMessages.Prompt("Please enter a list of XmlRpc urls (comma separated)").Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries));
+					return listedXmlRpcUrls == null ? null : string.Join("|", listedXmlRpcUrls);
 				}
-				set { listedXmlRpcUrls = value == null ? null : new List<string>(value.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)); }
+				set { listedXmlRpcUrls = value == null ? null : new List<string>(value.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)); }
 			}
+			public List<string> GetListedXmlRpcUrls() { return listedXmlRpcUrls ?? new List<string>(); }
 
 			[Obsolete("Do not use constructor otherwise getting/setting of properties does not go through Interceptor. Use Interceptor<TracXmlRpcInteropSettings>.Create(); ")]
 			public TracXmlRpcInteropSettings()
@@ -585,7 +602,19 @@ namespace SharedClasses
 				}
 			}
 
-			public string[] ListOfMonitoredSubversionDirectories { get; set; }
+			//TODO: add custom types to XAML: http://blogs.msdn.com/b/mikehillberg/archive/2006/10/06/limitedgenericssupportinxaml.aspx
+			private List<string> listOfMonitoredSubversionDirectories;
+			public string ListOfMonitoredSubversionDirectories
+			{
+				get
+				{
+					if (listOfMonitoredSubversionDirectories == null || listOfMonitoredSubversionDirectories.Count == 0)
+						listOfMonitoredSubversionDirectories = new List<string>(UserMessages.Prompt("Please enter a list of monitored Subversion directories").Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries));
+					return listOfMonitoredSubversionDirectories == null ? null : string.Join("|", listOfMonitoredSubversionDirectories);
+				}
+				set { listOfMonitoredSubversionDirectories = value == null ? null : new List<string>(value.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)); }
+			}
+			public List<string> GetListOfMonitoredSubversionDirectories() { return listOfMonitoredSubversionDirectories ?? new List<string>(); }
 
 			public int? IntervalForMonitoring_Milliseconds { get; set; }
 

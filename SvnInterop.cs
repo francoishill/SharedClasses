@@ -158,7 +158,7 @@ public class SubversionInterop
 				TextFeedbackSenderObject,
 				TextFeedbackEvent,
 				"Automatic checking of subversion status for: " + subversionDir,
-				TextFeedbackType.Noteworthy);
+				TextFeedbackType.Subtle);
 
 			Dictionary<MessagesTypes, List<string>> tmpSubversionMessages =
 				PerformSubversionCommand(TextFeedbackSenderObject, subversionDir, SubversionCommand.Status, TextFeedbackEvent);

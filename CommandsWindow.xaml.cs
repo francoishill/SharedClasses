@@ -66,7 +66,7 @@ public partial class CommandsWindow : Window
 
 	private void CommandsWindow1_MouseRightButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
 	{
-		this.Hide();
+		//this.Hide();
 	}
 
 	private void ThumbButtonInfo_Click(object sender, EventArgs e)

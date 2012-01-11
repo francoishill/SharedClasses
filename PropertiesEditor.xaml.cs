@@ -234,7 +234,7 @@ namespace SharedClasses
 	//	public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
 	//	{
 	//		var fs = (FontWeight)value;
-	//		return fs == FontWeights.Bold;
+	//		return fs == FontWeights.LargerSize;
 	//	}
 
 	//	public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
@@ -245,7 +245,7 @@ namespace SharedClasses
 
 	//			if (isSet)
 	//			{
-	//				return FontWeights.Bold;
+	//				return FontWeights.LargerSize;
 	//			}
 	//		}
 

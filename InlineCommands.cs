@@ -290,10 +290,10 @@ namespace InlineCommandToolkit
 			//		if (!KeyAndValuePair_ChangedEventsAdded)
 			//		{
 			//			foreach (KeyAndValuePair keyandvalue in AvailableArgumentAndDescriptionsPair)
-			//				keyandvalue.PropertyChanged += (snder, propchangedevent) =>
+			//				keyandvalue.PropertyChanged += (tag, propchangedevent) =>
 			//				{
 			//					NotifyPropertyChanged("CurrentArgumentsPair");
-			//					//(snder as KeyAndValuePair).
+			//					//(tag as KeyAndValuePair).
 			//				};
 			//			KeyAndValuePair_ChangedEventsAdded = true;
 			//		}

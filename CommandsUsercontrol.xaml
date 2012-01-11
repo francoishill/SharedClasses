@@ -1220,6 +1220,48 @@
 						</Style.Resources>
 					</Style>
 				</ResourceDictionary>-->
+				<ResourceDictionary>
+					<ControlTemplate TargetType='Button'
+													 x:Key='paragraphStandOut'>
+						<Border CornerRadius='3'
+										Padding='3'
+										Margin='3'
+										x:Name='templatedBorder'>
+							<Border.Background>
+								<LinearGradientBrush StartPoint='0,0'
+																		 EndPoint='0,1'>
+									<GradientStop Color='#777'
+																Offset='0' />
+									<GradientStop Color='#555'
+																Offset='0.7' />
+									<GradientStop Color='#444'
+																Offset='1' />
+								</LinearGradientBrush>
+							</Border.Background>
+							<TextBlock Text='{TemplateBinding Content}'
+												 Foreground='#fff' />
+						</Border>
+						<ControlTemplate.Triggers>
+							<DataTrigger Binding="{Binding IsMouseOver, ElementName=templatedBorder}"
+													 Value="True">
+								<Setter Property="Background"
+												TargetName="templatedBorder">
+									<Setter.Value>
+										<LinearGradientBrush StartPoint='0,0'
+																				 EndPoint='0,1'>
+											<GradientStop Color='#9bd'
+																		Offset='0' />
+											<GradientStop Color='#79b'
+																		Offset='0.7' />
+											<GradientStop Color='#68a'
+																		Offset='1' />
+										</LinearGradientBrush>
+									</Setter.Value>
+								</Setter>
+							</DataTrigger>
+						</ControlTemplate.Triggers>
+					</ControlTemplate>
+				</ResourceDictionary>
 			</ResourceDictionary.MergedDictionaries>
 		</ResourceDictionary>
 	</UserControl.Resources>
@@ -1229,24 +1271,28 @@
 			<RowDefinition Height="Auto" />
 			<RowDefinition />
 		</Grid.RowDefinitions>
-		<Label x:Name="label_ArgumentsExample"
-					 Grid.Row="0"
-					 Content="Label"
-					 HorizontalAlignment="Left"
-					 VerticalAlignment="Top"
-					 Foreground="Gray" />
-		<Button x:Name='CloseUsercontrolButton'
-						Grid.Row='0'
-						HorizontalAlignment='Right'
-						VerticalAlignment='Center'
-						BorderBrush='#ddd'
-						BorderThickness='1'
-						Background='Transparent'
-						Foreground='#777'
-						Padding='3,0'
-						Content='quit'
-						Visibility='Collapsed'
-						ToolTip="Quit Quick Access" />
+		<Grid Grid.Row='0'
+							 HorizontalAlignment='Stretch'
+							 VerticalAlignment='Stretch'
+							 Background='Transparent'
+							 MouseRightButtonUp='Grid_MouseRightButtonUp'>
+			<Label x:Name="label_ArgumentsExample"
+						 Content="Label"
+						 HorizontalAlignment="Left"
+						 VerticalAlignment="Top"
+						 Foreground="Gray" />
+			<Button x:Name='CloseUsercontrolButton'
+							HorizontalAlignment='Right'
+							VerticalAlignment='Center'
+							BorderBrush='#ddd'
+							BorderThickness='1'
+							Background='Transparent'
+							Foreground='#777'
+							Padding='3,0'
+							Content='quit'
+							Visibility='Collapsed'
+							ToolTip="Quit Quick Access" />
+		</Grid>
 		<TextBox Name='MainAutoCompleteTextbox'
 						 Grid.Row="1"
 						 FontSize="36"
@@ -1350,8 +1396,9 @@
 												 FontWeight='Bold'
 												 Foreground='Red'
 												 Text='*'
-												 Visibility='{Binding NumberUnreadMessages, Mode=OneWay, Converter={StaticResource unreadItemsStartVisibilityConverter}}'/>
-							<TextBlock DockPanel.Dock='Left' Background='Transparent'
+												 Visibility='{Binding NumberUnreadMessages, Mode=OneWay, Converter={StaticResource unreadItemsStartVisibilityConverter}}' />
+							<TextBlock DockPanel.Dock='Left'
+												 Background='Transparent'
 												 Text='{Binding}' />
 						</DockPanel>
 					</DataTemplate>
@@ -1514,14 +1561,15 @@
 			<DockPanel LastChildFill='True'
 								 Grid.Row='3'
 								 Grid.ColumnSpan='2'>
-				<Label Name='labelEditSettings' DockPanel.Dock='Right'
+				<Label Name='labelEditSettings'
+							 DockPanel.Dock='Right'
 							 Padding='0'
 							 HorizontalAlignment='Right'
 							 Foreground='#555'
 							 Content='Edit settings'
 							 MouseRightButtonUp='labelEditSettings_MouseRightButtonUp'
 							 VerticalAlignment='Center'
-							 Margin='5,0'/>
+							 Margin='5,0' />
 				<ListBox Name='listBoxUnsetProperties'
 								 ItemsSource='{x:Static propertyinterceptor:StaticPropertyInterceptor.UnsetProperties}'
 								 SelectionChanged='listBoxUnsetProperties_SelectionChanged'

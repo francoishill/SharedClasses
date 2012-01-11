@@ -42,6 +42,13 @@ namespace SharedClasses
 		//AutoCompleteManager autcompleteManager;
 		//AutocompleteProvider autocompleteProvider;
 
+		private void HideParentWindow()
+		{
+			if (!(this.Parent is Grid) || !((this.Parent as Grid).Parent is Window))
+				return;
+			((this.Parent as Grid).Parent as Window).Hide();
+		}
+
 		public void LoadAllPlugins()
 		{
 			System.Windows.Forms.Application.DoEvents();
@@ -86,22 +93,64 @@ namespace SharedClasses
 					Dispatcher.BeginInvoke(DispatcherPriority.Background,
 					(Action)delegate
 					{
-						MessagesParagraph tmpParagraph = new MessagesParagraph(new Run(evtargs.FeedbackText), evtargs.FeedbackType)
+						MessagesParagraph tmpParagraph = new MessagesParagraph(evtargs.FeedbackType);
+						tmpParagraph.LineStackingStrategy = LineStackingStrategy.MaxHeight;
+						if (evtargs is TextFeedbackEventArgs_MultiObjects)
 						{
-							Foreground = evtargs.FeedbackType == TextFeedbackType.Error ? Brushes.Red
-								: evtargs.FeedbackType == TextFeedbackType.Noteworthy ? Brushes.Purple
-								: evtargs.FeedbackType == TextFeedbackType.Success ? Brushes.Green
-								: evtargs.FeedbackType == TextFeedbackType.Subtle ? Brushes.LightGray
-								: Brushes.Gold,
-							TextIndent = -25,
-							Margin = new Thickness(25, 0, 0, 0),
-							ToolTip = DateTime.Now.ToString(@"HH\hmm:ss \o\n ddd, dd MM yyyy")
-						};
+							TextFeedbackEventArgs_MultiObjects args = (evtargs as TextFeedbackEventArgs_MultiObjects);
+							List<TextFeedbackSection> list = args.FeedbackStringList;
+							int cnt = 0;
+							foreach (TextFeedbackSection sec in list)
+							{
+								if (args.AutoSeparateWithSpaces && cnt++ > 0)
+									tmpParagraph.Inlines.Add(new Run(" "));
+
+								if (sec.DisplayType == TextFeedbackSection.DisplayTypeEnum.MakeButton)
+								{
+									Button buttonToAdd = new Button() { Content = sec.Text, Tag = sec };
+									if (sec.ActionOnDoubleClick != null)
+										buttonToAdd.MouseDoubleClick += (dblclicksnder, dblclickevtargs) =>
+										{
+											if (!(dblclicksnder is Button) || (!((dblclicksnder as Button).Tag is TextFeedbackSection)))
+												return;
+											TextFeedbackSection snderSec = (dblclicksnder as Button).Tag as TextFeedbackSection;
+											if (snderSec.ActionOnDoubleClick != null)
+												snderSec.ActionOnDoubleClick(snderSec.ActionTag);
+										};
+									if (this.Resources["paragraphStandOut"] is ControlTemplate)
+										buttonToAdd.Template = (ControlTemplate)this.Resources["paragraphStandOut"];
+									InlineUIContainer inlineUiContainer = new InlineUIContainer(buttonToAdd) { BaselineAlignment = BaselineAlignment.Center };
+									tmpParagraph.Inlines.Add(inlineUiContainer);
+								}
+								else
+								{
+									Run runToAdd = new Run(sec.Text);
+									//if (sec.DisplayType == TextFeedbackSection.DisplayTypeEnum.LargerSize)
+									//	runToAdd.FontSize = 18;
+									//if (sec.DisplayType == TextFeedbackSection.DisplayTypeEnum.Bold)
+									//	runToAdd.FontWeight = FontWeights.Bold;
+									tmpParagraph.Inlines.Add(runToAdd);
+								}
+							}
+						}
+						else
+							tmpParagraph.Inlines.Add(new Run(evtargs.FeedbackText));
+
+						tmpParagraph.Foreground =
+							evtargs.FeedbackType == TextFeedbackType.Error ? Brushes.Red
+							: evtargs.FeedbackType == TextFeedbackType.Noteworthy ? Brushes.Purple
+							: evtargs.FeedbackType == TextFeedbackType.Success ? Brushes.Green
+							: evtargs.FeedbackType == TextFeedbackType.Subtle ? Brushes.LightGray
+							: Brushes.Gold;
+						tmpParagraph.TextIndent = -25;
+						tmpParagraph.Margin = new Thickness(25, 0, 0, 0);
+						tmpParagraph.ToolTip = DateTime.Now.ToString(@"HH\hmm:ss \o\n ddd, dd MM yyyy");
+
 						if (snder is ICommandWithHandler)
 						{
 							ICommandWithHandler tmpCommand = snder as ICommandWithHandler;
 							tmpCommand.MessagesList.Add(tmpParagraph);
-							
+
 							//TODO: Handle the messages better
 							//Like if a message is new and the relevant command is not selected, add a "star" to the command
 							//if (tmpCommand != activeCommand) SetDataContext(tmpCommand);
@@ -156,7 +205,7 @@ namespace SharedClasses
 				//DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(@"D:\Francois\Dev\VSprojects\QuickAccess\QuickAccess\bin\Release\Plugins");
 				//DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(@"D:\Francois\Dev\VSprojects\QuickAccess\QuickAccess\bin\Release\Plugins");
 
-				
+
 				LoadAllPlugins();
 
 				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackEvent, "Refreshing command plugins...", TextFeedbackType.Subtle);
@@ -238,7 +287,7 @@ namespace SharedClasses
 		{
 			if (string.Compare(e.PropertyName, "MessagesList", true) == 0)
 				SetDataContext(activeCommand);
-				//System.Windows.Forms.MessageBox.Show("Prop changed: " + e.PropertyName);
+			//System.Windows.Forms.MessageBox.Show("Prop changed: " + e.PropertyName);
 		}
 
 		private AutoCompleteBox textBox_CommandLine
@@ -1435,6 +1484,11 @@ namespace SharedClasses
 		{
 			e.Handled = true;
 			GenericSettings.ShowAndEditAllSettings();
+		}
+
+		private void Grid_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+		{
+			HideParentWindow();
 		}
 
 		//private bool IsTreeViewDragBusy = false;

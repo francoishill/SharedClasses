@@ -148,41 +148,89 @@ public class SubversionInterop
 	}
 
 	private static bool IsPreviousMessageStillShowing = false;
+	private static bool IsBusyChecking = false;
 	private static void timer_Tick(object sender, EventArgs e)
 	{
-		bool SubversionChangesFound = false;
-		//System.Windows.Forms.MessageBox.Show("Test");
-		foreach (string subversionDir in GlobalSettings.SubversionSettings.Instance.GetListOfMonitoredSubversionDirectories())
+		if (!IsBusyChecking)
 		{
-			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(
-				TextFeedbackSenderObject,
-				TextFeedbackEvent,
-				"Automatic checking of subversion status for: " + subversionDir,
-				TextFeedbackType.Subtle);
-
-			Dictionary<MessagesTypes, List<string>> tmpSubversionMessages =
-				PerformSubversionCommand(TextFeedbackSenderObject, subversionDir, SubversionCommand.Status, TextFeedbackEvent);
-			if (tmpSubversionMessages[MessagesTypes.Output].Count(s => !s.ToLower().Contains("Status against revision".ToLower())) > 0
-				|| tmpSubversionMessages[MessagesTypes.Error].Count > 0)
-				SubversionChangesFound = true;
-			//foreach (string outmsg in tmpSubversionMessages[MessagesTypes.Output])
-			//	TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, TextFeedbackEvent, "Subversion message: " + outmsg, TextFeedbackType.Noteworthy);
-			//foreach (string errmsg in tmpSubversionMessages[MessagesTypes.Error])
-			//	TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, TextFeedbackEvent, "Subversion error: " + errmsg, TextFeedbackType.Error);
-			
-			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(
-				TextFeedbackSenderObject,
-				TextFeedbackEvent,
-				"Finished checking svn status for: " + subversionDir,
-				TextFeedbackType.Success);
-		}
-		if (SubversionChangesFound)
-		{
-			if (!IsPreviousMessageStillShowing)
+			IsBusyChecking = true;
+			try
 			{
-				IsPreviousMessageStillShowing = true;
-				UserMessages.ShowWarningMessage("Changes detected in subversion directories, see the log for more details");
-				IsPreviousMessageStillShowing = false;
+				bool SubversionChangesFound = false;
+				//System.Windows.Forms.MessageBox.Show("Test");
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(
+						TextFeedbackSenderObject,
+						TextFeedbackEvent,
+						"Automatic checking of subversion directories...",
+						TextFeedbackType.Subtle);
+				foreach (string subversionDir in GlobalSettings.SubversionSettings.Instance.GetListOfMonitoredSubversionDirectories())
+				{
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(
+						TextFeedbackSenderObject,
+						TextFeedbackEvent,
+						"Status for: " + subversionDir,
+						TextFeedbackType.Subtle);
+
+					Dictionary<MessagesTypes, List<string>> tmpSubversionMessages =
+				PerformSubversionCommand(TextFeedbackSenderObject, subversionDir, SubversionCommand.Status, TextFeedbackEvent);
+					if (tmpSubversionMessages[MessagesTypes.Output].Count(s => !s.ToLower().Contains("Status against revision".ToLower())) > 0
+						|| tmpSubversionMessages[MessagesTypes.Error].Count > 0)
+						SubversionChangesFound = true;
+					//foreach (string outmsg in tmpSubversionMessages[MessagesTypes.Output])
+					//	TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, TextFeedbackEvent, "Subversion message: " + outmsg, TextFeedbackType.Noteworthy);
+					//foreach (string errmsg in tmpSubversionMessages[MessagesTypes.Error])
+					//	TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, TextFeedbackEvent, "Subversion error: " + errmsg, TextFeedbackType.Error);
+
+					List<TextFeedbackSection> fslist = new List<TextFeedbackSection>();
+					if (!SubversionChangesFound)
+						fslist.Add(new TextFeedbackSection("Status check completed for: " + subversionDir));
+					else
+					{
+						fslist.Add(new TextFeedbackSection("Status check completed for ("));
+						fslist.Add(new TextFeedbackSection("changes found", (tag) =>
+						{
+							if (tag == null || !(tag is string))
+								return;
+							string dir = tag as string;
+							if (!Directory.Exists(dir))
+								UserMessages.ShowWarningMessage("Could not open directory: " + dir);
+							else
+								System.Diagnostics.Process.Start(dir);
+						},
+						subversionDir,
+						TextFeedbackSection.DisplayTypeEnum.MakeButton));
+						fslist.Add(new TextFeedbackSection("): " + subversionDir));
+					}
+
+					TextFeedbackEventArgs_MultiObjects.RaiseTextFeedbackEvent_Ifnotnull(
+						TextFeedbackSenderObject,
+						TextFeedbackEvent,
+						fslist,
+						TextFeedbackType.Subtle);
+				}
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(
+						TextFeedbackSenderObject,
+						TextFeedbackEvent,
+						"Finished with automatic checking of subversion statusses",
+						TextFeedbackType.Success);
+				if (SubversionChangesFound)
+				{
+					if (!IsPreviousMessageStillShowing)
+					{
+						IsPreviousMessageStillShowing = true;
+						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(
+							TextFeedbackSenderObject,
+							TextFeedbackEvent,
+							"Changes detected in subversion directories, see the log for more details.",
+							TextFeedbackType.Error);
+						UserMessages.ShowWarningMessage("Changes detected in subversion directories, see the log for more details.");
+						IsPreviousMessageStillShowing = false;
+					}
+				}
+			}
+			finally
+			{
+				IsBusyChecking = false;
 			}
 		}
 	}
@@ -209,7 +257,7 @@ public class SubversionInterop
 	//		Process proc = new Process();
 	//		proc.StartInfo = startInfo;
 
-	//		proc.OutputDataReceived += (snder, evtargs) =>
+	//		proc.OutputDataReceived += (tag, evtargs) =>
 	//		{
 	//			if (evtargs.Data != null && evtargs.Data.Trim().Length > 0)
 	//			{
@@ -219,7 +267,7 @@ public class SubversionInterop
 	//				//else listBox1.Items.Add("Output: " + evtargs.Data);
 	//			}
 	//		};
-	//		proc.ErrorDataReceived += (snder, evtargs) =>
+	//		proc.ErrorDataReceived += (tag, evtargs) =>
 	//		{
 	//			if (evtargs.Data != null && evtargs.Data.Trim().Length > 0
 	//				&& !evtargs.Data.ToLower().Contains("not a working copy"))

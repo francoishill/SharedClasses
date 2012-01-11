@@ -101,7 +101,7 @@ public partial class CustomBalloonTip : Form
 				{
 					string senderKey = ((snder as Control).FindForm() as CustomBalloonTip).KeyForForm;
 					CloseOwnerFormOfControl(snder as Control);
-					//CustomBalloonTip thisCustomTip = snder as CustomBalloonTip;
+					//CustomBalloonTip thisCustomTip = tag as CustomBalloonTip;
 					//thisCustomTip.Close();
 					if (OnClickCallbackOnSeparateThread)
 						ThreadingInterop.PerformVoidFunctionSeperateThread(() => { VoidDelegateToRunOnClick.Invoke(senderKey); });
@@ -111,7 +111,7 @@ public partial class CustomBalloonTip : Form
 			else if (c is ToolStripItem)
 				((ToolStripItem)c).Click += (snder, evtargs) =>
 				{
-					//CustomBalloonTip thisCustomTip = snder as CustomBalloonTip;
+					//CustomBalloonTip thisCustomTip = tag as CustomBalloonTip;
 					//thisCustomTip.Close();
 					if ((snder as ToolStripItem).GetCurrentParent() != null)
 						CloseOwnerFormOfControl((snder as ToolStripItem).GetCurrentParent());
@@ -121,9 +121,9 @@ public partial class CustomBalloonTip : Form
 						VoidDelegateToRunOnClick.Invoke(snder);
 				};
 			//else if (c is StatusStrip)//StatusStrip is control
-			//  ((StatusStrip)c).Click += (snder, evtargs) =>
+			//  ((StatusStrip)c).Click += (tag, evtargs) =>
 			//  {
-			//    CustomBalloonTip thisCustomTip = snder as CustomBalloonTip;
+			//    CustomBalloonTip thisCustomTip = tag as CustomBalloonTip;
 			//    thisCustomTip.Close();
 			//    if (OnClickCallbackOnSeparateThread)
 			//      ThreadingInterop.PerformVoidFunctionSeperateThread(() => { VoidDelegateToRunOnClick.Invoke(); });

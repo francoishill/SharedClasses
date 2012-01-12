@@ -165,6 +165,8 @@ public class SubversionInterop
 						TextFeedbackType.Subtle);
 				foreach (string subversionDir in GlobalSettings.SubversionSettings.Instance.GetListOfMonitoredSubversionDirectories())
 				{
+					bool ThisDirChangesFound = false;
+
 					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(
 						TextFeedbackSenderObject,
 						TextFeedbackEvent,
@@ -175,14 +177,17 @@ public class SubversionInterop
 				PerformSubversionCommand(TextFeedbackSenderObject, subversionDir, SubversionCommand.Status, TextFeedbackEvent);
 					if (tmpSubversionMessages[MessagesTypes.Output].Count(s => !s.ToLower().Contains("Status against revision".ToLower())) > 0
 						|| tmpSubversionMessages[MessagesTypes.Error].Count > 0)
+					{
 						SubversionChangesFound = true;
+						ThisDirChangesFound = true;
+					}
 					//foreach (string outmsg in tmpSubversionMessages[MessagesTypes.Output])
 					//	TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, TextFeedbackEvent, "Subversion message: " + outmsg, TextFeedbackType.Noteworthy);
 					//foreach (string errmsg in tmpSubversionMessages[MessagesTypes.Error])
 					//	TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, TextFeedbackEvent, "Subversion error: " + errmsg, TextFeedbackType.Error);
 
 					List<TextFeedbackSection> fslist = new List<TextFeedbackSection>();
-					if (!SubversionChangesFound)
+					if (!ThisDirChangesFound)
 						fslist.Add(new TextFeedbackSection("Status check completed for: " + subversionDir));
 					else
 					{

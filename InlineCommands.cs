@@ -16,6 +16,9 @@ using ICommandWithHandler = InlineCommandToolkit.InlineCommands.ICommandWithHand
 using InlineCommandToolkit;
 using System.Windows.Controls;
 using System.Windows;
+using DynamicDLLsInterop;
+using InterfaceForQuickAccessPlugin;
+using System.Windows.Media;
 //using OverrideToStringClass = InlineCommandToolkit.InlineCommands.OverrideToStringClass;
 
 namespace InlineCommandToolkit

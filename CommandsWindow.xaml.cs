@@ -49,6 +49,8 @@ public partial class CommandsWindow : Window
 				"Left-click hides. Right-click closes");
 		};
 		timer.Start();
+
+		commandsUsercontrol1.UpdateTaskbarOverlayIconForUnreadMessages();
 	}
 
 	private void CommandsWindow1_Closing(object sender, System.ComponentModel.CancelEventArgs e)

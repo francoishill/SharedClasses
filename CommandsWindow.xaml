@@ -5,6 +5,7 @@
 				xmlns:mc='http://schemas.openxmlformats.org/markup-compatibility/2006'
 				mc:Ignorable='d'
 				xmlns:SharedClasses="clr-namespace:SharedClasses"
+				xmlns:inlinecommandtoolkit='clr-namespace:InlineCommandToolkit'
 				Title='CommandsWindow'
 				Name='CommandsWindow1'
 				Loaded="CommandsWindow1_Loaded"
@@ -72,7 +73,8 @@
 					<DrawingImage.Drawing>
 						<DrawingGroup>
 							<DrawingGroup.Children>
-								<GeometryDrawing Brush="Red">
+								<!--<GeometryDrawing Brush="{x:Static sharedclasses:CommandsUsercontrol.HasUnreadMessagesBrush}">-->
+								<GeometryDrawing>
 									<GeometryDrawing.Geometry>
 										<PathGeometry>
 											<PathFigure StartPoint="0, 100"

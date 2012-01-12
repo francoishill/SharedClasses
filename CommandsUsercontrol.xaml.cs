@@ -287,7 +287,42 @@ namespace SharedClasses
 		{
 			if (string.Compare(e.PropertyName, "MessagesList", true) == 0)
 				SetDataContext(activeCommand);
+			if (string.Compare(e.PropertyName, "NumberUnreadMessages", true) == 0)
+			{
+				//BindingExpression be = BindingOperations.GetBindingExpression((((this.Parent as Grid).Parent as Window).TaskbarItemInfo.Overlay as DrawingImage).Drawing as GeometryDrawing, GeometryDrawing.BrushProperty);
+				//BindingExpression be = BindingOperations.GetBindingExpression(((((this.Parent as Grid).Parent as Window).TaskbarItemInfo.Overlay as DrawingImage).Drawing as DrawingGroup).Children[0] as GeometryDrawing, GeometryDrawing.BrushProperty);
+				//be.UpdateSource();
+				UpdateTaskbarOverlayIconForUnreadMessages();
+			}
 			//System.Windows.Forms.MessageBox.Show("Prop changed: " + e.PropertyName);
+		}
+
+		public void UpdateTaskbarOverlayIconForUnreadMessages()
+		{
+			(((((this.Parent as Grid)
+						.Parent as Window)
+						.TaskbarItemInfo.Overlay as DrawingImage)
+						.Drawing as DrawingGroup)
+						.Children[0] as GeometryDrawing)
+						.Brush = HasUnreadMessagesBrush;
+		}
+
+		public static Brush HasUnreadMessagesBrush
+		{
+			get
+			{
+				foreach (IQuickAccessPluginInterface plugin in DynamicDLLs.PluginList)
+				{
+					if (plugin is OverrideToStringClass)
+					{
+						ICommandWithHandler comm = plugin as ICommandWithHandler;
+						foreach (TextFeedbackType key in comm.NumberUnreadMessages.Keys)
+							if (comm.NumberUnreadMessages[key] > 0)
+								return Brushes.Red;
+					}
+				}
+				return Brushes.Transparent;//Green;
+			}
 		}
 
 		private AutoCompleteBox textBox_CommandLine
@@ -1494,7 +1529,22 @@ namespace SharedClasses
 		//private bool IsTreeViewDragBusy = false;
 	}
 
-	public class ZeroCollapsedNonZeroVisible : System.Windows.Data.IValueConverter
+	public class tmp : IValueConverter
+	{
+		public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			if (!(value is bool) || (bool)value == false)
+				return Visibility.Collapsed;
+			return true;
+		}
+
+		public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			throw new NotImplementedException();
+		}
+	}
+
+	public class ZeroCollapsedNonZeroVisible : IValueConverter
 	{
 
 		public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)

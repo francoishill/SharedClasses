@@ -5,9 +5,10 @@ using System.Text;
 using System.Diagnostics;
 using System.IO;
 using SharedClasses;
+using System.ComponentModel;
 //using System.Windows.Forms;
 
-public class SubversionInterop
+public class SubversionInterop : INotifyPropertyChanged
 {
 	public enum SubversionCommand { Commit, Update, Status, StatusLocal };
 	public enum MessagesTypes { Output, Error }
@@ -140,12 +141,30 @@ public class SubversionInterop
 			WasTimerStarted = true;
 			TextFeedbackEvent = textFeedbackEvent;
 			TextFeedbackSenderObject = textFeedbackSenderObject;
-			timer = new System.Windows.Forms.Timer();
+			if (timer == null) timer = new System.Windows.Forms.Timer();
 			timer.Interval = GlobalSettings.SubversionSettings.Instance.IntervalForMonitoring_Milliseconds ?? 240000;
 			timer.Tick += new EventHandler(timer_Tick);
+			GlobalSettings.SubversionSettings.Instance.PropertyChanged += (snder, evtargs) =>
+			{
+				if (evtargs.PropertyName.ToLower() == "IntervalForMonitoring_Milliseconds".ToLower())
+					timer.Interval = GlobalSettings.SubversionSettings.Instance.IntervalForMonitoring_Milliseconds ?? 240000;
+			};
 			timer.Start();
 		}
 	}
+
+	//public static int TimerInterval
+	//{
+	//	get
+	//	{
+	//		if (timer == null) timer = new System.Windows.Forms.Timer();
+	//		return timer.Interval;
+	//	}
+	//	set
+	//	{
+
+	//	}
+	//}
 
 	private static bool IsPreviousMessageStillShowing = false;
 	private static bool IsBusyChecking = false;
@@ -291,4 +310,11 @@ public class SubversionInterop
 	//		//proc.WaitForExit();
 	//	}
 	//}
+
+	public event PropertyChangedEventHandler PropertyChanged;
+	public void OnPropertyChanged(string PropertyName)
+	{
+		if (PropertyChanged != null)
+			PropertyChanged(this, new PropertyChangedEventArgs(PropertyName));
+	}
 }

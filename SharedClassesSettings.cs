@@ -178,7 +178,7 @@ namespace SharedClasses
 	//	}
 	//}
 
-	public abstract class GenericSettings : MarshalByRefObject, IInterceptorNotifiable// : IGenericSettings
+	public abstract class GenericSettings : MarshalByRefObject, IInterceptorNotifiable, INotifyPropertyChanged// : IGenericSettings
 	{
 		//private TempClass tc = new TempClass();//Leave this here as it ensures all settings are initialized
 
@@ -238,8 +238,9 @@ namespace SharedClasses
 
 		public virtual void OnPropertySet(string propertyName)
 		{
-			PropertyInfo pi = this.GetType().GetProperty(propertyName);
+			//PropertyInfo pi = this.GetType().GetProperty(propertyName);
 			SettingsInterop.FlushSettings(this.GetType(), this, RootApplicationNameForSharedClasses);
+			OnPropertyChanged(propertyName);
 		}
 
 		public virtual void OnPropertyGet(string propertyName)
@@ -250,6 +251,13 @@ namespace SharedClasses
 		public override string ToString()
 		{
 			return this.GetType().Name;
+		}
+
+		public event PropertyChangedEventHandler PropertyChanged;
+		public void OnPropertyChanged(string PropertyName)
+		{
+			if (PropertyChanged != null)
+				PropertyChanged(this, new PropertyChangedEventArgs(PropertyName));
 		}
 	}
 

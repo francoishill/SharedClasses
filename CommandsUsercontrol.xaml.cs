@@ -39,6 +39,7 @@ namespace SharedClasses
 		public ProgressChangedEventHandler progressChangedEvent;
 		public System.Windows.Forms.Form MainFormUsedForShuttingDownServers;
 		Socket listeningSocket;
+		public event System.ComponentModel.PropertyChangedEventHandler CommandPropertyChangedEvent;
 		//AutoCompleteManager autcompleteManager;
 		//AutocompleteProvider autocompleteProvider;
 
@@ -87,7 +88,9 @@ namespace SharedClasses
 					CloseUsercontrolButton.ToolTip = ButtonToolTip;
 				}
 
-				//TODO: Should eventually keep track of which messages goes with which command (keep track of Paragraphs).
+				this.IsVisibleChanged += new DependencyPropertyChangedEventHandler(CommandsUsercontrol_IsVisibleChanged);
+
+				//DONE: Should eventually keep track of which messages goes with which command (keep track of Paragraphs).
 				textFeedbackEvent += (snder, evtargs) =>
 				{
 					Dispatcher.BeginInvoke(DispatcherPriority.Background,
@@ -142,8 +145,8 @@ namespace SharedClasses
 							: evtargs.FeedbackType == TextFeedbackType.Success ? Brushes.Green
 							: evtargs.FeedbackType == TextFeedbackType.Subtle ? Brushes.LightGray
 							: Brushes.Gold;
-						tmpParagraph.TextIndent = -25;
-						tmpParagraph.Margin = new Thickness(25, 0, 0, 0);
+						tmpParagraph.TextIndent = 0;// -25;
+						tmpParagraph.Margin = new Thickness(0);//25, 0, 0, 0);
 						tmpParagraph.ToolTip = DateTime.Now.ToString(@"HH\hmm:ss \o\n ddd, dd MM yyyy");
 
 						if (snder is ICommandWithHandler)
@@ -157,7 +160,8 @@ namespace SharedClasses
 							//SelectTreeViewItemBasedOnCommand(tmpCommand);
 							if (tmpCommand == activeCommand)
 							{
-								tmpParagraph.Unread = false;
+								if (this.IsVisible)
+									tmpParagraph.Unread = false;
 								textBox_Messages.Document.Blocks.Add(tmpParagraph);
 								textBox_Messages.ScrollToEnd();
 							}
@@ -170,6 +174,7 @@ namespace SharedClasses
 							textBox1.Text +=
 								(textBox1.Text.Length > 0 ? Environment.NewLine : "")
 								+ "(" + DateTime.Now.ToString("ddd, dd MM yyyy HH:mm:ss") + ")  " + evtargs.FeedbackText;
+							textBox1.ScrollToEnd();
 						}
 
 						//textBox_Messages.Text += (textBox_Messages.Text.Length > 0 ? Environment.NewLine : "")
@@ -195,7 +200,7 @@ namespace SharedClasses
 					});
 				};
 
-				label_ArgumentsExample.Content = "";
+				//label_ArgumentsExample.Content = "";
 
 				//System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
 				//timer.Interval = 5000;
@@ -206,9 +211,11 @@ namespace SharedClasses
 				//DynamicDLLsInterop.DynamicDLLs.LoadPluginsInDirectory(@"D:\Francois\Dev\VSprojects\QuickAccess\QuickAccess\bin\Release\Plugins");
 
 
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackEvent, "Loading plugins...", TextFeedbackType.Subtle);
 				LoadAllPlugins();
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackEvent, "Done loading plugins.", TextFeedbackType.Subtle);
 
-				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackEvent, "Refreshing command plugins...", TextFeedbackType.Subtle);
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackEvent, "Refreshing Command plugins...", TextFeedbackType.Subtle);
 				treeView_CommandList.Items.Clear();
 				//List<OverrideToStringClass> tmplist = new List<OverrideToStringClass>();//CommandsManagerClass.ListOfInitializedCommandInterfaces;
 				foreach (IQuickAccessPluginInterface qai in DynamicDLLs.PluginList)
@@ -234,7 +241,7 @@ namespace SharedClasses
 				//timer.Start();
 				treeView_CommandList.UpdateLayout();
 				this.UpdateLayout();
-				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackEvent, "Done refreshing command plugins.", TextFeedbackType.Noteworthy);
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackEvent, "Done refreshing Command plugins.", TextFeedbackType.Noteworthy);
 
 				//ControlTemplate ct = this.FindResource("TextBoxBaseControlTemplate") as ControlTemplate;
 				//GetActualTextBoxOfAutocompleteControl().Template = ct;
@@ -283,6 +290,15 @@ namespace SharedClasses
 			}
 		}
 
+		private void CommandsUsercontrol_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+		{
+			if (activeCommand == null)
+				return;
+
+			if (e.NewValue is bool && (bool)e.NewValue == true)
+				MarkAllCommandMessagesAsRead(activeCommand);
+		}
+
 		private void Command_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
 		{
 			if (string.Compare(e.PropertyName, "MessagesList", true) == 0)
@@ -295,6 +311,14 @@ namespace SharedClasses
 				UpdateTaskbarOverlayIconForUnreadMessages();
 			}
 			//System.Windows.Forms.MessageBox.Show("Prop changed: " + e.PropertyName);
+
+			RaiseCommandPropertyChangedEvent(sender, e);
+		}
+
+		private void RaiseCommandPropertyChangedEvent(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+		{
+			if (CommandPropertyChangedEvent != null)
+				CommandPropertyChangedEvent(sender, e);
 		}
 
 		public void UpdateTaskbarOverlayIconForUnreadMessages()
@@ -307,7 +331,7 @@ namespace SharedClasses
 						.Brush = HasUnreadMessagesBrush;
 		}
 
-		public static Brush HasUnreadMessagesBrush
+		public static bool HasUnreadMessages
 		{
 			get
 			{
@@ -316,12 +340,23 @@ namespace SharedClasses
 					if (plugin is OverrideToStringClass)
 					{
 						ICommandWithHandler comm = plugin as ICommandWithHandler;
-						foreach (TextFeedbackType key in comm.NumberUnreadMessages.Keys)
+						foreach (TextFeedbackType key in comm.NumberUnreadMessages.Keys.ToList())
 							if (comm.NumberUnreadMessages[key] > 0)
-								return Brushes.Red;
+								return true;
 					}
 				}
-				return Brushes.Transparent;//Green;
+				return false;
+			}
+		}
+
+		public static Brush HasUnreadMessagesBrush
+		{
+			get
+			{
+				if (HasUnreadMessages)
+					return Brushes.Red;
+				else
+					return Brushes.Transparent;//Green;
 			}
 		}
 
@@ -415,11 +450,9 @@ namespace SharedClasses
 					e.Handled = true;
 					ICommandWithHandler command = e.NewValue as ICommandWithHandler;
 					SetDataContext(command);
-					label_ArgumentsExample.Content = label_ArgumentsExample.ToolTip = command.ArgumentsExample.Replace("\n", "  ");
+					//label_ArgumentsExample.Content = label_ArgumentsExample.ToolTip = command.ArgumentsExample.Replace("\n", "  ");
 
-					foreach (MessagesParagraph mp in command.MessagesList)
-						mp.Unread = false;
-					command.NotifyPropertyChanged("NumberUnreadMessages");
+					MarkAllCommandMessagesAsRead(command);
 
 					//TextBlock tmpTextBlock = (TextBlock)textBox_CommandLine.Template.FindName("EmbeddedButtonTextBlock", textBox_CommandLine);
 					//TextBlock tmpTextBlock = GetEmbeddedButtonTextBlock();
@@ -498,7 +531,7 @@ namespace SharedClasses
 			}
 			else if (e.NewValue == null)
 			{
-				label_ArgumentsExample.Content = "";
+				//label_ArgumentsExample.Content = "";
 
 				//TextBlock tmpTextBlock = (TextBlock)textBox_CommandLine.Template.FindName("EmbeddedButtonTextBlock", textBox_CommandLine);
 				TextBlock tmpTextBlock = GetEmbeddedButtonTextBlock();
@@ -520,6 +553,19 @@ namespace SharedClasses
 				FocusActualTextboxOfAutocompleteControl();
 				//autocompleteProvider.activeCommand = null;
 			}
+		}
+
+		private static void MarkAllCommandMessagesAsRead(ICommandWithHandler command)
+		{
+			foreach (MessagesParagraph mp in command.MessagesList)
+			{
+				if (mp.Unread)
+					mp.Background = new SolidColorBrush(Color.FromRgb(240, 240, 240));
+				else
+					mp.Background = null;
+				mp.Unread = false;
+			}
+			command.NotifyPropertyChanged("NumberUnreadMessages");
 		}
 
 		private ICommandWithHandler activeCommand = null;
@@ -642,9 +688,9 @@ namespace SharedClasses
 
 		private void textBox_CommandLine_TextChanged(object sender, TextChangedEventArgs e)
 		{
-			string tmpCommandName;
-			if (CommandNameExistOfTextboxText(out tmpCommandName))
-				label_ArgumentsExample.Content = "Press TAB to initiate mode for " + tmpCommandName;
+			//string tmpCommandName;
+			//if (CommandNameExistOfTextboxText(out tmpCommandName))
+			//	label_ArgumentsExample.Content = "Press TAB to initiate mode for " + tmpCommandName;
 		}
 
 		private AutoCompleteBox GetAutocompleteBoxOfArgument(object listboxItem)
@@ -917,8 +963,8 @@ namespace SharedClasses
 		private void textBox_CommandLine_TextChanged_1(object sender, RoutedEventArgs e)
 		{
 			string tmpCommandName;
-			if (CommandNameExistOfTextboxText(out tmpCommandName))
-				label_ArgumentsExample.Content = "Press TAB to initiate mode for " + tmpCommandName;
+			//if (CommandNameExistOfTextboxText(out tmpCommandName))
+			//	label_ArgumentsExample.Content = "Press TAB to initiate mode for " + tmpCommandName;
 		}
 
 		private void GoButton_Click(object sender, RoutedEventArgs e)

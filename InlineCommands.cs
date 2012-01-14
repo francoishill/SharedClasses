@@ -369,21 +369,25 @@ namespace InlineCommandToolkit
 				set { messagesList = value; }
 			}
 
+			private Dictionary<TextFeedbackType, int> numberUnreadMessages;
 			public Dictionary<TextFeedbackType, int> NumberUnreadMessages
 			{
 				get
 				{
-					Dictionary<TextFeedbackType, int> tmpDict = new Dictionary<TextFeedbackType, int>();
+					if (numberUnreadMessages == null)
+						numberUnreadMessages = new Dictionary<TextFeedbackType, int>();
+					else
+						numberUnreadMessages.Clear();
 					foreach (TextFeedbackType feedbackType in Enum.GetValues(typeof(TextFeedbackType)))
 					{
 						//var tmpunread = 
 						//	from n in ParagraphListForMessages
 						//	where n.FeedbackType == feedbackType
 						//	select n;
-						tmpDict.Add(feedbackType, MessagesList.Count(m => m.Unread && m.FeedbackType == feedbackType));
+						numberUnreadMessages.Add(feedbackType, MessagesList.Count(m => m.Unread && m.FeedbackType == feedbackType));
 					}
 					//return ParagraphListForMessages.Count(m => m.Unread);
-					return tmpDict;
+					return numberUnreadMessages;
 				}
 			}
 

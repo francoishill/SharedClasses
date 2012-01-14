@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -10,16 +11,16 @@ namespace SharedClasses
 	public class IconsInterop
 	{
 		/// <summary>
-		/// Create an icon with text on it, choosing color, font color and font.
+		/// Create an originalIcon with text on it, choosing color, font color and font.
 		/// </summary>
-		/// <param name="TextOnIcon">Text displayed on icon.</param>
-		/// <param name="backColor">Background color of icon.</param>
-		/// <param name="fontColorBrush">Font color of text on icon.</param>
-		/// <param name="font">Font of text on icon (example new Font("Arial", 17, FontStyle.Regular)).</param>
-		/// <returns>The icon.</returns>
+		/// <param name="TextOnIcon">Text displayed on originalIcon.</param>
+		/// <param name="backColor">Background color of originalIcon.</param>
+		/// <param name="fontColorBrush">Font color of text on originalIcon.</param>
+		/// <param name="font">Font of text on originalIcon (example new Font("Arial", 17, FontStyle.Regular)).</param>
+		/// <returns>The originalIcon.</returns>
 		public static System.Drawing.Icon GetIcon(String TextOnIcon, System.Drawing.Color backColor, System.Drawing.Brush fontColorBrush, System.Drawing.Font font)
 		{
-			//Create a bitmap, the size of an icon
+			//Create a bitmap, the size of an originalIcon
 			System.Drawing.Bitmap bmp = new System.Drawing.Bitmap(32, 32);
 			//Create Graphics object for the bitmap (all drawing to the graphics object will be drawn on the bitmap)
 			System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(bmp);
@@ -28,18 +29,34 @@ namespace SharedClasses
 			//g.DrawEllipse(Pens.Black, 0, 0, 32, 32);
 			System.Drawing.SizeF s = g.MeasureString(TextOnIcon, font);//to center the string
 			g.DrawString(TextOnIcon, font, fontColorBrush, (32 - s.Width) / 2, (32 - s.Height) / 2);
-			//And finally, get the icon out the icon handle of the bitmap
+			//And finally, get the originalIcon out the originalIcon handle of the bitmap
 			return System.Drawing.Icon.FromHandle(bmp.GetHicon());
 		}
 
 		/// <summary>
-		/// Shows a notification icon in the system tray, for the given duration then removes it.
+		/// Draw a circly over an existing icon
 		/// </summary>
-		/// <param name="icon">The icon of the notify icon.</param>
-		/// <param name="Duration">The duration to show the icon, in milliseconds.</param>
+		/// <param name="originalIcon">The original icon which will get an overlay</param>
+		/// <param name="fillColor">The color of the circle</param>
+		/// <param name="position">The position of the circle in the icon</param>
+		/// <param name="diameter">The diameter of the circle</param>
+		/// <returns>The new icon with the overlayed circle</returns>
+		public static System.Drawing.Icon OverlayIconWithCircle(Icon originalIcon, System.Drawing.Brush fillColor, Point position, int diameter)
+		{
+			Bitmap bmp = originalIcon.ToBitmap();
+			System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(bmp);
+			g.FillEllipse(fillColor, position.X, position.Y, diameter, diameter);
+			return System.Drawing.Icon.FromHandle(bmp.GetHicon());
+		}
+
+		/// <summary>
+		/// Shows a notification originalIcon in the system tray, for the given duration then removes it.
+		/// </summary>
+		/// <param name="originalIcon">The originalIcon of the notify originalIcon.</param>
+		/// <param name="Duration">The duration to show the originalIcon, in milliseconds.</param>
 		/// <param name="Title">Title of the message.</param>
 		/// <param name="Message">The message to show.</param>
-		/// <param name="tooltipIcon">The tooltip icon to use.</param>
+		/// <param name="tooltipIcon">The tooltip originalIcon to use.</param>
 		public static void ShowNotifyIcon(System.Drawing.Icon icon, int Duration, String Title, String Message, System.Windows.Forms.ToolTipIcon tooltipIcon)
 		{
 			System.Windows.Forms.NotifyIcon tmpIcon = new System.Windows.Forms.NotifyIcon();
@@ -64,14 +81,14 @@ namespace SharedClasses
 
 		/// <summary>
 		/// 
-		/// Extracts the icon associated with any file on your system.
+		/// Extracts the originalIcon associated with any file on your system.
 		/// Author: WidgetMan http://softwidgets.com
 		/// 
 		/// </summary>
 		/// <remarks>
 		/// 
 		/// Class requires the IconSize enumeration that is implemented in this
-		/// same file. For best results, draw an icon from within a control's Paint
+		/// same file. For best results, draw an originalIcon from within a control's Paint
 		/// event via the e.Graphics.DrawIcon method.
 		/// 
 		/// </remarks>  

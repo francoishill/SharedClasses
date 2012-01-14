@@ -9,7 +9,7 @@
 				Title='CommandsWindow'
 				Name='CommandsWindow1'
 				Loaded="CommandsWindow1_Loaded"
-				Width="1000"
+				Width="1200"
 				MinWidth="150"
 				WindowStartupLocation='CenterScreen'
 				WindowStyle='None'

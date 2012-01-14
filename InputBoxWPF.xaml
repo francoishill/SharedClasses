@@ -98,7 +98,7 @@
 						CornerRadius='10'
 						Width='500'
 						Height='120'
-						BorderBrush='#999'
+						BorderBrush='#777'
 						BorderThickness='1'>
 			<Border.LayoutTransform>
 				<ScaleTransform ScaleX='2.1'

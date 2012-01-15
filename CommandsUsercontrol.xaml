@@ -8,8 +8,9 @@
 						 xmlns:system="clr-namespace:System;assembly=mscorlib"
 						 xmlns:propertyinterceptor='clr-namespace:PropertyInterceptor'
 						 xmlns:wpftoolkitextended='clr-namespace:Microsoft.Windows.Controls;assembly=WPFToolkit.Extended'
-						 x:Class="SharedClasses.CommandsUsercontrol"
 						 xmlns:sharedclasses='clr-namespace:SharedClasses'
+						 xmlns:Planerator="clr-namespace:Planerator;assembly=Planerator"
+						 x:Class="SharedClasses.CommandsUsercontrol"
 						 mc:Ignorable="d"
 						 UseLayoutRounding='True'
 						 d:DesignHeight="500"
@@ -432,7 +433,7 @@
 													Color='#bbdddddd' />
 					</LinearGradientBrush>
 					<ControlTemplate x:Key="CommonValidationToolTipTemplate"
-													 TargetType="ToolTip">
+													 TargetType="{x:Type ToolTip}">
 						<Grid x:Name="Root"
 									Margin="5,0"
 									RenderTransformOrigin="0,0"
@@ -607,7 +608,7 @@
 																			 Background='White'
 																			 Margin='0,3,0,0'>
 															<Button DockPanel.Dock='Right'
-																			Name='ButtonClose'
+																			x:Name='ButtonClose'
 																			HorizontalAlignment='Right'
 																			VerticalAlignment='Center'
 																			Content='X'
@@ -616,8 +617,8 @@
 																			BorderBrush='#333'
 																			PreviewMouseLeftButtonUp='ClearTextboxTextButton_MouseLeftButtonDown'>
 																<Button.Template>
-																	<ControlTemplate TargetType='Button'>
-																		<Border Name='ButtonBorder'
+																	<ControlTemplate TargetType='{x:Type Button}'>
+																		<Border x:Name='ButtonBorder'
 																						CornerRadius='3'
 																						BorderThickness='1'
 																						BorderBrush='Transparent'
@@ -654,8 +655,8 @@
 																										 BorderThickness='0'
 																										 MinimumPrefixLength='0'
 																										 MinimumPopulateDelay='0'
-																										 Text='{Binding CurrentValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}'
-																										 Tag='{Binding DisplayName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}'
+																										 Text='{Binding CurrentValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}'
+																										 Tag='{Binding DisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}'
 																										 ItemsSource='{Binding PredefinedAutocompleteList, UpdateSourceTrigger=PropertyChanged}'
 																										 SelectionChanged='ArgumentText_SelectionChanged'
 																										 HorizontalAlignment='Stretch'
@@ -1156,7 +1157,7 @@
 						<Setter Property="Template">
 							<Setter.Value>
 								<ControlTemplate TargetType="{x:Type ButtonBase}">
-									<theme:ButtonChrome Name="Chrome"
+									<theme:ButtonChrome x:Name="Chrome"
 																			Background="{TemplateBinding Background}"
 																			BorderBrush="{TemplateBinding BorderBrush}"
 																			RenderDefaulted="{TemplateBinding Button.IsDefaulted}"
@@ -1221,7 +1222,7 @@
 					</Style>
 				</ResourceDictionary>-->
 				<ResourceDictionary>
-					<ControlTemplate TargetType='Button'
+					<ControlTemplate TargetType='{x:Type Button}'
 													 x:Key='paragraphStandOut'>
 						<Border CornerRadius='3'
 										Padding='3'
@@ -1262,6 +1263,37 @@
 						</ControlTemplate.Triggers>
 					</ControlTemplate>
 				</ResourceDictionary>
+				<ResourceDictionary>
+					<Storyboard x:Key="RotateAway"
+											AccelerationRatio="0.3"
+											DecelerationRatio="0.3">
+						<Rotation3DAnimationUsingKeyFrames BeginTime="00:00:00"
+																							 Storyboard.TargetProperty="(ModelVisual3D.Transform).(Transform3DGroup.Children)[2].(RotateTransform3D.Rotation)"
+																							 Storyboard.TargetName="ModelVisual3D">
+							<SplineRotation3DKeyFrame KeySpline="0.5,0.5,0.5,0.5"
+																				KeyTime="00:00:00.5">
+								<SplineRotation3DKeyFrame.Value>
+									<AxisAngleRotation3D Angle="75"
+																			 Axis="0,1,0" />
+								</SplineRotation3DKeyFrame.Value>
+							</SplineRotation3DKeyFrame>
+						</Rotation3DAnimationUsingKeyFrames>
+						<DoubleAnimationUsingKeyFrames BeginTime="00:00:00"
+																					 Storyboard.TargetProperty="(ModelVisual3D.Transform).(Transform3DGroup.Children)[4].(TranslateTransform3D.OffsetX)"
+																					 Storyboard.TargetName="ModelVisual3D">
+							<SplineDoubleKeyFrame KeySpline="0.5,0.5,0.5,0.5"
+																		Value="-0.35"
+																		KeyTime="00:00:0.5" />
+						</DoubleAnimationUsingKeyFrames>
+						<DoubleAnimationUsingKeyFrames BeginTime="00:00:00"
+																					 Storyboard.TargetProperty="(UIElement.Opacity)"
+																					 Storyboard.TargetName="ZAM3DViewport3D">
+							<SplineDoubleKeyFrame KeySpline="0.5,0.5,0.5,0.5"
+																		Value="0.4"
+																		KeyTime="00:00:00.5000000" />
+						</DoubleAnimationUsingKeyFrames>
+					</Storyboard>
+				</ResourceDictionary>
 			</ResourceDictionary.MergedDictionaries>
 		</ResourceDictionary>
 	</UserControl.Resources>
@@ -1272,10 +1304,10 @@
 			<RowDefinition />
 		</Grid.RowDefinitions>
 		<Grid Grid.Row='0'
-							 HorizontalAlignment='Stretch'
-							 VerticalAlignment='Stretch'
-							 Background='Transparent'
-							 MouseRightButtonUp='Grid_MouseRightButtonUp'>
+					HorizontalAlignment='Stretch'
+					VerticalAlignment='Stretch'
+					Background='Transparent'
+					MouseRightButtonUp='Grid_MouseRightButtonUp'>
 			<!--<Label x:Name="label_ArgumentsExample"
 						 Content="Label"
 						 HorizontalAlignment="Left"
@@ -1293,7 +1325,7 @@
 							Visibility='Collapsed'
 							ToolTip="Quit Quick Access" />
 		</Grid>
-		<TextBox Name='MainAutoCompleteTextbox'
+		<TextBox x:Name='MainAutoCompleteTextbox'
 						 Grid.Row="1"
 						 FontSize="36"
 						 Margin='5'
@@ -1307,7 +1339,7 @@
 									Padding='5'>
 						<DockPanel LastChildFill='True'
 											 Background='Transparent'>
-							<TextBox Name='TextBoxWithButtons'
+							<TextBox x:Name='TextBoxWithButtons'
 											 DockPanel.Dock='Left'
 											 Template='{StaticResource TextBoxBaseControlTemplate}' />
 							<input:AutoCompleteBox x:Name="textBox_CommandLine"
@@ -1388,7 +1420,7 @@
 						<DockPanel LastChildFill='True'
 											 MouseRightButtonUp='DockPanel_MouseRightButtonUp'
 											 ContextMenu='{Binding CommandContextMenu}'
-											 ToolTip='{Binding NumberUnreadMessages, Mode=OneWay, Converter={StaticResource numberUnreadItemsToTextConverter}}'>
+											 ToolTip='{Binding NumberUnreadMessages, Converter={StaticResource numberUnreadItemsToTextConverter}, Mode=OneWay}'>
 							<TextBlock DockPanel.Dock='Right'
 												 VerticalAlignment='Top'
 												 Background='Transparent'
@@ -1396,7 +1428,7 @@
 												 FontWeight='Bold'
 												 Foreground='Red'
 												 Text='*'
-												 Visibility='{Binding NumberUnreadMessages, Mode=OneWay, Converter={StaticResource unreadItemsStartVisibilityConverter}}' />
+												 Visibility='{Binding NumberUnreadMessages, Converter={StaticResource unreadItemsStartVisibilityConverter}, Mode=OneWay}' />
 							<TextBlock DockPanel.Dock='Left'
 												 Background='Transparent'
 												 Text='{Binding}' />
@@ -1515,7 +1547,7 @@
 					</LinearGradientBrush>
 				</GridSplitter.Background>
 			</GridSplitter>
-			<TextBox Name='textBox1'
+			<TextBox x:Name='textBox1'
 							 Grid.Column='1'
 							 IsReadOnly='True'
 							 Background='#ddd'
@@ -1545,28 +1577,30 @@
 										Grid.Row='0'
 										Height='3'
 										ShowsPreview="True" />
-			<RichTextBox x:Name="textBox_Messages"
-									 Grid.Column="1"
-									 Grid.Row='1'
-									 Grid.RowSpan='1'
-									 HorizontalAlignment="Stretch"
-									 Margin="0,0,5,0"
-									 MinWidth="50"
-									 PreviewMouseLeftButtonDown='textBox_Messages_PreviewMouseLeftButtonDown'
-									 ScrollViewer.HorizontalScrollBarVisibility='Auto'
-									 ScrollViewer.VerticalScrollBarVisibility='Auto'
-									 Foreground="Green"
-									 Padding='10,0'
-									 IsReadOnly='True'
-									 IsDocumentEnabled='True'
-									 FontSize="20">
-				<RichTextBox.Resources>
-					<Style TargetType="{x:Type inlinecommandtoolkit:MessagesParagraph}">
-						<Setter Property="Margin"
-										Value="0" />
-					</Style>
-				</RichTextBox.Resources>
-			</RichTextBox>
+			<Planerator:Planerator x:Name='planerator1'
+														 Grid.Column="1"
+														 Grid.Row='1'
+														 Grid.RowSpan='1'
+														 HorizontalAlignment="Stretch"
+														 Margin="0,5,5,0"
+														 MinWidth="50">
+				<RichTextBox x:Name="textBox_Messages"
+										 PreviewMouseLeftButtonDown='textBox_Messages_PreviewMouseLeftButtonDown'
+										 ScrollViewer.HorizontalScrollBarVisibility='Auto'
+										 ScrollViewer.VerticalScrollBarVisibility='Auto'
+										 Foreground="Green"
+										 Padding='10,0'
+										 IsReadOnly='True'
+										 IsDocumentEnabled='True'
+										 FontSize="20">
+					<RichTextBox.Resources>
+						<Style TargetType="{x:Type inlinecommandtoolkit:MessagesParagraph}">
+							<Setter Property="Margin"
+											Value="0" />
+						</Style>
+					</RichTextBox.Resources>
+				</RichTextBox>
+			</Planerator:Planerator>
 			<Slider Grid.Column='1'
 							Grid.Row='1'
 							Margin="0,0,5,1"
@@ -1586,7 +1620,7 @@
 			<DockPanel LastChildFill='True'
 								 Grid.Row='3'
 								 Grid.ColumnSpan='2'>
-				<Label Name='labelEditSettings'
+				<Label x:Name='labelEditSettings'
 							 DockPanel.Dock='Right'
 							 Padding='0'
 							 HorizontalAlignment='Right'
@@ -1595,11 +1629,11 @@
 							 MouseRightButtonUp='labelEditSettings_MouseRightButtonUp'
 							 VerticalAlignment='Center'
 							 Margin='5,0' />
-				<ListBox Name='listBoxUnsetProperties'
+				<ListBox x:Name='listBoxUnsetProperties'
 								 ItemsSource='{x:Static propertyinterceptor:StaticPropertyInterceptor.UnsetProperties}'
 								 SelectionChanged='listBoxUnsetProperties_SelectionChanged'
 								 SelectionMode='Single'
-								 Visibility="{Binding ElementName=listBoxUnsetProperties, Path=Items.Count, Converter={StaticResource hideListBox}}">
+								 Visibility="{Binding Items.Count, Converter={StaticResource hideListBox}, ElementName=listBoxUnsetProperties}">
 					<ListBox.ItemsPanel>
 						<ItemsPanelTemplate>
 							<WrapPanel Orientation='Horizontal'

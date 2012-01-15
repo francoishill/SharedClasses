@@ -27,6 +27,7 @@ using PropertyInterceptor;
 using ICommandWithHandler = InlineCommandToolkit.InlineCommands.ICommandWithHandler;//InlineCommands.CommandsManagerClass.ICommandWithHandler;
 using OverrideToStringClass = InlineCommandToolkit.InlineCommands.OverrideToStringClass;
 using MessagesParagraph = InlineCommandToolkit.MessagesParagraph;
+using System.Windows.Media.Animation;
 
 namespace SharedClasses
 {
@@ -40,6 +41,10 @@ namespace SharedClasses
 		public System.Windows.Forms.Form MainFormUsedForShuttingDownServers;
 		Socket listeningSocket;
 		public event System.ComponentModel.PropertyChangedEventHandler CommandPropertyChangedEvent;
+
+		AnimationTimeline firstHalve;
+		AnimationTimeline secondHalve;
+
 		//AutoCompleteManager autcompleteManager;
 		//AutocompleteProvider autocompleteProvider;
 
@@ -286,8 +291,61 @@ namespace SharedClasses
 					}
 				//SubversionInterop.StartMonitoringSubversionDirectories(textFeedbackEvent);
 
+				firstHalve = MyDoubleAnim(0, -90, 0.4);
+				secondHalve = MyDoubleAnim(90, 0, 0.4);
+
+				firstHalve.Completed += new EventHandler(firstHalve_Completed);
+
 				textFeedbackEventInitialized = true;
 			}
+		}
+
+		private ICommandWithHandler activeCommand = null;
+		private void SetDataContext(ICommandWithHandler command = null)
+		{
+			if (activeCommand == command)
+				return;
+
+			activeCommand = command;
+			textBox_CommandLine.DataContext = activeCommand;
+			textBox_CommandLine.UpdateLayout();
+			textBoxWithButtons.DataContext = activeCommand;
+			textBoxWithButtons.UpdateLayout();
+			textBox_Messages.DataContext = activeCommand;
+			textBox_Messages.UpdateLayout();
+
+			planerator1.FieldOfView = 1;
+			planerator1.BeginAnimation(Planerator.Planerator.RotationYProperty, firstHalve);
+			//textBox_Messages.Document.Blocks.Clear();
+			//if (command != null)
+			//{
+			//	textBox_Messages.Document.Blocks.AddRange(command.MessagesList);
+			//	textBox_Messages.ScrollToEnd();
+			//}
+
+			SetVisibilityOfExtraControls();
+		}
+
+		private void firstHalve_Completed(object sender, EventArgs e)
+		{
+			textBox_Messages.Document.Blocks.Clear();
+			if (activeCommand != null)
+			{
+				textBox_Messages.Document.Blocks.AddRange(activeCommand.MessagesList);
+				textBox_Messages.ScrollToEnd();
+			}
+			planerator1.BeginAnimation(Planerator.Planerator.RotationYProperty, secondHalve);
+		}
+
+		private AnimationTimeline MyDoubleAnim(double from, double to, double sec)
+		{
+			int msec = (int)(sec * 1000);
+			DoubleAnimation da = new DoubleAnimation(from, to, new Duration(new TimeSpan(msec * 1000 * 10)));
+			da.DecelerationRatio = 0.2;
+			//da.RepeatBehavior = RepeatBehavior.Forever;
+			da.FillBehavior = FillBehavior.Stop;
+
+			return da;
 		}
 
 		private void CommandsUsercontrol_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -566,28 +624,6 @@ namespace SharedClasses
 				mp.Unread = false;
 			}
 			command.NotifyPropertyChanged("NumberUnreadMessages");
-		}
-
-		private ICommandWithHandler activeCommand = null;
-		private void SetDataContext(ICommandWithHandler command = null)
-		{
-			activeCommand = command;
-			textBox_CommandLine.DataContext = activeCommand;
-			textBox_CommandLine.UpdateLayout();
-			textBoxWithButtons.DataContext = activeCommand;
-			textBoxWithButtons.UpdateLayout();
-			textBox_Messages.DataContext = activeCommand;
-			textBox_Messages.UpdateLayout();
-
-			textBox_Messages.UpdateLayout();
-			textBox_Messages.Document.Blocks.Clear();
-			if (command != null)
-			{
-				textBox_Messages.Document.Blocks.AddRange(command.MessagesList);
-				textBox_Messages.ScrollToEnd();
-			}
-
-			SetVisibilityOfExtraControls();
 		}
 
 		private void SetVisibilityOfExtraControls()

@@ -998,7 +998,7 @@ namespace SharedClasses
 
 		private void textBox_CommandLine_TextChanged_1(object sender, RoutedEventArgs e)
 		{
-			string tmpCommandName;
+			//string tmpCommandName;
 			//if (CommandNameExistOfTextboxText(out tmpCommandName))
 			//	label_ArgumentsExample.Content = "Press TAB to initiate mode for " + tmpCommandName;
 		}

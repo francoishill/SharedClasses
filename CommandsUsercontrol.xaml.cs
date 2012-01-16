@@ -1608,6 +1608,15 @@ namespace SharedClasses
 			HideParentWindow();
 		}
 
+		//private void Button_Click(object sender, RoutedEventArgs e)
+		//{
+		//	CustomBalloonTipwpf.ShowCustomBalloonTip(
+		//		"This is my title",
+		//		"This is the body of the message",
+		//		3000,
+		//		CustomBalloonTipwpf.IconTypes.Error);
+		//}
+
 		//private bool IsTreeViewDragBusy = false;
 	}
 

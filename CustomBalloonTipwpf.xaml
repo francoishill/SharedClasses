@@ -1,70 +1,89 @@
-﻿<Window
-	x:Class='CustomBalloonTipwpf'
-	xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
-	xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
-	Title='MainWindow'
-	Name='customBalloonTipwpf'
-	WindowStyle='None'
-	WindowStartupLocation='Manual'
-	AllowsTransparency='True'
-	mc:Ignorable="d"
-	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-	d:DesignHeight='81'
-	MaxHeight='61'
-	MinWidth='300'
-	d:DesignWidth='631'
-	SizeToContent='WidthAndHeight'
-	Background='Transparent'
-	FontSize='10'
-	FontFamily='Segoe Print'
-	Topmost='True'
-	FontWeight='Bold'
-	Loaded='customBalloonTipwpf_Loaded'
-	ShowInTaskbar='False'
-	ShowActivated='False'
-	ResizeMode='NoResize'>
-	<Border
-		Name='mainBorder'
-		Padding='20,0'
-		CornerRadius='8'
-		BorderThickness='1'
-		BorderBrush='#789'>
-		<Border.Background>
-			<LinearGradientBrush StartPoint='0,0' EndPoint='0,1'>
-				<GradientStop
-					Offset='0'
-					Color='#ddd' />
-				<GradientStop
-					Offset='0.5'
-					Color='#fff' />
-				<GradientStop
-					Offset='1'
-					Color='#ddd' />
-			</LinearGradientBrush>
-		</Border.Background>
-		<StackPanel
-			Orientation='Horizontal'
-			UseLayoutRounding='True'
-			VerticalAlignment='Top'
-			HorizontalAlignment='Left'>
-			<Image
-				Name='pictureBox_Icon'
-				Width='16'
-				Height='16'
-				UseLayoutRounding='True'></Image>
-			<Label
-				Content='Title'
-				Foreground='DarkGreen'
-				Name='label_Title'
-				Padding='0'
-				Margin='10,0,0,0' />
-			<Label
-				Content='Message'
-				Foreground='DarkBlue'
-				Name='label_Message'
-				Padding='0'
-				Margin='10,0,0,0' />
-		</StackPanel>
-	</Border>
+﻿<Window xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
+				xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
+				xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+				xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+				xmlns:DragCanvas="clr-namespace:DragCanvas"
+				x:Class='SharedClasses.CustomBalloonTipwpf'
+				xmlns:sharedclasses='clr-namespace:SharedClasses'
+				mc:Ignorable="d"
+				Title='MainWindow'
+				x:Name='customBalloonTipwpf'
+				WindowStyle='None'
+				WindowState='Maximized'
+				AllowsTransparency='True'
+				Background='Transparent'
+				FontSize='12'
+				FontFamily='Segoe Print'
+				Topmost='True'
+				FontWeight='Bold'
+				ShowInTaskbar='False'
+				Closing='customBalloonTipwpf_Closing'>
+	<Window.Resources>
+		<sharedclasses:WrapPanelParentHeightToHeightConverter x:Key='wrapPanelParentHeightToHeightConverter' />
+	</Window.Resources>
+	<Grid Background='Transparent'
+				Margin='5'>
+		<Grid.Resources>
+			<SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
+											 Color="Transparent" />
+			<SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"
+											 Color="Transparent" />
+		</Grid.Resources>
+		<ListBox x:Name='listBox1'
+						 Background='Transparent'
+						 HorizontalAlignment='Stretch'
+						 HorizontalContentAlignment='Center'
+						 BorderThickness='0'>
+			<ListBox.ItemsPanel>
+				<ItemsPanelTemplate>
+					<WrapPanel HorizontalAlignment='Center'
+										 Height='{Binding (FrameworkElement.ActualHeight), RelativeSource={RelativeSource AncestorType=ListBox}, Converter={StaticResource wrapPanelParentHeightToHeightConverter}, Mode=OneWay}'
+										 VerticalAlignment='Top'
+										 Orientation='Vertical'
+										 Background='Transparent' />
+				</ItemsPanelTemplate>
+			</ListBox.ItemsPanel>
+			<ListBox.ItemTemplate>
+				<DataTemplate>
+					<Border x:Name='ItemMainBorder'
+									Padding='10,0'
+									CornerRadius='4'
+									Margin='-2,1'
+									BorderThickness='1'
+									BorderBrush='#789'
+									MouseLeftButtonUp='Border_MouseLeftButtonUp'
+									LayoutTransform='{Binding LayoutTransformation}'>
+						<Border.Background>
+							<LinearGradientBrush StartPoint='0,0'
+																	 EndPoint='0,1'>
+								<GradientStop Offset='0'
+															Color='#ddd' />
+								<GradientStop Offset='0.5'
+															Color='#fff' />
+								<GradientStop Offset='1'
+															Color='#ddd' />
+							</LinearGradientBrush>
+						</Border.Background>
+						<StackPanel Orientation='Horizontal'
+												UseLayoutRounding='True'
+												VerticalAlignment='Top'
+												HorizontalAlignment='Left'>
+							<Image Source='{Binding Icon}'
+										 Width='16'
+										 Height='16'
+										 UseLayoutRounding='True' />
+							<Label Content='{Binding Title}'
+										 Foreground='DarkGreen'
+										 Padding='0'
+										 Margin='10,0,0,0' />
+							<Label Content='{Binding Message}'
+										 Foreground='DarkBlue'
+										 Padding='0'
+										 Margin='10,0,0,0' />
+						</StackPanel>
+					</Border>
+				</DataTemplate>
+			</ListBox.ItemTemplate>
+		</ListBox>
+	</Grid>
 </Window>

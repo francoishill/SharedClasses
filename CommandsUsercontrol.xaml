@@ -1313,6 +1313,11 @@
 						 HorizontalAlignment="Left"
 						 VerticalAlignment="Top"
 						 Foreground="Gray" />-->
+			<!--<Button HorizontalAlignment='Right' Content='Test'
+							Height="22"
+							Margin='0,0,50,0'
+							VerticalAlignment="Bottom"
+							Click='Button_Click'/>-->
 			<Button x:Name='CloseUsercontrolButton'
 							HorizontalAlignment='Right'
 							VerticalAlignment='Center'

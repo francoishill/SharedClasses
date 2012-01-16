@@ -40,10 +40,10 @@ public partial class OverlayForm : System.Windows.Forms.Form
 			this.Close();//.Hide();
 	}
 
-	public static void tmpQuickCustomBalloonTip(string msg)
-	{
-		CustomBalloonTip.ShowCustomBalloonTip("Title", msg, 2000, CustomBalloonTip.IconTypes.Information, delegate { });
-	}
+	//public static void tmpQuickCustomBalloonTip(string msg)
+	//{
+	//	CustomBalloonTip.ShowCustomBalloonTip("Title", msg, 2000, CustomBalloonTip.IconTypes.Information, delegate { });
+	//}
 
 	private void OverlayForm_Shown(object sender, EventArgs e)
 	{

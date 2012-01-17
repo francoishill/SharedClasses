@@ -43,10 +43,8 @@ public partial class CommandsWindow : Window
 			commandsUsercontrol1.InitializeTreeViewNodes(
 				MainFormUsedForShuttingDownServers,
 				true,
-				delegate { this.Hide(); },
 				delegate { this.Close(); },
-				"hide/close",
-				"Left-click hides. Right-click closes");
+				delegate { this.Hide(); });
 		};
 		timer.Start();
 

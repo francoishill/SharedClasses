@@ -79,18 +79,17 @@ namespace SharedClasses
 
 		//private FlowDocument messagesFlowDocument = new FlowDocument();
 		private bool textFeedbackEventInitialized = false;
-		public void InitializeTreeViewNodes(System.Windows.Forms.Form mainFormUsedForShuttingDownServers, bool ShowExitButton = false, Action MethodOnLeftClick = null, Action MethodOnRightClick = null, string ButtonText = null, string ButtonToolTip = null)
+		public void InitializeTreeViewNodes(System.Windows.Forms.Form mainFormUsedForShuttingDownServers, bool ShowExitAndMinimizeToTrayButtons = false, Action CloseButtonPressed = null, Action MinimizeToTrayButtonPressed = null)
 		{
 			MainFormUsedForShuttingDownServers = mainFormUsedForShuttingDownServers;
 			if (!textFeedbackEventInitialized)
 			{
-				if (ShowExitButton)
+				if (ShowExitAndMinimizeToTrayButtons)
 				{
-					CloseUsercontrolButton.Visibility = System.Windows.Visibility.Visible;
-					CloseUsercontrolButton.PreviewMouseLeftButtonDown += delegate { MethodOnLeftClick(); };
-					CloseUsercontrolButton.MouseRightButtonUp += delegate { MethodOnRightClick(); };
-					CloseUsercontrolButton.Content = ButtonText;
-					CloseUsercontrolButton.ToolTip = ButtonToolTip;
+					stackPanelWithCloseAndMinimizeToTrayButton.Visibility = System.Windows.Visibility.Visible;
+					
+					CloseUsercontrolButton.PreviewMouseLeftButtonDown += delegate { CloseButtonPressed(); };
+					MinimizeToTrayUsercontrolButton.PreviewMouseLeftButtonDown += delegate { MinimizeToTrayButtonPressed(); };
 				}
 
 				this.IsVisibleChanged += new DependencyPropertyChangedEventHandler(CommandsUsercontrol_IsVisibleChanged);
@@ -1606,6 +1605,16 @@ namespace SharedClasses
 		private void Grid_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
 		{
 			HideParentWindow();
+		}
+
+		private void MinimizeToTrayUsercontrolButton_PreviewMouseRightButtonUp(object sender, MouseButtonEventArgs e)
+		{
+			e.Handled = true;
+		}
+
+		private void CloseUsercontrolButton_PreviewMouseRightButtonUp(object sender, MouseButtonEventArgs e)
+		{
+			e.Handled = true;
 		}
 
 		//private void Button_Click(object sender, RoutedEventArgs e)

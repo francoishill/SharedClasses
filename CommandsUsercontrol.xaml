@@ -7,7 +7,6 @@
 						 xmlns:input="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls.Input.Toolkit"
 						 xmlns:system="clr-namespace:System;assembly=mscorlib"
 						 xmlns:propertyinterceptor='clr-namespace:PropertyInterceptor'
-						 xmlns:wpftoolkitextended='clr-namespace:Microsoft.Windows.Controls;assembly=WPFToolkit.Extended'
 						 xmlns:sharedclasses='clr-namespace:SharedClasses'
 						 xmlns:Planerator="clr-namespace:Planerator;assembly=Planerator"
 						 x:Class="SharedClasses.CommandsUsercontrol"
@@ -1294,6 +1293,20 @@
 						</DoubleAnimationUsingKeyFrames>
 					</Storyboard>
 				</ResourceDictionary>
+				<ResourceDictionary>
+					<Style x:Key='ButtonStyleSemiTransparentUntilHover' TargetType="{x:Type Button}">
+						<!-- Default Values -->
+						<Setter Property="Opacity"
+										Value="0.1" />
+						<Style.Triggers>
+							<Trigger Property="IsMouseOver"
+											 Value="True">
+								<Setter Property="Button.Opacity"
+												Value="1" />
+							</Trigger>
+						</Style.Triggers>
+					</Style>
+				</ResourceDictionary>
 			</ResourceDictionary.MergedDictionaries>
 		</ResourceDictionary>
 	</UserControl.Resources>
@@ -1318,17 +1331,34 @@
 							Margin='0,0,50,0'
 							VerticalAlignment="Bottom"
 							Click='Button_Click'/>-->
-			<Button x:Name='CloseUsercontrolButton'
-							HorizontalAlignment='Right'
-							VerticalAlignment='Center'
-							BorderBrush='#ddd'
-							BorderThickness='1'
-							Background='Transparent'
-							Foreground='#777'
-							Padding='3,0'
-							Content='quit'
-							Visibility='Collapsed'
-							ToolTip="Quit Quick Access" />
+			<StackPanel Orientation='Horizontal'
+									HorizontalAlignment='Right'
+									VerticalAlignment='Center'
+									Visibility='Collapsed'
+									Margin='3'
+									x:Name='stackPanelWithCloseAndMinimizeToTrayButton'>
+				<Button x:Name='MinimizeToTrayUsercontrolButton'
+								Style='{StaticResource ButtonStyleSemiTransparentUntilHover}'
+								PreviewMouseRightButtonUp='MinimizeToTrayUsercontrolButton_PreviewMouseRightButtonUp'
+								ToolTip='Minimize to tray'								
+								Margin='0,0,3,0'
+								BorderBrush='#ddd'
+								BorderThickness='1'
+								Background='Transparent'
+								Foreground='#777'
+								Padding='3,0'
+								Content='_' />
+				<Button x:Name='CloseUsercontrolButton'
+								Style='{StaticResource ButtonStyleSemiTransparentUntilHover}'
+								PreviewMouseRightButtonUp='CloseUsercontrolButton_PreviewMouseRightButtonUp'
+								ToolTip='Quit Quick Access'
+								BorderBrush='#ddd'
+								BorderThickness='1'
+								Background='Transparent'
+								Foreground='#777'
+								Padding='3,0'
+								Content='X'/>
+			</StackPanel>
 		</Grid>
 		<TextBox x:Name='MainAutoCompleteTextbox'
 						 Grid.Row="1"

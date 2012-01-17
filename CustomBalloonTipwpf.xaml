@@ -46,13 +46,14 @@
 			<ListBox.ItemTemplate>
 				<DataTemplate>
 					<Border x:Name='ItemMainBorder'
-									Padding='10,0'
+									Padding='10,1'
 									CornerRadius='4'
-									Margin='-2,1'
+									Margin='-2,0'
 									BorderThickness='1'
 									BorderBrush='#789'
 									MouseLeftButtonUp='Border_MouseLeftButtonUp'
-									LayoutTransform='{Binding LayoutTransformation}'>
+									LayoutTransform='{Binding LayoutTransformation}'
+									UseLayoutRounding='True'>
 						<Border.Background>
 							<LinearGradientBrush StartPoint='0,0'
 																	 EndPoint='0,1'>

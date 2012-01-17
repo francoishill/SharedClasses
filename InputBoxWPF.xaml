@@ -100,6 +100,9 @@
 						Height='120'
 						BorderBrush='#777'
 						BorderThickness='1'>
+			<Border.Effect>
+				<DropShadowEffect BlurRadius='15' ShadowDepth='0' Color='#eee'/>
+			</Border.Effect>
 			<Border.LayoutTransform>
 				<ScaleTransform ScaleX='2.1'
 												ScaleY='2.1' />

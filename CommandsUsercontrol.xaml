@@ -1340,6 +1340,7 @@
 				<Button x:Name='MinimizeToTrayUsercontrolButton'
 								Style='{StaticResource ButtonStyleSemiTransparentUntilHover}'
 								PreviewMouseRightButtonUp='MinimizeToTrayUsercontrolButton_PreviewMouseRightButtonUp'
+								
 								ToolTip='Minimize to tray'								
 								Margin='0,0,3,0'
 								BorderBrush='#ddd'

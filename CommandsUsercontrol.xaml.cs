@@ -79,18 +79,18 @@ namespace SharedClasses
 
 		//private FlowDocument messagesFlowDocument = new FlowDocument();
 		private bool textFeedbackEventInitialized = false;
-		public void InitializeTreeViewNodes(System.Windows.Forms.Form mainFormUsedForShuttingDownServers, bool ShowExitAndMinimizeToTrayButtons = false, Action CloseButtonPressed = null, Action MinimizeToTrayButtonPressed = null)
+		public void InitializeTreeViewNodes(System.Windows.Forms.Form mainFormUsedForShuttingDownServers)//, bool ShowExitAndMinimizeToTrayButtons = false, Action CloseButtonPressed = null, Action MinimizeToTrayButtonPressed = null)
 		{
 			MainFormUsedForShuttingDownServers = mainFormUsedForShuttingDownServers;
 			if (!textFeedbackEventInitialized)
 			{
-				if (ShowExitAndMinimizeToTrayButtons)
-				{
-					stackPanelWithCloseAndMinimizeToTrayButton.Visibility = System.Windows.Visibility.Visible;
+				//if (ShowExitAndMinimizeToTrayButtons)
+				//{
+				//	stackPanelWithCloseAndMinimizeToTrayButton.Visibility = System.Windows.Visibility.Visible;
 					
-					CloseUsercontrolButton.PreviewMouseLeftButtonDown += delegate { CloseButtonPressed(); };
-					MinimizeToTrayUsercontrolButton.PreviewMouseLeftButtonDown += delegate { MinimizeToTrayButtonPressed(); };
-				}
+				//	CloseUsercontrolButton.PreviewMouseLeftButtonDown += delegate { CloseButtonPressed(); };
+				//	MinimizeToTrayUsercontrolButton.PreviewMouseLeftButtonDown += delegate { MinimizeToTrayButtonPressed(); };
+				//}
 
 				this.IsVisibleChanged += new DependencyPropertyChangedEventHandler(CommandsUsercontrol_IsVisibleChanged);
 
@@ -290,8 +290,8 @@ namespace SharedClasses
 					}
 				//SubversionInterop.StartMonitoringSubversionDirectories(textFeedbackEvent);
 
-				firstHalve = MyDoubleAnim(0, -90, 0.4);
-				secondHalve = MyDoubleAnim(90, 0, 0.4);
+				firstHalve = MyDoubleAnim(0, -90, 0.2);
+				secondHalve = MyDoubleAnim(90, 0, 0.2);
 
 				firstHalve.Completed += new EventHandler(firstHalve_Completed);
 

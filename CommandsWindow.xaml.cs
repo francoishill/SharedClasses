@@ -16,6 +16,7 @@ using System.Windows.Media.Animation;
 using System.Reflection;
 using System.IO;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace SharedClasses
 {
@@ -33,8 +34,36 @@ namespace SharedClasses
 			MainFormUsedForShuttingDownServers = mainFormUsedForShuttingDownServers;
 		}
 
+		[StructLayout(LayoutKind.Sequential)]
+		private struct MARGINS
+		{
+			public int cxLeftWidth;      // width of left border that retains its size
+			public int cxRightWidth;     // width of right border that retains its size
+			public int cyTopHeight;      // height of top border that retains its size
+			public int cyBottomHeight;   // height of bottom border that retains its size
+		};
+
+		[DllImport("DwmApi.dll")]
+		private static extern int DwmExtendFrameIntoClientArea(IntPtr hwnd, ref MARGINS pMarInset);
+
 		private void CommandsWindow1_Loaded(object sender, RoutedEventArgs e)
 		{
+			WindowInteropHelper windowInteropHelper = new WindowInteropHelper(this);
+			IntPtr myHwnd = windowInteropHelper.Handle;
+			HwndSource mainWindowSrc = System.Windows.Interop.HwndSource.FromHwnd(myHwnd);
+
+			mainWindowSrc.CompositionTarget.BackgroundColor = Color.FromArgb(0, 0, 0, 0);
+
+			MARGINS margins = new MARGINS()
+			{
+				cxLeftWidth = -1,
+				cxRightWidth = -1,
+				cyBottomHeight = -1,
+				cyTopHeight = -1
+			};
+
+			DwmExtendFrameIntoClientArea(myHwnd, ref margins);
+
 			System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
 			timer.Interval = 1;
 			timer.Tick += delegate
@@ -54,10 +83,10 @@ namespace SharedClasses
 			commandsUsercontrol1.UpdateTaskbarOverlayIconForUnreadMessages();
 
 			//TODO: Have a look at the commented out code for the WindowChrome
-			Style _style = null;
-			if (Microsoft.Windows.Shell.SystemParameters2.Current.IsGlassEnabled == true)
-				_style = (Style)Resources["FractalStyle"];
-			this.Style = _style;
+			//Style _style = null;
+			//if (Microsoft.Windows.Shell.SystemParameters2.Current.IsGlassEnabled == true)
+			//	_style = (Style)Resources["FractalStyle"];
+			//this.Style = _style;
 		}
 
 		private void CommandsWindow1_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -84,18 +113,18 @@ namespace SharedClasses
 			this.TaskbarItemInfo.ProgressValue = 0.8;
 		}
 
-		private void _OnShowSystemMenuCommand(object sender, ExecutedRoutedEventArgs e)
-		{
-			Window _window = (Window)e.Parameter;
-			Point _point = new Point(_window.Left + 24, _window.Top + 24);
+		//private void _OnShowSystemMenuCommand(object sender, ExecutedRoutedEventArgs e)
+		//{
+		//	Window _window = (Window)e.Parameter;
+		//	Point _point = new Point(_window.Left + 24, _window.Top + 24);
 
-			Microsoft.Windows.Shell.SystemCommands.ShowSystemMenu(_window, _point);
-		}
+		//	Microsoft.Windows.Shell.SystemCommands.ShowSystemMenu(_window, _point);
+		//}
 
-		private void _OnSystemCommandCloseWindow(object sender, ExecutedRoutedEventArgs e)
-		{
-			Microsoft.Windows.Shell.SystemCommands.CloseWindow((Window)e.Parameter);
-		}
+		//private void _OnSystemCommandCloseWindow(object sender, ExecutedRoutedEventArgs e)
+		//{
+		//	Microsoft.Windows.Shell.SystemCommands.CloseWindow((Window)e.Parameter);
+		//}
 
 		private void MinimizeToTrayUsercontrolButton_PreviewMouseRightButtonUp(object sender, MouseButtonEventArgs e)
 		{
@@ -115,6 +144,15 @@ namespace SharedClasses
 		private void CloseUsercontrolButton_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
 		{
 			this.Close();
+		}
+
+		private void CommandsWindow1_StateChanged(object sender, EventArgs e)
+		{
+			if (this.WindowState == System.Windows.WindowState.Minimized)
+			{
+				this.WindowState = System.Windows.WindowState.Normal;
+				this.Hide();				
+			}
 		}
 	}
 }

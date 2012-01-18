@@ -5,32 +5,32 @@
 				xmlns:mc='http://schemas.openxmlformats.org/markup-compatibility/2006'
 				xmlns:shell="clr-namespace:Microsoft.Windows.Shell;assembly=Microsoft.Windows.Shell"
 				xmlns:local='clr-namespace:SharedClasses'
-				mc:Ignorable='d'
 				xmlns:SharedClasses="clr-namespace:SharedClasses"
 				xmlns:inlinecommandtoolkit='clr-namespace:InlineCommandToolkit'
+				mc:Ignorable='d'
 				Title='Commands Window'
 				x:Name='CommandsWindow1'
 				Loaded="CommandsWindow1_Loaded"
 				Width="1200"
 				MinWidth="150"
-				WindowStyle='None'
 				WindowStartupLocation='CenterScreen'
 				Background='Transparent'
 				Closing='CommandsWindow1_Closing'
 				UseLayoutRounding='True'
 				MouseLeftButtonDown='CommandsWindow1_MouseLeftButtonDown'
 				MouseRightButtonUp='CommandsWindow1_MouseRightButtonDown'
-				Height="700">
-	<Window.CommandBindings>
+				Height="700"
+				StateChanged='CommandsWindow1_StateChanged'>
+				<!--SharedClasses:WindowBehavior.HideCloseButton="True">-->
+	<!--<Window.CommandBindings>
 		<CommandBinding Command="{x:Static shell:SystemCommands.ShowSystemMenuCommand}"
 										Executed="_OnShowSystemMenuCommand" />
 		<CommandBinding Command="{x:Static shell:SystemCommands.CloseWindowCommand}"
 										Executed="_OnSystemCommandCloseWindow" />
-	</Window.CommandBindings>
+	</Window.CommandBindings>-->
 	<Window.Resources>
-		<Style x:Key='ButtonStyleSemiTransparentUntilHover'
+		<!--<Style x:Key='ButtonStyleSemiTransparentUntilHover'
 					 TargetType="{x:Type Button}">
-			<!-- Default Values -->
 			<Setter Property="Opacity"
 							Value="0.1" />
 			<Style.Triggers>
@@ -99,14 +99,6 @@
 															 FontFamily="Segoe UI"
 															 FontSize="14" />
 									</Grid>
-									<!--<Button Content="OFF"
-														Width="32"
-														Height="24"
-														HorizontalAlignment="Right"
-														shell:WindowChrome.IsHitTestVisibleInChrome="True"
-														Command="{x:Static shell:SystemCommands.CloseWindowCommand}"
-														CommandParameter="{Binding ElementName=CommandsWindow1}"
-														Margin="0,0,6,0"></Button>-->
 								</Grid>
 								<ContentPresenter Content="{TemplateBinding Content}"
 																	DockPanel.Dock="Bottom" />
@@ -115,7 +107,7 @@
 					</ControlTemplate>
 				</Setter.Value>
 			</Setter>
-		</Style>
+		</Style>-->
 		<DrawingImage x:Key="Button1Image">
 			<DrawingImage.Drawing>
 				<DrawingGroup>
@@ -213,7 +205,7 @@
 		<SharedClasses:CommandsUsercontrol x:Name="commandsUsercontrol1"
 																			 HorizontalAlignment="Stretch"
 																			 VerticalAlignment="Stretch">
-			<SharedClasses:CommandsUsercontrol.Background>
+			<!--<SharedClasses:CommandsUsercontrol.Background>
 				<LinearGradientBrush StartPoint="0,0"
 														 EndPoint="0,1">
 					<GradientStop Color="#fff"
@@ -223,7 +215,7 @@
 					<GradientStop Color="#f0f0f0"
 												Offset="1" />
 				</LinearGradientBrush>
-			</SharedClasses:CommandsUsercontrol.Background>
+			</SharedClasses:CommandsUsercontrol.Background>-->
 		</SharedClasses:CommandsUsercontrol>
 	</Grid>
 </Window>

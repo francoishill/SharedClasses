@@ -49,6 +49,20 @@ namespace SharedClasses
 			return System.Drawing.Icon.FromHandle(bmp.GetHicon());
 		}
 
+		public static System.Drawing.Icon OverlayIconWithFourCircles(Icon originalIcon, System.Drawing.Brush fillcolorTopLeft, System.Drawing.Brush fillcolorTopRight, System.Drawing.Brush fillcolorBottomLeft, System.Drawing.Brush fillcolorBottomRight)
+		{
+			Bitmap bmp = originalIcon.ToBitmap();
+			
+			System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(bmp);
+
+			int circleWidthHeight = 16;
+			g.FillEllipse(fillcolorTopLeft, 0, 0, circleWidthHeight, circleWidthHeight);
+			g.FillEllipse(fillcolorTopRight, originalIcon.Width - circleWidthHeight, 0, circleWidthHeight, circleWidthHeight);
+			g.FillEllipse(fillcolorBottomLeft, 0, originalIcon.Height - circleWidthHeight, circleWidthHeight, circleWidthHeight);
+			g.FillEllipse(fillcolorBottomRight, originalIcon.Width - circleWidthHeight, originalIcon.Height - circleWidthHeight, circleWidthHeight, circleWidthHeight);
+			return System.Drawing.Icon.FromHandle(bmp.GetHicon());
+		}
+		
 		/// <summary>
 		/// Shows a notification originalIcon in the system tray, for the given duration then removes it.
 		/// </summary>

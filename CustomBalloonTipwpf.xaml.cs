@@ -1,18 +1,14 @@
 ﻿using System;
-using System.Windows;
-using System.Windows.Interop;
-using System.Windows.Media.Imaging;
-using System.Windows.Media;
-//using System.Drawing;
-using System.Collections.Generic;
-using SystemIcons = System.Drawing.SystemIcons;
-using Screen = System.Windows.Forms.Screen;
-using Rectangle = System.Drawing.Rectangle;
-using System.Threading;
-using System.Windows.Media.Animation;
 using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
+//using System.Drawing;
+using SystemIcons = System.Drawing.SystemIcons;
 
 namespace SharedClasses
 {

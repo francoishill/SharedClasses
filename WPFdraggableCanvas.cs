@@ -1,3 +1,5 @@
+using System;
+using System.Windows;
 /// <summary> 
 /// A Canvas which manages dragging of the UIElements it contains.   
 /// </summary> 
@@ -5,11 +7,9 @@
 /// Documentation: http://www.codeproject.com/KB/WPF/DraggingElementsInCanvas.aspx 
 /// </remarks> 
 using System.Windows.Controls;
-using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
-using System.Windows.Input;
-using System;
 
 namespace DragCanvas
 {

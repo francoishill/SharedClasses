@@ -21,6 +21,9 @@
 				MouseRightButtonUp='CommandsWindow1_MouseRightButtonDown'
 				Height="700"
 				StateChanged='CommandsWindow1_StateChanged'>
+	<Window.Resources>
+		<ResourceDictionary Source='pack://application:,,,/InlineCommandToolkit;component/Resources/General.xaml' />
+	</Window.Resources>
 				<!--SharedClasses:WindowBehavior.HideCloseButton="True">-->
 	<!--<Window.CommandBindings>
 		<CommandBinding Command="{x:Static shell:SystemCommands.ShowSystemMenuCommand}"
@@ -28,132 +31,6 @@
 		<CommandBinding Command="{x:Static shell:SystemCommands.CloseWindowCommand}"
 										Executed="_OnSystemCommandCloseWindow" />
 	</Window.CommandBindings>-->
-	<Window.Resources>
-		<!--<Style x:Key='ButtonStyleSemiTransparentUntilHover'
-					 TargetType="{x:Type Button}">
-			<Setter Property="Opacity"
-							Value="0.1" />
-			<Style.Triggers>
-				<Trigger Property="IsMouseOver"
-								 Value="True">
-					<Setter Property="Button.Opacity"
-									Value="1" />
-				</Trigger>
-			</Style.Triggers>
-		</Style>
-		<Style x:Key="FractalStyle"
-					 TargetType="{x:Type local:CommandsWindow}">
-			<Setter Property="shell:WindowChrome.WindowChrome">
-				<Setter.Value>
-					<shell:WindowChrome GlassFrameThickness="8"
-															ResizeBorderThickness="4"
-															CaptionHeight="28"
-															CornerRadius="10" />
-				</Setter.Value>
-			</Setter>
-			<Setter Property="Template">
-				<Setter.Value>
-					<ControlTemplate TargetType="{x:Type local:CommandsWindow}">
-						<Border Background='White'
-										Margin='8'>
-							<DockPanel LastChildFill='True'>
-								<Grid DockPanel.Dock="Top"
-											Background='White'>
-									<StackPanel Orientation='Horizontal'
-															HorizontalAlignment='Right'
-															VerticalAlignment='Top'
-															Margin='3'>
-										<Button x:Name='MinimizeToTrayUsercontrolButton'
-														Style='{StaticResource ButtonStyleSemiTransparentUntilHover}'
-														PreviewMouseLeftButtonDown='MinimizeToTrayUsercontrolButton_PreviewMouseLeftButtonDown'
-														PreviewMouseRightButtonUp='MinimizeToTrayUsercontrolButton_PreviewMouseRightButtonUp'
-														shell:WindowChrome.IsHitTestVisibleInChrome="True"
-														ToolTip='Minimize to tray'
-														HorizontalAlignment='Right'
-														VerticalAlignment='Top'
-														Margin='0,0,3,0'
-														BorderBrush='#ddd'
-														BorderThickness='1'
-														Background='Transparent'
-														Foreground='#777'
-														Padding='3,0'
-														Content='_' />
-										<Button x:Name='CloseUsercontrolButton'
-														Style='{StaticResource ButtonStyleSemiTransparentUntilHover}'
-														PreviewMouseLeftButtonDown='CloseUsercontrolButton_PreviewMouseLeftButtonDown'
-														PreviewMouseRightButtonUp='CloseUsercontrolButton_PreviewMouseRightButtonUp'
-														shell:WindowChrome.IsHitTestVisibleInChrome="True"
-														ToolTip='Quit Quick Access'
-														HorizontalAlignment='Right'
-														VerticalAlignment='Top'
-														BorderBrush='#ddd'
-														BorderThickness='1'
-														Background='Transparent'
-														Foreground='#777'
-														Padding='3,0'
-														Content='X' />
-									</StackPanel>
-									<Grid HorizontalAlignment="Center">
-										<TextBlock Text="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Title}"
-															 Foreground="#777"
-															 FontFamily="Segoe UI"
-															 FontSize="14" />
-									</Grid>
-								</Grid>
-								<ContentPresenter Content="{TemplateBinding Content}"
-																	DockPanel.Dock="Bottom" />
-							</DockPanel>
-						</Border>
-					</ControlTemplate>
-				</Setter.Value>
-			</Setter>
-		</Style>-->
-		<DrawingImage x:Key="Button1Image">
-			<DrawingImage.Drawing>
-				<DrawingGroup>
-					<DrawingGroup.Children>
-						<GeometryDrawing Brush="Red">
-							<GeometryDrawing.Geometry>
-								<RectangleGeometry Rect="0 0 24 24"
-																	 RadiusX="4"
-																	 RadiusY="4" />
-							</GeometryDrawing.Geometry>
-						</GeometryDrawing>
-					</DrawingGroup.Children>
-				</DrawingGroup>
-			</DrawingImage.Drawing>
-		</DrawingImage>
-		<DrawingImage x:Key="Button2Image">
-			<DrawingImage.Drawing>
-				<DrawingGroup>
-					<DrawingGroup.Children>
-						<GeometryDrawing Brush="Green">
-							<GeometryDrawing.Geometry>
-								<RectangleGeometry Rect="0 0 24 24"
-																	 RadiusX="4"
-																	 RadiusY="4" />
-							</GeometryDrawing.Geometry>
-						</GeometryDrawing>
-					</DrawingGroup.Children>
-				</DrawingGroup>
-			</DrawingImage.Drawing>
-		</DrawingImage>
-		<DrawingImage x:Key="Button3Image">
-			<DrawingImage.Drawing>
-				<DrawingGroup>
-					<DrawingGroup.Children>
-						<GeometryDrawing Brush="Blue">
-							<GeometryDrawing.Geometry>
-								<RectangleGeometry Rect="0 0 24 24"
-																	 RadiusX="4"
-																	 RadiusY="4" />
-							</GeometryDrawing.Geometry>
-						</GeometryDrawing>
-					</DrawingGroup.Children>
-				</DrawingGroup>
-			</DrawingImage.Drawing>
-		</DrawingImage>
-	</Window.Resources>
 	<Window.TaskbarItemInfo>
 		<TaskbarItemInfo>
 			<TaskbarItemInfo.Overlay>
@@ -191,31 +68,10 @@
 			</TaskbarItemInfo.ThumbButtonInfos>
 		</TaskbarItemInfo>
 	</Window.TaskbarItemInfo>
-	<!--<Window.Background>
-        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#fff"
-                          Offset="0" />
-            <GradientStop Color="#eee"
-                          Offset="0.7" />
-            <GradientStop Color="#f0f0f0"
-                          Offset="1" />
-        </LinearGradientBrush>
-    </Window.Background>-->
 	<Grid>
 		<SharedClasses:CommandsUsercontrol x:Name="commandsUsercontrol1"
 																			 HorizontalAlignment="Stretch"
-																			 VerticalAlignment="Stretch">
-			<!--<SharedClasses:CommandsUsercontrol.Background>
-				<LinearGradientBrush StartPoint="0,0"
-														 EndPoint="0,1">
-					<GradientStop Color="#fff"
-												Offset="0" />
-					<GradientStop Color="#eee"
-												Offset="0.7" />
-					<GradientStop Color="#f0f0f0"
-												Offset="1" />
-				</LinearGradientBrush>
-			</SharedClasses:CommandsUsercontrol.Background>-->
-		</SharedClasses:CommandsUsercontrol>
+																			 VerticalAlignment="Stretch" />
+		<!--Background='{StaticResource LinearGradientBrush_CommandsWindowBackground}'/>-->
 	</Grid>
 </Window>

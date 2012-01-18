@@ -1,14 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Configuration;
 using System.Reflection;
-using System.Windows;
 using DynamicDLLsInterop;
-using SharedClasses;
 //using System.Windows.Forms;
-using UriProtocol = SharedClasses.GlobalSettings.VisualStudioInteropSettings.UriProtocol;
 
 namespace SharedClasses
 {

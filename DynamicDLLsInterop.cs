@@ -5,6 +5,8 @@ using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
 using InterfaceForQuickAccessPlugin;
+using ICommandWithHandler = InlineCommandToolkit.InlineCommands.ICommandWithHandler;
+using OverrideToStringClass = InlineCommandToolkit.InlineCommands.OverrideToStringClass;
 
 namespace DynamicDLLsInterop
 {
@@ -12,6 +14,45 @@ namespace DynamicDLLsInterop
 	{
 		public static List<IQuickAccessPluginInterface> PluginList = new List<IQuickAccessPluginInterface>();
 		public static List<string> AllSuccessfullyLoadedDllFiles = new List<string>();
+
+		public static bool HasUnreadMessages
+		{
+			get
+			{
+				foreach (IQuickAccessPluginInterface plugin in DynamicDLLs.PluginList)
+				{
+					if (plugin is OverrideToStringClass)
+					{
+						ICommandWithHandler comm = plugin as ICommandWithHandler;
+						foreach (TextFeedbackType key in comm.NumberUnreadMessages.Keys.ToList())
+							if (comm.NumberUnreadMessages[key] > 0)
+								return true;
+					}
+				}
+				return false;
+			}
+		}
+
+		private static bool HasUnreadOfType(TextFeedbackType type)
+		{
+			foreach (IQuickAccessPluginInterface plugin in DynamicDLLs.PluginList)
+				if (plugin is OverrideToStringClass)
+				{
+					ICommandWithHandler comm = plugin as ICommandWithHandler;
+					if (comm.NumberUnreadMessages[type] > 0)
+						return true;
+				}
+			return false;
+		}
+		
+		//Error, Success, Noteworthy, Subtle
+		public static bool HasUnreadErrorMessages { get { return HasUnreadOfType(TextFeedbackType.Error); } }
+
+		public static bool HasUnreadSuccessMessages { get { return HasUnreadOfType(TextFeedbackType.Success); } }
+
+		public static bool HasUnreadNoteworhyMessages { get { return HasUnreadOfType(TextFeedbackType.Noteworthy); } }
+
+		public static bool HasUnreadSubtleMessages { get { return HasUnreadOfType(TextFeedbackType.Subtle); } }
 
 		public static object InvokeDllMethodGetReturnObject(string FullPathToDll, string ClassName, string MethodName, object[] parameters)
 		{
@@ -84,7 +125,7 @@ namespace DynamicDLLsInterop
 				foreach (string dllFile in Directory.GetFiles(DirectoryFullPath, "*.dll"))
 					if (IsFileValid(dllFile))
 						LoadPlugin(dllFile);
-					//else MessageBox.Show(dllFile);
+				//else MessageBox.Show(dllFile);
 			});
 
 			if (DelayLoadDurationMilliseconds != 0)

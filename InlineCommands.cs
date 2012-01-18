@@ -1,24 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-//using System.Windows.Forms;
-using System.IO;
-using System.Diagnostics;
-using System.Text.RegularExpressions;
-using System.Runtime.InteropServices;
-using System.Reflection;
-using System.Globalization;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
+//using System.Windows.Forms;
+using System.Text.RegularExpressions;
+using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Documents;
 using ICommandWithHandler = InlineCommandToolkit.InlineCommands.ICommandWithHandler;
-using InlineCommandToolkit;
-using System.Windows.Controls;
-using System.Windows;
-using DynamicDLLsInterop;
-using InterfaceForQuickAccessPlugin;
-using System.Windows.Media;
 //using OverrideToStringClass = InlineCommandToolkit.InlineCommands.OverrideToStringClass;
 
 namespace InlineCommandToolkit

@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using SharedClasses;
-using System.ComponentModel;
 //using System.Windows.Forms;
 
 public class SubversionInterop : INotifyPropertyChanged

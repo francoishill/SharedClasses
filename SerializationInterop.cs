@@ -2,11 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Xml;
-using System.Xml.Serialization;
 public class SerializationInterop
 {
 	//TODO: Check uit and use the code snippet indexer

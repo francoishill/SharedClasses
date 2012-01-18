@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Diagnostics;
 using System.IO;
-using System.Windows.Forms;
-using System.Windows;
 using System.Runtime.InteropServices;
+using System.Windows;
+using System.Windows.Forms;
 using System.Windows.Interop;
 
 namespace SharedClasses

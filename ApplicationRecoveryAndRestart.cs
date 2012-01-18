@@ -1,8 +1,8 @@
-using Microsoft.WindowsAPICodePack.ApplicationServices;
-using MS.WindowsAPICodePack.Internal;
-using System.Windows.Forms;
 using System;
 using System.IO;
+using System.Windows.Forms;
+using Microsoft.WindowsAPICodePack.ApplicationServices;
+using MS.WindowsAPICodePack.Internal;
 
 /// <summary>
 /// Need to add a reference to the Microsoft.WindowsAPICodePack.dll in SharedClasses\DLLs

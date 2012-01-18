@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Windows.Forms;
 using System.IO;
-using System.Xml.XPath;
 //using TestingSharedClasses.Properties;
 
 public class SettingsInterop

@@ -2,11 +2,8 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
 using System.Net.Sockets;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -14,9 +11,7 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using DynamicDLLsInterop;
 using InlineCommandToolkit;//InlineCommands.CommandsManagerClass.OverrideToStringClass;
@@ -25,9 +20,8 @@ using PropertyInterceptor;
 //using dragonz.actb.core;
 //using dragonz.actb.provider;
 using ICommandWithHandler = InlineCommandToolkit.InlineCommands.ICommandWithHandler;//InlineCommands.CommandsManagerClass.ICommandWithHandler;
-using OverrideToStringClass = InlineCommandToolkit.InlineCommands.OverrideToStringClass;
 using MessagesParagraph = InlineCommandToolkit.MessagesParagraph;
-using System.Windows.Media.Animation;
+using OverrideToStringClass = InlineCommandToolkit.InlineCommands.OverrideToStringClass;
 
 namespace SharedClasses
 {
@@ -295,7 +289,44 @@ namespace SharedClasses
 
 				firstHalve.Completed += new EventHandler(firstHalve_Completed);
 
+				GeneralResourceDictionary.CommandPerformedEvent += new CommandPerformedEventHandler(GeneralResourceDictionary_CommandPerformedEvent);
+				//if (this.Resources.MergedDictionaries[0] is GeneralResourceDictionary)
+					//System.Windows.Forms.MessageBox.Show(this.Resources.MergedDictionaries[0].GetType().Name);
+
 				textFeedbackEventInitialized = true;
+			}
+		}
+
+		private void GeneralResourceDictionary_CommandPerformedEvent(object sender, CommandPerformedEventArgs e)
+		{
+			switch (e.CommandPerformed)
+			{
+				case CommandPerformedType.EmbeddedButton_MouseLeftButtonDown:
+					EmbeddedButton_MouseLeftButtonDown(sender, e.eventArgs as MouseButtonEventArgs);
+					break;
+				case CommandPerformedType.EmbeddedButton_MouseRightButtonDown:
+					EmbeddedButton_MouseRightButtonDown(sender, e.eventArgs as MouseButtonEventArgs);
+					break;
+				case CommandPerformedType.ClearTextboxTextButton_MouseLeftButtonDown:
+					ClearTextboxTextButton_MouseLeftButtonDown(sender, e.eventArgs as MouseButtonEventArgs);
+					break;
+				case CommandPerformedType.AutoCompleteActualTextBox_PreviewKeyDown:
+					AutoCompleteActualTextBox_PreviewKeyDown(sender, e.eventArgs as KeyEventArgs);
+					break;
+				case CommandPerformedType.ArgumentText_DragOver:
+					ArgumentText_DragOver(sender, e.eventArgs as DragEventArgs);
+					break;
+				case CommandPerformedType.ArgumentText_Drop:
+					ArgumentText_Drop(sender, e.eventArgs as DragEventArgs);
+					break;
+				case CommandPerformedType.ArgumentText_GotFocus:
+					ArgumentText_GotFocus(sender, e.eventArgs as RoutedEventArgs);
+					break;
+				case CommandPerformedType.ArgumentText_SelectionChanged:
+					ArgumentText_SelectionChanged(sender, e.eventArgs as SelectionChangedEventArgs);
+					break;
+				default:
+					break;
 			}
 		}
 
@@ -388,29 +419,11 @@ namespace SharedClasses
 						.Brush = HasUnreadMessagesBrush;
 		}
 
-		public static bool HasUnreadMessages
-		{
-			get
-			{
-				foreach (IQuickAccessPluginInterface plugin in DynamicDLLs.PluginList)
-				{
-					if (plugin is OverrideToStringClass)
-					{
-						ICommandWithHandler comm = plugin as ICommandWithHandler;
-						foreach (TextFeedbackType key in comm.NumberUnreadMessages.Keys.ToList())
-							if (comm.NumberUnreadMessages[key] > 0)
-								return true;
-					}
-				}
-				return false;
-			}
-		}
-
 		public static Brush HasUnreadMessagesBrush
 		{
 			get
 			{
-				if (HasUnreadMessages)
+				if (DynamicDLLs.HasUnreadMessages)
 					return Brushes.Red;
 				else
 					return Brushes.Transparent;//Green;
@@ -1644,7 +1657,7 @@ namespace SharedClasses
 		}
 	}
 
-	public class ZeroCollapsedNonZeroVisible : IValueConverter
+	public class ZeroCollapsedNonZeroVisibleConverter : IValueConverter
 	{
 
 		public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)

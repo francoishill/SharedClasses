@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -51,7 +52,76 @@ namespace SharedClasses
 			if (window.WindowState != WindowState.Normal) window.WindowState = WindowState.Normal;
 			window.Activate();
 		}
+
+		// Define the Win32 API methods we are going to use
+		[DllImport("user32.dll")]
+		private static extern IntPtr GetSystemMenu(IntPtr hWnd, bool bRevert);
+
+		[DllImport("user32.dll")]
+		private static extern bool InsertMenu(IntPtr hMenu, Int32 wPosition, Int32 wFlags, Int32 wIDNewItem, string lpNewItem);
+
+		/// Define our Constants we will use
+		public const Int32 WM_SYSCOMMAND = 0x112;
+		public const Int32 MF_SEPARATOR = 0x800;
+		public const Int32 MF_BYPOSITION = 0x400;
+		public const Int32 MF_STRING = 0x0;
+
+		public static IntPtr GetWindowHandle(Window window) { return new WindowInteropHelper(window).Handle; }
+
+		public static void SetHookForSystemMenu(Window window, HwndSourceHook wndProc, List<SystemMenuItem> MenuItemList)
+		{
+			if (
+				window == null || GetWindowHandle(window) == IntPtr.Zero
+				|| wndProc == null
+				|| MenuItemList == null || MenuItemList.Count == 0)
+				return;
+
+			/// Get the Handle for the Forms System Menu
+			IntPtr systemMenuHandle = GetSystemMenu(GetWindowHandle(window), false);
+
+			int counter = 5;
+			foreach (SystemMenuItem menuitem in MenuItemList)
+			{
+				switch (menuitem.SystemMenuItemType)
+				{
+					case SystemMenuItemTypeEnum.Separator:
+						InsertMenu(systemMenuHandle, counter++, MF_BYPOSITION | MF_SEPARATOR, 0, string.Empty);
+						break;
+					case SystemMenuItemTypeEnum.String:
+						InsertMenu(systemMenuHandle, counter++, MF_BYPOSITION, menuitem.wParamForItem, menuitem.DisplayText);
+						break;
+					//default:
+					//	break;
+				}
+			}
+
+			// Attach our WndProc handler to this Window
+			HwndSource source = HwndSource.FromHwnd(GetWindowHandle(window));
+			source.AddHook(wndProc);
+		}
 	}
+
+	public enum SystemMenuItemTypeEnum { Separator, String }
+	public class SystemMenuItem
+	{
+		public SystemMenuItemTypeEnum SystemMenuItemType;
+		public int wParamForItem;
+		public string DisplayText;
+		public SystemMenuItem(SystemMenuItemTypeEnum SystemMenuItemType = SystemMenuItemTypeEnum.Separator, int wParamForItem = 0, string DisplayText = null)
+		{
+			if (SystemMenuItemType == SystemMenuItemTypeEnum.String && (wParamForItem == 0 || DisplayText == null))
+			{
+				if (wParamForItem == 0)
+					UserMessages.ShowWarningMessage("Cannot add String SystemMenuItem with wParamForItem = " + 0);
+				else//if DisplayText == null
+					UserMessages.ShowWarningMessage("Cannot add String SystemMenuItem with no DisplayText");
+			}
+			this.SystemMenuItemType = SystemMenuItemType;
+			this.wParamForItem = wParamForItem;
+			this.DisplayText = DisplayText;
+		}
+	}
+
 	public class WindowBehavior
 	{
 		private static readonly Type OwnerType = typeof(WindowBehavior);

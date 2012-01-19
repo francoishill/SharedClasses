@@ -15,6 +15,7 @@ namespace SharedClasses
 		System.Windows.Forms.Form MainFormUsedForShuttingDownServers;
 		public CommandsUsercontrol GetCommandsUsercontrol() { return commandsUsercontrol1; }
 
+		public event OverlayRibbon.RequestToOpenWindowEventHandler MouseClickedRequestToOpenOverlayWindow;
 		public CommandsWindow(System.Windows.Forms.Form mainFormUsedForShuttingDownServers)
 		{
 			InitializeComponent();
@@ -74,6 +75,42 @@ namespace SharedClasses
 			//if (Microsoft.Windows.Shell.SystemParameters2.Current.IsGlassEnabled == true)
 			//	_style = (Style)Resources["FractalStyle"];
 			//this.Style = _style;
+
+			WindowsInterop.SetHookForSystemMenu(
+				this,
+				WndProc,
+				new System.Collections.Generic.List<SystemMenuItem>()
+				{
+					new SystemMenuItem(SystemMenuItemTypeEnum.Separator),
+					new SystemMenuItem(SystemMenuItemTypeEnum.String, ShowGesturesFormMenuID, "Gestures"),
+					//new SystemMenuItem(SystemMenuItemTypeEnum.String, _AboutSysMenuID, "Abou")
+				});
+		}
+
+		public const Int32 ShowGesturesFormMenuID = 1000;
+		//public const Int32 _AboutSysMenuID = 1001;
+
+		private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+		{
+			// Check if a System Command has been executed
+			if (msg == WindowsInterop.WM_SYSCOMMAND)
+			{
+				// Execute the appropriate code for the System Menu item that was clicked
+				switch (wParam.ToInt32())
+				{
+					case ShowGesturesFormMenuID:
+						handled = true;
+						if (MouseClickedRequestToOpenOverlayWindow != null)
+							MouseClickedRequestToOpenOverlayWindow(this, new  OverlayRibbon.RequestToOpenWindowEventArgs(true));
+						break;
+					//case _AboutSysMenuID:
+					//	MessageBox.Show("\"About\" was clicked");
+					//	handled = true;
+					//	break;
+				}
+			}
+
+			return IntPtr.Zero;
 		}
 
 		private void CommandsWindow1_Closing(object sender, System.ComponentModel.CancelEventArgs e)

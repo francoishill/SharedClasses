@@ -1601,7 +1601,7 @@ namespace SharedClasses
 		private void treeView_CommandList_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
 		{
 			e.Handled = true;
-		}
+		}		
 
 		private void DockPanel_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
 		{

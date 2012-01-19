@@ -1,0 +1,99 @@
+﻿<Window Name="mainWindow"
+				x:Class="OverlayRibbon"
+				xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+				xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+				WindowStyle="None"
+				AllowsTransparency="True"
+				WindowStartupLocation="Manual"
+				UseLayoutRounding="True"
+				Background="Transparent"
+				Opacity="0.2"
+				mc:Ignorable="d"
+				xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+				xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+				SizeToContent="WidthAndHeight"
+				ShowActivated="False"
+				ShowInTaskbar="False"
+				Topmost="True"
+				LocationChanged="mainWindow_LocationChanged"
+				ResizeMode="NoResize"
+				MouseLeftButtonDown="mainWindow_MouseLeftButtonDown"
+				MouseRightButtonUp='mainWindow_PreviewMouseRightButtonUp'
+				DragEnter='mainWindow_DragEnter'
+				AllowDrop='True'
+				Focusable='False'>
+	<Border Name="mainBorder"
+					UseLayoutRounding="True"
+					CornerRadius="0,10,10,0"
+					VerticalAlignment="Stretch"
+					HorizontalAlignment="Stretch"
+					Cursor="Hand"
+					Height="50"
+					Width="10">
+		<Border.Triggers>
+			<EventTrigger RoutedEvent='MouseEnter'>
+				<BeginStoryboard>
+					<Storyboard AutoReverse="False"
+											RepeatBehavior="1x"
+											FillBehavior='HoldEnd'>
+						<DoubleAnimation Storyboard.TargetName="mainWindow"
+														 Storyboard.TargetProperty="Opacity"
+														 Duration="0:0:0:0.1"
+														 To="0.75" />
+						<ColorAnimation Storyboard.TargetName="mainGradient1"
+														Storyboard.TargetProperty="Color"
+														Duration="0:0:0:0.1"
+														To="#999" />
+						<ColorAnimation Storyboard.TargetName="mainGradient2"
+														Storyboard.TargetProperty="Color"
+														Duration="0:0:0:0.1"
+														To="#fff" />
+						<ColorAnimation Storyboard.TargetName="mainGradient3"
+														Storyboard.TargetProperty="Color"
+														Duration="0:0:0:0.1"
+														To="#999" />
+					</Storyboard>
+				</BeginStoryboard>
+			</EventTrigger>
+			<EventTrigger RoutedEvent='MouseLeave'>
+				<BeginStoryboard>
+					<Storyboard AutoReverse='False'
+											RepeatBehavior='1x'
+											FillBehavior='HoldEnd'>
+						<DoubleAnimation Storyboard.TargetProperty='Opacity'
+														 Duration='0:0:0:0.8'
+														 Storyboard.TargetName='mainWindow'
+														 To='0.3' />
+						<ColorAnimation Storyboard.TargetName="mainGradient1"
+														Duration='0:0:0:0.8'
+														Storyboard.TargetProperty="Color"
+														To="#222" />
+						<ColorAnimation Storyboard.TargetName="mainGradient2"
+														Duration='0:0:0:0.8'
+														Storyboard.TargetProperty="Color"
+														To="#777" />
+						<ColorAnimation Storyboard.TargetName="mainGradient3"
+														Duration='0:0:0:0.8'
+														Storyboard.TargetProperty="Color"
+														To="#222" />
+					</Storyboard>
+				</BeginStoryboard>
+			</EventTrigger>
+		</Border.Triggers>
+		<Border.Background>
+			<LinearGradientBrush>
+				<LinearGradientBrush.GradientStops>
+					<GradientStop x:Name='mainGradient1'
+												Color="#222"
+												Offset="0" />
+					<GradientStop x:Name='mainGradient2'
+												Color="#777"
+												Offset="0.6" />
+					<GradientStop x:Name='mainGradient3'
+												Color="#222"
+												Offset="1" />
+				</LinearGradientBrush.GradientStops>
+			</LinearGradientBrush>
+		</Border.Background>
+	</Border>
+</Window>

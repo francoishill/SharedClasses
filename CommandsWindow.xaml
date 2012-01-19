@@ -14,7 +14,7 @@
 				Width="1200"
 				MinWidth="150"
 				WindowStartupLocation='CenterScreen'
-				Background='Transparent'
+				Background='{DynamicResource WindowBackgroundBrush}'
 				Closing='CommandsWindow1_Closing'
 				UseLayoutRounding='True'
 				MouseLeftButtonDown='CommandsWindow1_MouseLeftButtonDown'
@@ -72,6 +72,5 @@
 		<SharedClasses:CommandsUsercontrol x:Name="commandsUsercontrol1"
 																			 HorizontalAlignment="Stretch"
 																			 VerticalAlignment="Stretch" />
-		<!--Background='{StaticResource LinearGradientBrush_CommandsWindowBackground}'/>-->
 	</Grid>
 </Window>

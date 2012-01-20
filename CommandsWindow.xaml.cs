@@ -36,21 +36,7 @@ namespace SharedClasses
 
 		private void CommandsWindow1_Loaded(object sender, RoutedEventArgs e)
 		{
-			WindowInteropHelper windowInteropHelper = new WindowInteropHelper(this);
-			IntPtr myHwnd = windowInteropHelper.Handle;
-			HwndSource mainWindowSrc = System.Windows.Interop.HwndSource.FromHwnd(myHwnd);
-
-			mainWindowSrc.CompositionTarget.BackgroundColor = Color.FromArgb(0, 0, 0, 0);
-
-			MARGINS margins = new MARGINS()
-			{
-				cxLeftWidth = -1,
-				cxRightWidth = -1,
-				cyBottomHeight = -1,
-				cyTopHeight = -1
-			};
-
-			DwmExtendFrameIntoClientArea(myHwnd, ref margins);
+			//MakeGlassWindow();
 
 			System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
 			timer.Interval = 1;
@@ -85,6 +71,25 @@ namespace SharedClasses
 					new SystemMenuItem(SystemMenuItemTypeEnum.String, ShowGesturesFormMenuID, "Gestures"),
 					//new SystemMenuItem(SystemMenuItemTypeEnum.String, _AboutSysMenuID, "Abou")
 				});
+		}
+
+		private void MakeGlassWindow()
+		{
+			WindowInteropHelper windowInteropHelper = new WindowInteropHelper(this);
+			IntPtr myHwnd = windowInteropHelper.Handle;
+			HwndSource mainWindowSrc = System.Windows.Interop.HwndSource.FromHwnd(myHwnd);
+
+			mainWindowSrc.CompositionTarget.BackgroundColor = Color.FromArgb(0, 0, 0, 0);
+
+			MARGINS margins = new MARGINS()
+			{
+				cxLeftWidth = -1,
+				cxRightWidth = -1,
+				cyBottomHeight = -1,
+				cyTopHeight = -1
+			};
+
+			DwmExtendFrameIntoClientArea(myHwnd, ref margins);
 		}
 
 		public const Int32 ShowGesturesFormMenuID = 1000;

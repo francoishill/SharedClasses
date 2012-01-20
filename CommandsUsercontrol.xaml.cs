@@ -95,7 +95,7 @@ namespace SharedClasses
 					(Action)delegate
 					{
 						MessagesParagraph tmpParagraph = new MessagesParagraph(evtargs.FeedbackType);
-						tmpParagraph.LineStackingStrategy = LineStackingStrategy.MaxHeight;
+						//tmpParagraph.LineStackingStrategy = LineStackingStrategy.MaxHeight;
 						if (evtargs is TextFeedbackEventArgs_MultiObjects)
 						{
 							TextFeedbackEventArgs_MultiObjects args = (evtargs as TextFeedbackEventArgs_MultiObjects);

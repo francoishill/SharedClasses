@@ -9,6 +9,7 @@
 						 xmlns:propertyinterceptor='clr-namespace:PropertyInterceptor'
 						 xmlns:sharedclasses='clr-namespace:SharedClasses'
 						 xmlns:Planerator="clr-namespace:Planerator;assembly=Planerator"
+						 xmlns:extToolkit="http://schemas.microsoft.com/winfx/2006/xaml/presentation/toolkit/extended"
 						 x:Class="SharedClasses.CommandsUsercontrol"
 						 mc:Ignorable="d"
 						 UseLayoutRounding='True'
@@ -330,7 +331,7 @@
 														 HorizontalAlignment="Stretch"
 														 Margin="0,5,5,0"
 														 MinWidth="10">
-				<RichTextBox x:Name="textBox_Messages"
+				<!--<RichTextBox x:Name="textBox_Messages"
 										 PreviewMouseLeftButtonDown='textBox_Messages_PreviewMouseLeftButtonDown'
 										 ScrollViewer.HorizontalScrollBarVisibility='Auto'
 										 ScrollViewer.VerticalScrollBarVisibility='Auto'
@@ -346,7 +347,32 @@
 											Value="0" />
 						</Style>
 					</RichTextBox.Resources>
-				</RichTextBox>
+				</RichTextBox>-->
+				<extToolkit:RichTextBox x:Name="textBox_Messages"
+																PreviewMouseLeftButtonDown='textBox_Messages_PreviewMouseLeftButtonDown'
+																ScrollViewer.HorizontalScrollBarVisibility='Auto'
+																ScrollViewer.VerticalScrollBarVisibility='Auto'
+																Foreground="Green"
+																Background='#aaffffff'
+																Padding='10,0'
+																IsReadOnlyCaretVisible='True'
+																IsReadOnly='True'
+																IsDocumentEnabled='True'
+																HorizontalAlignment='Stretch'
+																FontSize="20">
+					<extToolkit:RichTextBox.Resources>
+						<Style TargetType="{x:Type inlinecommandtoolkit:MessagesParagraph}">
+							<Setter Property="Margin"
+											Value="0" />
+						</Style>
+					</extToolkit:RichTextBox.Resources>
+					<FlowDocument PageWidth='{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType=Planerator:Planerator}}' />
+					<!--<FlowDocument>
+						<Paragraph>
+							<Run Text="RichTextBox" />
+						</Paragraph>
+					</FlowDocument>-->
+				</extToolkit:RichTextBox>
 			</Planerator:Planerator>
 			<Slider Grid.Column='1'
 							Grid.Row='1'

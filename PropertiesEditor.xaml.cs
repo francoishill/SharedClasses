@@ -57,6 +57,7 @@ namespace SharedClasses
 			if (e.AddedItems.Count != 1)
 				return;
 			propertyGrid1.SelectedObject = e.AddedItems[0];
+			propertyGrid2.SelectedObject = e.AddedItems[0];
 		}
 
 	}

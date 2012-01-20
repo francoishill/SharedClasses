@@ -1,9 +1,10 @@
 ﻿<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
 				xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 				xmlns:Custom="http://schemas.denisvuyka.wordpress.com/wpfpropertygrid"
-				x:Class="SharedClasses.PropertiesEditor"
 				xmlns:local='clr-namespace:SharedClasses'
 				xmlns:System="clr-namespace:System;assembly=mscorlib"
+				xmlns:extToolkit="http://schemas.microsoft.com/winfx/2006/xaml/presentation/toolkit/extended"
+				x:Class="SharedClasses.PropertiesEditor"
 				Title="PropertiesEditor"
 				Height="300"
 				Width="1000"
@@ -39,12 +40,12 @@
 					<RowDefinition Height="*" />
 				</Grid.RowDefinitions>
 				<TextBox Grid.Row="0"
-								 Text="{Binding StringValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource pipesToNewlinesConverter}}"
+								 Text="{Binding StringValue, Converter={StaticResource pipesToNewlinesConverter}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
 								 IsReadOnly="{Binding IsReadOnly}"
 								 TextWrapping="Wrap"
 								 AcceptsReturn='True'
 								 IsUndoEnabled='True'
-								 UndoLimit='100'/>
+								 UndoLimit='100' />
 			</Grid>
 		</DataTemplate>
 		<!--<DataTemplate x:Key="StringList_InlineTemplateKey">
@@ -98,9 +99,10 @@
 	<Grid>
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width='auto' />
+			<ColumnDefinition Width='100' />
 			<ColumnDefinition />
 		</Grid.ColumnDefinitions>
-		<ListBox Name='listBox1'
+		<ListBox x:Name='listBox1'
 						 MinWidth='200'
 						 HorizontalAlignment='Stretch'
 						 SelectionChanged="listBox1_SelectionChanged"
@@ -139,7 +141,7 @@
 														 Text='{Binding}' />
 								</Border>
 								<DataTemplate.Triggers>
-									<DataTrigger Binding="{Binding IsMouseOver,RelativeSource={RelativeSource TemplatedParent}}"
+									<DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource TemplatedParent}}"
 															 Value="True">
 										<Setter Property="Background"
 														TargetName="listboxitemBorder">
@@ -159,7 +161,7 @@
 														TargetName="listboxitemTextBlock"
 														Value='#fff' />
 									</DataTrigger>
-									<DataTrigger Binding="{Binding IsSelected,RelativeSource={RelativeSource TemplatedParent}}"
+									<DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource TemplatedParent}}"
 															 Value="True">
 										<Setter Property="Background"
 														TargetName="listboxitemBorder">
@@ -209,9 +211,7 @@
 																		 Custom:TabbedLayout.Header="Alphabetical" />
 				</Custom:TabbedLayout>
 			</Custom:PropertyGrid.Layout>
-			<Custom:PropertyGrid.Editors>
-				<!--See code for the added Editors-->
-			</Custom:PropertyGrid.Editors>
 		</Custom:PropertyGrid>
+		<extToolkit:PropertyGrid x:Name='propertyGrid2' ShowAdvancedOptions='True' Grid.Column='2' />
 	</Grid>
 </Window>

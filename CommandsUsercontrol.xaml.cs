@@ -287,7 +287,7 @@ namespace SharedClasses
 				firstHalve = MyDoubleAnim(0, -90, 0.2);
 				secondHalve = MyDoubleAnim(90, 0, 0.2);
 
-				firstHalve.Completed += new EventHandler(firstHalve_Completed);
+				//firstHalve.Completed += new EventHandler(firstHalve_Completed);
 
 				GeneralResourceDictionary.CommandPerformedEvent += new CommandPerformedEventHandler(GeneralResourceDictionary_CommandPerformedEvent);
 				//if (this.Resources.MergedDictionaries[0] is GeneralResourceDictionary)
@@ -344,28 +344,28 @@ namespace SharedClasses
 			textBox_Messages.DataContext = activeCommand;
 			textBox_Messages.UpdateLayout();
 
-			planerator1.FieldOfView = 1;
-			planerator1.BeginAnimation(Planerator.Planerator.RotationYProperty, firstHalve);
-			//textBox_Messages.Document.Blocks.Clear();
-			//if (command != null)
-			//{
-			//	textBox_Messages.Document.Blocks.AddRange(command.MessagesList);
-			//	textBox_Messages.ScrollToEnd();
-			//}
+			//planerator1.FieldOfView = 1;
+			//planerator1.BeginAnimation(Planerator.Planerator.RotationYProperty, firstHalve);
+			textBox_Messages.Document.Blocks.Clear();
+			if (command != null)
+			{
+				textBox_Messages.Document.Blocks.AddRange(command.MessagesList);
+				textBox_Messages.ScrollToEnd();
+			}
 
 			SetVisibilityOfExtraControls();
 		}
 
-		private void firstHalve_Completed(object sender, EventArgs e)
-		{
-			textBox_Messages.Document.Blocks.Clear();
-			if (activeCommand != null)
-			{
-				textBox_Messages.Document.Blocks.AddRange(activeCommand.MessagesList);
-				textBox_Messages.ScrollToEnd();
-			}
-			planerator1.BeginAnimation(Planerator.Planerator.RotationYProperty, secondHalve);
-		}
+		//private void firstHalve_Completed(object sender, EventArgs e)
+		//{
+		//	textBox_Messages.Document.Blocks.Clear();
+		//	if (activeCommand != null)
+		//	{
+		//		textBox_Messages.Document.Blocks.AddRange(activeCommand.MessagesList);
+		//		textBox_Messages.ScrollToEnd();
+		//	}
+		//	planerator1.BeginAnimation(Planerator.Planerator.RotationYProperty, secondHalve);
+		//}
 
 		private AnimationTimeline MyDoubleAnim(double from, double to, double sec)
 		{

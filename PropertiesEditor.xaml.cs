@@ -14,8 +14,9 @@ namespace SharedClasses
 	/// </summary>
 	public partial class PropertiesEditor : Window
 	{
-		const string String_InlineTemplateKey = "String_InlineTemplate";
-		const string String_ExtendedTemplateKey = "String_ExtendedTemplate";
+		//const string String_InlineTemplateKey = "String_InlineTemplate";
+		//const string String_ExtendedTemplateKey = "String_ExtendedTemplate";
+
 		//const string StringList_InlineTemplateKey = "StringList_InlineTemplateKey";
 		//const string StringList_ExtendedTemplateKey = "StringList_ExtendedTemplateKey";
 
@@ -23,14 +24,16 @@ namespace SharedClasses
 		{
 			InitializeComponent();
 
-			List<string> ResourceKeys = new List<string>();
-			foreach (string s in this.Resources.Keys)
-				ResourceKeys.Add(s);
+			//List<string> ResourceKeys = new List<string>();
+			//foreach (string s in this.Resources.Keys)
+			//	ResourceKeys.Add(s);
 
-			if (!ResourceKeys.Contains(String_InlineTemplateKey))
-				UserMessages.ShowWarningMessage("Could not find inline template key = " + String_InlineTemplateKey);
-			if (!ResourceKeys.Contains(String_ExtendedTemplateKey))
-				UserMessages.ShowWarningMessage("Could not find inline template key = " + String_ExtendedTemplateKey);
+			//if (!ResourceKeys.Contains(String_InlineTemplateKey))
+			//	UserMessages.ShowWarningMessage("Could not find inline template key = " + String_InlineTemplateKey);
+			//if (!ResourceKeys.Contains(String_ExtendedTemplateKey))
+			//	UserMessages.ShowWarningMessage("Could not find inline template key = " + String_ExtendedTemplateKey);
+			
+			
 			//if (!ResourceKeys.Contains(StringList_InlineTemplateKey))
 			//	UserMessages.ShowWarningMessage("Could not find inline template key = " + StringList_InlineTemplateKey);
 			//if (!ResourceKeys.Contains(StringList_ExtendedTemplateKey))
@@ -40,11 +43,12 @@ namespace SharedClasses
 			//propertyGrid1.Editors.Add(new TypeEditor(typeof(string[]), Resources[StringList_InlineTemplateKey], Resources[StringList_ExtendedTemplateKey]));
 
 
-			foreach (Type type in new Type[] { typeof(String), typeof(Int16?), typeof(Int32?), typeof(Int64?), typeof(Double?), typeof(Boolean?), typeof(UriProtocol?), typeof(Int16), typeof(Int32), typeof(Int64), typeof(Double), typeof(Boolean), typeof(UriProtocol) })
-				propertyGrid1.Editors.Add(new TypeEditor(type, Resources[String_InlineTemplateKey], Resources[String_ExtendedTemplateKey]));
+			//foreach (Type type in new Type[] { typeof(String), typeof(Int16?), typeof(Int32?), typeof(Int64?), typeof(Double?), typeof(Boolean?), typeof(UriProtocol?), typeof(Int16), typeof(Int32), typeof(Int64), typeof(Double), typeof(Boolean), typeof(UriProtocol) })
+			//	propertyGrid1.Editors.Add(new TypeEditor(type, Resources[String_InlineTemplateKey], Resources[String_ExtendedTemplateKey]));
 			
-			//tabControl1.ItemsSource = new ObservableCollection<object>() { selectedObject };
-			propertyGrid1.SelectedObject = null;
+			////tabControl1.ItemsSource = new ObservableCollection<object>() { selectedObject };
+			//propertyGrid1.SelectedObject = null;
+
 			listBox1.Items.Clear();
 			foreach (object obj in objectsToView)
 				listBox1.Items.Add(obj);
@@ -56,7 +60,7 @@ namespace SharedClasses
 		{
 			if (e.AddedItems.Count != 1)
 				return;
-			propertyGrid1.SelectedObject = e.AddedItems[0];
+			//propertyGrid1.SelectedObject = e.AddedItems[0];
 			propertyGrid2.SelectedObject = e.AddedItems[0];
 		}
 

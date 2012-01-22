@@ -171,6 +171,11 @@ public class UserMessages
 		return InputBoxWPF.Prompt(Message, Title, IsPassword);
 	}
 
+	public static object PickItemWPF(Type ObjectType, Array itemArray, string Message, object defaultItem)
+	{
+		return SharedClasses.PickItemWPF.PickItem(ObjectType, itemArray, Message, defaultItem);
+	}
+
 	public static T PickItem<T>(Array itemArray, string Message, T defaultItem)
 	{
 		return PickItem<T>(null, itemArray, Message, defaultItem);

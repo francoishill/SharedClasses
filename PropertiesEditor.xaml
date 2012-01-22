@@ -1,9 +1,8 @@
-﻿<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<Window xmlns:extToolkit="http://schemas.microsoft.com/winfx/2006/xaml/presentation/toolkit/extended"  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
 				xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 				xmlns:Custom="http://schemas.denisvuyka.wordpress.com/wpfpropertygrid"
 				xmlns:local='clr-namespace:SharedClasses'
 				xmlns:System="clr-namespace:System;assembly=mscorlib"
-				xmlns:extToolkit="http://schemas.microsoft.com/winfx/2006/xaml/presentation/toolkit/extended"
 				x:Class="SharedClasses.PropertiesEditor"
 				Title="PropertiesEditor"
 				Height="300"
@@ -99,7 +98,7 @@
 	<Grid>
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width='auto' />
-			<ColumnDefinition Width='100' />
+			<!--<ColumnDefinition Width='100' />-->
 			<ColumnDefinition />
 		</Grid.ColumnDefinitions>
 		<ListBox x:Name='listBox1'
@@ -198,7 +197,7 @@
 									BorderThickness='2'
 									BorderBrush='Transparent'
 									Background='#777' />
-		<Custom:PropertyGrid x:Name='propertyGrid1'
+		<!--<Custom:PropertyGrid x:Name='propertyGrid1'
 												 Grid.Column='1'
 												 PropertyDisplayMode="All"
 												 HorizontalAlignment="Stretch"
@@ -211,7 +210,26 @@
 																		 Custom:TabbedLayout.Header="Alphabetical" />
 				</Custom:TabbedLayout>
 			</Custom:PropertyGrid.Layout>
-		</Custom:PropertyGrid>
-		<extToolkit:PropertyGrid x:Name='propertyGrid2' ShowAdvancedOptions='True' Grid.Column='2' />
+		</Custom:PropertyGrid>-->
+		<extToolkit:PropertyGrid x:Name='propertyGrid2' ShowAdvancedOptions='True' Grid.Column='2'>
+			<extToolkit:PropertyGrid.EditorDefinitions>
+				<!--<extToolkit:EditorDefinition TargetType="{x:Type System:DateTime}">
+					<extToolkit:EditorDefinition.EditorTemplate>
+						<DataTemplate>
+							<extToolkit:DateTimeUpDown Format="ShortDate"
+																				 Value="{Binding Value}" />
+						</DataTemplate>
+					</extToolkit:EditorDefinition.EditorTemplate>
+				</extToolkit:EditorDefinition>-->
+				<extToolkit:EditorDefinition TargetType="{x:Type System:String}">
+					<extToolkit:EditorDefinition.EditorTemplate>
+						<DataTemplate>
+							<TextBox AcceptsReturn='True'
+											 Text="{Binding Value, Converter={StaticResource pipesToNewlinesConverter}}" />
+						</DataTemplate>
+					</extToolkit:EditorDefinition.EditorTemplate>
+				</extToolkit:EditorDefinition>
+			</extToolkit:PropertyGrid.EditorDefinitions>
+		</extToolkit:PropertyGrid>
 	</Grid>
 </Window>

@@ -151,7 +151,7 @@ public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable
 							{
 								if (att == null || string.IsNullOrWhiteSpace(att.UserPrompt))
 									UserPrompt = "Please pick one of the following options for " + propName;
-								tmpUserAnswer = UserMessages.PickItem(
+								tmpUserAnswer = UserMessages.PickItemWPF(
 									pi.PropertyType,
 									Enum.GetValues(pi.PropertyType.IsEnum ? pi.PropertyType : Nullable.GetUnderlyingType(pi.PropertyType)),
 									UserPrompt,

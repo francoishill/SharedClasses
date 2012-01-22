@@ -2,7 +2,8 @@
 using System.Drawing;
 using System.Windows.Forms;
 using DynamicDLLsInterop;
-using InterfaceForQuickAccessPlugin;
+using InlineCommandToolkit;
+//using InterfaceForQuickAccessPlugin;
 
 namespace SharedClasses
 {
@@ -43,9 +44,9 @@ namespace SharedClasses
 		private bool FindGestureMathcAndPerformIt(string gestureText)//like URD or LURD
 		{
 			foreach (IQuickAccessPluginInterface qai in DynamicDLLs.PluginList)
-				if (qai.GetType().GetInterface(typeof(MouseGesturePlugins.IMouseGesture).Name) != null)
+				if (qai.GetType().GetInterface(typeof(IMouseGesture).Name) != null)
 				{
-					MouseGesturePlugins.IMouseGesture gesture = (MouseGesturePlugins.IMouseGesture)qai.GetType().GetConstructor(new Type[0]).Invoke(new object[0]);
+					IMouseGesture gesture = (IMouseGesture)qai.GetType().GetConstructor(new Type[0]).Invoke(new object[0]);
 					if (gesture.GestureString.ToLower() == gestureText.ToLower())
 					{
 						string tmpErrorMessage;

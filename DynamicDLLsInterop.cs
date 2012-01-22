@@ -4,7 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
-using InterfaceForQuickAccessPlugin;
+using InlineCommandToolkit;
+//using InterfaceForQuickAccessPlugin;
 using ICommandWithHandler = InlineCommandToolkit.InlineCommands.ICommandWithHandler;
 using OverrideToStringClass = InlineCommandToolkit.InlineCommands.OverrideToStringClass;
 
@@ -106,7 +107,8 @@ namespace DynamicDLLsInterop
 		{
 			"InlineCommandToolkit.dll",
 			"System.Windows.Controls.Input.Toolkit.dll",
-			"System.Windows.Controls.WpfPropertyGrid.dll"
+			"System.Windows.Controls.WpfPropertyGrid.dll",
+			"WPFToolkit.Extended.dll"
 		};
 
 		private static bool IsFileValid(string filePath)

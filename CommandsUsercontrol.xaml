@@ -18,7 +18,24 @@
 	<UserControl.Resources>
 		<ResourceDictionary Source='pack://application:,,,/InlineCommandToolkit;component/Resources/General.xaml' />
 	</UserControl.Resources>
-	<Grid Background='Transparent'>
+	<Grid Name='mainGrid'
+				Background='Transparent'>
+		<Grid.Resources>
+			<Storyboard x:Key='rotateMessagesFirstHalve'>
+				<DoubleAnimation From="1"
+												 To="0"
+												 Duration="0:0:0.2"
+												 Storyboard.TargetName="textBox_Messages"
+												 Storyboard.TargetProperty="(RenderTransform).(ScaleTransform.ScaleX)" />
+			</Storyboard>
+			<Storyboard x:Key='rotateMessagesSecondHalve'>
+				<DoubleAnimation From="0"
+												 To="1"
+												 Duration="0:0:0.2"
+												 Storyboard.TargetName="textBox_Messages"
+												 Storyboard.TargetProperty="(RenderTransform).(ScaleTransform.ScaleX)" />
+			</Storyboard>
+		</Grid.Resources>
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto" />
 			<RowDefinition Height="Auto" />
@@ -364,13 +381,19 @@
 															IsReadOnly='True'
 															IsDocumentEnabled='True'
 															HorizontalAlignment='Stretch'
-															FontSize="20">
+															FontSize="20"
+															SpellCheck.IsEnabled='True'
+															RenderTransformOrigin='0.5,0.5'>
 				<extToolkit:RichTextBox.Resources>
 					<Style TargetType="{x:Type inlinecommandtoolkit:MessagesParagraph}">
 						<Setter Property="Margin"
 										Value="0" />
 					</Style>
 				</extToolkit:RichTextBox.Resources>
+				<extToolkit:RichTextBox.RenderTransform>
+					<ScaleTransform ScaleX='1'
+													ScaleY='1' />
+				</extToolkit:RichTextBox.RenderTransform>
 				<FlowDocument PageWidth='{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType=extToolkit:RichTextBox}}' />
 				<!--<FlowDocument PageWidth='{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType=Planerator:Planerator}}' />-->
 				<!--<FlowDocument>

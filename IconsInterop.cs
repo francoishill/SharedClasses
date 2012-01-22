@@ -5,10 +5,14 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace SharedClasses
 {
-	public class IconsInterop
+	public static class IconsInterop
 	{
 		/// <summary>
 		/// Create an originalIcon with text on it, choosing color, font color and font.
@@ -41,7 +45,7 @@ namespace SharedClasses
 		/// <param name="position">The position of the circle in the icon</param>
 		/// <param name="diameter">The diameter of the circle</param>
 		/// <returns>The new icon with the overlayed circle</returns>
-		public static System.Drawing.Icon OverlayIconWithCircle(Icon originalIcon, System.Drawing.Brush fillColor, Point position, int diameter)
+		public static System.Drawing.Icon OverlayIconWithCircle(Icon originalIcon, System.Drawing.Brush fillColor, System.Drawing.Point position, int diameter)
 		{
 			Bitmap bmp = originalIcon.ToBitmap();
 			System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(bmp);
@@ -62,7 +66,17 @@ namespace SharedClasses
 			g.FillEllipse(fillcolorBottomRight, originalIcon.Width - circleWidthHeight, originalIcon.Height - circleWidthHeight, circleWidthHeight, circleWidthHeight);
 			return System.Drawing.Icon.FromHandle(bmp.GetHicon());
 		}
-		
+
+		public static ImageSource IconToImageSource(this Icon icon)
+		{
+			ImageSource imageSource = Imaging.CreateBitmapSourceFromHIcon(
+					icon.Handle,
+					Int32Rect.Empty,
+					BitmapSizeOptions.FromEmptyOptions());
+
+			return imageSource;
+		}
+
 		/// <summary>
 		/// Shows a notification originalIcon in the system tray, for the given duration then removes it.
 		/// </summary>

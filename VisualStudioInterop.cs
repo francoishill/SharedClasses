@@ -39,10 +39,10 @@ public class VisualStudioInterop
 		return false;
 	}
 
-	private enum BuildType { Rebuild, Build };
-	private enum ProjectConfiguration { Debug, Release };
-	private enum PlatformTarget { x86, x64 };
-	private static string BuildVsProjectReturnNewversionString(string projName, string csprojFilename, string slnFilename, bool SolutionTrueProjectFalse, BuildType buildType, ProjectConfiguration configuration, PlatformTarget platformTarget, bool AutomaticallyUpdateRevision, Object textfeedbackSenderObject, TextFeedbackEventHandler textFeedbackEvent = null)
+	public enum BuildType { Rebuild, Build };
+	public enum ProjectConfiguration { Debug, Release };
+	public enum PlatformTarget { x86, x64 };
+	public static string BuildVsProjectReturnNewversionString(string projName, string csprojFilename, string slnFilename, bool SolutionTrueProjectFalse, BuildType buildType, ProjectConfiguration configuration, PlatformTarget platformTarget, bool AutomaticallyUpdateRevision, Object textfeedbackSenderObject, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
 		string msbuildpath;
 		if (!FindMsbuildPath4(out msbuildpath))

@@ -166,6 +166,92 @@ public class DynamicCodeInvoking
 		ParametersModified = tmpParameterList.ToArray();
 	}
 
+	public static class DynamicTypeBuilder
+	{
+		public class Property
+		{
+			public string FieldName;
+			public Type FieldType;
+			public Property(string FieldName, Type FieldType)
+			{
+				this.FieldName = FieldName;
+				this.FieldType = FieldType;
+			}
+		}
+
+		public static object CreateNewObject(string TypeName, List<Property> yourListOfFields)
+		{
+			var myType = CompileResultType(TypeName, yourListOfFields);
+			return Activator.CreateInstance(myType);
+		}
+		private static Type CompileResultType(string TypeName, List<Property> yourListOfFields)
+		{
+			TypeBuilder tb = GetTypeBuilder(TypeName);
+			ConstructorBuilder constructor = tb.DefineDefaultConstructor(MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName);
+
+			// NOTE: assuming your list contains Property objects with fields FieldName(string) and FieldType(Type)
+			foreach (var field in yourListOfFields)
+				CreateProperty(tb, field.FieldName, field.FieldType);
+
+			Type objectType = tb.CreateType();
+			return objectType;
+		}
+
+		private static TypeBuilder GetTypeBuilder(string TypeName)
+		{
+			var typeSignature = TypeName;
+			var an = new AssemblyName(typeSignature);
+			AssemblyBuilder assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(an, AssemblyBuilderAccess.Run);
+			ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule("MainModule");
+			TypeBuilder tb = moduleBuilder.DefineType(
+				typeSignature,
+				TypeAttributes.Public |
+					TypeAttributes.Class |
+					TypeAttributes.AutoClass |
+					TypeAttributes.AnsiClass |
+					TypeAttributes.BeforeFieldInit |
+					TypeAttributes.AutoLayout,
+				null);
+			return tb;
+		}
+
+		private static void CreateProperty(TypeBuilder tb, string propertyName, Type propertyType)
+		{
+			FieldBuilder fieldBuilder = tb.DefineField("_" + propertyName, propertyType, FieldAttributes.Private);
+
+			PropertyBuilder propertyBuilder = tb.DefineProperty(propertyName, System.Reflection.PropertyAttributes.HasDefault, propertyType, null);
+			MethodBuilder getPropMthdBldr = tb.DefineMethod("get_" + propertyName, MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig, propertyType, Type.EmptyTypes);
+			ILGenerator getIl = getPropMthdBldr.GetILGenerator();
+
+			getIl.Emit(OpCodes.Ldarg_0);
+			getIl.Emit(OpCodes.Ldfld, fieldBuilder);
+			getIl.Emit(OpCodes.Ret);
+
+			MethodBuilder setPropMthdBldr =
+                tb.DefineMethod("set_" + propertyName,
+						MethodAttributes.Public |
+						MethodAttributes.SpecialName |
+						MethodAttributes.HideBySig,
+						null, new[] { propertyType });
+
+			ILGenerator setIl = setPropMthdBldr.GetILGenerator();
+			System.Reflection.Emit.Label modifyProperty = setIl.DefineLabel();
+			System.Reflection.Emit.Label exitSet = setIl.DefineLabel();
+
+			setIl.MarkLabel(modifyProperty);
+			setIl.Emit(OpCodes.Ldarg_0);
+			setIl.Emit(OpCodes.Ldarg_1);
+			setIl.Emit(OpCodes.Stfld, fieldBuilder);
+
+			setIl.Emit(OpCodes.Nop);
+			setIl.MarkLabel(exitSet);
+			setIl.Emit(OpCodes.Ret);
+
+			propertyBuilder.SetGetMethod(getPropMthdBldr);
+			propertyBuilder.SetSetMethod(setPropMthdBldr);
+		}
+	}
+
 	private static List<Type> AllUniqueSimpleTypesInCurrentAssembly = null;
 	public static List<Type> GetAllUniqueSimpleTypesInCurrentAssembly
 	{

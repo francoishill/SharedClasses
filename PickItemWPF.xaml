@@ -4,7 +4,8 @@
 				Title='PickItemWPF'
 				Width='300'
 				Height='150'
-				x:Name='PickItemWPF1'>
+				x:Name='PickItemWPF1'
+				WindowStartupLocation='CenterScreen'>
 	<Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition Height='auto' />

@@ -25,7 +25,7 @@ public class UserMessages
 
 		Action showConfirmAction = delegate
 		{
-			bool ownerOriginalTopmostState = ((Form)owner).TopMost; 
+			bool ownerOriginalTopmostState = ((Form)owner).TopMost;
 			((Form)owner).TopMost = AlwaysOnTop;
 			if (iconForMessages != null) ((Form)owner).Icon = iconForMessages;
 			MessageBox.Show(owner, Message, Title, MessageBoxButtons.OK, icon);
@@ -77,7 +77,7 @@ public class UserMessages
 		ShowMessage(null, Message, Title, AlwaysOnTop);
 		return true;
 	}
-	public static bool ShowMessage(IWin32Window owner, string Message, string Title = "Warning",bool AlwaysOnTop = true)
+	public static bool ShowMessage(IWin32Window owner, string Message, string Title = "Warning", bool AlwaysOnTop = true)
 	{
 		ShowMsg(owner, Message, Title, MessageBoxIcon.None, AlwaysOnTop);
 		return true;
@@ -225,5 +225,38 @@ public class UserMessages
 		topmostForm.TopMost = true;
 		return topmostForm;
 		// Finally show the MessageBox with the form just created as its owner
+	}
+
+	public static string ChooseDirectory(string UserMessage, string SelectedPath = null, Environment.SpecialFolder RootFolder = Environment.SpecialFolder.SendTo, bool ShowNewFolderButton = false, IWin32Window owner = null)
+	{
+		bool useTempForm = false;
+		Form topmostForm = null;
+		if (owner == null)
+		{
+			useTempForm = true;
+			topmostForm = GetTopmostForm();// new Form();
+			owner = topmostForm;
+		}
+
+		bool ownerOriginalTopmostState = ((Form)owner).TopMost;
+		((Form)owner).TopMost = true;
+		if (iconForMessages != null) ((Form)owner).Icon = iconForMessages;
+
+		try
+		{
+			FolderBrowserDialog fbd = new FolderBrowserDialog();
+			fbd.Description = UserMessage;
+			if (SelectedPath != null) fbd.SelectedPath = SelectedPath;
+			if (RootFolder != Environment.SpecialFolder.SendTo) fbd.RootFolder = RootFolder;
+			fbd.ShowNewFolderButton = ShowNewFolderButton;
+			if (fbd.ShowDialog(owner) == DialogResult.OK)
+				return fbd.SelectedPath;
+			return null;
+		}
+		finally
+		{
+			if (useTempForm && topmostForm != null && !topmostForm.IsDisposed) topmostForm.Dispose();
+			((Form)owner).TopMost = ownerOriginalTopmostState;
+		}
 	}
 }

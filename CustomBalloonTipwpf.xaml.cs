@@ -201,6 +201,8 @@ namespace SharedClasses
 				);
 			StaticInstance.VisibleBalloonTipForms.Add(cbt);
 			StaticInstance.Show();
+			StaticInstance.Activate();
+			StaticInstance.BringIntoView();
 
 			StaticInstance.StartTimerToRemoveItem(cbt);
 

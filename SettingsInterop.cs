@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Xml.Serialization;
 //using TestingSharedClasses.Properties;
 
 public class SettingsInterop
@@ -112,7 +113,7 @@ public class SettingsInterop
 
 	private static void SerializeToFile<T>(string file, T settingsObject)
 	{
-		//System.Xml.Serialization.XmlSerializer xs = new System.Xml.Serialization.XmlSerializer(settingsObject.GetType());
+		//XmlSerializer xs = new XmlSerializer(settingsObject.GetType());
 		//StreamWriter writer = File.CreateText(file);
 		//xs.Serialize(writer, settingsObject);
 		//writer.Flush();
@@ -125,7 +126,8 @@ public class SettingsInterop
 	{
 		lock (LockObject)
 		{
-			System.Xml.Serialization.XmlSerializer xs = new System.Xml.Serialization.XmlSerializer(settingsObject.GetType());
+			//TODO: Never change this serializer to binary for instance, otherwise properties with XmlIgnore attribute will not work as they should
+			XmlSerializer xs = new XmlSerializer(settingsObject.GetType());
 			StreamWriter writer = File.CreateText(file);
 			xs.Serialize(writer, settingsObject);
 			writer.Flush();
@@ -143,8 +145,8 @@ public class SettingsInterop
 		lock (LockObject)
 		{
 			if (!File.Exists(file)) return ObjectType.GetConstructor(new Type[] { }).Invoke(new object[] { });
-			System.Xml.Serialization.XmlSerializer xs 
-            = new System.Xml.Serialization.XmlSerializer(
+			XmlSerializer xs 
+            = new XmlSerializer(
 						ObjectType);
 			StreamReader reader = File.OpenText(file);
 			object c = xs.Deserialize(reader);

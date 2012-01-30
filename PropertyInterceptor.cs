@@ -117,6 +117,7 @@ public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable
 			if (call != null)
 			{
 			gotoRetryAfterUserSet:
+
 				var result = InvokeMethod(call);
 				if (call.MethodName.StartsWith("set_"))
 				{
@@ -128,13 +129,27 @@ public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable
 					string propName = call.MethodName.Substring(4);
 					target.OnPropertyGet(propName);
 
+					PropertyInfo pi = target.GetType().GetProperty(propName);
+					string propOwnLongName = pi.DeclaringType.Name + "." + propName;
+					//if (pi.PropertyType.IsEnum || (Nullable.GetUnderlyingType(pi.PropertyType) != null && Nullable.GetUnderlyingType(pi.PropertyType).IsEnum))
+					//	System.Windows.Forms.MessageBox.Show("Enum = " + propName);
+					SettingAttribute att = pi.GetCustomAttribute(typeof(SettingAttribute)) as SettingAttribute;
+
+					if (att != null && att.IgnoredByPropertyInterceptor_EncryptingAnother &&
+						!ConfirmUsingFaceDetection.ConfirmUsingFacedetection(
+								GlobalSettings.FaceDetectionInteropSettings.Instance.FaceName,
+								10))
+					{
+						pi.SetValue(target, null);
+						target.OnPropertySet(propName);
+						goto gotoRetryAfterUserSet;
+					}
+
 					if (result.ReturnValue == null)
 					{
-						PropertyInfo pi = target.GetType().GetProperty(propName);
-						string propOwnLongName = pi.DeclaringType.Name + "." + propName;
-						//if (pi.PropertyType.IsEnum || (Nullable.GetUnderlyingType(pi.PropertyType) != null && Nullable.GetUnderlyingType(pi.PropertyType).IsEnum))
-						//	System.Windows.Forms.MessageBox.Show("Enum = " + propName);
-						SettingAttribute att = pi.GetCustomAttribute(typeof(SettingAttribute)) as SettingAttribute;
+						if (att.IgnoredByPropertyInterceptor_EncryptingAnother)
+							return result;
+
 						string UserPrompt = "Please enter value for " + propName;
 						bool IsPasswordDoNotSave = false;
 						if (att != null)
@@ -247,8 +262,9 @@ public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable
 						if (tmpUserAnswer != null && tmpUserAnswer.ToString() != "")
 						{
 							pi.SetValue(target, tmpUserAnswer);
-							if (!IsPasswordDoNotSave)
-								target.OnPropertySet(propName);
+							//Removed this as the passwords should be XmlIgnore and have another public property called (for instance) PasswordEncrypted and should have attribute XmlElement and also in its get/set use encoding/encryption
+							//if (!IsPasswordDoNotSave)
+							target.OnPropertySet(propName);
 							goto gotoRetryAfterUserSet;
 						}
 						else

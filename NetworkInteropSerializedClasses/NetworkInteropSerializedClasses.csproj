@@ -116,9 +116,6 @@
     <Compile Include="..\MemoryManagement.cs">
       <Link>MemoryManagement.cs</Link>
     </Compile>
-    <Compile Include="..\TracXmlRpcInterop.cs">
-      <Link>TracXmlRpcInterop.cs</Link>
-    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

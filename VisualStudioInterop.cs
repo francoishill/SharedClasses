@@ -528,7 +528,7 @@ public class VisualStudioInterop
 						Improvements.Add("Ticket #" + i + ": " + cl.NewValue + "  (" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + ")");
 					else if (tmpIdsAndDescriptionsAndTicketTypes[i].TicketType == TracXmlRpcInterop.TicketTypeEnum.NewFeature)
 						NewFeatures.Add("Ticket #" + i + ": " + cl.NewValue + "  (" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + ")");
-					//tmpList.Add("Ticket #" + i + ": '" + cl.Field + "' new value = " + cl.NewValue + ", old value = " + cl.OldValue);
+			//tmpList.Add("Ticket #" + i + ": '" + cl.Field + "' new value = " + cl.NewValue + ", old value = " + cl.OldValue);
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Finished obtaining changelogs for ticket " + i.ToString() + ".", TextFeedbackType.Subtle);
 		}
 	}
@@ -544,5 +544,26 @@ public class VisualStudioInterop
 
 		//Dictionary<string, object> dict = TracXmlRpcInterop.GetFieldValuesOfTicket(3);
 		//foreach (string key in dict.Keys) MessageBox.Show("Field = " + key);
+	}
+
+	public static bool GetEmbeddedResource(string Filename, string FileSaveLocation)
+	{
+		System.Reflection.Assembly objAssembly = System.Reflection.Assembly.GetExecutingAssembly();
+		string[] myResources = objAssembly.GetManifestResourceNames();
+		foreach (string reso in myResources)
+			if (reso.ToLower().EndsWith(Filename))
+			{
+				Stream stream = objAssembly.GetManifestResourceStream(reso);
+				int length = (int)stream.Length;
+				byte[] bytesOfDotnetCheckerDLL = new byte[length];
+				stream.Read(bytesOfDotnetCheckerDLL, 0, length);
+				stream.Close();
+				FileStream fileStream = new FileStream(FileSaveLocation, FileMode.Create);
+				fileStream.Write(bytesOfDotnetCheckerDLL, 0, length);
+				fileStream.Close();
+				bytesOfDotnetCheckerDLL = null;
+				return true;
+			}
+		return false;
 	}
 }

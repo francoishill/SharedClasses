@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Reflection;
+using System.Xml.Serialization;
 using DynamicDLLsInterop;
 //using System.Windows.Forms;
 
@@ -13,11 +14,13 @@ namespace SharedClasses
 		// Private fields.
 		private string userPrompt;
 		private bool passwordPromptEveryTime;
+		public bool IgnoredByPropertyInterceptor_EncryptingAnother;
 
-		public SettingAttribute(string userPrompt, bool passwordPromptEveryTime = false)
+		public SettingAttribute(string userPrompt, bool passwordPromptEveryTime = false, bool IgnoredByPropertyInterceptor_EncryptingAnother = false)
 		{
 			this.userPrompt = userPrompt;
 			this.passwordPromptEveryTime = passwordPromptEveryTime;
+			this.IgnoredByPropertyInterceptor_EncryptingAnother = IgnoredByPropertyInterceptor_EncryptingAnother;
 		}
 
 		public string UserPrompt { get { return userPrompt; } }//public virtual string UserPrompt { get { return userPrompt; } }
@@ -177,6 +180,20 @@ namespace SharedClasses
 	{
 		//private TempClass tc = new TempClass();//Leave this here as it ensures all settings are initialized
 
+		public static string RootApplicationNameForSharedClasses = "SharedClasses";
+		private static EncodeAndDecodeInterop.EncodingType EncodingType = EncodeAndDecodeInterop.EncodingType.ASCII;
+
+		public string Encrypt(string OriginalString)
+		{
+			//TODO: Later on looking at using more secure encoding/encryption
+			return EncodeAndDecodeInterop.EncodeString(OriginalString, GenericSettings.EncodingType);
+		}
+
+		public string Decrypt(string OriginalString)
+		{
+			return EncodeAndDecodeInterop.DecodeString(OriginalString, GenericSettings.EncodingType);
+		}
+
 		public static void EnsureAllSettingsAreInitialized()
 		{
 			foreach (Type type in typeof(GlobalSettings).GetNestedTypes(BindingFlags.Public))
@@ -188,7 +205,11 @@ namespace SharedClasses
 						{
 							PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Instance);//Find all properties of class
 							foreach (PropertyInfo pi in properties)
-								pi.GetValue(spi.GetValue(null));//This will invoke the _get method which will run through the InterceptorProxy and therefore ask userinput if the value is null
+							{
+								object obj = spi.GetValue(null); 
+								if (obj != null)
+									pi.GetValue(obj);//This will invoke the _get method which will run through the InterceptorProxy and therefore ask userinput if the value is null
+							}
 						}
 				}
 		}
@@ -218,8 +239,6 @@ namespace SharedClasses
 			pe.ShowDialog();
 			pe = null;
 		}
-
-		public static string RootApplicationNameForSharedClasses = "SharedClasses";
 
 		//TODO: Have a look at Lazy<> in c#, being able to initialize an object the first time it is used.
 		public abstract void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH");
@@ -268,6 +287,46 @@ namespace SharedClasses
 	{
 		//TODO: Check out INotifyPropertyChanged (in System.ComponentModel)
 		[Serializable]
+		public sealed class FaceDetectionInteropSettings : GenericSettings
+		{
+			private static volatile FaceDetectionInteropSettings instance;
+			private static object lockingObject = new Object();
+
+			public static FaceDetectionInteropSettings Instance
+			{
+				get
+				{
+					if (instance == null)
+					{
+						lock (lockingObject)
+						{
+							if (instance == null)
+							{
+								instance = Interceptor<FaceDetectionInteropSettings>.Create();
+								instance.LoadFromFile(RootApplicationNameForSharedClasses);
+							}
+						}
+					}
+					return instance;
+				}
+			}
+
+			//TODO: This must be greatly improved in the sense that the face "pictures" and their names are stored online for instance
+			[Setting("Please enter the face name used for facial recognition to decrypt passwords")]
+			public string FaceName { get; set; }
+
+			public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+			{
+				instance = Interceptor<FaceDetectionInteropSettings>.Create(SettingsInterop.GetSettings<FaceDetectionInteropSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
+			}
+
+			public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+			{
+				SettingsInterop.FlushSettings<FaceDetectionInteropSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
+			}
+		}
+
+		[Serializable]
 		public sealed class VisualStudioInteropSettings : GenericSettings
 		{
 			private static volatile VisualStudioInteropSettings instance;
@@ -315,7 +374,12 @@ namespace SharedClasses
 
 			[Browsable(false)]
 			[Setting("Please enter ftp password user for Visual Studio publishing", true)]
+			[XmlIgnore]//TODO: Must explicitly set the attribute as [XmlIgnore] otherwise if ANOTHER property is changed and the settings are flushed, the password will also be saved
 			public string FtpPassword { get; set; }
+			[Browsable(false)]
+			[Setting(null, IgnoredByPropertyInterceptor_EncryptingAnother: true)]
+			[XmlElement("FtpPassword")]
+			public string FtpPasswordEncrypted { get { return Encrypt(FtpPassword); } set { FtpPassword = Decrypt(value); } }
 
 			[Obsolete("Do not use constructor otherwise getting/setting of properties does not go through Interceptor. Use Interceptor<VisualStudioInteropSettings>.Create(); ")]
 			public VisualStudioInteropSettings()
@@ -439,8 +503,14 @@ namespace SharedClasses
 			//TODO: Implement Username in UserPrompt message [Setting("Please enter ftp password for Trac XmlRpc, username " + Username)]
 			[Browsable(false)]
 			[Setting("Please enter ftp password for Trac XmlRpc, username ", true)]
+			[XmlIgnore]
 			public string Password { get; set; }
+			[Browsable(false)]
+			[Setting(null, IgnoredByPropertyInterceptor_EncryptingAnother: true)]
+			[XmlElement("Password")]
+			public string PasswordEncrypted { get { return Encrypt(Password); } set { Password = Decrypt(value); } }
 
+			//TODO: Check out Attribute = [NotifyParentProperty]
 			[Setting("Please enter the Base url of the Dynamic Invokation Server")]
 			public string DynamicInvokationServer_BasePath { get; set; }
 

@@ -49,6 +49,9 @@ namespace SharedClasses
 		/// <returns>The encoded string.</returns>
 		public static string EncodeString(string data, EncodingType encodingType)
 		{
+			if (data == null)
+				return null;
+
 			try
 			{
 				byte[] encData_byte = new byte[data.Length];
@@ -56,7 +59,7 @@ namespace SharedClasses
 				else if (encodingType == EncodingType.Unicode) encData_byte = System.Text.Encoding.Unicode.GetBytes(data);
 				else if (encodingType == EncodingType.UTF32) encData_byte = System.Text.Encoding.UTF32.GetBytes(data);
 				else if (encodingType == EncodingType.UTF7) encData_byte = System.Text.Encoding.UTF7.GetBytes(data);
-				if (encodingType == EncodingType.UTF8) encData_byte = System.Text.Encoding.UTF8.GetBytes(data);
+				else if (encodingType == EncodingType.UTF8) encData_byte = System.Text.Encoding.UTF8.GetBytes(data);
 				else { MessageBox.Show("No encoding type selected", "No type", MessageBoxButtons.OK, MessageBoxIcon.Error); }
 				string encodedData = Convert.ToBase64String(encData_byte);
 				return encodedData;
@@ -75,6 +78,9 @@ namespace SharedClasses
 		/// <returns>The decoded string.</returns>
 		public static string DecodeString(string data, EncodingType decodingType)
 		{
+			if (data == null)
+				return null;
+
 			try
 			{
 				if (decodingType == EncodingType.ASCII)

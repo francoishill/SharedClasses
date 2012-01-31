@@ -9,6 +9,7 @@ using System.Net;
 using System.Web;
 using CookComputing.XmlRpc;
 using SharedClasses;
+using System.Reflection;
 
 public class VisualStudioInterop
 {
@@ -316,33 +317,36 @@ public class VisualStudioInterop
 				}
 
 				//DONE TODO: Must make provision if pc (to do building and compiling of NSIS scripts), does not have the DotNetChecker.dll plugin for NSIS
-				bool DotNetCheckerDllFileFound = false;
-				string DotNetCheckerFilenameEndswith = "dotnetchecker.dll";
+				//bool DotNetCheckerDllFileFound = false;
+				string DotNetCheckerFilenameEndswith = "DotNetChecker.dll";
 				string dotnetCheckerDllPath = @"C:\Program Files (x86)\NSIS\Plugins\DotNetChecker.dll";
 
-				System.Reflection.Assembly objAssembly = System.Reflection.Assembly.GetExecutingAssembly();
-				string[] myResources = objAssembly.GetManifestResourceNames();
-				foreach (string reso in myResources)
-					if (reso.ToLower().EndsWith(DotNetCheckerFilenameEndswith))
-					{
-						DotNetCheckerDllFileFound = true;
-						if (!File.Exists(dotnetCheckerDllPath))
-						{
-							DotNetCheckerDllFileFound = true;
-							Stream stream = objAssembly.GetManifestResourceStream(reso);
-							int length = (int)stream.Length;
-							byte[] bytesOfDotnetCheckerDLL = new byte[length];
-							stream.Read(bytesOfDotnetCheckerDLL, 0, length);
-							stream.Close();
-							FileStream fileStream = new FileStream(dotnetCheckerDllPath, FileMode.Create);
-							fileStream.Write(bytesOfDotnetCheckerDLL, 0, length);
-							fileStream.Close();
-							bytesOfDotnetCheckerDLL = null;
-						}
-					}
+				if (!GetEmbeddedResource(DotNetCheckerFilenameEndswith, dotnetCheckerDllPath))
+					UserMessages.ShowWarningMessage("Could not find " + DotNetCheckerFilenameEndswith + " in resources");
 
-				if (!DotNetCheckerDllFileFound)
-					UserMessages.ShowWarningMessage("Could not find DotNetChecker.dll in resources");
+				//System.Reflection.Assembly objAssembly = System.Reflection.Assembly.GetExecutingAssembly();
+				//string[] myResources = objAssembly.GetManifestResourceNames();
+				//foreach (string reso in myResources)
+				//	if (reso.ToLower().EndsWith(DotNetCheckerFilenameEndswith.ToLower()))
+				//	{
+				//		DotNetCheckerDllFileFound = true;
+				//		if (!File.Exists(dotnetCheckerDllPath))
+				//		{
+				//			DotNetCheckerDllFileFound = true;
+				//			Stream stream = objAssembly.GetManifestResourceStream(reso);
+				//			int length = (int)stream.Length;
+				//			byte[] bytesOfDotnetCheckerDLL = new byte[length];
+				//			stream.Read(bytesOfDotnetCheckerDLL, 0, length);
+				//			stream.Close();
+				//			FileStream fileStream = new FileStream(dotnetCheckerDllPath, FileMode.Create);
+				//			fileStream.Write(bytesOfDotnetCheckerDLL, 0, length);
+				//			fileStream.Close();
+				//			bytesOfDotnetCheckerDLL = null;
+				//		}
+				//	}
+
+				//if (!DotNetCheckerDllFileFound)
+				//	UserMessages.ShowWarningMessage("Could not find DotNetChecker.dll in resources");
 
 				string MakeNsisFilePath = @"C:\Program Files (x86)\NSIS\makensis.exe";
 				if (!File.Exists(MakeNsisFilePath)) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not find MakeNsis.exe: " + MakeNsisFilePath);
@@ -390,38 +394,55 @@ public class VisualStudioInterop
 		if (Improvements != null) foreach (string improvement in Improvements) improvements += "<li>" + improvement + "</li>";
 		if (NewFeatures != null) foreach (string newfeature in NewFeatures) newfeatures += "<li>" + newfeature + "</li>";
 
-		bool HtmlFileFound = false;
-		string HtmlFileName = "VisualStudioInterop (publish page).html";
-		System.Reflection.Assembly objAssembly = System.Reflection.Assembly.GetExecutingAssembly();
-		string[] myResources = objAssembly.GetManifestResourceNames();
-		foreach (string reso in myResources)
-			if (reso.ToLower().EndsWith(HtmlFileName.ToLower()))
-			{
-				HtmlFileFound = true;
-				Stream stream = objAssembly.GetManifestResourceStream(reso);
-				int length = (int)stream.Length;
-				byte[] bytesOfPublishHtmlTemplateDLL = new byte[length];
-				stream.Read(bytesOfPublishHtmlTemplateDLL, 0, length);
-				stream.Close();
-				FileStream fileStream = new FileStream(tempFilename, FileMode.Create);
-				fileStream.Write(bytesOfPublishHtmlTemplateDLL, 0, length);
-				fileStream.Close();
-				string textOfFile = File.ReadAllText(tempFilename);
-				textOfFile = textOfFile.Replace("{PageGeneratedDate}", DateTime.Now.ToString(@"dddd, dd MMMM yyyy \a\t HH:mm:ss"));
-				textOfFile = textOfFile.Replace("{ProjectName}", projectName);
-				textOfFile = textOfFile.Replace("{ProjectVersion}", projectVersion);
-				textOfFile = textOfFile.Replace("{SetupFilename}", Path.GetFileName(setupFilename));
-				//textOfFile = textOfFile.Replace("{DescriptionLiElements}", description);
-				textOfFile = textOfFile.Replace("{BugsFixedList}", bugsfixed);
-				textOfFile = textOfFile.Replace("{ImprovementList}", improvements);
-				textOfFile = textOfFile.Replace("{NewFeaturesList}", newfeatures);
+		//bool HtmlFileFound = false;
 
-				File.WriteAllText(tempFilename, textOfFile);
-				bytesOfPublishHtmlTemplateDLL = null;
-			}
+		string HtmlTemplateFileName = "VisualStudioInterop (publish page).html";
+		if (!GetEmbeddedResource(HtmlTemplateFileName, tempFilename))
+			UserMessages.ShowWarningMessage("Could not find Html file in resources: " + HtmlTemplateFileName);
+		else
+		{
+			string textOfFile = File.ReadAllText(tempFilename);
+			textOfFile = textOfFile.Replace("{PageGeneratedDate}", DateTime.Now.ToString(@"dddd, dd MMMM yyyy \a\t HH:mm:ss"));
+			textOfFile = textOfFile.Replace("{ProjectName}", projectName);
+			textOfFile = textOfFile.Replace("{ProjectVersion}", projectVersion);
+			textOfFile = textOfFile.Replace("{SetupFilename}", Path.GetFileName(setupFilename));
+			//textOfFile = textOfFile.Replace("{DescriptionLiElements}", description);
+			textOfFile = textOfFile.Replace("{BugsFixedList}", bugsfixed);
+			textOfFile = textOfFile.Replace("{ImprovementList}", improvements);
+			textOfFile = textOfFile.Replace("{NewFeaturesList}", newfeatures);
+			File.WriteAllText(tempFilename, textOfFile);
+		}
 
-		if (!HtmlFileFound)
-			UserMessages.ShowWarningMessage("Could not find Html file in resources: " + HtmlFileName);
+		//System.Reflection.Assembly objAssembly = System.Reflection.Assembly.GetExecutingAssembly();
+		//string[] myResources = objAssembly.GetManifestResourceNames();
+		//foreach (string reso in myResources)
+		//	if (reso.ToLower().EndsWith(HtmlTemplateFileName.ToLower()))
+		//	{
+		//		HtmlFileFound = true;
+		//		Stream stream = objAssembly.GetManifestResourceStream(reso);
+		//		int length = (int)stream.Length;
+		//		byte[] bytesOfPublishHtmlTemplateDLL = new byte[length];
+		//		stream.Read(bytesOfPublishHtmlTemplateDLL, 0, length);
+		//		stream.Close();
+		//		FileStream fileStream = new FileStream(tempFilename, FileMode.Create);
+		//		fileStream.Write(bytesOfPublishHtmlTemplateDLL, 0, length);
+		//		fileStream.Close();
+		//		string textOfFile = File.ReadAllText(tempFilename);
+		//		textOfFile = textOfFile.Replace("{PageGeneratedDate}", DateTime.Now.ToString(@"dddd, dd MMMM yyyy \a\t HH:mm:ss"));
+		//		textOfFile = textOfFile.Replace("{ProjectName}", projectName);
+		//		textOfFile = textOfFile.Replace("{ProjectVersion}", projectVersion);
+		//		textOfFile = textOfFile.Replace("{SetupFilename}", Path.GetFileName(setupFilename));
+		//		//textOfFile = textOfFile.Replace("{DescriptionLiElements}", description);
+		//		textOfFile = textOfFile.Replace("{BugsFixedList}", bugsfixed);
+		//		textOfFile = textOfFile.Replace("{ImprovementList}", improvements);
+		//		textOfFile = textOfFile.Replace("{NewFeaturesList}", newfeatures);
+
+		//		File.WriteAllText(tempFilename, textOfFile);
+		//		bytesOfPublishHtmlTemplateDLL = null;
+		//	}
+
+		//if (!HtmlFileFound)
+		//	UserMessages.ShowWarningMessage("Could not find Html file in resources: " + HtmlTemplateFileName);
 		//using (StreamWriter sw = new StreamWriter(tempFilename, false))
 		//{
 		//	sw.WriteLine("<html>");
@@ -548,22 +569,25 @@ public class VisualStudioInterop
 
 	public static bool GetEmbeddedResource(string Filename, string FileSaveLocation)
 	{
-		System.Reflection.Assembly objAssembly = System.Reflection.Assembly.GetExecutingAssembly();
-		string[] myResources = objAssembly.GetManifestResourceNames();
-		foreach (string reso in myResources)
-			if (reso.ToLower().EndsWith(Filename))
-			{
-				Stream stream = objAssembly.GetManifestResourceStream(reso);
-				int length = (int)stream.Length;
-				byte[] bytesOfDotnetCheckerDLL = new byte[length];
-				stream.Read(bytesOfDotnetCheckerDLL, 0, length);
-				stream.Close();
-				FileStream fileStream = new FileStream(FileSaveLocation, FileMode.Create);
-				fileStream.Write(bytesOfDotnetCheckerDLL, 0, length);
-				fileStream.Close();
-				bytesOfDotnetCheckerDLL = null;
-				return true;
-			}
+		foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+		{
+			//Assembly objAssembly = Assembly.GetExecutingAssembly();
+			string[] myResources = assembly.GetManifestResourceNames();
+			foreach (string reso in myResources)
+				if (reso.ToLower().EndsWith(Filename.ToLower()))
+				{
+					Stream stream = assembly.GetManifestResourceStream(reso);
+					int length = (int)stream.Length;
+					byte[] bytesOfDotnetCheckerDLL = new byte[length];
+					stream.Read(bytesOfDotnetCheckerDLL, 0, length);
+					stream.Close();
+					FileStream fileStream = new FileStream(FileSaveLocation, FileMode.Create);
+					fileStream.Write(bytesOfDotnetCheckerDLL, 0, length);
+					fileStream.Close();
+					bytesOfDotnetCheckerDLL = null;
+					return true;
+				}
+		}
 		return false;
 	}
 }

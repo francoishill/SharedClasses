@@ -42,10 +42,10 @@ namespace SharedClasses
 
 			labelSecondsRemaining.Text = "";
 
-			face = new HaarCascade(SettingsInterop.LocalAppdataPath("SharedClasses")
-				+ "\\haarcascade_frontalface_default.xml");
-			eye = new HaarCascade(SettingsInterop.LocalAppdataPath("SharedClasses")
-				+ "\\haarcascade_eye.xml");
+			VisualStudioInterop.GetEmbeddedResource("haarcascade_frontalface_default.xml", SettingsInterop.LocalAppdataPath("SharedClasses") + "\\haarcascade_frontalface_default.xml");
+			VisualStudioInterop.GetEmbeddedResource("haarcascade_eye.xml", SettingsInterop.LocalAppdataPath("SharedClasses") + "\\haarcascade_eye.xml");
+			face = new HaarCascade(SettingsInterop.LocalAppdataPath("SharedClasses") + @"\haarcascade_frontalface_default.xml");
+			eye = new HaarCascade(SettingsInterop.LocalAppdataPath("SharedClasses") + @"\haarcascade_eye.xml");
 
 			try
 			{
@@ -112,7 +112,7 @@ namespace SharedClasses
 
 
 			//Get the current frame form capture device
-			Image<Bgr, Byte> currentFrame = grabber.QueryFrame().Resize(320, 240, Emgu.CV.CvEnum.INTER.CV_INTER_CUBIC);
+			Image<Bgr, Byte> currentFrame = grabber.QueryFrame().Resize(320, 240, Emgu.CV.CvEnum.INTER.CV_INTER_CUBIC).Flip(FLIP.HORIZONTAL);
 
 			//Convert it to Grayscale
 			Image<Gray, Byte> gray = currentFrame.Convert<Gray, Byte>();

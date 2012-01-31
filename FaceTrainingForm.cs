@@ -156,7 +156,7 @@ namespace SharedClasses
 			NamePersons.Add("");
 
 			//Get the current frame form capture device
-			currentFrame = grabber.QueryFrame().Resize(320, 240, Emgu.CV.CvEnum.INTER.CV_INTER_CUBIC);
+			currentFrame = grabber.QueryFrame().Resize(320, 240, Emgu.CV.CvEnum.INTER.CV_INTER_CUBIC).Flip(FLIP.HORIZONTAL);
 
 			//Convert it to Grayscale
 			gray = currentFrame.Convert<Gray, Byte>();

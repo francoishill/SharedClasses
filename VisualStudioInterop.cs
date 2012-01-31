@@ -13,11 +13,6 @@ using System.Reflection;
 
 public class VisualStudioInterop
 {
-	//private const string defaultBaseUri = "fjh.dyndns.org/";
-	//private const string defaultBaseUri = "127.0.0.1";
-	//private const string defaultRootUriForVsPublishing = "ftp://" + defaultBaseUri + "/francois/websites/firepuma/ownapplications";
-	//private const string defaultRootUriAFTERvspublishing = "http://" + defaultBaseUri + "/ownapplications";
-
 	//TODO: Make it easy to add todo item to a specific c# file if visual studio is not open
 	//Maybe for instance popup with a prompt window and the user chooses the file and then types the description of the todo item.
 	private static bool FindMsbuildPath4(out string msbuildpathOrerror)
@@ -324,30 +319,6 @@ public class VisualStudioInterop
 				if (!GetEmbeddedResource(DotNetCheckerFilenameEndswith, dotnetCheckerDllPath))
 					UserMessages.ShowWarningMessage("Could not find " + DotNetCheckerFilenameEndswith + " in resources");
 
-				//System.Reflection.Assembly objAssembly = System.Reflection.Assembly.GetExecutingAssembly();
-				//string[] myResources = objAssembly.GetManifestResourceNames();
-				//foreach (string reso in myResources)
-				//	if (reso.ToLower().EndsWith(DotNetCheckerFilenameEndswith.ToLower()))
-				//	{
-				//		DotNetCheckerDllFileFound = true;
-				//		if (!File.Exists(dotnetCheckerDllPath))
-				//		{
-				//			DotNetCheckerDllFileFound = true;
-				//			Stream stream = objAssembly.GetManifestResourceStream(reso);
-				//			int length = (int)stream.Length;
-				//			byte[] bytesOfDotnetCheckerDLL = new byte[length];
-				//			stream.Read(bytesOfDotnetCheckerDLL, 0, length);
-				//			stream.Close();
-				//			FileStream fileStream = new FileStream(dotnetCheckerDllPath, FileMode.Create);
-				//			fileStream.Write(bytesOfDotnetCheckerDLL, 0, length);
-				//			fileStream.Close();
-				//			bytesOfDotnetCheckerDLL = null;
-				//		}
-				//	}
-
-				//if (!DotNetCheckerDllFileFound)
-				//	UserMessages.ShowWarningMessage("Could not find DotNetChecker.dll in resources");
-
 				string MakeNsisFilePath = @"C:\Program Files (x86)\NSIS\makensis.exe";
 				if (!File.Exists(MakeNsisFilePath)) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not find MakeNsis.exe: " + MakeNsisFilePath);
 				else
@@ -413,61 +384,6 @@ public class VisualStudioInterop
 			File.WriteAllText(tempFilename, textOfFile);
 		}
 
-		//System.Reflection.Assembly objAssembly = System.Reflection.Assembly.GetExecutingAssembly();
-		//string[] myResources = objAssembly.GetManifestResourceNames();
-		//foreach (string reso in myResources)
-		//	if (reso.ToLower().EndsWith(HtmlTemplateFileName.ToLower()))
-		//	{
-		//		HtmlFileFound = true;
-		//		Stream stream = objAssembly.GetManifestResourceStream(reso);
-		//		int length = (int)stream.Length;
-		//		byte[] bytesOfPublishHtmlTemplateDLL = new byte[length];
-		//		stream.Read(bytesOfPublishHtmlTemplateDLL, 0, length);
-		//		stream.Close();
-		//		FileStream fileStream = new FileStream(tempFilename, FileMode.Create);
-		//		fileStream.Write(bytesOfPublishHtmlTemplateDLL, 0, length);
-		//		fileStream.Close();
-		//		string textOfFile = File.ReadAllText(tempFilename);
-		//		textOfFile = textOfFile.Replace("{PageGeneratedDate}", DateTime.Now.ToString(@"dddd, dd MMMM yyyy \a\t HH:mm:ss"));
-		//		textOfFile = textOfFile.Replace("{ProjectName}", projectName);
-		//		textOfFile = textOfFile.Replace("{ProjectVersion}", projectVersion);
-		//		textOfFile = textOfFile.Replace("{SetupFilename}", Path.GetFileName(setupFilename));
-		//		//textOfFile = textOfFile.Replace("{DescriptionLiElements}", description);
-		//		textOfFile = textOfFile.Replace("{BugsFixedList}", bugsfixed);
-		//		textOfFile = textOfFile.Replace("{ImprovementList}", improvements);
-		//		textOfFile = textOfFile.Replace("{NewFeaturesList}", newfeatures);
-
-		//		File.WriteAllText(tempFilename, textOfFile);
-		//		bytesOfPublishHtmlTemplateDLL = null;
-		//	}
-
-		//if (!HtmlFileFound)
-		//	UserMessages.ShowWarningMessage("Could not find Html file in resources: " + HtmlTemplateFileName);
-		//using (StreamWriter sw = new StreamWriter(tempFilename, false))
-		//{
-		//	sw.WriteLine("<html>");
-		//	sw.WriteLine("<head>");
-		//	sw.WriteLine("<style>");
-		//	sw.WriteLine("body { font-size: 24px; }");
-		//	sw.WriteLine(".heading { color: blue; text-align: center; }");
-		//	sw.WriteLine(".value { color: gray; text-align: center; }");
-		//	sw.WriteLine(".downloadlink { color: orange; text-align: center; }");
-		//	sw.WriteLine("</style>");
-		//	sw.WriteLine("</head>");
-		//	sw.WriteLine("<body>");
-		//	sw.WriteLine(SurroundWithHtmlTag("Project: ", "label", "heading"));
-		//	sw.WriteLine(SurroundWithHtmlTag(projName, "label", "value"));
-		//	sw.WriteLine("</br>");
-		//	sw.WriteLine(SurroundWithHtmlTag("Version: ", "label", "heading"));
-		//	sw.WriteLine(SurroundWithHtmlTag(projVersion, "label", "value"));
-		//	sw.WriteLine("</br>");
-		//	sw.WriteLine("</br>");
-		//	sw.WriteLine(string.Format("<a href='{0}' class='downloadlink'>{1}</a>", Path.GetFileName(setupFilename), "Download"));
-		//	sw.WriteLine("</body>");
-		//	sw.WriteLine("</html>");
-		//	sw.Close();
-		//}
-
 		return tempFilename;
 	}
 
@@ -483,7 +399,8 @@ public class VisualStudioInterop
 			ServicePointManager.DefaultConnectionLimit = 10000;
 			//System.Net.ServicePointManager.DefaultConnectionLimit = 1;
 			//#pragma warning disable
-			bool ThereIsNoProperItemsForBugsFixedEtcInNextFunction;
+			//DONE: There is no proper items for bugs fixed etc in next function
+			//bool ThereIsNoProperItemsForBugsFixedEtcInNextFunction;
 			//#pragma warning restore
 
 			List<string> BugsFixed;
@@ -516,6 +433,7 @@ public class VisualStudioInterop
 		return null;
 	}
 
+	//DONE: Continue with implementing this XmlRpc of Trac into the projects that uses Trac
 	public static void GetChangeLogs(object textfeedbackSenderObject, string ProjectName, out List<string> BugsFixed, out List<string> Improvements, out List<string> NewFeatures, string Username = null, string Password = null, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
 		BugsFixed = new List<string>();
@@ -552,19 +470,6 @@ public class VisualStudioInterop
 			//tmpList.Add("Ticket #" + i + ": '" + cl.Field + "' new value = " + cl.NewValue + ", old value = " + cl.OldValue);
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Finished obtaining changelogs for ticket " + i.ToString() + ".", TextFeedbackType.Subtle);
 		}
-	}
-
-	//TODO: Continue with implementing this XmlRpc of Trac into the projects that uses Trac
-	public static void TestTracXmlRpc(TextFeedbackEventHandler textFeedbackEvent = null)
-	{
-		//int[] ids = TracXmlRpcInterop.GetTicketIds();
-		//foreach (int id in ids) MessageBox.Show("Id = " + id.ToString());
-
-		//List<string> fieldLabels = TracXmlRpcInterop.GetFieldLables();
-		//foreach (string label in fieldLabels) MessageBox.Show("Field label = " + label);
-
-		//Dictionary<string, object> dict = TracXmlRpcInterop.GetFieldValuesOfTicket(3);
-		//foreach (string key in dict.Keys) MessageBox.Show("Field = " + key);
 	}
 
 	public static bool GetEmbeddedResource(string Filename, string FileSaveLocation)

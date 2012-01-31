@@ -71,8 +71,8 @@ namespace SharedClasses
 
 			if (e.Gesture.ToString() == "URDLU")
 			{
-				Clipboard.SetText("bokbokkie");
-				RunMethodAfterMilliseconds(delegate { Clipboard.Clear(); }, 7000);
+				UserMessages.ShowWarningMessage("The hardcoded password was removed from this gesture due to security reasons");
+				//RunMethodAfterMilliseconds(delegate { Clipboard.Clear(); }, 7000);
 			}
 			else if (GlobalSettings.MouseGesturesSettings.Instance.GetGesturesWithGesturePluginName().ContainsKey(e.Gesture.ToString()))
 				UserMessages.ShowInfoMessage(GlobalSettings.MouseGesturesSettings.Instance.GetGesturesWithGesturePluginName()[e.Gesture.ToString()], "Gesture message");

@@ -23,14 +23,19 @@ namespace SharedClasses
 		//Declararation of all variables, vectors and haarcascades
 		Image<Bgr, Byte> currentFrame;
 		Capture grabber;
+
+		//HaarCascade haarCascades = 
 		HaarCascade face;
 		HaarCascade eye;
+		HaarCascade nose;
+		HaarCascade righteye;//Note that it uses left eye xml file because the image is forcebly flipped horizontally
+
 		//TODO: Think about having separate installation for Face Recognition (EmguCV) Dlls: cv110.dll, cvaux110.dll, cvextern.dll, cxcore110.dll, opencv_calib3d220.dll, opencv_contrib220.dll, opencv_core220.dll, opencv_features2d220.dll, opencv_ffmpeg220.dll, opencv_flann220.dll, opencv_gpu220.dll, opencv_highgui220.dll, opencv_imgproc220.dll, opencv_legacy220.dll, opencv_ml220.dll, opencv_objdetect220.dll, opencv_video220.dll (maybe also Emgu.CV.dll, Emgu.CV.UI.dll, Emgu.Util.dll which are included in the VS Project references).
 		MCvFont font = new MCvFont(FONT.CV_FONT_HERSHEY_TRIPLEX, 0.5d, 0.5d);//If it fails here, DLLs are missing, all the "cv..." and "opencv_..." Dlls mentioned above
 		Image<Gray, byte> result, TrainedFace = null;
 		Image<Gray, byte> gray = null;
 		List<Image<Gray, byte>> trainingImages = new List<Image<Gray, byte>>();
-		List<string> labels= new List<string>();
+		List<string> labels = new List<string>();
 		List<string> NamePersons = new List<string>();
 		//int ContTrain, NumLabels, t;
 		int MaximumIterations;
@@ -42,9 +47,18 @@ namespace SharedClasses
 			InitializeComponent();
 			//Load haarcascades for face detection
 			VisualStudioInterop.GetEmbeddedResource("haarcascade_frontalface_default.xml", SettingsInterop.LocalAppdataPath("SharedClasses") + "\\haarcascade_frontalface_default.xml");
-			VisualStudioInterop.GetEmbeddedResource("haarcascade_eye.xml", SettingsInterop.LocalAppdataPath("SharedClasses") + "\\haarcascade_eye.xml");
 			face = new HaarCascade(SettingsInterop.LocalAppdataPath("SharedClasses") + @"\haarcascade_frontalface_default.xml");
+			
+			VisualStudioInterop.GetEmbeddedResource("haarcascade_eye.xml", SettingsInterop.LocalAppdataPath("SharedClasses") + "\\haarcascade_eye.xml");
 			eye = new HaarCascade(SettingsInterop.LocalAppdataPath("SharedClasses") + @"\haarcascade_eye.xml");
+
+			VisualStudioInterop.GetEmbeddedResource("haarcascade_mcs_nose.xml", SettingsInterop.LocalAppdataPath("SharedClasses") + "\\haarcascade_mcs_nose.xml");
+			nose = new HaarCascade(SettingsInterop.LocalAppdataPath("SharedClasses") + @"\haarcascade_mcs_nose.xml");
+
+			//Note that it uses left eye xml file because the image is forcebly flipped horizontally
+			VisualStudioInterop.GetEmbeddedResource("haarcascade_lefteye_2splits.xml", SettingsInterop.LocalAppdataPath("SharedClasses") + "\\haarcascade_lefteye_2splits.xml");
+			righteye = new HaarCascade(SettingsInterop.LocalAppdataPath("SharedClasses") + @"\haarcascade_lefteye_2splits.xml");
+
 			try
 			{
 				MaximumIterations = 0;
@@ -76,7 +90,7 @@ namespace SharedClasses
 				MessageBox.Show("Nothing in binary database, please add at least a face", "Triained faces load", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
 			}
 
-			GenericSettings.EnsureAllSettingsAreInitialized();
+			//GenericSettings.EnsureAllSettingsAreInitialized();
 		}
 
 		private void button1_Click(object sender, EventArgs e)
@@ -221,6 +235,38 @@ namespace SharedClasses
 					Rectangle eyeRect = ey.rect;
 					eyeRect.Offset(f.rect.X, f.rect.Y);
 					currentFrame.Draw(eyeRect, new Bgr(Color.Blue), 2);
+				}
+
+				gray.ROI = f.rect;
+				MCvAvgComp[][] nosesDetected = gray.DetectHaarCascade(
+					 nose,
+					 1.1,
+					 10,
+					 Emgu.CV.CvEnum.HAAR_DETECTION_TYPE.DO_CANNY_PRUNING,
+					 new Size(20, 20));
+				gray.ROI = Rectangle.Empty;
+
+				foreach (MCvAvgComp nos in nosesDetected[0])
+				{
+					Rectangle eyeRect = nos.rect;
+					eyeRect.Offset(f.rect.X, f.rect.Y);
+					currentFrame.Draw(eyeRect, new Bgr(Color.Green), 2);
+				}
+
+				gray.ROI = f.rect;
+				MCvAvgComp[][] righteyesDetected = gray.DetectHaarCascade(
+					 righteye,
+					 1.1,
+					 10,
+					 Emgu.CV.CvEnum.HAAR_DETECTION_TYPE.DO_CANNY_PRUNING,
+					 new Size(20, 20));
+				gray.ROI = Rectangle.Empty;
+
+				foreach (MCvAvgComp re in righteyesDetected[0])
+				{
+					Rectangle eyeRect = re.rect;
+					eyeRect.Offset(f.rect.X, f.rect.Y);
+					currentFrame.Draw(eyeRect, new Bgr(Color.Orange), 2);
 				}
 			}
 			t = 0;

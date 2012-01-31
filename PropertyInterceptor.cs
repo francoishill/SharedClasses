@@ -135,143 +135,183 @@ public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable
 					//	System.Windows.Forms.MessageBox.Show("Enum = " + propName);
 					SettingAttribute att = pi.GetCustomAttribute(typeof(SettingAttribute)) as SettingAttribute;
 
-					if (att != null && att.IgnoredByPropertyInterceptor_EncryptingAnother &&
-						!ConfirmUsingFaceDetection.ConfirmUsingFacedetection(
-								GlobalSettings.FaceDetectionInteropSettings.Instance.FaceName,
-								10))
-					{
-						pi.SetValue(target, null);
-						target.OnPropertySet(propName);
-						goto gotoRetryAfterUserSet;
-					}
+					//if (att != null && att.IgnoredByPropertyInterceptor_EncryptingAnother &&
+					//	!ConfirmUsingFaceDetection.ConfirmUsingFacedetection(
+					//			GlobalSettings.FaceDetectionInteropSettings.Instance.FaceName,
+					//			10))
+					//{
+					//	pi.SetValue(target, null);
+					//	target.OnPropertySet(propName);
+					//	goto gotoRetryAfterUserSet;
+					//}
 
 					if (result.ReturnValue == null)
 					{
-						if (att.IgnoredByPropertyInterceptor_EncryptingAnother)
-							return result;
-
-						string UserPrompt = "Please enter value for " + propName;
-						bool IsPasswordDoNotSave = false;
-						if (att != null)
+						if (att.IsEncrypted)
 						{
-							if (!string.IsNullOrWhiteSpace(att.UserPrompt))
-								UserPrompt = att.UserPrompt;
-							IsPasswordDoNotSave = att.PasswordPromptEveryTime;
-						}
-
-						object tmpUserAnswer = null;
-						if (!StaticPropertyInterceptor.IsBypassingUserPromptEnabled())
-						{
-							if (pi.PropertyType.IsEnum || (Nullable.GetUnderlyingType(pi.PropertyType) != null && Nullable.GetUnderlyingType(pi.PropertyType).IsEnum))
+							PropertyInfo encryptedPi = target.GetType().GetProperty(att.EncryptedPropertyName);
+							object encryptedVal = encryptedPi.GetValue(target);
+							if (encryptedVal != null)
 							{
-								if (att == null || string.IsNullOrWhiteSpace(att.UserPrompt))
-									UserPrompt = "Please pick one of the following options for " + propName;
-								tmpUserAnswer = UserMessages.PickItemWPF(
-									pi.PropertyType,
-									Enum.GetValues(pi.PropertyType.IsEnum ? pi.PropertyType : Nullable.GetUnderlyingType(pi.PropertyType)),
-									UserPrompt,
-									null);
-							}
-							else if (IsOfTypeOrNullableType(pi.PropertyType, typeof(string)))
-								tmpUserAnswer = UserMessages.Prompt(UserPrompt, propOwnLongName, IsPassword: IsPasswordDoNotSave);
-							else if (IsOfTypeOrNullableType(pi.PropertyType, typeof(short)))
-							{
-								tmpUserAnswer = UserMessages.Prompt(UserPrompt, propOwnLongName, IsPassword: IsPasswordDoNotSave);
-								short tmpshort;
-								if (short.TryParse(tmpUserAnswer.ToString(), out tmpshort))
-									tmpUserAnswer = tmpshort;
-								else
+								string decryptedVal = GenericSettings.Decrypt(encryptedVal.ToString(), att.EncryptedPropertyName);
+								if (decryptedVal != null)
 								{
-									UserMessages.ShowErrorMessage("Cannot convert value of " + propName + " to an integer: " + tmpUserAnswer);
-									tmpUserAnswer = null;
+									pi.SetValue(target, decryptedVal);
+									//target.OnPropertySet(pi.Name);
+									goto gotoRetryAfterUserSet;
 								}
 							}
-							else if (IsOfTypeOrNullableType(pi.PropertyType, typeof(int)))
-							{
-								tmpUserAnswer = UserMessages.Prompt(UserPrompt, propOwnLongName, IsPassword: IsPasswordDoNotSave);
-								int tmpint;
-								if (int.TryParse(tmpUserAnswer.ToString(), out tmpint))
-									tmpUserAnswer = tmpint;
-								else
-								{
-									UserMessages.ShowErrorMessage("Cannot convert value of " + propName + " to an integer: " + tmpUserAnswer);
-									tmpUserAnswer = null;
-								}
-							}
-							else if (IsOfTypeOrNullableType(pi.PropertyType, typeof(double)))
-							{
-								tmpUserAnswer = UserMessages.Prompt(UserPrompt, propOwnLongName, IsPassword: IsPasswordDoNotSave);
-								double tmpdouble;
-								if (double.TryParse(tmpUserAnswer.ToString(), out tmpdouble))
-									tmpUserAnswer = tmpdouble;
-								else
-								{
-									UserMessages.ShowErrorMessage("Cannot convert value of " + propName + " to a double: " + tmpUserAnswer);
-									tmpUserAnswer = null;
-								}
-							}
-							else if (IsOfTypeOrNullableType(pi.PropertyType, typeof(bool)))
-							{
-								if (att == null || string.IsNullOrWhiteSpace(att.UserPrompt))
-									UserPrompt = propName + "?";
-								tmpUserAnswer = Nullable.GetUnderlyingType(pi.PropertyType) != null ? UserMessages.ConfirmNullable(UserPrompt) : UserMessages.Confirm(UserPrompt);
-							}
-							else if (IsOfTypeOrNullableType(pi.PropertyType, typeof(string[])))
-							{
-								List<string> tmpList = null;
-								string tmpstr = null;
-								do
-								{
-									tmpstr = UserMessages.Prompt(UserPrompt);
-									if (tmpstr == null) continue;
-									else
-									{
-										if (tmpList == null)
-											tmpList = new List<string>();
-										tmpList.Add(tmpstr);
-									}
-								}
-								while (tmpstr != null);
-								if (tmpList != null)
-								{
-									tmpUserAnswer = tmpList.ToArray();
-									tmpList.Clear();
-									tmpList = null;
-								}
-							}
-							/*
-							//TODO: This works but when flushing to file (serializing), it fails as it is a custom dictionary
-							else if (IsOfTypeOrNullableType(pi.PropertyType, typeof(Dictionary<string, List<GlobalSettings.MouseGesturesSettings.GestureDirection>>)))
-							{
-								string tmpString;
-								List<GlobalSettings.MouseGesturesSettings.GestureDirection> tmpList;
-								while (UserMessages.EnterStringAndListOfEnums<GlobalSettings.MouseGesturesSettings.GestureDirection>("Enter message which will be shown when the MouseGesture is performed.", out tmpString, out tmpList))
-								{
-									if (tmpUserAnswer == null)
-										tmpUserAnswer = new Dictionary<string, List<GlobalSettings.MouseGesturesSettings.GestureDirection>>();
-									(tmpUserAnswer as Dictionary<string, List<GlobalSettings.MouseGesturesSettings.GestureDirection>>)
-										.Add(tmpString, tmpList);
-								}
-								//UserMessages.ShowMessage("Dictionary hook type");
-							}*/
 							else
-								UserMessages.ShowWarningMessage("No hook method is defined for a property of type = "
-									+ (Nullable.GetUnderlyingType(pi.PropertyType) != null ? Nullable.GetUnderlyingType(pi.PropertyType).Name : pi.PropertyType.Name));
-						}
-
-						if (tmpUserAnswer != null && tmpUserAnswer.ToString() != "")
-						{
-							pi.SetValue(target, tmpUserAnswer);
-							//Removed this as the passwords should be XmlIgnore and have another public property called (for instance) PasswordEncrypted and should have attribute XmlElement and also in its get/set use encoding/encryption
-							//if (!IsPasswordDoNotSave)
-							target.OnPropertySet(propName);
-							goto gotoRetryAfterUserSet;
+							{
+								string UserPrompt = "Please enter value for " + propName;
+								if (att != null && !string.IsNullOrWhiteSpace(att.UserPrompt))
+									UserPrompt = att.UserPrompt;
+								object tmpUnEncryptedAnswer = UserMessages.Prompt(UserPrompt, propOwnLongName, IsPassword: true);
+								if (tmpUnEncryptedAnswer != null)
+								{
+									encryptedPi.SetValue(target, GenericSettings.Encrypt(tmpUnEncryptedAnswer.ToString(), att.EncryptedPropertyName));
+									pi.SetValue(target, tmpUnEncryptedAnswer.ToString());
+									target.OnPropertySet(propName);
+									goto gotoRetryAfterUserSet;
+								}
+							}
 						}
 						else
 						{
-							//User cancelled the request to enter the setting
-							if (!StaticPropertyInterceptor.UnsetPropertiesContains(propName))
-								StaticPropertyInterceptor.UnsetProperties.Add(new UnsetPropertyDetail(propName, pi, UserPrompt));
+							//It does not ask for userinput if the current value is null
+							if (att.IgnoredByPropertyInterceptor_EncryptingAnother)
+								return result;
+
+							string UserPrompt = "Please enter value for " + propName;
+							bool IsPasswordDoNotSave = false;
+							if (att != null)
+							{
+								if (!string.IsNullOrWhiteSpace(att.UserPrompt))
+									UserPrompt = att.UserPrompt;
+								IsPasswordDoNotSave = att.PasswordPromptEveryTime;
+							}
+
+							object tmpUserAnswer = null;
+							if (!StaticPropertyInterceptor.IsBypassingUserPromptEnabled())
+							{
+								if (pi.PropertyType.IsEnum || (Nullable.GetUnderlyingType(pi.PropertyType) != null && Nullable.GetUnderlyingType(pi.PropertyType).IsEnum))
+								{
+									if (att == null || string.IsNullOrWhiteSpace(att.UserPrompt))
+										UserPrompt = "Please pick one of the following options for " + propName;
+									tmpUserAnswer = UserMessages.PickItemWPF(
+										pi.PropertyType,
+										Enum.GetValues(pi.PropertyType.IsEnum ? pi.PropertyType : Nullable.GetUnderlyingType(pi.PropertyType)),
+										UserPrompt,
+										null);
+								}
+								else if (IsOfTypeOrNullableType(pi.PropertyType, typeof(string)))
+									tmpUserAnswer = UserMessages.Prompt(UserPrompt, propOwnLongName, IsPassword: IsPasswordDoNotSave);
+								else if (IsOfTypeOrNullableType(pi.PropertyType, typeof(short)))
+								{
+									tmpUserAnswer = UserMessages.Prompt(UserPrompt, propOwnLongName, IsPassword: IsPasswordDoNotSave);
+									short tmpshort;
+									if (short.TryParse(tmpUserAnswer.ToString(), out tmpshort))
+										tmpUserAnswer = tmpshort;
+									else
+									{
+										UserMessages.ShowErrorMessage("Cannot convert value of " + propName + " to an integer: " + tmpUserAnswer);
+										tmpUserAnswer = null;
+									}
+								}
+								else if (IsOfTypeOrNullableType(pi.PropertyType, typeof(int)))
+								{
+									tmpUserAnswer = UserMessages.Prompt(UserPrompt, propOwnLongName, IsPassword: IsPasswordDoNotSave);
+									int tmpint;
+									if (int.TryParse(tmpUserAnswer.ToString(), out tmpint))
+										tmpUserAnswer = tmpint;
+									else
+									{
+										UserMessages.ShowErrorMessage("Cannot convert value of " + propName + " to an integer: " + tmpUserAnswer);
+										tmpUserAnswer = null;
+									}
+								}
+								else if (IsOfTypeOrNullableType(pi.PropertyType, typeof(double)))
+								{
+									tmpUserAnswer = UserMessages.Prompt(UserPrompt, propOwnLongName, IsPassword: IsPasswordDoNotSave);
+									double tmpdouble;
+									if (double.TryParse(tmpUserAnswer.ToString(), out tmpdouble))
+										tmpUserAnswer = tmpdouble;
+									else
+									{
+										UserMessages.ShowErrorMessage("Cannot convert value of " + propName + " to a double: " + tmpUserAnswer);
+										tmpUserAnswer = null;
+									}
+								}
+								else if (IsOfTypeOrNullableType(pi.PropertyType, typeof(bool)))
+								{
+									if (att == null || string.IsNullOrWhiteSpace(att.UserPrompt))
+										UserPrompt = propName + "?";
+									tmpUserAnswer = Nullable.GetUnderlyingType(pi.PropertyType) != null ? UserMessages.ConfirmNullable(UserPrompt) : UserMessages.Confirm(UserPrompt);
+								}
+								else if (IsOfTypeOrNullableType(pi.PropertyType, typeof(string[])))
+								{
+									List<string> tmpList = null;
+									string tmpstr = null;
+									do
+									{
+										tmpstr = UserMessages.Prompt(UserPrompt);
+										if (tmpstr == null) continue;
+										else
+										{
+											if (tmpList == null)
+												tmpList = new List<string>();
+											tmpList.Add(tmpstr);
+										}
+									}
+									while (tmpstr != null);
+									if (tmpList != null)
+									{
+										tmpUserAnswer = tmpList.ToArray();
+										tmpList.Clear();
+										tmpList = null;
+									}
+								}
+								/*
+								//TODO: This works but when flushing to file (serializing), it fails as it is a custom dictionary
+								else if (IsOfTypeOrNullableType(pi.PropertyType, typeof(Dictionary<string, List<GlobalSettings.MouseGesturesSettings.GestureDirection>>)))
+								{
+									string tmpString;
+									List<GlobalSettings.MouseGesturesSettings.GestureDirection> tmpList;
+									while (UserMessages.EnterStringAndListOfEnums<GlobalSettings.MouseGesturesSettings.GestureDirection>("Enter message which will be shown when the MouseGesture is performed.", out tmpString, out tmpList))
+									{
+										if (tmpUserAnswer == null)
+											tmpUserAnswer = new Dictionary<string, List<GlobalSettings.MouseGesturesSettings.GestureDirection>>();
+										(tmpUserAnswer as Dictionary<string, List<GlobalSettings.MouseGesturesSettings.GestureDirection>>)
+											.Add(tmpString, tmpList);
+									}
+									//UserMessages.ShowMessage("Dictionary hook type");
+								}*/
+								else
+									UserMessages.ShowWarningMessage("No hook method is defined for a property of type = "
+										+ (Nullable.GetUnderlyingType(pi.PropertyType) != null ? Nullable.GetUnderlyingType(pi.PropertyType).Name : pi.PropertyType.Name));
+							}
+
+							if (tmpUserAnswer != null && tmpUserAnswer.ToString() != "")
+							{
+								//if (att.IsEncrypted)
+								//{
+								//	tmpUserAnswer = GenericSettings.Encrypt(tmpUserAnswer.ToString(), propName);
+								//}
+
+								pi.SetValue(target, tmpUserAnswer);
+								target.OnPropertySet(propName);
+								goto gotoRetryAfterUserSet;
+								//Removed this as the passwords should be XmlIgnore and have another public property called (for instance) PasswordEncrypted and should have attribute XmlElement and also in its get/set use encoding/encryption
+								//if (!IsPasswordDoNotSave)//This occurs the 
+								//	target.OnPropertySet(propName);
+								//goto gotoRetryAfterUserSet;
+							}
+							else
+							{
+								//User cancelled the request to enter the setting
+								if (!StaticPropertyInterceptor.UnsetPropertiesContains(propName))
+									StaticPropertyInterceptor.UnsetProperties.Add(new UnsetPropertyDetail(propName, pi, UserPrompt));
+							}
 						}
 					}
 					else if (result.ReturnValue != null)

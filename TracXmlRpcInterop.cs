@@ -23,7 +23,14 @@ public class TracXmlRpcInterop
 		object obj = null;
 		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 		{
-			obj = tracMonitorSystem.Wiki_GetRecentChanges(sinceDate);
+			try
+			{
+				obj = tracMonitorSystem.Wiki_GetRecentChanges(sinceDate);
+			}
+			catch (Exception exc)
+			{
+				UserMessages.ShowErrorMessage("Cannot get recent changes in TracXml: " + exc.Message);
+			}
 		},
 		ThreadName: "Wiki_GetRecentChanges");
 		return obj;
@@ -35,7 +42,14 @@ public class TracXmlRpcInterop
 		object[] objarray = null;
 		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 		{
-			objarray = tracMonitorSystem.PerformSearch(SearchQuery, SearchFilters ?? new string[0]);
+			try
+			{
+				objarray = tracMonitorSystem.PerformSearch(SearchQuery, SearchFilters ?? new string[0]);
+			}
+			catch (Exception exc)
+			{
+				UserMessages.ShowErrorMessage("Cannot perform TracXml search: " + exc.Message);
+			}
 		},
 		ThreadName: "PerformSearch");
 		return objarray;
@@ -52,7 +66,14 @@ public class TracXmlRpcInterop
 			object[] fields = new object[0];//
 			ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 			{
-				fields = tracMonitorSystem.GetTicketFields();
+				try
+				{
+					fields = tracMonitorSystem.GetTicketFields();
+				}
+				catch (Exception exc)
+				{
+					UserMessages.ShowErrorMessage("Cannot get field labels in TracXml: " + exc.Message);
+				}
 			},
 			ThreadName: "GetFieldLables");
 			foreach (object field in fields)
@@ -78,7 +99,18 @@ public class TracXmlRpcInterop
 		try
 		{
 			int[] ticketIDs = new int[0];//
-			ThreadingInterop.PerformVoidFunctionSeperateThread(() => { ticketIDs = tracMonitorSystem.Query(); }, ThreadName: "GetTicketIds");
+			ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+			{
+				try
+				{
+					ticketIDs = tracMonitorSystem.Query();
+				}
+				catch (Exception exc)
+				{
+					UserMessages.ShowErrorMessage("Cannot get ticket IDs in TracXml: " + exc.Message);
+				}
+			},
+			ThreadName: "GetTicketIds");
 			return ticketIDs;
 		}
 		catch (Exception exc)
@@ -98,7 +130,18 @@ public class TracXmlRpcInterop
 		try
 		{
 			object[] IdTimecreatedTimechangedAttributes = new object[0];
-			ThreadingInterop.PerformVoidFunctionSeperateThread(() => { IdTimecreatedTimechangedAttributes = tracMonitorSystem.TicketGet(ticketId); }, ThreadName: "GetFieldValuesOfTicket");
+			ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+			{
+				try
+				{
+					IdTimecreatedTimechangedAttributes = tracMonitorSystem.TicketGet(ticketId);
+				}
+				catch (Exception exc)
+				{
+					UserMessages.ShowErrorMessage("Cannot get field values of ticket in TracXml: " + exc.Message);
+				}
+			},
+			ThreadName: "GetFieldValuesOfTicket");
 			foreach (object obj in IdTimecreatedTimechangedAttributes)
 			{
 				if ((obj is XmlRpcStruct))
@@ -196,7 +239,14 @@ public class TracXmlRpcInterop
 		object[] changelogArray = new object[0];
 		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 		{
-			changelogArray = tracMonitorSystem.Ticket_ChangeLog(ticketId);
+			try
+			{
+				changelogArray = tracMonitorSystem.Ticket_ChangeLog(ticketId);
+			}
+			catch (Exception exc)
+			{
+				UserMessages.ShowErrorMessage("Cannot get ChangeLog in TracXml: " + exc.Message);
+			}
 		},
 		ThreadName: "ChangeLogs");
 
@@ -232,7 +282,18 @@ public class TracXmlRpcInterop
 	{
 		ITracServerFunctions tracMonitorSystem = InitializeTracServer(xmlRpcUrl, Username, Password);
 		string[] listmethods = new string[0];
-		ThreadingInterop.PerformVoidFunctionSeperateThread(() => { listmethods = tracMonitorSystem.ListMethods(); }, ThreadName: "GetListOfMethods");
+		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+		{
+			try
+			{
+				listmethods = tracMonitorSystem.ListMethods();
+			}
+			catch (Exception exc)
+			{
+				UserMessages.ShowErrorMessage("Cannot get list of methods in TracXml: " + exc.Message);
+			}
+		},
+		ThreadName: "GetListOfMethods");
 		return listmethods;
 	}
 

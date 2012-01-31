@@ -14,12 +14,16 @@ namespace SharedClasses
 		// Private fields.
 		private string userPrompt;
 		private bool passwordPromptEveryTime;
+		public bool IsEncrypted;
+		public string EncryptedPropertyName;//The public encrypted property name, like if the current property is Password, this variable (EncryptedPropertyName) will be PasswordEncrypted
 		public bool IgnoredByPropertyInterceptor_EncryptingAnother;
 
-		public SettingAttribute(string userPrompt, bool passwordPromptEveryTime = false, bool IgnoredByPropertyInterceptor_EncryptingAnother = false)
+		public SettingAttribute(string userPrompt, bool passwordPromptEveryTime = false, bool IsEncrypted = false, string EncryptedPropertyName = null, bool IgnoredByPropertyInterceptor_EncryptingAnother = false)
 		{
 			this.userPrompt = userPrompt;
 			this.passwordPromptEveryTime = passwordPromptEveryTime;
+			this.IsEncrypted = IsEncrypted;
+			this.EncryptedPropertyName = EncryptedPropertyName;
 			this.IgnoredByPropertyInterceptor_EncryptingAnother = IgnoredByPropertyInterceptor_EncryptingAnother;
 		}
 
@@ -183,15 +187,31 @@ namespace SharedClasses
 		public static string RootApplicationNameForSharedClasses = "SharedClasses";
 		private static EncodeAndDecodeInterop.EncodingType EncodingType = EncodeAndDecodeInterop.EncodingType.ASCII;
 
-		public string Encrypt(string OriginalString)
+		public static string Encrypt(string OriginalString, string PropertyName)
 		{
 			//TODO: Later on looking at using more secure encoding/encryption
 			return EncodeAndDecodeInterop.EncodeString(OriginalString, GenericSettings.EncodingType);
 		}
 
-		public string Decrypt(string OriginalString)
+		public static string Decrypt(string OriginalString, string PropertyName)
 		{
-			return EncodeAndDecodeInterop.DecodeString(OriginalString, GenericSettings.EncodingType);
+			if (ConfirmUsingFaceDetection.ConfirmUsingFacedetection(GlobalSettings.FaceDetectionInteropSettings.Instance.FaceName, "Face detection for '" + PropertyName + "'", TimeOutSeconds_nullIfNever: null))
+				return EncodeAndDecodeInterop.DecodeString(OriginalString, GenericSettings.EncodingType);
+			else
+			{
+				//UserMessages.ShowWarningMessage("Face detection failed, cannot decrypt string");
+				return null;
+			}
+		}
+
+		public string sEncrypt(string OriginalString, string PropertyName)
+		{
+			return GenericSettings.Encrypt(OriginalString, PropertyName);
+		}
+
+		public string sDecrypt(string OriginalString, string PropertyName)
+		{
+			return GenericSettings.Decrypt(OriginalString, PropertyName);
 		}
 
 		public static void EnsureAllSettingsAreInitialized()
@@ -373,13 +393,13 @@ namespace SharedClasses
 			public string FtpUsername { get; set; }
 
 			[Browsable(false)]
-			[Setting("Please enter ftp password user for Visual Studio publishing", true)]
+			[Setting("Please enter ftp password user for Visual Studio publishing", true, true, "FtpPasswordEncrypted")]
 			[XmlIgnore]//TODO: Must explicitly set the attribute as [XmlIgnore] otherwise if ANOTHER property is changed and the settings are flushed, the password will also be saved
-			public string FtpPassword { get; set; }
+			public string FtpPassword { get; set; }//{ get { return Decrypt(FtpPasswordEncrypted, ); } set { FtpPasswordEncrypted = Encrypt(value); } }//{ get; set; }
 			[Browsable(false)]
-			[Setting(null, IgnoredByPropertyInterceptor_EncryptingAnother: true)]
+			[Setting(null, true, IgnoredByPropertyInterceptor_EncryptingAnother: true)]
 			[XmlElement("FtpPassword")]
-			public string FtpPasswordEncrypted { get { return Encrypt(FtpPassword); } set { FtpPassword = Decrypt(value); } }
+			public string FtpPasswordEncrypted { get; set; }//{ return Encrypt(FtpPassword); } set { FtpPassword = Decrypt(value); } }
 
 			[Obsolete("Do not use constructor otherwise getting/setting of properties does not go through Interceptor. Use Interceptor<VisualStudioInteropSettings>.Create(); ")]
 			public VisualStudioInteropSettings()
@@ -502,13 +522,13 @@ namespace SharedClasses
 
 			//TODO: Implement Username in UserPrompt message [Setting("Please enter ftp password for Trac XmlRpc, username " + Username)]
 			[Browsable(false)]
-			[Setting("Please enter ftp password for Trac XmlRpc, username ", true)]
+			[Setting("Please enter ftp password for Trac XmlRpc, username ", true, true, "PasswordEncrypted")]
 			[XmlIgnore]
 			public string Password { get; set; }
 			[Browsable(false)]
-			[Setting(null, IgnoredByPropertyInterceptor_EncryptingAnother: true)]
+			[Setting(null, true, IgnoredByPropertyInterceptor_EncryptingAnother: true)]
 			[XmlElement("Password")]
-			public string PasswordEncrypted { get { return Encrypt(Password); } set { Password = Decrypt(value); } }
+			public string PasswordEncrypted { get; set; }//{ get { return Encrypt(Password); } set { Password = Decrypt(value); } }
 
 			//TODO: Check out Attribute = [NotifyParentProperty]
 			[Setting("Please enter the Base url of the Dynamic Invokation Server")]

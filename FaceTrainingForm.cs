@@ -25,7 +25,8 @@ namespace SharedClasses
 		Capture grabber;
 		HaarCascade face;
 		HaarCascade eye;
-		MCvFont font = new MCvFont(FONT.CV_FONT_HERSHEY_TRIPLEX, 0.5d, 0.5d);
+		//TODO: Think about having separate installation for Face Recognition (EmguCV) Dlls: cv110.dll, cvaux110.dll, cvextern.dll, cxcore110.dll, opencv_calib3d220.dll, opencv_contrib220.dll, opencv_core220.dll, opencv_features2d220.dll, opencv_ffmpeg220.dll, opencv_flann220.dll, opencv_gpu220.dll, opencv_highgui220.dll, opencv_imgproc220.dll, opencv_legacy220.dll, opencv_ml220.dll, opencv_objdetect220.dll, opencv_video220.dll (maybe also Emgu.CV.dll, Emgu.CV.UI.dll, Emgu.Util.dll which are included in the VS Project references).
+		MCvFont font = new MCvFont(FONT.CV_FONT_HERSHEY_TRIPLEX, 0.5d, 0.5d);//If it fails here, DLLs are missing, all the "cv..." and "opencv_..." Dlls mentioned above
 		Image<Gray, byte> result, TrainedFace = null;
 		Image<Gray, byte> gray = null;
 		List<Image<Gray, byte>> trainingImages = new List<Image<Gray, byte>>();
@@ -255,5 +256,10 @@ namespace SharedClasses
 			FaceTrainingForm frm = new FaceTrainingForm();
 			frm.ShowDialog();
 		}
+
+		//private void button3_Click(object sender, EventArgs e)
+		//{
+		//	UserMessages.ShowInfoMessage("FtpPassword = " + GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword);
+		//}
 	}
 }

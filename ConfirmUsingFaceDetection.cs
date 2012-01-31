@@ -25,7 +25,7 @@ namespace SharedClasses
 		List<Image<Gray, byte>> trainingImages = new List<Image<Gray, byte>>();
 		List<string> labels = new List<string>();
 		//string name, names = null;
-		MCvFont font = new MCvFont(FONT.CV_FONT_HERSHEY_TRIPLEX, 0.5d, 0.5d);
+		MCvFont font = new MCvFont(FONT.CV_FONT_HERSHEY_TRIPLEX, 0.5d, 0.5d);//If it fails here, DLLs are missing, all the "cv..." and "opencv_..." Dlls
 
 		string RequiredFaceName;
 		bool IsTimerRequired = false;
@@ -36,7 +36,7 @@ namespace SharedClasses
 		/// <param name="DirectoryWithTrainedFaces">The directory must have a folder for each "person" and all .bmp files inside will be used for recognizing.</param>
 		/// <param name="RequiredFaceName">The name of the "person" which will result in a DialogResult of OK.</param>
 		/// <param name="TimeOutSeconds_nullIfNever">The duration (in milliseconds) after which it must result in a DialogResult of Cancel.</param>
-		public ConfirmUsingFaceDetection(string RequiredFaceName, int? TimeOutSeconds_nullIfNever)
+		public ConfirmUsingFaceDetection(string RequiredFaceName, string UserMessage, int? TimeOutSeconds_nullIfNever)
 		{
 			InitializeComponent();
 
@@ -89,6 +89,7 @@ namespace SharedClasses
 				//timer1.Enabled = true;
 				IsTimerRequired = true;
 			}
+			labelUserPrompt.Text = UserMessage;
 		}
 
 		private void ConfirmUsingFaceDetection_Load(object sender, EventArgs e)
@@ -203,9 +204,9 @@ namespace SharedClasses
 				this.DialogResult = System.Windows.Forms.DialogResult.Cancel;
 		}
 
-		public static bool ConfirmUsingFacedetection(string RequiredFaceName, int? TimeOutSeconds_nullIfNever, IWin32Window owner = null)
+		public static bool ConfirmUsingFacedetection(string RequiredFaceName, string UserMessage, int? TimeOutSeconds_nullIfNever, IWin32Window owner = null)
 		{
-			ConfirmUsingFaceDetection frm = new ConfirmUsingFaceDetection(RequiredFaceName, TimeOutSeconds_nullIfNever);
+			ConfirmUsingFaceDetection frm = new ConfirmUsingFaceDetection(RequiredFaceName, UserMessage, TimeOutSeconds_nullIfNever);
 			return frm.ShowDialog(owner) == System.Windows.Forms.DialogResult.OK;
 		}
 	}

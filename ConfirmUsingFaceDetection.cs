@@ -144,7 +144,7 @@ namespace SharedClasses
 					EigenObjectRecognizer recognizer = new EigenObjectRecognizer(
 						 trainingImages.ToArray(),
 						 labels.ToArray(),
-						 5000,
+						 GlobalSettings.FaceDetectionInteropSettings.Instance.RecognitionTolerance ?? 0,
 						 ref termCrit);
 
 					string name = recognizer.Recognize(result);
@@ -208,6 +208,13 @@ namespace SharedClasses
 		{
 			ConfirmUsingFaceDetection frm = new ConfirmUsingFaceDetection(RequiredFaceName, UserMessage, TimeOutSeconds_nullIfNever);
 			return frm.ShowDialog(owner) == System.Windows.Forms.DialogResult.OK;
+		}
+
+		private void ConfirmUsingFaceDetection_FormClosing(object sender, FormClosingEventArgs e)
+		{
+			grabber.Dispose();
+			grabber = null;
+			Application.Idle -= new EventHandler(FrameGrabber);
 		}
 	}
 }

@@ -87,6 +87,7 @@
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
 			this.Text = "ConfirmUsingFaceDetection";
 			this.TopMost = true;
+			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ConfirmUsingFaceDetection_FormClosing);
 			this.Load += new System.EventHandler(this.ConfirmUsingFaceDetection_Load);
 			((System.ComponentModel.ISupportInitialize)(this.imageBoxFrameGrabber)).EndInit();
 			this.ResumeLayout(false);

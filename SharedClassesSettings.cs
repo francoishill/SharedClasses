@@ -195,7 +195,7 @@ namespace SharedClasses
 
 		public static string Decrypt(string OriginalString, string PropertyName)
 		{
-			if (ConfirmUsingFaceDetection.ConfirmUsingFacedetection(GlobalSettings.FaceDetectionInteropSettings.Instance.FaceName, "Face detection for '" + PropertyName + "'", TimeOutSeconds_nullIfNever: null))
+			if (ConfirmUsingFaceDetection.ConfirmUsingFacedetection(GlobalSettings.FaceDetectionInteropSettings.Instance.FaceName, "Face detection for '" + PropertyName + "'", TimeOutSeconds_nullIfNever: GlobalSettings.FaceDetectionInteropSettings.Instance.TimeOutSecondsBeforeAutoFailing))
 				return EncodeAndDecodeInterop.DecodeString(OriginalString, GenericSettings.EncodingType);
 			else
 			{
@@ -334,6 +334,12 @@ namespace SharedClasses
 			//TODO: This must be greatly improved in the sense that the face "pictures" and their names are stored online for instance
 			[Setting("Please enter the face name used for facial recognition to decrypt passwords")]
 			public string FaceName { get; set; }
+
+			[Setting("Please enter the tolerance for Face detection (0 - 5000, default = 3000).")]
+			public double? RecognitionTolerance { get; set; }
+
+			[Setting("Please enter the timeout for Face detection (in seconds), this is the maximum allowed time for recognizing a face, it will fail thereafter.")]
+			public int? TimeOutSecondsBeforeAutoFailing { get; set; }
 
 			public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
 			{

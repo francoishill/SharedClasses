@@ -194,6 +194,7 @@
 			this.Name = "FaceTrainingForm";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Serg3ant\'s face detector and recgonizer :D";
+			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FaceTrainingForm_FormClosing);
 			((System.ComponentModel.ISupportInitialize)(this.imageBoxFrameGrabber)).EndInit();
 			((System.ComponentModel.ISupportInitialize)(this.imageBox1)).EndInit();
 			this.groupBox1.ResumeLayout(false);

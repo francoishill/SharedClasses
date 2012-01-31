@@ -188,7 +188,7 @@ namespace SharedClasses
 					EigenObjectRecognizer recognizer = new EigenObjectRecognizer(
 						 trainingImages.ToArray(),
 						 labels.ToArray(),
-						 500,
+						 GlobalSettings.FaceDetectionInteropSettings.Instance.RecognitionTolerance ?? 0,
 						 ref termCrit);
 
 					name = recognizer.Recognize(result);
@@ -255,6 +255,13 @@ namespace SharedClasses
 		{
 			FaceTrainingForm frm = new FaceTrainingForm();
 			frm.ShowDialog();
+		}
+
+		private void FaceTrainingForm_FormClosing(object sender, FormClosingEventArgs e)
+		{
+			grabber.Dispose();
+			grabber = null;
+			Application.Idle -= new EventHandler(FrameGrabber);
 		}
 
 		//private void button3_Click(object sender, EventArgs e)

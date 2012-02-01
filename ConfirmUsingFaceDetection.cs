@@ -118,8 +118,8 @@ namespace SharedClasses
 			Image<Gray, Byte> gray = currentFrame.Convert<Gray, Byte>();
 
 			//Face Detector
-			MCvAvgComp[][] facesDetected = gray.DetectHaarCascade(
-				face,
+			MCvAvgComp[] facesDetected = face.Detect(
+				gray,
 				1.2,
 				10,
 				Emgu.CV.CvEnum.HAAR_DETECTION_TYPE.DO_CANNY_PRUNING,
@@ -127,7 +127,7 @@ namespace SharedClasses
 
 			int t = 0;
 			//Action for each element detected
-			foreach (MCvAvgComp f in facesDetected[0])
+			foreach (MCvAvgComp f in facesDetected)
 			{
 				t = t + 1;
 				Image<Gray, byte> result = currentFrame.Copy(f.rect).Convert<Gray, byte>().Resize(100, 100, Emgu.CV.CvEnum.INTER.CV_INTER_CUBIC);
@@ -163,15 +163,15 @@ namespace SharedClasses
 				//label3.Text = facesDetected[0].Length.ToString();
 
 				gray.ROI = f.rect;
-				MCvAvgComp[][] eyesDetected = gray.DetectHaarCascade(
-					 eye,
+				MCvAvgComp[] eyesDetected = eye.Detect(
+					 gray,
 					 1.1,
 					 10,
 					 Emgu.CV.CvEnum.HAAR_DETECTION_TYPE.DO_CANNY_PRUNING,
 					 new Size(20, 20));
 				gray.ROI = Rectangle.Empty;
 
-				foreach (MCvAvgComp ey in eyesDetected[0])
+				foreach (MCvAvgComp ey in eyesDetected)
 				{
 					Rectangle eyeRect = ey.rect;
 					eyeRect.Offset(f.rect.X, f.rect.Y);

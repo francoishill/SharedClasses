@@ -114,15 +114,15 @@ namespace SharedClasses
 				gray = grabber.QueryGrayFrame().Resize(320, 240, Emgu.CV.CvEnum.INTER.CV_INTER_CUBIC);
 
 				//Face Detector
-				MCvAvgComp[][] facesDetected = gray.DetectHaarCascade(
-				face,
+				MCvAvgComp[] facesDetected = face.Detect(
+				gray,
 				1.2,
 				10,
 				Emgu.CV.CvEnum.HAAR_DETECTION_TYPE.DO_CANNY_PRUNING,
 				new Size(20, 20));
 
 				//Action for each element detected
-				foreach (MCvAvgComp f in facesDetected[0])
+				foreach (MCvAvgComp f in facesDetected)
 				{
 					TrainedFace = currentFrame.Copy(f.rect).Convert<Gray, byte>();
 					break;
@@ -176,8 +176,8 @@ namespace SharedClasses
 			gray = currentFrame.Convert<Gray, Byte>();
 
 			//Face Detector
-			MCvAvgComp[][] facesDetected = gray.DetectHaarCascade(
-				face,
+			MCvAvgComp[] facesDetected = face.Detect(
+				gray,
 				1.2,
 				10,
 				Emgu.CV.CvEnum.HAAR_DETECTION_TYPE.DO_CANNY_PRUNING,
@@ -185,7 +185,7 @@ namespace SharedClasses
 
 			int t = 0;
 			//Action for each element detected
-			foreach (MCvAvgComp f in facesDetected[0])
+			foreach (MCvAvgComp f in facesDetected)
 			{
 				t = t + 1;
 				result = currentFrame.Copy(f.rect).Convert<Gray, byte>().Resize(100, 100, Emgu.CV.CvEnum.INTER.CV_INTER_CUBIC);
@@ -217,20 +217,20 @@ namespace SharedClasses
 
 
 				//Set the number of faces detected on the scene
-				label3.Text = facesDetected[0].Length.ToString();
+				label3.Text = facesDetected.Length.ToString();
 
 
 				//Set the region of interest on the faces                        
 				gray.ROI = f.rect;
-				MCvAvgComp[][] eyesDetected = gray.DetectHaarCascade(
-					 eye,
+				MCvAvgComp[] eyesDetected = eye.Detect(
+					 gray,
 					 1.1,
 					 10,
 					 Emgu.CV.CvEnum.HAAR_DETECTION_TYPE.DO_CANNY_PRUNING,
 					 new Size(20, 20));
 				gray.ROI = Rectangle.Empty;
 
-				foreach (MCvAvgComp ey in eyesDetected[0])
+				foreach (MCvAvgComp ey in eyesDetected)
 				{
 					Rectangle eyeRect = ey.rect;
 					eyeRect.Offset(f.rect.X, f.rect.Y);
@@ -238,15 +238,15 @@ namespace SharedClasses
 				}
 
 				gray.ROI = f.rect;
-				MCvAvgComp[][] nosesDetected = gray.DetectHaarCascade(
-					 nose,
+				MCvAvgComp[] nosesDetected = nose.Detect(
+					 gray,
 					 1.1,
 					 10,
 					 Emgu.CV.CvEnum.HAAR_DETECTION_TYPE.DO_CANNY_PRUNING,
 					 new Size(20, 20));
 				gray.ROI = Rectangle.Empty;
 
-				foreach (MCvAvgComp nos in nosesDetected[0])
+				foreach (MCvAvgComp nos in nosesDetected)
 				{
 					Rectangle eyeRect = nos.rect;
 					eyeRect.Offset(f.rect.X, f.rect.Y);
@@ -254,15 +254,15 @@ namespace SharedClasses
 				}
 
 				gray.ROI = f.rect;
-				MCvAvgComp[][] righteyesDetected = gray.DetectHaarCascade(
-					 righteye,
+				MCvAvgComp[] righteyesDetected = righteye.Detect(
+					 gray,
 					 1.1,
 					 10,
 					 Emgu.CV.CvEnum.HAAR_DETECTION_TYPE.DO_CANNY_PRUNING,
 					 new Size(20, 20));
 				gray.ROI = Rectangle.Empty;
 
-				foreach (MCvAvgComp re in righteyesDetected[0])
+				foreach (MCvAvgComp re in righteyesDetected)
 				{
 					Rectangle eyeRect = re.rect;
 					eyeRect.Offset(f.rect.X, f.rect.Y);
@@ -272,7 +272,7 @@ namespace SharedClasses
 			t = 0;
 
 			//Names concatenation of persons recognized
-			for (int nnn = 0; nnn < facesDetected[0].Length; nnn++)
+			for (int nnn = 0; nnn < facesDetected.Length; nnn++)
 			{
 				names = names + NamePersons[nnn] + ", ";
 			}

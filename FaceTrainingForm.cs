@@ -41,6 +41,9 @@ namespace SharedClasses
 		int MaximumIterations;
 		string name, names = null;
 
+		const string Passphrase = "mysecretpassphrase";
+		const string Salt = "alluminiumcopper";
+
 
 		public FaceTrainingForm()
 		{
@@ -147,10 +150,18 @@ namespace SharedClasses
 					if (!Directory.Exists(dir))
 						Directory.CreateDirectory(dir);
 					string filepath = dir + "\\face" + i + ".bmp";
-					trainingImages.ToArray()[i - 1].Save(
-						//Application.StartupPath + "/TrainedFaces/face" + i + ".bmp"
-						filepath
-						);
+
+					FaceDetectionInterop.AddFace(trainingImages.ToArray()[i - 1], Passphrase, Salt);
+					//CvArray<byte> bytes;
+					//MemoryStream ms = new MemoryStream();
+					//trainingImages.ToArray()[i - 1].ToBitmap().Save(ms, System.Drawing.Imaging.ImageFormat.Bmp);
+					//byte[] bs = ms.ToArray();
+					//foreach (byte b in bs) { }
+
+					//trainingImages.ToArray()[i - 1].Save(
+					//	//Application.StartupPath + "/TrainedFaces/face" + i + ".bmp"
+					//	filepath
+					//	);
 					//File.AppendAllText(Application.StartupPath + "/TrainedFaces/TrainedLabels.txt", labels.ToArray()[i - 1] + "%");
 				}
 
@@ -299,14 +310,20 @@ namespace SharedClasses
 
 		public static void ShowFacetraining()
 		{
-			FaceTrainingForm frm = new FaceTrainingForm();
-			frm.ShowDialog();
+			if (FaceDetectionInterop.CheckFaceDetectionDllsExistInCurrentExeDir(true))
+			{
+				FaceTrainingForm frm = new FaceTrainingForm();
+				frm.ShowDialog();
+			}
 		}
 
 		private void FaceTrainingForm_FormClosing(object sender, FormClosingEventArgs e)
 		{
-			grabber.Dispose();
-			grabber = null;
+			if (grabber != null)
+			{
+				grabber.Dispose();
+				grabber = null;
+			}
 			Application.Idle -= new EventHandler(FrameGrabber);
 		}
 

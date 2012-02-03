@@ -29,6 +29,22 @@ namespace SharedClasses
 
 			listBox1.ItemsSource = VisibleBalloonTipForms;
 
+			//System.Windows.Forms.Application.ApplicationExit += delegate
+			//Application.Current.Exit += delegate
+			//{
+			//	//UserMessages.ShowErrorMessage("");
+			//	try
+			//	{
+			//		StaticInstance.Close();
+			//	}
+			//	catch { }
+			//};
+
+			//Application.Current.Exit += delegate
+			//{
+			//	UserMessages.ShowErrorMessage("");
+			//};
+
 			//this.label_Title.Content = Title;
 			//this.label_Message.Content = Message;
 			//if (Duration > 0) this.timer_ShowDuration.Interval = Duration;
@@ -126,7 +142,15 @@ namespace SharedClasses
 					DataTemplate myDataTemplate = myContentPresenter.ContentTemplate;
 					Border myBorder = (Border)myDataTemplate.FindName("ItemMainBorder", myContentPresenter);
 
-					FadeItemStoryboadAndPerformOnComplete(myBorder, delegate { VisibleBalloonTipForms.Remove(item); });
+					FadeItemStoryboadAndPerformOnComplete(myBorder, delegate
+					{
+						VisibleBalloonTipForms.Remove(item);
+						if (visibleBalloonTipForms.Count == 0)
+						{
+							StaticInstance.Close();
+							StaticInstance = null;
+						}
+					});
 				}
 
 				AllowToClose = true;
@@ -278,28 +302,28 @@ namespace SharedClasses
 
 		private void customBalloonTipwpf_Loaded(object sender, RoutedEventArgs e)
 		{
-			HwndSource source = (HwndSource)PresentationSource.FromDependencyObject(this);
-			source.AddHook(WindowProc);
+			//HwndSource source = (HwndSource)PresentationSource.FromDependencyObject(this);
+			//source.AddHook(WindowProc);
 		}
 
-		private static IntPtr WindowProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-		{
-			switch (msg)
-			{
-				case 0x11:
-				case 0x16:
-					//Console.WriteLine("Close reason: WindowsShutDown");
-					UserMessages.ShowInfoMessage("Shutdown");
-					break;
+		//private static IntPtr WindowProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+		//{
+		//	switch (msg)
+		//	{
+		//		case 0x11:
+		//		case 0x16:
+		//			//Console.WriteLine("Close reason: WindowsShutDown");
+		//			UserMessages.ShowInfoMessage("Shutdown");
+		//			break;
 
-				case 0x112:
-					if ((((int)wParam) & 0xfff0) == 0xf060)
-						//Console.WriteLine("Close reason: UserClosing");
-						UserMessages.ShowInfoMessage("Userclose");
-					break;
-			}
-			return IntPtr.Zero;
-		}
+		//		case 0x112:
+		//			if ((((int)wParam) & 0xfff0) == 0xf060)
+		//				//Console.WriteLine("Close reason: UserClosing");
+		//				UserMessages.ShowInfoMessage("Userclose");
+		//			break;
+		//	}
+		//	return IntPtr.Zero;
+		//}
 	}
 
 	public class WrapPanelParentHeightToHeightConverter : IValueConverter

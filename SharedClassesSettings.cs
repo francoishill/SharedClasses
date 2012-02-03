@@ -12,23 +12,25 @@ namespace SharedClasses
 	public class SettingAttribute : Attribute
 	{
 		// Private fields.
-		private string userPrompt;
-		private bool passwordPromptEveryTime;
-		public bool IsEncrypted;
-		public string EncryptedPropertyName;//The public encrypted property name, like if the current property is Password, this variable (EncryptedPropertyName) will be PasswordEncrypted
-		public bool IgnoredByPropertyInterceptor_EncryptingAnother;
+		public string UserPrompt { get; private set; }
+		public bool DoNoSaveToFile { get; private set; }
+		public bool IsEncrypted { get; private set; }
+		public string EncryptedPropertyName { get; private set; }//The public encrypted property name, like if the current property is Password, this variable (EncryptedPropertyName) will be PasswordEncrypted
+		public bool IgnoredByPropertyInterceptor_EncryptingAnother { get; private set; }
+		public bool RequireFacialAutorisationEverytime { get; private set; }
 
-		public SettingAttribute(string userPrompt, bool passwordPromptEveryTime = false, bool IsEncrypted = false, string EncryptedPropertyName = null, bool IgnoredByPropertyInterceptor_EncryptingAnother = false)
+		public SettingAttribute(string UserPrompt, bool DoNoSaveToFile = false, bool IsEncrypted = false, bool RequireFacialAutorisationEverytime = true, string EncryptedPropertyName = null, bool IgnoredByPropertyInterceptor_EncryptingAnother = false)
 		{
-			this.userPrompt = userPrompt;
-			this.passwordPromptEveryTime = passwordPromptEveryTime;
+			this.UserPrompt = UserPrompt;
+			this.DoNoSaveToFile = DoNoSaveToFile;
 			this.IsEncrypted = IsEncrypted;
+			this.RequireFacialAutorisationEverytime = RequireFacialAutorisationEverytime;
 			this.EncryptedPropertyName = EncryptedPropertyName;
 			this.IgnoredByPropertyInterceptor_EncryptingAnother = IgnoredByPropertyInterceptor_EncryptingAnother;
 		}
 
-		public string UserPrompt { get { return userPrompt; } }//public virtual string UserPrompt { get { return userPrompt; } }
-		public bool PasswordPromptEveryTime { get { return passwordPromptEveryTime; } }
+		//public string UserPrompt { get { return UserPrompt; } }//public virtual string UserPrompt { get { return UserPrompt; } }
+		//public bool DoNoSaveToFile { get { return DoNoSaveToFile; } }
 	}
 
 	public sealed class SharedClassesSettings
@@ -184,6 +186,8 @@ namespace SharedClasses
 	{
 		//private TempClass tc = new TempClass();//Leave this here as it ensures all settings are initialized
 
+		private static bool AuthorizationWasDoneOnce = false;
+
 		public static string RootApplicationNameForSharedClasses = "SharedClasses";
 		private static EncodeAndDecodeInterop.EncodingType EncodingType = EncodeAndDecodeInterop.EncodingType.ASCII;
 
@@ -193,10 +197,14 @@ namespace SharedClasses
 			return EncodeAndDecodeInterop.EncodeString(OriginalString, GenericSettings.EncodingType);
 		}
 
-		public static string Decrypt(string OriginalString, string PropertyName)
+		public static string Decrypt(string OriginalString, string PropertyName, bool RequireFacialAutorisationEverytime)
 		{
-			if (ConfirmUsingFaceDetection.ConfirmUsingFacedetection(GlobalSettings.FaceDetectionInteropSettings.Instance.FaceName, "Face detection for '" + PropertyName + "'", TimeOutSeconds_nullIfNever: GlobalSettings.FaceDetectionInteropSettings.Instance.TimeOutSecondsBeforeAutoFailing))
+			if ((!RequireFacialAutorisationEverytime && AuthorizationWasDoneOnce)
+				|| ConfirmUsingFaceDetection.ConfirmUsingFacedetection(GlobalSettings.FaceDetectionInteropSettings.Instance.FaceName, "Face detection for '" + PropertyName + "'", TimeOutSeconds_nullIfNever: GlobalSettings.FaceDetectionInteropSettings.Instance.TimeOutSecondsBeforeAutoFailing))
+			{
+				AuthorizationWasDoneOnce = true;
 				return EncodeAndDecodeInterop.DecodeString(OriginalString, GenericSettings.EncodingType);
+			}
 			else
 			{
 				//UserMessages.ShowWarningMessage("Face detection failed, cannot decrypt string");
@@ -209,9 +217,9 @@ namespace SharedClasses
 			return GenericSettings.Encrypt(OriginalString, PropertyName);
 		}
 
-		public string sDecrypt(string OriginalString, string PropertyName)
+		public string sDecrypt(string OriginalString, string PropertyName, bool RequireFacialAutorisationEverytime)
 		{
-			return GenericSettings.Decrypt(OriginalString, PropertyName);
+			return GenericSettings.Decrypt(OriginalString, PropertyName, RequireFacialAutorisationEverytime);
 		}
 
 		public static void EnsureAllSettingsAreInitialized()
@@ -399,7 +407,7 @@ namespace SharedClasses
 			public string FtpUsername { get; set; }
 
 			[Browsable(false)]
-			[Setting("Please enter ftp password user for Visual Studio publishing", true, true, "FtpPasswordEncrypted")]
+			[Setting("Please enter ftp password user for Visual Studio publishing", true, true, false, "FtpPasswordEncrypted")]
 			[XmlIgnore]//TODO: Must explicitly set the attribute as [XmlIgnore] otherwise if ANOTHER property is changed and the settings are flushed, the password will also be saved
 			public string FtpPassword { get; set; }//{ get { return Decrypt(FtpPasswordEncrypted, ); } set { FtpPasswordEncrypted = Encrypt(value); } }//{ get; set; }
 			[Browsable(false)]
@@ -528,7 +536,7 @@ namespace SharedClasses
 
 			//TODO: Implement Username in UserPrompt message [Setting("Please enter ftp password for Trac XmlRpc, username " + Username)]
 			[Browsable(false)]
-			[Setting("Please enter ftp password for Trac XmlRpc, username ", true, true, "PasswordEncrypted")]
+			[Setting("Please enter ftp password for Trac XmlRpc, username ", true, true, false, "PasswordEncrypted")]
 			[XmlIgnore]
 			public string Password { get; set; }
 			[Browsable(false)]

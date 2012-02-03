@@ -153,7 +153,7 @@ public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable
 							object encryptedVal = encryptedPi.GetValue(target);
 							if (encryptedVal != null)
 							{
-								string decryptedVal = GenericSettings.Decrypt(encryptedVal.ToString(), att.EncryptedPropertyName);
+								string decryptedVal = GenericSettings.Decrypt(encryptedVal.ToString(), att.EncryptedPropertyName, att.RequireFacialAutorisationEverytime);
 								if (decryptedVal != null)
 								{
 									pi.SetValue(target, decryptedVal);
@@ -188,7 +188,7 @@ public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable
 							{
 								if (!string.IsNullOrWhiteSpace(att.UserPrompt))
 									UserPrompt = att.UserPrompt;
-								IsPasswordDoNotSave = att.PasswordPromptEveryTime;
+								IsPasswordDoNotSave = att.DoNoSaveToFile;
 							}
 
 							object tmpUserAnswer = null;

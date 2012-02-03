@@ -8,6 +8,7 @@ using FileToAddTextblock = NsisInterop.NSISclass.SectionGroupClass.SectionClass.
 using System.Windows.Forms;
 using System.IO;
 using System.Drawing;
+using SharedClasses;
 
 public class NsisInterop
 {
@@ -64,7 +65,7 @@ public class NsisInterop
 		SectionGroupLines.Add(@"  SetOverwrite ifnewer");
 		SectionGroupLines.Add(@"	SetOutPath ""$INSTDIR""");
 		SectionGroupLines.Add(@"  SetOverwrite ifnewer");
-		SectionGroupLines.Add(@"  File /a /x *.pdb /x *.application /x *.vshost.* /x *.manifest """ + PublishedDir + @"\*.*""");
+		SectionGroupLines.Add(@"  File /a /x *.pdb /x *.application /x *.vshost.* /x *.manifest" + MainProgram_FaceDetectionNsisExclusionList() + @" """ + PublishedDir + @"\*.*""");
 		if (WriteIntoRegistryForWindowsAutostartup) SectionGroupLines.Add(@"  WriteRegStr HKCU ""SOFTWARE\Microsoft\Windows\CurrentVersion\Run"" '${PRODUCT_NAME}' '$INSTDIR\${PRODUCT_EXE_NAME}'");
 		SectionGroupLines.Add(@"SectionEnd");
 
@@ -107,7 +108,7 @@ public class NsisInterop
 				SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite ifnewer");
 				SectionGroupLines.Add(NSISclass.Spacer + @"	SetOutPath ""$INSTDIR\Plugins""");
 				SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite ifnewer");
-				SectionGroupLines.Add(NSISclass.Spacer + @"  File /a /x *.pdb /x *.xml /x *Toolkit* /x *InterfaceFor* /x *CookComputing.XmlRpcV2.dll /x *MouseGestures.dll /x *System.Windows.Controls.WpfPropertyGrid.dll """ + pluginDllPath + @"\*.*""");
+				SectionGroupLines.Add(NSISclass.Spacer + @"  File /a /x *.pdb /x *.xml /x *Toolkit* /x *InterfaceFor* /x *CookComputing.XmlRpcV2.dll /x *MouseGestures.dll /x *System.Windows.Controls.WpfPropertyGrid.dll" + Plugins_FaceDetectionNsisExclusionList() + @" """ + pluginDllPath + @"\*.*""");
 				SectionGroupLines.Add(NSISclass.Spacer + @"SectionEnd");
 				SectionGroupLines.Add("");
 				//}
@@ -156,6 +157,24 @@ public class NsisInterop
 			null,
 			WriteIntoRegistryForWindowsAutostartup,
 			HasPlugins);//SectionDescriptions);
+	}
+
+	private static string MainProgram_FaceDetectionNsisExclusionList()
+	{
+		return " /x *cvextern*dll /x *opencv_*.dll";
+		//string tmpstr = "";
+		//foreach (string filename in FaceDetectionInterop.ListOfRequiredDllsInExeDir.Keys)
+		//	tmpstr += " /x " + filename;
+		//return tmpstr;
+	}
+
+	private static string Plugins_FaceDetectionNsisExclusionList()
+	{
+		return " /x *cvextern*dll /x opencv_*.dll /x *Emgu.*.dll";
+		//string tmpstr = "";
+		//foreach (string filename in FaceDetectionInterop.ListOfRequiredDllsInExeDir.Keys)
+		//	tmpstr += " /x " + filename;
+		//return tmpstr;
 	}
 
 	public static string DotNetChecker_NSH_file

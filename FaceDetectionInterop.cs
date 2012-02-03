@@ -14,7 +14,7 @@ namespace SharedClasses
 		public const string Passphrase = "mysecretpassphrase";
 		public const string Salt = "alluminiumcopper";
 
-		private static Dictionary<string, bool> ListOfRequiredDllsInExeDir = new Dictionary<string, bool>(StringComparer.InvariantCultureIgnoreCase)
+		public static Dictionary<string, bool> ListOfRequiredDllsInExeDir = new Dictionary<string, bool>(StringComparer.InvariantCultureIgnoreCase)
 		{
 			{ "cvextern.dll", false },
 			{ "cvextern_gpu.dll", false },
@@ -30,7 +30,10 @@ namespace SharedClasses
 			{ "opencv_legacy231.dll", false },
 			{ "opencv_ml231.dll", false },
 			{ "opencv_objdetect231.dll", false },
-			{ "opencv_video231.dll", false }
+			{ "opencv_video231.dll", false },
+			{ "Emgu.CV.UI.dll", false },
+			{ "Emgu.CV.dll", false },
+			{ "Emgu.Util.dll", false }
 		};
 
 		public static bool CheckFaceDetectionDllsExistInCurrentExeDir(out List<string> MissingFiles)

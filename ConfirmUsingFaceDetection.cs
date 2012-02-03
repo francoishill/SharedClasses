@@ -60,12 +60,25 @@ namespace SharedClasses
 				//	UserMessages.ShowWarningMessage("Cannot find trained faces, directory does not exist: " + DirectoryWithTrainedFaces);
 				//else
 				//{
-				foreach (string file in Directory.GetFiles(FaceDetectionInterop.GetFaceDetectionFolderPath(), "*.bmp", SearchOption.AllDirectories))
-				{
-					MaximumIterations++;
-					trainingImages.Add(new Image<Gray, byte>(file));
-					labels.Add(Path.GetDirectoryName(file).Split('\\')[Path.GetDirectoryName(file).Split('\\').Length - 1]);
-				}
+
+				trainingImages.Clear();
+				labels.Clear();
+
+				Dictionary<string, List<Image<Gray, byte>>> facesList = FaceDetectionInterop.GetListOfTrainedFaces(FaceDetectionInterop.Passphrase, FaceDetectionInterop.Salt);
+				foreach (string personname in facesList.Keys)
+					foreach (Image<Gray, byte> faceimage in facesList[personname])
+					{
+						trainingImages.Add(faceimage);
+						labels.Add(personname);
+					}
+				
+				//foreach (string file in Directory.GetFiles(FaceDetectionInterop.GetFaceDetectionFolderPath(), "*.bmp", SearchOption.AllDirectories))
+				//{
+				//	MaximumIterations++;
+				//	trainingImages.Add(new Image<Gray, byte>(file));
+				//	labels.Add(Path.GetDirectoryName(file).Split('\\')[Path.GetDirectoryName(file).Split('\\').Length - 1]);
+				//}
+				
 				//}
 
 				//for (int tf = 1; tf < NumLabels + 1; tf++)

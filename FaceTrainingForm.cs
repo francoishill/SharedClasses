@@ -42,10 +42,6 @@ namespace SharedClasses
 		//int MaximumIterations;
 		string name, names = null;
 
-		const string Passphrase = "mysecretpassphrase";
-		const string Salt = "alluminiumcopper";
-
-
 		public FaceTrainingForm()
 		{
 			InitializeComponent();
@@ -73,6 +69,17 @@ namespace SharedClasses
 				//	labels.Add(Path.GetDirectoryName(file).Split('\\')[Path.GetDirectoryName(file).Split('\\').Length - 1]);
 				//}
 
+				//string PersonName = "Francois Hill";
+				trainingImages.Clear();
+				labels.Clear();
+
+				Dictionary<string, List<Image<Gray, byte>>> facesList = FaceDetectionInterop.GetListOfTrainedFaces(FaceDetectionInterop.Passphrase, FaceDetectionInterop.Salt);
+				foreach (string personname in facesList.Keys)
+					foreach (Image<Gray, byte> faceimage in facesList[personname])
+					{
+						trainingImages.Add(faceimage);
+						labels.Add(personname);
+					}
 
 				////Load of previus trainned faces and labels for each image
 				//string Labelsinfo = File.ReadAllText(Application.StartupPath + "/TrainedFaces/TrainedLabels.txt");
@@ -146,7 +153,7 @@ namespace SharedClasses
 				//Write the number of triained faces in a file text for further load
 				//File.WriteAllText(Application.StartupPath + "/TrainedFaces/TrainedLabels.txt", trainingImages.ToArray().Length.ToString() + "%");
 
-				FaceDetectionInterop.AddFace(trainingImage, Passphrase, Salt);
+				FaceDetectionInterop.AddFace(textBox1.Text, trainingImage, FaceDetectionInterop.Passphrase, FaceDetectionInterop.Salt);
 
 				////Write the labels of triained faces in a file text for further load
 				//for (int i = 1; i < trainingImages.ToArray().Length + 1; i++)
@@ -333,6 +340,11 @@ namespace SharedClasses
 				grabber = null;
 			}
 			Application.Idle -= new EventHandler(FrameGrabber);
+		}
+
+		private void FaceTrainingForm_Load(object sender, EventArgs e)
+		{
+			button1.PerformClick();
 		}
 
 		//private void button3_Click(object sender, EventArgs e)

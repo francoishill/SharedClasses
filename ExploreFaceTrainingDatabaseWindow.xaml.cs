@@ -196,7 +196,7 @@ namespace SharedClasses
 				listBox1.ItemsSource = GetListOfTablenames();
 			}
 
-			string Passphrase = "abcdefghijklmnopqrstuvwxyz1234567890";
+			/*string Passphrase = "abcdefghijklmnopqrstuvwxyz1234567890";
 			string Salt = "abcdefghijklmnopqrstuvwxyz1234567890";
 
 			string filepathToConcatenatedImagesFile = @"C:\Francois\Other\tmp\tmpfile";
@@ -234,8 +234,8 @@ namespace SharedClasses
 					//int cnt = 1;
 					//while (br.PeekChar() != -1)
 					//{
-					//Int64 lngth = br.ReadInt64();
-					Int32 lngth = 0;
+					//Int64 imagebyteLength = br.ReadInt64();
+					Int32 imagebyteLength = 0;
 
 					bool EOF = false;
 
@@ -246,8 +246,8 @@ namespace SharedClasses
 					{
 						try
 						{
-							lngth = br.ReadInt32();
-							byte[] fileBytes = DecryptBytes(br.ReadBytes(lngth), Passphrase, Salt);
+							imagebyteLength = br.ReadInt32();
+							byte[] fileBytes = DecryptBytes(br.ReadBytes(imagebyteLength), Passphrase, Salt);
 							//DecryptBytes(ref fileBytes);					
 							File.WriteAllBytes(
 								@"C:\Francois\Other\tmp\tmppic" + cnt++ + ".jpg",
@@ -270,7 +270,7 @@ namespace SharedClasses
 					//bw.Write(EncryptedBytes);
 					//break;
 				}
-			}
+			}*/
 
 			//LoadData();
 		}

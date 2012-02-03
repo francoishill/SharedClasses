@@ -477,21 +477,25 @@ public class VisualStudioInterop
 		foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
 		{
 			//Assembly objAssembly = Assembly.GetExecutingAssembly();
-			string[] myResources = assembly.GetManifestResourceNames();
-			foreach (string reso in myResources)
-				if (reso.ToLower().EndsWith(Filename.ToLower()))
-				{
-					Stream stream = assembly.GetManifestResourceStream(reso);
-					int length = (int)stream.Length;
-					byte[] bytesOfDotnetCheckerDLL = new byte[length];
-					stream.Read(bytesOfDotnetCheckerDLL, 0, length);
-					stream.Close();
-					FileStream fileStream = new FileStream(FileSaveLocation, FileMode.Create);
-					fileStream.Write(bytesOfDotnetCheckerDLL, 0, length);
-					fileStream.Close();
-					bytesOfDotnetCheckerDLL = null;
-					return true;
-				}
+			try
+			{
+				string[] myResources = assembly.GetManifestResourceNames();
+				foreach (string reso in myResources)
+					if (reso.ToLower().EndsWith(Filename.ToLower()))
+					{
+						Stream stream = assembly.GetManifestResourceStream(reso);
+						int length = (int)stream.Length;
+						byte[] bytesOfDotnetCheckerDLL = new byte[length];
+						stream.Read(bytesOfDotnetCheckerDLL, 0, length);
+						stream.Close();
+						FileStream fileStream = new FileStream(FileSaveLocation, FileMode.Create);
+						fileStream.Write(bytesOfDotnetCheckerDLL, 0, length);
+						fileStream.Close();
+						bytesOfDotnetCheckerDLL = null;
+						return true;
+					}
+			}
+			catch { }
 		}
 		return false;
 	}

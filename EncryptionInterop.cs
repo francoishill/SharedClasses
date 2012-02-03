@@ -45,11 +45,14 @@ namespace SharedClasses
 			byte[] plainBytes = new byte[inputBytes.Length];
 
 			int DecryptedCount = cryptoStream.Read(plainBytes, 0, plainBytes.Length);
+			byte[] paddedPlainBytes = new byte[DecryptedCount];
+			for (int i = 0; i < DecryptedCount; i++)
+				paddedPlainBytes[i] = plainBytes[i];
 
 			memoryStream.Close();
 			cryptoStream.Close();
 
-			return plainBytes;
+			return paddedPlainBytes;
 		}
 	}
 }

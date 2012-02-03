@@ -85,7 +85,7 @@
 			this.textBox1.Name = "textBox1";
 			this.textBox1.Size = new System.Drawing.Size(107, 20);
 			this.textBox1.TabIndex = 7;
-			this.textBox1.Text = "Sergio";
+			this.textBox1.Text = "Francois Hill";
 			// 
 			// groupBox1
 			// 
@@ -195,6 +195,7 @@
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Serg3ant\'s face detector and recgonizer :D";
 			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FaceTrainingForm_FormClosing);
+			this.Load += new System.EventHandler(this.FaceTrainingForm_Load);
 			((System.ComponentModel.ISupportInitialize)(this.imageBoxFrameGrabber)).EndInit();
 			((System.ComponentModel.ISupportInitialize)(this.imageBox1)).EndInit();
 			this.groupBox1.ResumeLayout(false);

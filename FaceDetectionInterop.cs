@@ -75,6 +75,12 @@ namespace SharedClasses
 		private static readonly string SqliteDatabasePath = @"C:\Francois\Other\tmp\tmpfile";
 		public static void AddFace(Image<Gray, byte> faceImage, string Passphrase, string Salt)
 		{
+			if (faceImage == null)
+			{
+				UserMessages.ShowInfoMessage("Face image object may not be NULL");
+				return;
+			}
+
 			if (!File.Exists(SqliteDatabasePath))
 			{
 				using (FileStream fs = new FileStream(SqliteDatabasePath, FileMode.Create))
@@ -88,7 +94,7 @@ namespace SharedClasses
 							imageBytes = EncryptionInterop.EncryptBytes(ms.ToArray(), Passphrase, Salt);
 						}
 
-						//bw.Write(imageBytes.Length);
+						bw.Write(imageBytes.Length);
 						bw.Write(imageBytes);
 						imageBytes = null;
 					}

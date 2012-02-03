@@ -17,7 +17,7 @@ namespace SharedClasses
 	/// </summary>
 	public partial class CustomBalloonTipwpf : Window
 	{
-		//private System.Windows.Forms.Timer timer_ShowDuration = new System.Windows.Forms.Timer();
+		//private System.Windows.Forms.Timer timerShowDuration = new System.Windows.Forms.Timer();
 		//public string KeyForForm;
 
 		public delegate void SimpleDelegateWithSender(object returnObject);
@@ -129,6 +129,8 @@ namespace SharedClasses
 					FadeItemStoryboadAndPerformOnComplete(myBorder, delegate { VisibleBalloonTipForms.Remove(item); });
 				}
 
+				AllowToClose = true;
+
 				//VisibleBalloonTipForms.Remove(item);
 			};
 			timer.Start();
@@ -200,6 +202,7 @@ namespace SharedClasses
 				//new ScaleTransform(StaticInstance.VisibleBalloonTipForms.Count+1, StaticInstance.VisibleBalloonTipForms.Count+1)//Scaling, Scaling)
 				);
 			StaticInstance.VisibleBalloonTipForms.Add(cbt);
+			AllowToClose = false;
 			StaticInstance.Show();
 			StaticInstance.Activate();
 			StaticInstance.BringIntoView();
@@ -247,11 +250,11 @@ namespace SharedClasses
 		public static bool AllowToClose = false;
 		private void customBalloonTipwpf_Closing(object sender, System.ComponentModel.CancelEventArgs e)
 		{
-			if (!AllowToClose)
-			{
-				e.Cancel = true;
-				this.Hide();
-			}
+			//if (!AllowToClose)
+			//{
+			//	e.Cancel = true;
+			//	this.Hide();
+			//}
 		}
 
 		private void Border_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -271,6 +274,31 @@ namespace SharedClasses
 						bt.OnClickCallback(bt);					
 				}
 			}
+		}
+
+		private void customBalloonTipwpf_Loaded(object sender, RoutedEventArgs e)
+		{
+			HwndSource source = (HwndSource)PresentationSource.FromDependencyObject(this);
+			source.AddHook(WindowProc);
+		}
+
+		private static IntPtr WindowProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+		{
+			switch (msg)
+			{
+				case 0x11:
+				case 0x16:
+					//Console.WriteLine("Close reason: WindowsShutDown");
+					UserMessages.ShowInfoMessage("Shutdown");
+					break;
+
+				case 0x112:
+					if ((((int)wParam) & 0xfff0) == 0xf060)
+						//Console.WriteLine("Close reason: UserClosing");
+						UserMessages.ShowInfoMessage("Userclose");
+					break;
+			}
+			return IntPtr.Zero;
 		}
 	}
 

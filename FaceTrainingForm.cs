@@ -35,10 +35,11 @@ namespace SharedClasses
 		Image<Gray, byte> result, TrainedFace = null;
 		Image<Gray, byte> gray = null;
 		List<Image<Gray, byte>> trainingImages = new List<Image<Gray, byte>>();
+		Image<Gray, byte> trainingImage;
 		List<string> labels = new List<string>();
 		List<string> NamePersons = new List<string>();
 		//int ContTrain, NumLabels, t;
-		int MaximumIterations;
+		//int MaximumIterations;
 		string name, names = null;
 
 		const string Passphrase = "mysecretpassphrase";
@@ -64,13 +65,14 @@ namespace SharedClasses
 
 			try
 			{
-				MaximumIterations = 0;
-				foreach (string file in Directory.GetFiles(FaceDetectionInterop.GetFaceDetectionFolderPath(), "*.bmp", SearchOption.AllDirectories))
-				{
-					MaximumIterations++;
-					trainingImages.Add(new Image<Gray, byte>(file));
-					labels.Add(Path.GetDirectoryName(file).Split('\\')[Path.GetDirectoryName(file).Split('\\').Length - 1]);
-				}
+				//MaximumIterations = 0;
+				//foreach (string file in Directory.GetFiles(FaceDetectionInterop.GetFaceDetectionFolderPath(), "*.bmp", SearchOption.AllDirectories))
+				//{
+				//	MaximumIterations++;
+				//	trainingImages.Add(new Image<Gray, byte>(file));
+				//	labels.Add(Path.GetDirectoryName(file).Split('\\')[Path.GetDirectoryName(file).Split('\\').Length - 1]);
+				//}
+
 
 				////Load of previus trainned faces and labels for each image
 				//string Labelsinfo = File.ReadAllText(Application.StartupPath + "/TrainedFaces/TrainedLabels.txt");
@@ -135,6 +137,7 @@ namespace SharedClasses
 				//test image with cubic interpolation type method
 				TrainedFace = result.Resize(100, 100, Emgu.CV.CvEnum.INTER.CV_INTER_CUBIC);
 				trainingImages.Add(TrainedFace);
+				trainingImage = TrainedFace;
 				labels.Add(textBox1.Text);
 
 				//Show face added in gray scale
@@ -143,29 +146,34 @@ namespace SharedClasses
 				//Write the number of triained faces in a file text for further load
 				//File.WriteAllText(Application.StartupPath + "/TrainedFaces/TrainedLabels.txt", trainingImages.ToArray().Length.ToString() + "%");
 
-				//Write the labels of triained faces in a file text for further load
-				for (int i = 1; i < trainingImages.ToArray().Length + 1; i++)
-				{
-					string dir = FaceDetectionInterop.GetFaceDetectionFolderPath() + "\\" + labels[i - 1];
-					if (!Directory.Exists(dir))
-						Directory.CreateDirectory(dir);
-					string filepath = dir + "\\face" + i + ".bmp";
+				FaceDetectionInterop.AddFace(trainingImage, Passphrase, Salt);
 
-					FaceDetectionInterop.AddFace(trainingImages.ToArray()[i - 1], Passphrase, Salt);
-					//CvArray<byte> bytes;
-					//MemoryStream ms = new MemoryStream();
-					//trainingImages.ToArray()[i - 1].ToBitmap().Save(ms, System.Drawing.Imaging.ImageFormat.Bmp);
-					//byte[] bs = ms.ToArray();
-					//foreach (byte b in bs) { }
+				////Write the labels of triained faces in a file text for further load
+				//for (int i = 1; i < trainingImages.ToArray().Length + 1; i++)
+				//{
+				//	string dir = FaceDetectionInterop.GetFaceDetectionFolderPath() + "\\" + labels[i - 1];
+				//	if (!Directory.Exists(dir))
+				//		Directory.CreateDirectory(dir);
+				//	string filepath = dir + "\\face" + i + ".bmp";
 
-					//trainingImages.ToArray()[i - 1].Save(
-					//	//Application.StartupPath + "/TrainedFaces/face" + i + ".bmp"
-					//	filepath
-					//	);
-					//File.AppendAllText(Application.StartupPath + "/TrainedFaces/TrainedLabels.txt", labels.ToArray()[i - 1] + "%");
-				}
+				//	//CvArray<byte> bytes;
+				//	//MemoryStream ms = new MemoryStream();
+				//	//trainingImages.ToArray()[i - 1].ToBitmap().Save(ms, System.Drawing.Imaging.ImageFormat.Bmp);
+				//	//byte[] bs = ms.ToArray();
+				//	//foreach (byte b in bs) { }
 
-				MessageBox.Show(textBox1.Text + "´s face detected and added :)", "Training OK", MessageBoxButtons.OK, MessageBoxIcon.Information);
+				//	//trainingImages.ToArray()[i - 1].Save(
+				//	//	//Application.StartupPath + "/TrainedFaces/face" + i + ".bmp"
+				//	//	filepath
+				//	//	);
+				//	//File.AppendAllText(Application.StartupPath + "/TrainedFaces/TrainedLabels.txt", labels.ToArray()[i - 1] + "%");
+				//}
+				CustomBalloonTipwpf.ShowCustomBalloonTip(
+					"Face added",
+					"Detected and added face for " + textBox1.Text,
+					1000,
+					CustomBalloonTipwpf.IconTypes.Information);
+				//MessageBox.Show(textBox1.Text + "´s face detected and added :)", "Training OK", MessageBoxButtons.OK, MessageBoxIcon.Information);
 			}
 			catch (Exception exc)
 			{
@@ -207,7 +215,7 @@ namespace SharedClasses
 				if (trainingImages.ToArray().Length != 0)
 				{
 					//TermCriteria for face recognition with numbers of trained images like maxIteration
-					MCvTermCriteria termCrit = new MCvTermCriteria(MaximumIterations, 0.001);
+					MCvTermCriteria termCrit = new MCvTermCriteria(trainingImages.Count, 0.001);
 
 					//Eigen face recognizer
 					EigenObjectRecognizer recognizer = new EigenObjectRecognizer(

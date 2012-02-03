@@ -17,6 +17,7 @@
 				Topmost='True'
 				FontWeight='Bold'
 				ShowInTaskbar='False'
+				Loaded='customBalloonTipwpf_Loaded'
 				Closing='customBalloonTipwpf_Closing'>
 	<Window.Resources>
 		<sharedclasses:WrapPanelParentHeightToHeightConverter x:Key='wrapPanelParentHeightToHeightConverter' />

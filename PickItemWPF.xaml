@@ -5,7 +5,8 @@
 				Width='300'
 				Height='150'
 				x:Name='PickItemWPF1'
-				WindowStartupLocation='CenterScreen'>
+				WindowStartupLocation='CenterScreen'
+				Topmost='True'>
 	<Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition Height='auto' />

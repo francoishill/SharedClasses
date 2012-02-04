@@ -322,7 +322,7 @@ public class MicrosoftOfficeInterop
 //		TempScreenshotFile += "tmp123.jpg";
 
 //		System.Drawing.Bitmap b = ScreenAndDrawingInterop.CaptureScreen.CaptureScreenNow.GetDesktopImage();
-//		System.Drawing.Image image = b;
+//		System.Drawing.Image imageWithRectangles = b;
 //		b.Save(TempScreenshotFile);
 
 //		Microsoft.Office.Interop.Outlook.Application app = null;

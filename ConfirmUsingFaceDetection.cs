@@ -42,8 +42,8 @@ namespace SharedClasses
 
 			labelSecondsRemaining.Text = "";
 
-			VisualStudioInterop.GetEmbeddedResource("haarcascade_frontalface_default.xml", SettingsInterop.LocalAppdataPath("SharedClasses") + "\\haarcascade_frontalface_default.xml");
-			VisualStudioInterop.GetEmbeddedResource("haarcascade_eye.xml", SettingsInterop.LocalAppdataPath("SharedClasses") + "\\haarcascade_eye.xml");
+			VisualStudioInterop.GetEmbeddedResource_FirstOneEndingWith("haarcascade_frontalface_default.xml", SettingsInterop.LocalAppdataPath("SharedClasses") + "\\haarcascade_frontalface_default.xml");
+			VisualStudioInterop.GetEmbeddedResource_FirstOneEndingWith("haarcascade_eye.xml", SettingsInterop.LocalAppdataPath("SharedClasses") + "\\haarcascade_eye.xml");
 			face = new HaarCascade(SettingsInterop.LocalAppdataPath("SharedClasses") + @"\haarcascade_frontalface_default.xml");
 			eye = new HaarCascade(SettingsInterop.LocalAppdataPath("SharedClasses") + @"\haarcascade_eye.xml");
 

@@ -316,7 +316,7 @@ public class VisualStudioInterop
 				string DotNetCheckerFilenameEndswith = "DotNetChecker.dll";
 				string dotnetCheckerDllPath = @"C:\Program Files (x86)\NSIS\Plugins\DotNetChecker.dll";
 
-				if (!GetEmbeddedResource(DotNetCheckerFilenameEndswith, dotnetCheckerDllPath))
+				if (!GetEmbeddedResource_FirstOneEndingWith(DotNetCheckerFilenameEndswith, dotnetCheckerDllPath))
 					UserMessages.ShowWarningMessage("Could not find " + DotNetCheckerFilenameEndswith + " in resources");
 
 				string MakeNsisFilePath = @"C:\Program Files (x86)\NSIS\makensis.exe";
@@ -368,7 +368,7 @@ public class VisualStudioInterop
 		//bool HtmlFileFound = false;
 
 		string HtmlTemplateFileName = "VisualStudioInterop (publish page).html";
-		if (!GetEmbeddedResource(HtmlTemplateFileName, tempFilename))
+		if (!GetEmbeddedResource_FirstOneEndingWith(HtmlTemplateFileName, tempFilename))
 			UserMessages.ShowWarningMessage("Could not find Html file in resources: " + HtmlTemplateFileName);
 		else
 		{
@@ -472,7 +472,50 @@ public class VisualStudioInterop
 		}
 	}
 
-	public static bool GetEmbeddedResource(string Filename, string FileSaveLocation)
+	public static List<string> GetAllEmbeddedResourcesReturnFilePaths(Predicate<string> predicateToValidateOn, bool ShowErrorIfNoMatched = true)
+	{
+		List<string> tmplist = new List<string>();
+
+		foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+		{
+			//Assembly objAssembly = Assembly.GetExecutingAssembly();
+			try
+			{
+				string[] myResources = assembly.GetManifestResourceNames();
+				foreach (string reso in myResources)
+					if (predicateToValidateOn(reso))
+					{
+						Stream stream = assembly.GetManifestResourceStream(reso);
+						int length = (int)stream.Length;
+						byte[] bytesOfDotnetCheckerDLL = new byte[length];
+						stream.Read(bytesOfDotnetCheckerDLL, 0, length);
+						stream.Close();
+						string tmpFilePath = Path.GetTempPath() + Path.GetFileName(reso);
+						while (tmplist.Contains(tmpFilePath, StringComparer.InvariantCultureIgnoreCase))
+							tmpFilePath = Path.GetDirectoryName(tmpFilePath) + "\\" + Path.GetFileNameWithoutExtension(tmpFilePath) + "_" + Path.GetExtension(tmpFilePath);
+						FileStream fileStream = new FileStream(tmpFilePath, FileMode.Create);
+						fileStream.Write(bytesOfDotnetCheckerDLL, 0, length);
+						fileStream.Close();
+						tmplist.Add(tmpFilePath);
+
+						bytesOfDotnetCheckerDLL = null;
+					}
+			}
+			catch { }
+		}
+		if (ShowErrorIfNoMatched && tmplist.Count == 0)
+		{
+			string callStack = "";
+			StackTrace stackTrace = new StackTrace();           // get call stack
+			StackFrame[] stackFrames = stackTrace.GetFrames();  // get method calls (frames)
+			foreach (StackFrame stackFrame in stackFrames)
+				callStack += Environment.NewLine + stackFrame.GetMethod().Name;   // write method name
+			UserMessages.ShowWarningMessage("Could not find resource name. Call stack: " + callStack);
+		}
+		return tmplist;
+	}
+
+	public static bool GetEmbeddedResource(Predicate<string> predicateToValidateOn, string FileSaveLocation)
 	{
 		foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
 		{
@@ -481,7 +524,7 @@ public class VisualStudioInterop
 			{
 				string[] myResources = assembly.GetManifestResourceNames();
 				foreach (string reso in myResources)
-					if (reso.ToLower().EndsWith(Filename.ToLower()))
+					if (predicateToValidateOn(reso))
 					{
 						Stream stream = assembly.GetManifestResourceStream(reso);
 						int length = (int)stream.Length;
@@ -498,5 +541,10 @@ public class VisualStudioInterop
 			catch { }
 		}
 		return false;
+	}
+
+	public static bool GetEmbeddedResource_FirstOneEndingWith(string EndOfFilename, string FileSaveLocation)
+	{
+		return GetEmbeddedResource(reso => reso.ToLower().EndsWith(EndOfFilename.ToLower()), FileSaveLocation);
 	}
 }

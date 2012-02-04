@@ -13,7 +13,7 @@ namespace SharedClasses
 	public class ScreenAndDrawingInterop
 	{
 		/// <summary>
-		/// Capture a screentshot (using the given rectangle) and save it to an image file.
+		/// Capture a screentshot (using the given rectangle) and save it to an imageWithRectangles file.
 		/// </summary>
 		/// <param name="rect"></param>
 		/// <param name="FilePath"></param>

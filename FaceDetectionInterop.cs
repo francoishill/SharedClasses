@@ -33,6 +33,7 @@ namespace SharedClasses
 			{ "opencv_video231.dll", false },
 			{ "Emgu.CV.UI.dll", false },
 			{ "Emgu.CV.dll", false },
+			{ "Emgu.CV.GPU.dll", false},
 			{ "Emgu.Util.dll", false }
 		};
 

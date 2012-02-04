@@ -32,6 +32,7 @@ public partial class PickItemForm : Form
 	public static object PickItem(Type ObjectType, Array itemArray, string Message, object defaultItem, IWin32Window owner = null)
 	{
 		PickItemForm pickItemForm = new PickItemForm();
+		if (owner == null) pickItemForm.StartPosition = FormStartPosition.CenterScreen;
 		pickItemForm.label_Message.Text = Message;
 		pickItemForm.comboBox_ItemPicked.Items.Clear();
 		if (itemArray != null)

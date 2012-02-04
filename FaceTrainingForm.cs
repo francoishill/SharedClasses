@@ -46,17 +46,17 @@ namespace SharedClasses
 		{
 			InitializeComponent();
 			//Load haarcascades for face detection
-			VisualStudioInterop.GetEmbeddedResource("haarcascade_frontalface_default.xml", SettingsInterop.LocalAppdataPath("SharedClasses") + "\\haarcascade_frontalface_default.xml");
+			VisualStudioInterop.GetEmbeddedResource_FirstOneEndingWith("haarcascade_frontalface_default.xml", SettingsInterop.LocalAppdataPath("SharedClasses") + "\\haarcascade_frontalface_default.xml");
 			face = new HaarCascade(SettingsInterop.LocalAppdataPath("SharedClasses") + @"\haarcascade_frontalface_default.xml");
 			
-			VisualStudioInterop.GetEmbeddedResource("haarcascade_eye.xml", SettingsInterop.LocalAppdataPath("SharedClasses") + "\\haarcascade_eye.xml");
+			VisualStudioInterop.GetEmbeddedResource_FirstOneEndingWith("haarcascade_eye.xml", SettingsInterop.LocalAppdataPath("SharedClasses") + "\\haarcascade_eye.xml");
 			eye = new HaarCascade(SettingsInterop.LocalAppdataPath("SharedClasses") + @"\haarcascade_eye.xml");
 
-			VisualStudioInterop.GetEmbeddedResource("haarcascade_mcs_nose.xml", SettingsInterop.LocalAppdataPath("SharedClasses") + "\\haarcascade_mcs_nose.xml");
+			VisualStudioInterop.GetEmbeddedResource_FirstOneEndingWith("haarcascade_mcs_nose.xml", SettingsInterop.LocalAppdataPath("SharedClasses") + "\\haarcascade_mcs_nose.xml");
 			nose = new HaarCascade(SettingsInterop.LocalAppdataPath("SharedClasses") + @"\haarcascade_mcs_nose.xml");
 
 			//Note that it uses left eye xml file because the image is forcebly flipped horizontally
-			VisualStudioInterop.GetEmbeddedResource("haarcascade_lefteye_2splits.xml", SettingsInterop.LocalAppdataPath("SharedClasses") + "\\haarcascade_lefteye_2splits.xml");
+			VisualStudioInterop.GetEmbeddedResource_FirstOneEndingWith("haarcascade_lefteye_2splits.xml", SettingsInterop.LocalAppdataPath("SharedClasses") + "\\haarcascade_lefteye_2splits.xml");
 			righteye = new HaarCascade(SettingsInterop.LocalAppdataPath("SharedClasses") + @"\haarcascade_lefteye_2splits.xml");
 
 			try

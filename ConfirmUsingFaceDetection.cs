@@ -108,7 +108,16 @@ namespace SharedClasses
 		private void ConfirmUsingFaceDetection_Load(object sender, EventArgs e)
 		{
 			//Initialize the capture device
-			grabber = new Capture();
+			try
+			{
+				grabber = new Capture();
+			}
+			catch (Exception exc)
+			{
+				if (UserMessages.Confirm("Cannot start face detection from camera (do you want to continue without face recognition): " + exc.Message))
+					this.DialogResult = System.Windows.Forms.DialogResult.OK;
+				return;
+			}
 			grabber.QueryFrame();
 			//Initialize the FrameGraber event
 			Application.Idle += new EventHandler(FrameGrabber);
@@ -122,7 +131,8 @@ namespace SharedClasses
 			//label3.Text = "0";
 			//label4.Text = "";
 			//NamePersons.Add("");
-
+			if (grabber == null)
+				return;
 
 			//Get the current frame form capture device
 			Image<Bgr, Byte> currentFrame = grabber.QueryFrame().Resize(320, 240, Emgu.CV.CvEnum.INTER.CV_INTER_CUBIC).Flip(FLIP.HORIZONTAL);
@@ -217,17 +227,31 @@ namespace SharedClasses
 				this.DialogResult = System.Windows.Forms.DialogResult.Cancel;
 		}
 
-		public static bool ConfirmUsingFacedetection(string RequiredFaceName, string UserMessage, int? TimeOutSeconds_nullIfNever, IWin32Window owner = null)
-		{
-			ConfirmUsingFaceDetection frm = new ConfirmUsingFaceDetection(RequiredFaceName, UserMessage, TimeOutSeconds_nullIfNever);
-			return frm.ShowDialog(owner) == System.Windows.Forms.DialogResult.OK;
-		}
-
 		private void ConfirmUsingFaceDetection_FormClosing(object sender, FormClosingEventArgs e)
 		{
-			grabber.Dispose();
-			grabber = null;
+			if (grabber != null)
+			{
+				grabber.Dispose();
+				grabber = null;
+			}
 			Application.Idle -= new EventHandler(FrameGrabber);
+		}
+	}
+
+	public partial class ConfirmUsingFaceDetection
+	{
+		public static bool ConfirmUsingFacedetection(string RequiredFaceName, string UserMessage, int? TimeOutSeconds_nullIfNever, IWin32Window owner = null)
+		{
+			//try
+			//{
+				ConfirmUsingFaceDetection frm = new ConfirmUsingFaceDetection(RequiredFaceName, UserMessage, TimeOutSeconds_nullIfNever);
+				return frm.ShowDialog(owner) == System.Windows.Forms.DialogResult.OK;
+			//}
+			//catch (Exception exc)
+			//{
+			//	UserMessages.ShowWarningMessage("Cannot confirm using facedetection: " + exc.Message);
+			//	return false;
+			//}
 		}
 	}
 }

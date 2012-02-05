@@ -128,7 +128,7 @@ public class NetworkInterop
 		};
 	}
 
-	private static void SetupServerSocketSettings(Socket serverListeningSocketToUse, int listeningPort, int maxBufferPerTransfer, int maxNumberPendingConnections)
+	public static void SetupServerSocketSettings(ref Socket serverListeningSocketToUse, int listeningPort, int maxBufferPerTransfer, int maxNumberPendingConnections)
 	{
 		serverListeningSocketToUse.NoDelay = true;
 		serverListeningSocketToUse.Ttl = 112;
@@ -138,7 +138,7 @@ public class NetworkInterop
 		serverListeningSocketToUse.Listen(maxNumberPendingConnections);
 	}
 
-	private static bool IsSocketTryingToCloseUponApplicationExit(SocketException sexc)
+	public static bool IsSocketTryingToCloseUponApplicationExit(SocketException sexc)
 	{
 		/* This is normal behavior when interrupting a blocking socket (i.e. waiting for clients). WSACancelBlockingCall is called and a SocketException
 		is thrown (see my post above). Just catch this exception and use it to exit the thread ('break' in the infinite while loop).
@@ -146,7 +146,7 @@ public class NetworkInterop
 		return sexc.Message.ToLower().Contains("WSACancelBlockingCall".ToLower());
 	}
 
-	private static bool GetBytesAvailable(ref Socket socketToCheck, out int AvailableBytes)
+	public static bool GetBytesAvailable(ref Socket socketToCheck, out int AvailableBytes)
 	{
 		if (socketToCheck == null)
 		{
@@ -416,7 +416,7 @@ public class NetworkInterop
 		if (formToHookSocketClosingIntoFormDisposedEvent != null)
 			HookIntoFormDisposedEventAndCloseSocket(serverListeningSocketToUse, formToHookSocketClosingIntoFormDisposedEvent);
 
-		SetupServerSocketSettings(serverListeningSocketToUse, listeningPort, maxBufferPerTransfer, maxNumberPendingConnections);
+		SetupServerSocketSettings(ref serverListeningSocketToUse, listeningPort, maxBufferPerTransfer, maxNumberPendingConnections);
 
 		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, TextFeedbackEvent, "Server started, waiting for clients...");
 

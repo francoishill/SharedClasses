@@ -80,7 +80,7 @@ public class ThreadingInterop
 	/// </summary>
 	public class WaitIndicator : IDisposable
 	{
-		class ProgressForm : Form
+		public class ProgressForm : Form
 		{
 			public ProgressForm()
 			{
@@ -149,7 +149,7 @@ public class ThreadingInterop
 			}
 		}
 
-		ProgressForm progressForm;
+		public ProgressForm progressForm;
 		Thread thread;
 		bool disposed = false; //to avoid redundant call
 		public WaitIndicator()

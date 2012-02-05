@@ -7,8 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using ICommandWithHandler = InlineCommands.TempNewCommandsManagerClass.ICommandWithHandler;
-using InlineCommands;
+using ICommandWithHandler = InlineCommandToolkit.InlineCommands.ICommandWithHandler;
+using InlineCommandToolkit;
 
 namespace SharedClasses
 {
@@ -40,7 +40,7 @@ namespace SharedClasses
 
 			StylingInterop.SetTreeviewVistaStyle(treeView_CommandList);
 			treeView_CommandList.Nodes.Clear();
-			foreach (ICommandWithHandler comm in TempNewCommandsManagerClass.ListOfInitializedCommandInterfaces)
+			foreach (ICommandWithHandler comm in InlineCommandToolkit.CommandsManagerClass.ListOfInitializedCommandInterfaces)
 				treeView_CommandList.Nodes.Add(new TreeNode()
 				{
 					Name = comm.CommandName,
@@ -57,9 +57,10 @@ namespace SharedClasses
 				if (treeView_CommandList.SelectedNode != null && treeView_CommandList.SelectedNode.Tag is ICommandWithHandler)
 				{
 					ICommandWithHandler comm = treeView_CommandList.SelectedNode.Tag as ICommandWithHandler;
-					TempNewCommandsManagerClass.PerformCommandFromString(
+					InlineCommandToolkit.CommandsManagerClass.PerformCommandFromString(
 						comm,
 						textFeedbackEvent,
+						null,
 						richTextBox_CommandLine.Text);
 				}
 			}

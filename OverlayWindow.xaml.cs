@@ -16,7 +16,7 @@ using System.Windows.Media.Animation;
 using System.Reflection;
 using System.IO;
 using System.Diagnostics;
-using InlineCommands;
+using InlineCommandToolkit;
 
 /// <summary>
 /// Interaction logic for MainWindow.xaml
@@ -286,7 +286,8 @@ public partial class OverlayWindow : Window
 	{
 		if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
 		{
-			string commandName = "";
+			//TODO: Had to comment out this code after refactoring, did not have time to have a look at it to refactor it aswell
+			/*string commandName = "";
 			if (sender is CommandUserControl)
 				commandName = (sender as CommandUserControl).labelTitle.Content.ToString();
 			else if (sender is TextBox && (sender as TextBox).Tag is InlineCommands.InlineCommands.CommandDetails)
@@ -322,7 +323,7 @@ public partial class OverlayWindow : Window
 					else if (Directory.Exists(filedropped))
 						UserMessages.ShowInfoMessage("Folder " + filedropped + " was dropped onto " + commandName);
 					else UserMessages.ShowWarningMessage("File/folder not found: " + filedropped);
-			}
+			}*/
 		}
 	}
 

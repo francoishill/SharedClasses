@@ -5,12 +5,221 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+//TODO: Check out extension functions (a static class with methods which uses this as one of the parameters)
+public static class StringExtensions
+{
+	public static bool IsFrancois(this string str, bool CaseSensitive)
+	{
+		return str.Equals("Francois", CaseSensitive ? StringComparison.InvariantCulture : StringComparison.InvariantCultureIgnoreCase);
+	}
+}
+
+public static class SocketExtensions
+{
+	private static bool IsConnectionSuccessful = false;
+	private static Exception socketexception;
+	private static ManualResetEvent TimeoutObject = new ManualResetEvent(false);
+
+	public static bool BeginConnect_Ext(this TcpClient client, IPEndPoint remoteEndPoint, int timeoutMSec, out string errorMessage)
+	{
+		TimeoutObject.Reset();
+		socketexception = null;
+
+		string serverip = Convert.ToString(remoteEndPoint.Address);
+		int serverport = remoteEndPoint.Port;
+		//TcpClient tcpclient = new TcpClient();
+		//client = new TcpClient();
+		//client = new TcpClient();
+
+		client.BeginConnect(serverip, serverport,
+			new AsyncCallback(BeginConnect_CallBackMethod), client);
+
+		if (TimeoutObject.WaitOne(timeoutMSec, false))
+		{
+			if (IsConnectionSuccessful)
+			{
+				errorMessage = null;
+				return true;
+			}
+			else
+			{
+				errorMessage = socketexception.Message;
+				return false;
+				//throw socketexception;
+			}
+		}
+		else
+		{
+			client.Close();
+			client = null;
+			errorMessage = "Timeout exception on connecting socket";
+			return false;
+			//throw new TimeoutException("TimeOut Exception");
+			//UserMessages.ShowErrorMessage("Timeout on connection");
+			//return null;
+		}
+	}
+	private static void BeginConnect_CallBackMethod(IAsyncResult asyncresult)
+	{
+		try
+		{
+			IsConnectionSuccessful = false;
+			TcpClient tcpclient = asyncresult.AsyncState as TcpClient;
+
+			if (tcpclient.Client != null)
+			{
+				tcpclient.EndConnect(asyncresult);
+				IsConnectionSuccessful = true;
+			}
+		}
+		catch (Exception ex)
+		{
+			IsConnectionSuccessful = false;
+			socketexception = ex;
+		}
+		finally
+		{
+			TimeoutObject.Set();
+		}
+	}
+
+	//public static bool BeginWrite_Ext(this TcpClient client, , out string errorMessage)
+	//{
+	//	TimeoutObject.Reset();
+	//	socketexception = null;
+
+	//	string serverip = Convert.ToString(remoteEndPoint.Address);
+	//	int serverport = remoteEndPoint.Port;
+	//	//TcpClient tcpclient = new TcpClient();
+	//	//client = new TcpClient();
+	//	//client = new TcpClient();
+
+	//	client.BeginConnect(serverip, serverport,
+	//		new AsyncCallback(CallBackMethod), client);
+
+	//	if (TimeoutObject.WaitOne(timeoutMSec, false))
+	//	{
+	//		if (IsConnectionSuccessful)
+	//		{
+	//			errorMessage = null;
+	//			return true;
+	//		}
+	//		else
+	//		{
+	//			errorMessage = socketexception.Message;
+	//			return false;
+	//			//throw socketexception;
+	//		}
+	//	}
+	//	else
+	//	{
+	//		client.Close();
+	//		client = null;
+	//		errorMessage = "Timeout exception on connecting socket";
+	//		return false;
+	//		//throw new TimeoutException("TimeOut Exception");
+	//		//UserMessages.ShowErrorMessage("Timeout on connection");
+	//		//return null;
+	//	}
+	//}
+	//private static void CallBackMethod(IAsyncResult asyncresult)
+	//{
+	//	try
+	//	{
+	//		IsConnectionSuccessful = false;
+	//		TcpClient tcpclient = asyncresult.AsyncState as TcpClient;
+
+	//		if (tcpclient.Client != null)
+	//		{
+	//			tcpclient.EndConnect(asyncresult);
+	//			IsConnectionSuccessful = true;
+	//		}
+	//	}
+	//	catch (Exception ex)
+	//	{
+	//		IsConnectionSuccessful = false;
+	//		socketexception = ex;
+	//	}
+	//	finally
+	//	{
+	//		TimeoutObject.Set();
+	//	}
+	//}
+
+	///// <summary>
+	///// Connects the specified socket.
+	///// </summary>
+	///// <param name="socket">The socket.</param>
+	///// <param name="endpoint">The IP endpoint.</param>
+	///// <param name="timeout">The timeout.</param>
+	//public static bool BeginConnect_Ext(this Socket socket, EndPoint endpoint, TimeSpan timeout)
+	//{
+	//	var result = socket.BeginConnect(endpoint, null, null);
+
+	//	bool success = result.AsyncWaitHandle.WaitOne(timeout, true);
+	//	if (!success)
+	//	{
+	//		socket.Close();
+	//		return false;
+	//		//throw new SocketException(10060); // Connection timed out.
+	//	}
+	//	else return true;
+	//}
+}
+
 public class NetworkInterop
 {
-	public static IPAddress GetIPAddressFromString(string ipAddressString)
+	private delegate IPHostEntry GetHostEntryHandler(string ip);
+
+	public static IPAddress GetIPAddressFromString(string ipAddressString, int timeout = 10000)
+	{
+		bool resolveDnsMode = false;
+		foreach (char chr in ipAddressString)
+			if (!char.IsNumber(chr) && chr != '.')
+				resolveDnsMode = true;
+		IPAddress returnIPAddress = null;
+
+		if (!resolveDnsMode && !IPAddress.TryParse(ipAddressString, out returnIPAddress))
+		{
+			UserMessages.ShowErrorMessage("Invalid IP address: " + (ipAddressString ?? ""));
+			return null;
+		}
+		if (resolveDnsMode)
+		{
+			try
+			{
+				GetHostEntryHandler callback = new GetHostEntryHandler(Dns.GetHostEntry);
+				IAsyncResult result = callback.BeginInvoke(ipAddressString, null, null);
+				if (result.AsyncWaitHandle.WaitOne(timeout, false))
+				{
+					IPHostEntry iphostEntry = callback.EndInvoke(result);
+					if (iphostEntry == null || iphostEntry.AddressList.Length == 0)
+					{
+						UserMessages.ShowErrorMessage("Could not resolve DNS from " + ipAddressString);
+						return null;
+					}
+					else returnIPAddress = iphostEntry.AddressList[0];
+				}
+				else
+				{
+					UserMessages.ShowErrorMessage("Timeout to resolve DNS from " + ipAddressString);
+					return null;
+				}
+			}
+			catch (Exception exc)
+			{
+				UserMessages.ShowErrorMessage("Error occurred resolving DNS from " + ipAddressString + ": " + exc.Message);
+				return null;
+			}
+		}
+		return returnIPAddress;
+	}
+
+	/*public static IPAddress GetIPAddressFromString(string ipAddressString)
 	{
 		bool resolveDnsMode = false;
 		foreach (char chr in ipAddressString)
@@ -34,7 +243,7 @@ public class NetworkInterop
 			else returnIPAddress = iphostEntry.AddressList[0];
 		}
 		return returnIPAddress;
-	}
+	}*/
 
 	public static IPAddress GetLocalIPaddress()
 	{

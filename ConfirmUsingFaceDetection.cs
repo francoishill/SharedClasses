@@ -236,22 +236,53 @@ namespace SharedClasses
 			}
 			Application.Idle -= new EventHandler(FrameGrabber);
 		}
-	}
 
-	public partial class ConfirmUsingFaceDetection
-	{
-		public static bool ConfirmUsingFacedetection(string RequiredFaceName, string UserMessage, int? TimeOutSeconds_nullIfNever, IWin32Window owner = null)
+		private void textBoxManuallyEnteredPassword_Leave(object sender, EventArgs e)
 		{
-			//try
-			//{
-				ConfirmUsingFaceDetection frm = new ConfirmUsingFaceDetection(RequiredFaceName, UserMessage, TimeOutSeconds_nullIfNever);
-				return frm.ShowDialog(owner) == System.Windows.Forms.DialogResult.OK;
-			//}
-			//catch (Exception exc)
-			//{
-			//	UserMessages.ShowWarningMessage("Cannot confirm using facedetection: " + exc.Message);
-			//	return false;
-			//}
+			textBoxManuallyEnteredPassword.Focus();
+		}
+
+		private void buttonUseThisPassword_Click(object sender, EventArgs e)
+		{
+			if (textBoxManuallyEnteredPassword.Text.Trim().Length > 0
+				|| UserMessages.Confirm("The password is blank, is this the intention?"))
+				this.DialogResult = System.Windows.Forms.DialogResult.Yes;
+		}
+
+		/// <summary>
+		/// Shows a facial recognition form, it will look for a face and if the name is equal to the RequiredFaceName return true.
+		/// </summary>
+		/// <param name="RequiredFaceName">The face name it should look for.</param>
+		/// <param name="UserMessage">The prompt message to show to the user.</param>
+		/// <param name="TimeOutSeconds_nullIfNever">The amount of seconds to wait before timing out (cause the result to be false).</param>
+		/// <param name="PasswordFromTextbox">If a face cannot be recognized, the user may type the password manually.</param>
+		/// <param name="owner">The owner window.</param>
+		/// <returns>Returns true if facial recognition was successful, null if a password was entered, false if it was cancelled (or failed after timeout).</returns>
+		public static bool? ConfirmUsingFacedetection(string RequiredFaceName, string UserMessage, int? TimeOutSeconds_nullIfNever, out string PasswordFromTextbox, IWin32Window owner = null)
+		{
+			ConfirmUsingFaceDetection frm = new ConfirmUsingFaceDetection(RequiredFaceName, UserMessage, TimeOutSeconds_nullIfNever);
+			DialogResult dr = frm.ShowDialog(owner);
+			if (dr == DialogResult.OK)//Face was confirmed
+			{
+				PasswordFromTextbox = null;
+				return true;
+			}
+			else if (dr == DialogResult.Yes)//Face was not recognized but manual password was entered
+			{
+				PasswordFromTextbox = frm.textBoxManuallyEnteredPassword.Text;
+				return null;
+			}
+			else//Window was cancelled or timeout has ocurred
+			{
+				PasswordFromTextbox = null;
+				return false;
+			}
+		}
+
+		private void textBoxManuallyEnteredPassword_KeyPress(object sender, KeyPressEventArgs e)
+		{
+			if ((int)e.KeyChar == 10 || (int)e.KeyChar == 13)
+				buttonUseThisPassword.PerformClick();
 		}
 	}
 }

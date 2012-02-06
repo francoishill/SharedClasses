@@ -12,18 +12,18 @@ public class NetworkInterop
 {
 	public static IPAddress GetIPAddressFromString(string ipAddressString)
 	{
-		bool resolveDndMode = false;
+		bool resolveDnsMode = false;
 		foreach (char chr in ipAddressString)
 			if (!char.IsNumber(chr) && chr != '.')
-				resolveDndMode = true;
+				resolveDnsMode = true;
 		IPAddress returnIPAddress = null;
 
-		if (!resolveDndMode && !IPAddress.TryParse(ipAddressString, out returnIPAddress))
+		if (!resolveDnsMode && !IPAddress.TryParse(ipAddressString, out returnIPAddress))
 		{
 			UserMessages.ShowErrorMessage("Invalid IP address: " + (ipAddressString ?? ""));
 			return null;
 		}
-		if (resolveDndMode)
+		if (resolveDnsMode)
 		{
 			IPHostEntry iphostEntry = Dns.GetHostEntry(ipAddressString);
 			if (iphostEntry == null || iphostEntry.AddressList.Length == 0)
@@ -745,8 +745,8 @@ public class NetworkInterop
 		try
 		{
 			socketToInitialize = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-			socketToInitialize.ReceiveTimeout = 1000;
-			socketToInitialize.SendTimeout = 1000;
+			socketToInitialize.ReceiveTimeout = 5000;
+			socketToInitialize.SendTimeout = 5000;
 			socketToInitialize.NoDelay = true;
 			socketToInitialize.Ttl = 112;
 			socketToInitialize.SendBufferSize = maxBufferPerTransfer;

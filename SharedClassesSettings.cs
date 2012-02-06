@@ -199,16 +199,28 @@ namespace SharedClasses
 
 		public static string Decrypt(string OriginalString, string PropertyName, bool RequireFacialAutorisationEverytime)
 		{
-			if ((!RequireFacialAutorisationEverytime && AuthorizationWasDoneOnce)
-				|| ConfirmUsingFaceDetection.ConfirmUsingFacedetection(GlobalSettings.FaceDetectionInteropSettings.Instance.FaceName, "Face detection for '" + PropertyName + "'", TimeOutSeconds_nullIfNever: GlobalSettings.FaceDetectionInteropSettings.Instance.TimeOutSecondsBeforeAutoFailing))
+			if (!RequireFacialAutorisationEverytime && AuthorizationWasDoneOnce)
 			{
 				AuthorizationWasDoneOnce = true;
 				return EncodeAndDecodeInterop.DecodeString(OriginalString, GenericSettings.EncodingType);
 			}
 			else
 			{
-				//UserMessages.ShowWarningMessage("Face detection failed, cannot decrypt string");
-				return null;
+				string manualPasswordEnterd;
+				bool? confirmedFaceDetection = ConfirmUsingFaceDetection.ConfirmUsingFacedetection(GlobalSettings.FaceDetectionInteropSettings.Instance.FaceName, "Face detection for '" + PropertyName + "'", TimeOutSeconds_nullIfNever: GlobalSettings.FaceDetectionInteropSettings.Instance.TimeOutSecondsBeforeAutoFailing, PasswordFromTextbox: out manualPasswordEnterd);
+				if (confirmedFaceDetection == true)//Face was confirmed
+				{
+					AuthorizationWasDoneOnce = true;
+					return EncodeAndDecodeInterop.DecodeString(OriginalString, GenericSettings.EncodingType);
+				}
+				else if (confirmedFaceDetection == null)//Face was not recognized but manual password was entered
+				{
+					return manualPasswordEnterd;
+				}
+				else// if (confirmedFaceDetection == false)//Window was cancelled or timeout has ocurred
+				{
+					return null;
+				}
 			}
 		}
 

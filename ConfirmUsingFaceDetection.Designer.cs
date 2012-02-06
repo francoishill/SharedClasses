@@ -33,6 +33,8 @@
 			this.timer1 = new System.Windows.Forms.Timer(this.components);
 			this.labelSecondsRemaining = new System.Windows.Forms.Label();
 			this.labelUserPrompt = new System.Windows.Forms.Label();
+			this.textBoxManuallyEnteredPassword = new System.Windows.Forms.TextBox();
+			this.buttonUseThisPassword = new System.Windows.Forms.Button();
 			((System.ComponentModel.ISupportInitialize)(this.imageBoxFrameGrabber)).BeginInit();
 			this.SuspendLayout();
 			// 
@@ -55,7 +57,7 @@
 			this.labelSecondsRemaining.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.labelSecondsRemaining.AutoSize = true;
 			this.labelSecondsRemaining.ForeColor = System.Drawing.Color.Gray;
-			this.labelSecondsRemaining.Location = new System.Drawing.Point(12, 285);
+			this.labelSecondsRemaining.Location = new System.Drawing.Point(8, 316);
 			this.labelSecondsRemaining.Name = "labelSecondsRemaining";
 			this.labelSecondsRemaining.Size = new System.Drawing.Size(35, 13);
 			this.labelSecondsRemaining.TabIndex = 6;
@@ -74,11 +76,34 @@
 			this.labelUserPrompt.Text = "Face detection for:";
 			this.labelUserPrompt.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
 			// 
+			// textBoxManuallyEnteredPassword
+			// 
+			this.textBoxManuallyEnteredPassword.Location = new System.Drawing.Point(11, 289);
+			this.textBoxManuallyEnteredPassword.Name = "textBoxManuallyEnteredPassword";
+			this.textBoxManuallyEnteredPassword.Size = new System.Drawing.Size(172, 20);
+			this.textBoxManuallyEnteredPassword.TabIndex = 8;
+			this.textBoxManuallyEnteredPassword.UseSystemPasswordChar = true;
+			this.textBoxManuallyEnteredPassword.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.textBoxManuallyEnteredPassword_KeyPress);
+			this.textBoxManuallyEnteredPassword.Leave += new System.EventHandler(this.textBoxManuallyEnteredPassword_Leave);
+			// 
+			// buttonUseThisPassword
+			// 
+			this.buttonUseThisPassword.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.buttonUseThisPassword.Location = new System.Drawing.Point(217, 287);
+			this.buttonUseThisPassword.Name = "buttonUseThisPassword";
+			this.buttonUseThisPassword.Size = new System.Drawing.Size(114, 23);
+			this.buttonUseThisPassword.TabIndex = 9;
+			this.buttonUseThisPassword.Text = "Use &this password";
+			this.buttonUseThisPassword.UseVisualStyleBackColor = true;
+			this.buttonUseThisPassword.Click += new System.EventHandler(this.buttonUseThisPassword_Click);
+			// 
 			// ConfirmUsingFaceDetection
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(343, 307);
+			this.ClientSize = new System.Drawing.Size(343, 338);
+			this.Controls.Add(this.buttonUseThisPassword);
+			this.Controls.Add(this.textBoxManuallyEnteredPassword);
 			this.Controls.Add(this.labelUserPrompt);
 			this.Controls.Add(this.labelSecondsRemaining);
 			this.Controls.Add(this.imageBoxFrameGrabber);
@@ -101,5 +126,7 @@
 		private System.Windows.Forms.Timer timer1;
 		private System.Windows.Forms.Label labelSecondsRemaining;
 		private System.Windows.Forms.Label labelUserPrompt;
+		private System.Windows.Forms.Button buttonUseThisPassword;
+		public System.Windows.Forms.TextBox textBoxManuallyEnteredPassword;
 	}
 }

@@ -7,7 +7,7 @@ using System.Runtime.Remoting.Channels.Http;
 using CookComputing.XmlRpc;
 using SharedClasses;
 
-//Client side settings
+//ClientOnServerSide side settings
 //[XmlRpcUrl("http://fjh.dyndns.org:5678/DynamicCodeInvoking/xmlrpc")]
 public interface Iclientside_DynamicCodeInvokingServerClass : IXmlRpcProxy
 {

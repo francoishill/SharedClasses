@@ -200,7 +200,7 @@ public class NsisInterop
 					StrCpy $dotNetReadableVersion ""4.0 Full""
 				${ElseIf} ${FrameworkVersion} == ""40Client""
 					StrCpy $dotNetUrl ${DOTNET40Client_URL}
-					StrCpy $dotNetReadableVersion ""4.0 Client""
+					StrCpy $dotNetReadableVersion ""4.0 ClientOnServerSide""
 				${ElseIf} ${FrameworkVersion} == ""35""
 					StrCpy $dotNetUrl ${DOTNET35_URL}
 					StrCpy $dotNetReadableVersion ""3.5""
@@ -680,7 +680,7 @@ public class NsisInterop
 				if (DotnetFrameworkTargeted == DotnetFrameworkTargetedEnum.DotNet4full)
 					tmpList.Add(Spacer + @"!insertmacro CheckNetFramework 40Full ; if your application targets .NET 4.0 Full Framework");
 				if (DotnetFrameworkTargeted == DotnetFrameworkTargetedEnum.DotNet4client)
-					tmpList.Add(Spacer + @"!insertmacro CheckNetFramework 40Client ; if your application targets .NET 4.0 Client Framework");
+					tmpList.Add(Spacer + @"!insertmacro CheckNetFramework 40Client ; if your application targets .NET 4.0 ClientOnServerSide Framework");
 				if (DotnetFrameworkTargeted == DotnetFrameworkTargetedEnum.DotNet3_5)
 					tmpList.Add(Spacer + @"!insertmacro CheckNetFramework 35 ; if your application targets .NET 3.5 Framework");
 				if (DotnetFrameworkTargeted == DotnetFrameworkTargetedEnum.DotNet3_0)

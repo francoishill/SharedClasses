@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -143,7 +144,7 @@ public static class SocketExtensions
 	//		IsConnectionSuccessful = false;
 	//		TcpClient tcpclient = asyncresult.AsyncState as TcpClient;
 
-	//		if (tcpclient.Client != null)
+	//		if (tcpclient.ClientOnServerSide != null)
 	//		{
 	//			tcpclient.EndConnect(asyncresult);
 	//			IsConnectionSuccessful = true;
@@ -1240,193 +1241,476 @@ public class NetworkInterop
 			ns.Close();
 			client.Close();
 			connections--;
-			Console.WriteLine("Client disconnected: {0} active connections",
+			Console.WriteLine("ClientOnServerSide disconnected: {0} active connections",
 												 connections);
 		}
 	}*/
 }
 
-
-public class AsyncTcpClient
+public class StateObject
 {
-	private IPAddress[] addresses;
-	private int port;
-	private WaitHandle addressesSet;
+	// ClientOnServerSide  socket.
+	public Socket workSocket = null;
+	// Size of receive buffer.
+	public const int BufferSize = 1024;
+	// Receive buffer.
+	public byte[] buffer = new byte[BufferSize];
+	// Received data string.
+	public StringBuilder sb = new StringBuilder();
+}
+
+public class MyEventArgs : EventArgs
+{
+	private TcpClient  sock;
+	public TcpClient clientSock
+	{
+		get { return sock; }
+		set { sock = value; }
+	}
+
+	public MyEventArgs(TcpClient tcpClient)
+	{
+		sock = tcpClient;
+	}
+
+
+}
+
+public class Server
+{
+	public TextFeedbackEventHandler TextFeedbackEvent;
+
+	private TcpListener tcpServer;
 	private TcpClient tcpClient;
-	private int failedConnectionCount;
+	private Thread th;
+	public ClientOnServerSide ctd;
+	private ArrayList formArray = new ArrayList();
+	private ArrayList threadArray = new ArrayList();
+	List<string> tvClientList = new List<string>();
+	public delegate void ChangedEventHandler(object sender, EventArgs e);
+	//public event ChangedEventHandler Changed;
 
-	/// <summary>
-	/// Construct a new client from a known IP Address
-	/// </summary>
-	/// <param name="address">The IP Address of the server</param>
-	/// <param name="port">The port of the server</param>
-	public AsyncTcpClient(IPAddress address, int port)
-		: this(new[] { address }, port)
+	public Server()
 	{
+		// Add Event to handle when a client is connected
+		//Changed += new ChangedEventHandler(ClientAdded);
+
+		// Add node in Tree View
+		//TreeNode node;
+		//node = tvClientList.Add("Connected Clients");
+		//ImageList il = new ImageList();
+		//   il.Images.Add(new Icon("audio.ico"));
+		//il.Images.Add(new Icon("messenger.ico"));
+		//tvClientList.ImageList = il;
+		//node.ImageIndex = 1;
 	}
 
-	/// <summary>
-	/// Construct a new client where multiple IP Addresses for
-	/// the same client are known.
-	/// </summary>
-	/// <param name="addresses">The array of known IP Addresses</param>
-	/// <param name="port">The port of the server</param>
-	public AsyncTcpClient(IPAddress[] addresses, int port)
-		: this(port)
+	~Server()
 	{
-		this.addresses = addresses;
+		StopServer();
 	}
 
-	/// <summary>
-	/// Construct a new client where the address or host name of
-	/// the server is known.
-	/// </summary>
-	/// <param name="hostNameOrAddress">The host name or address of the server</param>
-	/// <param name="port">The port of the server</param>
-	public AsyncTcpClient(string hostNameOrAddress, int port)
-		: this(port)
+	public void NewClient(Object obj)
 	{
-		addressesSet = new AutoResetEvent(false);
-		Dns.BeginGetHostAddresses(hostNameOrAddress, GetHostAddressesCallback, null);
+		ClientAdded(this, new MyEventArgs((TcpClient)obj));
 	}
 
-	/// <summary>
-	/// Private constuctor called by other constuctors
-	/// for common operations.
-	/// </summary>
-	/// <param name="port"></param>
-	private AsyncTcpClient(int port)
+	private int portNumber;
+	public void StartServer(int portNumber)
 	{
-		if (port < 0)
-			throw new ArgumentException();
-		this.port = port;
-		this.tcpClient = new TcpClient();
-		this.Encoding = Encoding.Default;
+		this.portNumber = portNumber;
+		//tbPortNumber.Enabled = false;
+		th = new Thread(new ThreadStart(StartListen));
+		th.Start();
+
 	}
 
-	/// <summary>
-	/// The endoding used to encode/decode string when sending and receiving.
-	/// </summary>
-	public Encoding Encoding { get; set; }
 
-	/// <summary>
-	/// Attempts to connect to one of the specified IP Addresses
-	/// </summary>
-	public void Connect()
+	bool IsBusyStoppingServer = false;
+	private void StartListen()
 	{
-		if (addressesSet != null)
-			//Wait for the addresses value to be set
-			addressesSet.WaitOne();
-		//Set the failed connection count to 0
-		Interlocked.Exchange(ref failedConnectionCount, 0);
-		//Start the async connect operation
-		tcpClient.BeginConnect(addresses, port, ConnectCallback, null);
-	}
+		IPAddress localAddr = IPAddress.Parse("127.0.0.1");
 
-	/// <summary>
-	/// Writes a string to the network using the defualt encoding.
-	/// </summary>
-	/// <param name="data">The string to write</param>
-	/// <returns>A WaitHandle that can be used to detect
-	/// when the write operation has completed.</returns>
-	public void Write(string data)
-	{
-		byte[] bytes = Encoding.GetBytes(data);
-		Write(bytes);
-	}
+		tcpServer = new TcpListener(localAddr, portNumber);
+		tcpServer.Start();
 
-	/// <summary>
-	/// Writes an array of bytes to the network.
-	/// </summary>
-	/// <param name="bytes">The array to write</param>
-	/// <returns>A WaitHandle that can be used to detect
-	/// when the write operation has completed.</returns>
-	public void Write(byte[] bytes)
-	{
-		NetworkStream networkStream = tcpClient.GetStream();
-		//Start async write operation
-		networkStream.BeginWrite(bytes, 0, bytes.Length, WriteCallback, null);
-	}
+		//Console.WriteLine("Server started.");
+		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, TextFeedbackEvent, "Server started.", TextFeedbackType.Success);
 
-	/// <summary>
-	/// Callback for Write operation
-	/// </summary>
-	/// <param name="result">The AsyncResult object</param>
-	private void WriteCallback(IAsyncResult result)
-	{
-		NetworkStream networkStream = tcpClient.GetStream();
-		networkStream.EndWrite(result);
-	}
-
-	/// <summary>
-	/// Callback for Connect operation
-	/// </summary>
-	/// <param name="result">The AsyncResult object</param>
-	private void ConnectCallback(IAsyncResult result)
-	{
-		try
+		// Keep on accepting ClientOnServerSide Connection
+		while (true)
 		{
-			tcpClient.EndConnect(result);
-		}
-		catch
-		{
-			//Increment the failed connection count in a thread safe way
-			Interlocked.Increment(ref failedConnectionCount);
-			if (failedConnectionCount >= addresses.Length)
+			if (IsBusyStoppingServer)
+				break;
+			// New ClientOnServerSide connected, call Event to handle it.
+			Thread t = new Thread(new ParameterizedThreadStart(NewClient));
+			try
 			{
-				//We have failed to connect to all the IP Addresses
-				//connection has failed overall.
-				return;
+				tcpClient = tcpServer.AcceptTcpClient();
+			}
+			catch (SocketException sexc)
+			{
+				if (NetworkInterop.IsSocketTryingToCloseUponApplicationExit(sexc))
+					break;
+				else
+					//UserMessages.ShowErrorMessage("Socket error: " + sexc.Message);
+					//MessageBox.Show("Socket exception: " + sexc.Message);
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, TextFeedbackEvent, "Socket exception: " + sexc.Message, TextFeedbackType.Error);
+			}
+			catch (Exception exc)
+			{
+				//MessageBox.Show("Error acception Tcp ClientOnServerSide: " + exc.Message);
+				if (exc.Message.Equals("Thread was being aborted.", StringComparison.InvariantCultureIgnoreCase))
+					break;
+				else
+					//MessageBox.Show("Error acception Tcp ClientOnServerSide: " + exc.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, TextFeedbackEvent, "Error acception Tcp ClientOnServerSide: " + exc.Message, TextFeedbackType.Error);
+				//UserMessages.ShowErrorMessage("Error Accepting Tcp ClientOnServerSide: " + exc.Message);
+			}
+			t.Start(tcpClient);
+		}
+	}
+
+	public void StopServer()
+	{
+		if (tcpServer != null)
+		{
+			// Close all Socket connection
+			foreach (ClientOnServerSide c in formArray)
+				c.connectedClient.Client.Close();
+
+			// Abort All Running Threads
+			foreach (Thread t in threadArray)
+				t.Abort();
+
+			// Clear all ArrayList
+			threadArray.Clear();
+			formArray.Clear();
+			tvClientList.Clear();
+
+			IsBusyStoppingServer = true;
+			// Abort Listening Thread and Stop listening
+			tcpServer.Stop();
+			th.Abort();
+
+		}
+		//tbPortNumber.Enabled = true;
+	}
+
+	public void ClientAdded(object sender, EventArgs e)
+	{
+		tcpClient = ((MyEventArgs)e).clientSock;
+		String remoteIP = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.ToString();
+		String remotePort = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Port.ToString();
+
+		// Call Delegate Function to update Tree View
+		UpdateClientList(remoteIP + " : " + remotePort, "Add");
+
+		// Show Dialog Box for Chatting
+		ctd = new ClientOnServerSide(this, tcpClient);
+		ctd.nestedTextFeedbackEvent += (snder, evtargs) =>
+		{
+			if (TextFeedbackEvent != null)
+				TextFeedbackEvent(snder, evtargs);
+		};
+		//ctd.Text = "Connected to " + remoteIP + "on port number " + remotePort;
+		//Console.WriteLine("Server connected to client: " + remoteIP + "on port number " + remotePort);
+		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, TextFeedbackEvent, "Server connected to client: " + remoteIP + "on port number " + remotePort, TextFeedbackType.Success);
+
+		// Add Dialog Box Object to Array List
+		formArray.Add(ctd);
+		threadArray.Add(Thread.CurrentThread);
+		//ctd.ShowDialog();
+	}
+
+	public void DisconnectClient(String remoteIP, String remotePort)
+	{
+		// Delete ClientOnServerSide from Tree View
+		UpdateClientList(remoteIP + " : " + remotePort, "Delete");
+
+		// Find ClientOnServerSide Chat Dialog box corresponding to this Socket
+		int counter = 0;
+		foreach (ClientOnServerSide c in formArray)
+		{
+			String remoteIP1 = ((IPEndPoint)c.connectedClient.Client.RemoteEndPoint).Address.ToString();
+			String remotePort1 = ((IPEndPoint)c.connectedClient.Client.RemoteEndPoint).Port.ToString();
+
+			if (remoteIP1.Equals(remoteIP) && remotePort1.Equals(remotePort))
+			{
+				break;
+			}
+			counter++;
+		}
+
+		// Terminate Chat Dialog Box
+		//ChatDialog cd = (ChatDialog)formArray[counter];
+		if (formArray.Count > counter)
+			formArray.RemoveAt(counter);
+
+		if (threadArray.Count > counter)
+		{
+			((Thread)(threadArray[counter])).Abort();
+			threadArray.RemoveAt(counter);
+		}
+	}
+
+	private void UpdateClientList(string str, string type)
+	{
+		// If type is Add, the add ClientOnServerSide info in Tree View
+		if (type.Equals("Add"))
+		{
+			this.tvClientList.Add(str);
+		}
+		// Else delete ClientOnServerSide information from Tree View
+		else
+		{
+			foreach (string s in this.tvClientList)
+			{
+				if (s.Equals(str))
+					this.tvClientList.Remove(s);
+			}
+		}
+	}
+
+	public class ClientOnServerSide
+	{
+		public TextFeedbackEventHandler nestedTextFeedbackEvent;//Nested inside a Server class
+
+		private TcpClient client;
+		private NetworkStream clientStream;
+		public delegate void SetTextCallback(string s);
+		private Server owner;
+
+		public TcpClient connectedClient
+		{
+			get { return client; }
+			set { client = value; }
+		}
+
+		public ClientOnServerSide(Server parent, TcpClient tcpClient)
+		{
+			this.owner = parent;
+
+			connectedClient = tcpClient;
+			clientStream = tcpClient.GetStream();
+
+			// Create the state object.
+			StateObject state = new StateObject();
+			state.workSocket = connectedClient.Client;
+
+			//Call Asynchronous Receive Function
+			connectedClient.Client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+					new AsyncCallback(OnReceive), state);
+
+			//connectedClient.ClientOnServerSide.BeginDisconnect(true, new AsyncCallback(DisconnectCallback), state);
+			//rtbChat.AppendText("Chat Log Here------>");
+			//Console.WriteLine("ClientOnServerSide has connected");
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, nestedTextFeedbackEvent, "Client has connected.", TextFeedbackType.Success);
+		}
+
+		public void Send(string txt)
+		{
+			byte[] bt;
+			bt = Encoding.ASCII.GetBytes(txt);
+			//connectedClient.Client.Send(bt);
+			Send(bt);
+
+			//rtbChat.SelectionColor = Color.IndianRed;
+			//rtbChat.SelectedText = "\nMe:     " + txtMessage.Text;
+			//txtMessage.Text = ""; 
+		}
+
+		public void Send(byte[] bytes)
+		{
+			connectedClient.Client.Send(bytes);
+		}
+
+		public void OnReceive(IAsyncResult ar)
+		{
+			String content = String.Empty;
+
+			// Retrieve the state object and the handler socket
+			// from the asynchronous state object.
+			StateObject state = (StateObject)ar.AsyncState;
+			Socket handler = state.workSocket;
+			int bytesRead;
+
+			if (handler.Connected)
+			{
+
+				// Read data from the client socket. 
+				try
+				{
+					bytesRead = handler.EndReceive(ar);
+					if (bytesRead > 0)
+					{
+						// There  might be more data, so store the data received so far.
+						state.sb.Remove(0, state.sb.Length);
+						state.sb.Append(Encoding.ASCII.GetString(
+										 state.buffer, 0, bytesRead));
+
+						// Display Text in Rich Text Box
+						content = state.sb.ToString();
+						SetText(content);
+
+						handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+							new AsyncCallback(OnReceive), state);
+
+					}
+				}
+
+				catch (SocketException socketException)
+				{
+					//WSAECONNRESET, the other side closed impolitely
+					if (socketException.ErrorCode == 10054 || ((socketException.ErrorCode != 10004) && (socketException.ErrorCode != 10053)))
+					{
+						// Complete the disconnect request.
+						String remoteIP = ((IPEndPoint)handler.RemoteEndPoint).Address.ToString();
+						String remotePort = ((IPEndPoint)handler.RemoteEndPoint).Port.ToString();
+						this.owner.DisconnectClient(remoteIP, remotePort);
+
+						handler.Close();
+						handler = null;
+
+					}
+				}
+
+			// Eat up exception....Hmmmm I'm loving eat!!!
+				catch (Exception exception)
+				{
+					MessageBox.Show(exception.Message + "\n" + exception.StackTrace);
+
+				}
 			}
 		}
 
-		//We are connected successfully.
-		NetworkStream networkStream = tcpClient.GetStream();
-		byte[] buffer = new byte[tcpClient.ReceiveBufferSize];
-		//Now we are connected start asyn read operation.
-		networkStream.BeginRead(buffer, 0, buffer.Length, ReadCallback, buffer);
+		private void SetText(string text)
+		{
+			// InvokeRequired required compares the thread ID of the
+			// calling thread to the thread ID of the creating thread.
+			// If these threads are different, it returns true.
+			//if (this.rtbChat.InvokeRequired)
+			//{
+			//	SetTextCallback d = new SetTextCallback(SetText);
+			//	this.Invoke(d, new object[] { text });
+			//}
+			//else
+			//{
+			//this.rtbChat.SelectionColor = Color.Blue;
+			//this.rtbChat.SelectedText = "\nFriend: " + text;
+			//Console.WriteLine("\nFriend: " + text);
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, nestedTextFeedbackEvent, "Friend: " + text, TextFeedbackType.Noteworthy);
+			//}
+		}
 	}
+}
 
-	/// <summary>
-	/// Callback for Read operation
-	/// </summary>
-	/// <param name="result">The AsyncResult object</param>
-	private void ReadCallback(IAsyncResult result)
+public class ClientOnClientSide
+{
+	public TextFeedbackEventHandler TextFeedbackEvent;
+
+	public void tmp()
 	{
-		int read;
-		NetworkStream networkStream;
+		byte[] data = new byte[1024];
+		string input;
+		int port;
+		TcpClient server;
+
+		//System.Console.WriteLine("Please Enter the port number of Server:\n");
+		port = Int32.Parse(UserMessages.Prompt("Please Enter the port number of Server")); //System.Console.ReadLine());
 		try
 		{
-			networkStream = tcpClient.GetStream();
-			read = networkStream.EndRead(result);
+			server = new TcpClient("127.0.0.1", port);
 		}
-		catch
+		catch (SocketException)
 		{
-			//An error has occured when reading
+			//Console.WriteLine("Unable to connect to server");
+			//UserMessages.ShowWarningMessage("Unable to connect to server");
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, TextFeedbackEvent, "Unable to connect to server", TextFeedbackType.Error);
 			return;
 		}
+		//Console.WriteLine("Connected to the Server...");
+		//UserMessages.ShowInfoMessage("Connected to the Server...");
+		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, TextFeedbackEvent, "Connected to the Server...", TextFeedbackType.Success);
+		//Console.WriteLine("Enter the message to send it to the Sever");
+		NetworkStream ns = server.GetStream();
 
-		if (read == 0)
+		StateObject state = new StateObject();
+		state.workSocket = server.Client;
+		server.Client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+					new AsyncCallback(OnReceive), state);
+
+		while (true)
 		{
-			//The connection has been closed.
-			return;
-		}
+			input = UserMessages.Prompt("Enter the message to send it to the Sever (type exit to exit)");//Console.ReadLine();
+			if (input == "exit" || input == null)
+				break;
+			ns.Write(Encoding.ASCII.GetBytes(input), 0, input.Length);
+			ns.Flush();
 
-		byte[] buffer = result.AsyncState as byte[];
-		string data = this.Encoding.GetString(buffer, 0, read);
-		//Do something with the data object here.
-		//Then start reading from the network again.
-		networkStream.BeginRead(buffer, 0, buffer.Length, ReadCallback, buffer);
+			//data = new byte[1024];
+			//recv = ns.Read(data, 0, data.Length);
+			//stringData = Encoding.ASCII.GetString(data, 0, recv);
+			//Console.WriteLine(stringData);
+		}
+		//Console.WriteLine("Disconnecting from server...");
+		//UserMessages.ShowInfoMessage("Disconnecting from server...");
+		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, TextFeedbackEvent, "Disconnecting from Server...", TextFeedbackType.Success);
+		ns.Close();
+		server.Close();
 	}
 
-	/// <summary>
-	/// Callback for Get Host Addresses operation
-	/// </summary>
-	/// <param name="result">The AsyncResult object</param>
-	private void GetHostAddressesCallback(IAsyncResult result)
+	public void OnReceive(IAsyncResult ar)
 	{
-		addresses = Dns.EndGetHostAddresses(result);
-		//Signal the addresses are now set
-		((AutoResetEvent)addressesSet).Set();
+		String content = String.Empty;
+
+		// Retrieve the state object and the handler socket
+		// from the asynchronous state object.
+		StateObject state = (StateObject)ar.AsyncState;
+		Socket handler = state.workSocket;
+		int bytesRead;
+
+		if (handler.Connected)
+		{
+
+			// Read data from the client socket. 
+			try
+			{
+				bytesRead = handler.EndReceive(ar);
+				if (bytesRead > 0)
+				{
+					// There  might be more data, so store the data received so far.
+					state.sb.Remove(0, state.sb.Length);
+					state.sb.Append(Encoding.ASCII.GetString(
+									 state.buffer, 0, bytesRead));
+
+					// Display Text in Rich Text Box
+					content = state.sb.ToString();
+					//Console.WriteLine(content);
+					//UserMessages.ShowInfoMessage(content);
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, TextFeedbackEvent, content, TextFeedbackType.Noteworthy);
+
+					handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+						new AsyncCallback(OnReceive), state);
+
+				}
+			}
+
+			catch (SocketException socketException)
+			{
+				//WSAECONNRESET, the other side closed impolitely
+				if (socketException.ErrorCode == 10054 || ((socketException.ErrorCode != 10004) && (socketException.ErrorCode != 10053)))
+				{
+					handler.Close();
+				}
+			}
+
+		// Eat up exception....Hmmmm I'm loving eat!!!
+			catch (Exception exception)
+			{
+				//MessageBox.Show(exception.Message + "\n" + exception.StackTrace);
+
+			}
+		}
 	}
 }

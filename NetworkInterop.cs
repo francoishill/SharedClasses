@@ -27,6 +27,13 @@ public static class StringExtensions
 	{
 		return string.IsNullOrWhiteSpace(str);
 	}
+
+	public static void CloseAndDispose(this MemoryStream memorystream)
+	{
+		memorystream.Close();
+		memorystream.Dispose();
+		memorystream = null;
+	}
 }
 
 public static class SocketExtensions
@@ -605,13 +612,6 @@ public class NetworkInterop
 		filestream = null;
 	}
 
-	private static void CloseAndDisposeMemoryStream(ref MemoryStream memorystream)
-	{
-		memorystream.Close();
-		memorystream.Dispose();
-		memorystream = null;
-	}
-
 	private static void CloseAndDisposeNetworkStream(ref NetworkStream network)
 	{
 		network.Close();
@@ -730,7 +730,7 @@ public class NetworkInterop
 
 			//RenameFileBasedOnInfoOfTransfer((InfoOfTransferToServer)SerializationInterop.DeserializeCustomObjectFromStream(memoryStreamForInfo, new InfoOfTransferToServer(), false), ref TextFeedbackEvent);
 
-			CloseAndDisposeMemoryStream(ref memoryStreamForInfo);
+			memoryStreamForInfo.CloseAndDispose();
 
 			RaiseProgressChangedEvent_Ifnotnull(ref ProgressChangedEvent, 0, 100);
 
@@ -902,7 +902,7 @@ public class NetworkInterop
 							//			Environment.NewLine + exc.Message);
 							//	}
 							//}
-							CloseAndDisposeMemoryStream(ref memoryStreamForInfo);
+							memoryStreamForInfo.CloseAndDispose();
 							if (info.SuccessfullyReceiveComplete)
 							{
 								TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(

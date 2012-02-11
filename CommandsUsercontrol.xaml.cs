@@ -155,7 +155,7 @@ namespace SharedClasses
 							ICommandWithHandler tmpCommand = snder as ICommandWithHandler;
 							tmpCommand.MessagesList.Add(tmpParagraph);
 
-							//TODO: Handle the messages better
+							//DONE: Handle the messages better
 							//Like if a message is new and the relevant command is not selected, add a "star" to the command
 							//if (tmpCommand != activeCommand) SetDataContext(tmpCommand);
 							//SelectTreeViewItemBasedOnCommand(tmpCommand);

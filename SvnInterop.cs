@@ -12,7 +12,7 @@ public class SubversionInterop : INotifyPropertyChanged
 	public enum SubversionCommand { Commit, Update, Status, StatusLocal };
 	public enum MessagesTypes { Output, Error }
 
-	public static  Dictionary<MessagesTypes, List<string>> PerformSubversionCommand(Object textfeedbackSenderObject, string svnargs, SubversionCommand svnCommand, TextFeedbackEventHandler textFeedbackEvent = null)
+	public static Dictionary<MessagesTypes, List<string>> PerformSubversionCommand(Object textfeedbackSenderObject, string svnargs, SubversionCommand svnCommand, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
 		Dictionary<MessagesTypes, List<string>> tmpReturnMessagesList = new Dictionary<MessagesTypes, List<string>>();
 		tmpReturnMessagesList.Add(MessagesTypes.Output, new List<string>());
@@ -47,17 +47,20 @@ public class SubversionInterop : INotifyPropertyChanged
 			else if (!Directory.Exists(projDir) && listOfDirectoriesToCheckLocalStatusses == null) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Error: folder not found: " + projDir);
 			else
 			{
-				ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+				//ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+				//{
+				if (listOfDirectoriesToCheckLocalStatusses == null)
 				{
-					if (listOfDirectoriesToCheckLocalStatusses == null)
-					{
-						listOfDirectoriesToCheckLocalStatusses = new List<string>();
-						listOfDirectoriesToCheckLocalStatusses.Add(projDir);
-					}
+					listOfDirectoriesToCheckLocalStatusses = new List<string>();
+					listOfDirectoriesToCheckLocalStatusses.Add(projDir);
+				}
 
-					bool pleaseWaitAlreadyDisplayed = false;
+				bool pleaseWaitAlreadyDisplayed = false;
 
-					foreach (string tmpFolder in listOfDirectoriesToCheckLocalStatusses)
+				foreach (string tmpFolder in listOfDirectoriesToCheckLocalStatusses)
+				{
+					//System.Threading.ThreadPool.QueueUserWorkItem(delegate
+					ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 					{
 						string humanfriendlyFoldername = tmpFolder;
 						if (humanfriendlyFoldername.Contains('\\'))
@@ -118,8 +121,9 @@ public class SubversionInterop : INotifyPropertyChanged
 						svnproc.BeginErrorReadLine();
 
 						svnproc.WaitForExit();
-					}
-				});
+					});
+				}
+				//});
 			}
 		}
 		catch (Exception exc)

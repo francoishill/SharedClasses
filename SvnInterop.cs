@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using SharedClasses;
 //using System.Windows.Forms;
 
@@ -57,17 +58,24 @@ public class SubversionInterop : INotifyPropertyChanged
 
 				bool pleaseWaitAlreadyDisplayed = false;
 
-				foreach (string tmpFolder in listOfDirectoriesToCheckLocalStatusses)
+				//foreach (string tmpFolder in listOfDirectoriesToCheckLocalStatusses)
+				//{
+				ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 				{
-					//System.Threading.ThreadPool.QueueUserWorkItem(delegate
-					ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+					//Parallel.For uses multiple threads but also uses the current thread, therefore freezing the UI. Use ThreadingInterop.PerformVoidFunctionSeperateThread to overcome this
+					Parallel.For(0, listOfDirectoriesToCheckLocalStatusses.Count, (tmpIndex) =>
 					{
+						//System.Threading.ThreadPool.QueueUserWorkItem(delegate
+						//ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+						//{
+
+						string tmpFolder = listOfDirectoriesToCheckLocalStatusses[tmpIndex];
 						string humanfriendlyFoldername = tmpFolder;
 						if (humanfriendlyFoldername.Contains('\\'))
 							humanfriendlyFoldername = humanfriendlyFoldername.Split('\\')[humanfriendlyFoldername.Split('\\').Length - 1];
 
 						string processArguments =
-											svnCommand ==
+															svnCommand ==
 							SubversionCommand.Commit ? "commit -m\"" + logmessage + "\" \"" + tmpFolder + "\""
 							: svnCommand == SubversionCommand.Update ? "update \"" + tmpFolder + "\""
 							: svnCommand == SubversionCommand.Status ? "status --show-updates \"" + tmpFolder + "\""
@@ -104,7 +112,7 @@ public class SubversionInterop : INotifyPropertyChanged
 						svnproc.StartInfo = start;
 
 						string performingPleasewaitMsg = 
-							svnCommand == SubversionCommand.Commit ? "Performing svn commit, please wait..."
+											svnCommand == SubversionCommand.Commit ? "Performing svn commit, please wait..."
 							: svnCommand == SubversionCommand.Update ? "Performing svn update, please wait..."
 							: svnCommand == SubversionCommand.Status ? "Check status of svn (local and server), please wait..."
 							: svnCommand == SubversionCommand.StatusLocal ? "Check status of svn (local), please wait..."
@@ -122,7 +130,9 @@ public class SubversionInterop : INotifyPropertyChanged
 
 						svnproc.WaitForExit();
 					});
-				}
+					//});
+				});
+				//}
 				//});
 			}
 		}

@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 //TODO: Check out extension functions (a static class with methods which uses this as one of the parameters)
+//TODO: Check out BeforeFieldInit and NotBeforeFieldInit for static initializers: http://geekswithblogs.net/BlackRabbitCoder/archive/2010/09/02/c.net-five-more-little-wonders-that-make-code-better-2.aspx
+//TODO: Check out cross-calling constructors: http://geekswithblogs.net/BlackRabbitCoder/archive/2010/12/16/c.net-little-wonders-ndash-cross-calling-constructors.aspx
 public static class StringExtensions
 {
 	public static bool IsFrancois(this string str, bool CaseSensitive)

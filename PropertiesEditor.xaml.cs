@@ -174,7 +174,7 @@ namespace SharedClasses
 	//		{
 	//			_typeArgument = value;
 
-	//			// If the TypeArgument doesn't get set until after
+	//			// If the TypeArgument doesn'buildTask get set until after
 	//			// items have been added, we need to re-create items
 	//			// to be the right type.
 	//			if (_items != null)

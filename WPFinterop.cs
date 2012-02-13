@@ -55,7 +55,7 @@ namespace FocusTest
 				object targetProperty = pvt.TargetProperty;
 				if (fe != null)
 				{
-					// If the element isn't loaded yet, then wait for it.
+					// If the element isn'buildTask loaded yet, then wait for it.
 					if (!fe.IsLoaded)
 					{
 						RoutedEventHandler deferredFocusHookup = null;

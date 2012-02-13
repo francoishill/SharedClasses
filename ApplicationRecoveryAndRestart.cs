@@ -12,7 +12,7 @@ public class ApplicationRecoveryAndRestart
 	public static MethodInvoker FunctionToPerformOnCrash;
 
 	public const string CrashReportsDirectory = @"C:\Francois\Crash reports";
-	public const string SavetofileDateFormat = @"yyyy MM dd \a\t HH mm ss";
+	public const string SavetofileDateFormat = @"yyyy MM dd \a\buildTask HH mm ss";
 
 	public static void RegisterApplicationRecoveryAndRestart(MethodInvoker functionToPerformOnCrash, MethodInvoker callbackWhenApplicationIsRestartReadyAfter60seconds = null)
 	{

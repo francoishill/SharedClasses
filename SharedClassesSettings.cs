@@ -215,6 +215,7 @@ namespace SharedClasses
 				}
 				else if (confirmedFaceDetection == null)//Face was not recognized but manual password was entered
 				{
+					AuthorizationWasDoneOnce = true;
 					return manualPasswordEnterd;
 				}
 				else// if (confirmedFaceDetection == false)//Window was cancelled or timeout has ocurred
@@ -351,13 +352,16 @@ namespace SharedClasses
 				}
 			}
 
+			[Description("The name required for face detection (this is used to decrypt the encrypted passwords).")]
 			//TODO: This must be greatly improved in the sense that the face "pictures" and their names are stored online for instance
 			[Setting("Please enter the face name used for facial recognition to decrypt passwords")]
 			public string FaceName { get; set; }
 
+			[Description("The tolerence for detecting (and matching names) to faces, must be between 0 - 5000, default = 3000.")]
 			[Setting("Please enter the tolerance for Face detection (0 - 5000, default = 3000).")]
 			public double? RecognitionTolerance { get; set; }
 
+			[Description("The duration (in seconds) before automatically 'failing' face detection if no face was detected.")]
 			[Setting("Please enter the timeout for Face detection (in seconds), this is the maximum allowed time for recognizing a face, it will fail thereafter.")]
 			public int? TimeOutSecondsBeforeAutoFailing { get; set; }
 
@@ -403,16 +407,20 @@ namespace SharedClasses
 			public enum UriProtocol { Http, Ftp }
 
 			[Category("My temp category")]
-			[Description("The description will be typed here")]
+			[Description("The base Uri for both publishing and opening the published page after success (this should not end with a front-slash /).")]
 			[SettingAttribute("Please enter the base Uri for Visual Studio publishing, ie. code.google.com")]
 			public string BaseUri { get; set; }
 
+			[Description("This is the section after the base url of the url used for opening the published webpage after successful publishing. It must start with a front-slash / (example: /ownapplications).")]
 			public string RelativeRootUriAFTERvspublishing { get; set; }
 
+			[Description("The uri protocol (Http or Ftp) used for opening the published webpage after successful publishing.")]
 			public UriProtocol? UriProtocolForAFTERvspublishing { get; set; }
 
+			[Description("This is the section after the base url of the visual studio publishing path. It must start with a front-slash / (example: /ownapplications).")]
 			public string RelativeRootUriForVsPublishing { get; set; }
 
+			[Description("The uri protocol (Http or Ftp) used for publishing visual studio application.")]
 			[SettingAttribute("Please enter Uri protocol for Visual Studio Publishing")]
 			public UriProtocol? UriProtocolForVsPublishing { get; set; }
 
@@ -486,15 +494,24 @@ namespace SharedClasses
 				}
 			}
 
+			[Description("The TTL (time-to-live) for the socket server.")]
 			[Setting("Please enter value for the time-to-live (Ttl) of the server socket")]
 			public short? ServerSocket_Ttl { get; set; }
 
+			[Description("Whether NoDelay should be enabled on the socket server.")]
 			[Setting("Enable NoDelay for the server socket?")]
 			public bool? ServerSocket_NoDelay { get; set; }
 
+			[Description("The buffersize for receiving data from the client.")]
 			public int? ServerSocket_ReceiveBufferSize { get; set; }
+
+			[Description("The buffersize for sending data to the client.")]
 			public int? ServerSocket_SendBufferSize { get; set; }
+
+			[Description("The maximum number of pending connections allowed on the server.")]
 			public int? ServerSocket_MaxNumberPendingConnections { get; set; }
+
+			[Description("The listening port used for a socket server.")]
 			public int? ServerSocket_ListeningPort { get; set; }
 
 			[Obsolete("Do not use constructor otherwise getting/setting of properties does not go through Interceptor. Use Interceptor<NetworkInteropSettings>.Create(); ")]
@@ -544,6 +561,7 @@ namespace SharedClasses
 				}
 			}
 
+			[Description("The username used for authentication Trac XmlRpc communication.")]
 			[Setting("Please enter ftp username for Trac XmlRpc")]
 			public string Username { get; set; }
 
@@ -558,17 +576,21 @@ namespace SharedClasses
 			public string PasswordEncrypted { get; set; }//{ get { return Encrypt(Password); } set { Password = Decrypt(value); } }
 
 			//TODO: Check out Attribute = [NotifyParentProperty]
-			[Setting("Please enter the Base url of the Dynamic Invokation Server")]
+			[Description("The base url of the Dynamic Invoking server (example: http://localhost or http://mywebsite). It must not end with a slash.")]
+			[Setting("Please enter the Base url of the Dynamic Invoking Server")]
 			public string DynamicInvokationServer_BasePath { get; set; }
 
+			[Description("This is the section after the base url of the dynamic invoking server. It must start with a front-slash / (example: /dynamicserver/xmlrpc).")]
 			[Setting("Please enter the Relative url of the Dynamic Invokation Server")]
 			public string DynamicInvokationServer_RelativePath { get; set; }
 
-			[Setting("Please enter the Port number of the Dynamic Invokation Server")]
+			[Description("The port number used for starting a server to allow Dynamic Invoking of code from a clientside pc.")]
+			[Setting("Please enter the Port number of the Dynamic Invoking Server")]
 			public int? DynamicInvokationServer_PortNumber { get; set; }
 
 			//TODO: Sort out how this list to string will work inside the PropertyInterceptor
 			private List<string> listedXmlRpcUrls;
+			[Description("A list of XmlRpc urls used for obtaining Trac ticketing information when publishing an application.")]
 			public string ListedXmlRpcUrls
 			{
 				get
@@ -641,6 +663,7 @@ namespace SharedClasses
 			//[Setting("Please define the list of gestures to use")]
 			//public Dictionary<string, List<GestureDirection>> ListOfGesturesAndMessages { get; set; }
 			private Dictionary<string, string> gesturesWithGesturePluginName;
+			[Description("The list of gestures with a message to display, each on a new line (example: URDL=Hallo there you have gestured Up-Right-Down-Left).")]
 			public string GesturesWithGesturePluginName
 			{
 				get
@@ -724,6 +747,7 @@ namespace SharedClasses
 
 			//TODO: add custom types to XAML: http://blogs.msdn.com/b/mikehillberg/archive/2006/10/06/limitedgenericssupportinxaml.aspx
 			private List<string> listOfMonitoredSubversionDirectories;
+			[Description("The list of subversion directories to automatically check for any changes/updates.")]
 			public string ListOfMonitoredSubversionDirectories
 			{
 				get
@@ -736,6 +760,7 @@ namespace SharedClasses
 			}
 			public List<string> GetListOfMonitoredSubversionDirectories() { return listOfMonitoredSubversionDirectories ?? new List<string>(); }
 
+			[Description("The interval (in milliseconds) for checking the monitored subversion directories.")]
 			public int? IntervalForMonitoring_Milliseconds { get; set; }
 
 			public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")

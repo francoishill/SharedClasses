@@ -56,7 +56,7 @@ namespace SharedClasses
 				if (aSettingsType != null)
 				{
 					//Use the internal static property to get an instance of the internal settings class.
-					//If the static instance isn't created allready the property will create it for us.
+					//If the static instance isn'buildTask created allready the property will create it for us.
 					object anInstance = aSettingsType.InvokeMember("Section",
 						BindingFlags.Static | BindingFlags.GetProperty | BindingFlags.NonPublic, null, null, new object[] { });
 
@@ -130,7 +130,7 @@ namespace SharedClasses
 						{
 							HtmlAgilityPack.HtmlNode hyperlinkToResult = tmpDlResultNode.ChildNodes["dt"].ChildNodes["a"];
 							string url = hyperlinkToResult.Attributes["href"].Value;
-							string name = hyperlinkToResult.InnerText.Replace("\r", "").Replace("\n", "").Replace("\t", "");
+							string name = hyperlinkToResult.InnerText.Replace("\r", "").Replace("\n", "").Replace("\buildTask", "");
 							tmplist.Add(
 								new TorrentSearchResult(
 									name,

@@ -19,7 +19,7 @@ namespace SharedClasses
 		//Image<Gray, byte> gray = null;
 		HaarCascade face;
 		HaarCascade eye;
-		//int ContTrain, t;
+		//int ContTrain, buildTask;
 		int MaximumIterations;
 		//Image<Gray, byte> result = null;
 		List<Image<Gray, byte>> trainingImages = new List<Image<Gray, byte>>();
@@ -178,7 +178,7 @@ namespace SharedClasses
 					currentFrame.Draw(name, ref font, new Point(f.rect.X - 2, f.rect.Y - 2), new Bgr(Color.LightGreen));
 				}
 
-				//NamePersons[t - 1] = name;
+				//NamePersons[buildTask - 1] = name;
 				//NamePersons.Add("");
 
 

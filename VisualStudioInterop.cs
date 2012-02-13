@@ -10,6 +10,8 @@ using System.Web;
 using CookComputing.XmlRpc;
 using SharedClasses;
 using System.Reflection;
+using System.Threading.Tasks;
+using System.Collections.Concurrent;
 
 public class VisualStudioInterop
 {
@@ -47,7 +49,7 @@ public class VisualStudioInterop
 			return null;
 		}
 		//Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox,
-		//"msbuild /t:publish /p:configuration=release /p:buildenvironment=DEV /p:applicationversion=" + newversionstring + " \"" + csprojFileName + "\"");
+		//"msbuild /buildTask:publish /p:configuration=release /p:buildenvironment=DEV /p:applicationversion=" + newversionstring + " \"" + csprojFileName + "\"");
 		while (msbuildpath.EndsWith("\\")) msbuildpath = msbuildpath.Substring(0, msbuildpath.Length - 1);
 		msbuildpath += "\\msbuild.exe";
 
@@ -55,7 +57,7 @@ public class VisualStudioInterop
 		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 		{
 			ProcessStartInfo startinfo = new ProcessStartInfo(msbuildpath,
-				"/t:" + buildType.ToString().ToLower() +
+				"/buildTask:" + buildType.ToString().ToLower() +
 				" /p:configuration=" + configuration.ToString().ToLower() +
 				" /p:AllowUnsafeBlocks=true" +
 				" /p:PlatformTarget=" + platformTarget.ToString() +
@@ -373,7 +375,7 @@ public class VisualStudioInterop
 		else
 		{
 			string textOfFile = File.ReadAllText(tempFilename);
-			textOfFile = textOfFile.Replace("{PageGeneratedDate}", DateTime.Now.ToString(@"dddd, dd MMMM yyyy \a\t HH:mm:ss"));
+			textOfFile = textOfFile.Replace("{PageGeneratedDate}", DateTime.Now.ToString(@"dddd, dd MMMM yyyy \a\buildTask HH:mm:ss"));
 			textOfFile = textOfFile.Replace("{ProjectName}", projectName);
 			textOfFile = textOfFile.Replace("{ProjectVersion}", projectVersion);
 			textOfFile = textOfFile.Replace("{SetupFilename}", Path.GetFileName(setupFilename));
@@ -389,31 +391,46 @@ public class VisualStudioInterop
 
 	public async static void PerformPublishOnline(Object textfeedbackSenderObject, string projName, bool HasPlugins, bool AutomaticallyUpdateRevision = false, bool WriteIntoRegistryForWindowsAutostartup = true, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
 	{
-		string versionString;
-		string publishedSetupPath = PerformPublish(textfeedbackSenderObject, projName, out versionString, HasPlugins, AutomaticallyUpdateRevision, false, WriteIntoRegistryForWindowsAutostartup, textFeedbackEvent);
+		string versionString = null;
+		string publishedSetupPath = null;
+
+		List<string> BugsFixed = null;
+		List<string> Improvements = null;
+		List<string> NewFeatures = null;
+
+		//TODO: this (ServicePointManager.DefaultConnectionLimit) is actually very annoying, is there no other workaround?
+		ServicePointManager.DefaultConnectionLimit = 10000;
+
+		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+		{
+			Parallel.Invoke(
+				() =>
+				{
+					publishedSetupPath = PerformPublish(textfeedbackSenderObject, projName, out versionString, HasPlugins, AutomaticallyUpdateRevision, false, WriteIntoRegistryForWindowsAutostartup, textFeedbackEvent);
+				},
+				() =>
+				{
+					//System.Net.ServicePointManager.DefaultConnectionLimit = 1;
+					//#pragma warning disable
+					//DONE: There is no proper items for bugs fixed etc in next function
+					//bool ThereIsNoProperItemsForBugsFixedEtcInNextFunction;
+					//#pragma warning restore
+
+					//TODO: When pulling buglist/improvement etc from Trac repository for a project, must also check in the project's .csproj file whether it uses/references SharedClasses. Then it must also pull the changes from the SharedClasses Trac repository.
+					GetChangeLogs(textfeedbackSenderObject, projName, out BugsFixed, out Improvements, out NewFeatures, textFeedbackEvent: textFeedbackEvent);
+				});
+		});
+
 		if (publishedSetupPath != null)
 		{
 			string validatedUrlsectionForProjname = HttpUtility.UrlPathEncode(projName).ToLower();
-
-			//TODO: this (ServicePointManager.DefaultConnectionLimit) is actually very annoying, is there no other workaround?
-			ServicePointManager.DefaultConnectionLimit = 10000;
-			//System.Net.ServicePointManager.DefaultConnectionLimit = 1;
-			//#pragma warning disable
-			//DONE: There is no proper items for bugs fixed etc in next function
-			//bool ThereIsNoProperItemsForBugsFixedEtcInNextFunction;
-			//#pragma warning restore
-
-			List<string> BugsFixed;
-			List<string> Improvements;
-			List<string> NewFeatures;
-			//TODO: When pulling buglist/improvement etc from Trac repository for a project, must also check in the project's .csproj file whether it uses/references SharedClasses. Then it must also pull the changes from the SharedClasses Trac repository.
-			GetChangeLogs(textfeedbackSenderObject, projName, out BugsFixed, out Improvements, out NewFeatures, textFeedbackEvent: textFeedbackEvent);
 
 			string htmlFilePath = CreateHtmlPageReturnFilename(projName, versionString, publishedSetupPath, BugsFixed, Improvements, NewFeatures);
 
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent,
 				"Attempting Ftp Uploading of Setup file and index file for " + projName);
 			await NetworkInterop.FtpUploadFiles(
+			//Task uploadTask = NetworkInterop.FtpUploadFiles(
 				textfeedbackSenderObject,
 				GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForVsPublishing() + "/" + validatedUrlsectionForProjname,
 				GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,//NetworkInterop.ftpUsername,
@@ -422,6 +439,8 @@ public class VisualStudioInterop
 				GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForAFTERvspublishing() + "/" + validatedUrlsectionForProjname,
 				textFeedbackEvent: textFeedbackEvent,
 				progressChanged: progressChanged);
+			//uploadTask.Start();
+			//uploadTask.Wait();
 		}
 	}
 
@@ -454,7 +473,39 @@ public class VisualStudioInterop
 
 		//List<string> tmpList = new List<string>();
 		//int[] ids = TracXmlRpcInterop.GetTicketIds(ProjectXmlRpcTracUri, Username, Password);
-		foreach (int i in tmpIdsAndDescriptionsAndTicketTypes.Keys)
+
+		List<string> tmpBugsFixed = new List<string>();
+		List<string> tmpImprovements = new List<string>();
+		List<string> tmpNewFeatures = new List<string>();
+		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+		{
+			List<int> tmpKeysList = tmpIdsAndDescriptionsAndTicketTypes.Keys.ToList();
+			Parallel.For(0, tmpKeysList.Count, (tmpIndex) =>
+			{
+				int i = tmpKeysList[tmpIndex];
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Obtaining changelogs for ticket " + i.ToString() + "...", TextFeedbackType.Subtle);
+				List<TracXmlRpcInterop.ChangeLogStruct> changelogs = TracXmlRpcInterop.ChangeLogs(i, ProjectXmlRpcTracUri);
+				foreach (TracXmlRpcInterop.ChangeLogStruct cl in changelogs)
+					if (cl.Field == "comment" && !string.IsNullOrWhiteSpace(cl.NewValue))
+						//TODO: This can be greatly improved
+						if (tmpIdsAndDescriptionsAndTicketTypes[i].TicketType == TracXmlRpcInterop.TicketTypeEnum.Bug)
+							tmpBugsFixed.Add("<e class='graycolor'>Ticket #" + i + ":</e> " + cl.NewValue + " <e class='graycolor'>[" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + "]</e>");
+						else if (tmpIdsAndDescriptionsAndTicketTypes[i].TicketType == TracXmlRpcInterop.TicketTypeEnum.Improvement)
+							tmpImprovements.Add("<e class='graycolor'>Ticket #" + i + ":</e> " + cl.NewValue + " <e class='graycolor'>[" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + "]</e>");
+						else if (tmpIdsAndDescriptionsAndTicketTypes[i].TicketType == TracXmlRpcInterop.TicketTypeEnum.NewFeature)
+							tmpNewFeatures.Add("<e class='graycolor'>Ticket #" + i + ":</e> " + cl.NewValue + " <e class='graycolor'>[" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + "]</e>");
+				//tmpList.Add("Ticket #" + i + ": '" + cl.Field + "' new value = " + cl.NewValue + ", old value = " + cl.OldValue);
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Finished obtaining changelogs for ticket " + i.ToString() + ".", TextFeedbackType.Subtle);
+			});
+		});
+		BugsFixed = tmpBugsFixed;
+		Improvements = tmpImprovements;
+		NewFeatures = tmpNewFeatures;
+		tmpBugsFixed = null;
+		tmpImprovements = null;
+		tmpNewFeatures = null;
+
+		/*foreach (int i in tmpIdsAndDescriptionsAndTicketTypes.Keys)
 		{
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Obtaining changelogs for ticket " + i.ToString() + "...", TextFeedbackType.Subtle);
 			List<TracXmlRpcInterop.ChangeLogStruct> changelogs = TracXmlRpcInterop.ChangeLogs(i, ProjectXmlRpcTracUri);
@@ -469,7 +520,7 @@ public class VisualStudioInterop
 						NewFeatures.Add("Ticket #" + i + ": " + cl.NewValue + "  (" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + ")");
 			//tmpList.Add("Ticket #" + i + ": '" + cl.Field + "' new value = " + cl.NewValue + ", old value = " + cl.OldValue);
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Finished obtaining changelogs for ticket " + i.ToString() + ".", TextFeedbackType.Subtle);
-		}
+		}*/
 	}
 
 	public static List<string> GetAllEmbeddedResourcesReturnFilePaths(Predicate<string> predicateToValidateOn, bool ShowErrorIfNoMatched = true)

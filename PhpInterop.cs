@@ -181,7 +181,7 @@ public class PhpInterop
 					{
 						string ArgumentListTabSeperated = "";
 						foreach (string s in ArgumentList)
-							ArgumentListTabSeperated += (ArgumentListTabSeperated.Length > 0 ? "\t" : "") + s;
+							ArgumentListTabSeperated += (ArgumentListTabSeperated.Length > 0 ? "\buildTask" : "") + s;
 
 						string tmpRequest = doWorkAddress + "/dotask/" +
 								PhpInterop.PhpEncryption.SimpleTripleDesEncrypt(Username, "123456789abcdefghijklmno") + "/" +

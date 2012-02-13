@@ -38,7 +38,7 @@ namespace SharedClasses
 		Image<Gray, byte> trainingImage;
 		List<string> labels = new List<string>();
 		List<string> NamePersons = new List<string>();
-		//int ContTrain, NumLabels, t;
+		//int ContTrain, NumLabels, buildTask;
 		//int MaximumIterations;
 		string name, names = null;
 

@@ -5,7 +5,7 @@
 				xmlns:System="clr-namespace:System;assembly=mscorlib"
 				x:Class="SharedClasses.PropertiesEditor"
 				Title="PropertiesEditor"
-				Height="300"
+				Height="400"
 				Width="1000"
 				WindowStartupLocation='CenterScreen'>
 	<Window.Resources>

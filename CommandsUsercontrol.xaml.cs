@@ -794,10 +794,10 @@ namespace SharedClasses
 			//		foreach (object lbo in lb.Items)
 			//		{
 			//			//GetAutocompleteBoxOfArgument(lbo).IsDropDownOpen = false;
-			//			TextBox t = GetActualTextboxOfArgument(lbo);
-			//			t.SelectionLength = 0;
-			//			t.SelectionStart = t.Text.Length;
-			//			BindingExpression be = t.GetBindingExpression(TextBox.TextProperty);
+			//			TextBox buildTask = GetActualTextboxOfArgument(lbo);
+			//			buildTask.SelectionLength = 0;
+			//			buildTask.SelectionStart = buildTask.Text.Length;
+			//			BindingExpression be = buildTask.GetBindingExpression(TextBox.TextProperty);
 			//			be.UpdateSource();
 			//		}
 
@@ -1259,12 +1259,12 @@ namespace SharedClasses
 					AutoCompleteBox acb = dataTemplate.FindName("ArgumentText", contentPresenter) as AutoCompleteBox;
 					acb.IsDropDownOpen = false;
 					//GetAutocompleteBoxOfArgument(lbo).IsDropDownOpen = false;
-					//TextBox t = GetActualTextboxOfArgument(lbo);
-					//t.SelectionLength = 0;
-					//t.SelectionStart = t.Text.Length;
+					//TextBox buildTask = GetActualTextboxOfArgument(lbo);
+					//buildTask.SelectionLength = 0;
+					//buildTask.SelectionStart = buildTask.Text.Length;
 
-					//AutoCompleteBox t = GetAutocompleteBoxOfArgument(lbo);
-					//BindingExpression be = t.GetBindingExpression(AutoCompleteBox.TextProperty);//TextBox.TextProperty);
+					//AutoCompleteBox buildTask = GetAutocompleteBoxOfArgument(lbo);
+					//BindingExpression be = buildTask.GetBindingExpression(AutoCompleteBox.TextProperty);//TextBox.TextProperty);
 					//be.UpdateSource();
 				}
 

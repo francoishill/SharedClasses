@@ -49,7 +49,7 @@ public class VisualStudioInterop
 			return null;
 		}
 		//Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox,
-		//"msbuild /buildTask:publish /p:configuration=release /p:buildenvironment=DEV /p:applicationversion=" + newversionstring + " \"" + csprojFileName + "\"");
+		//"msbuild /t:publish /p:configuration=release /p:buildenvironment=DEV /p:applicationversion=" + newversionstring + " \"" + csprojFileName + "\"");
 		while (msbuildpath.EndsWith("\\")) msbuildpath = msbuildpath.Substring(0, msbuildpath.Length - 1);
 		msbuildpath += "\\msbuild.exe";
 
@@ -57,7 +57,7 @@ public class VisualStudioInterop
 		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 		{
 			ProcessStartInfo startinfo = new ProcessStartInfo(msbuildpath,
-				"/buildTask:" + buildType.ToString().ToLower() +
+				"/t:" + buildType.ToString().ToLower() +
 				" /p:configuration=" + configuration.ToString().ToLower() +
 				" /p:AllowUnsafeBlocks=true" +
 				" /p:PlatformTarget=" + platformTarget.ToString() +
@@ -375,7 +375,7 @@ public class VisualStudioInterop
 		else
 		{
 			string textOfFile = File.ReadAllText(tempFilename);
-			textOfFile = textOfFile.Replace("{PageGeneratedDate}", DateTime.Now.ToString(@"dddd, dd MMMM yyyy \a\buildTask HH:mm:ss"));
+			textOfFile = textOfFile.Replace("{PageGeneratedDate}", DateTime.Now.ToString(@"dddd, dd MMMM yyyy \a\t HH:mm:ss"));
 			textOfFile = textOfFile.Replace("{ProjectName}", projectName);
 			textOfFile = textOfFile.Replace("{ProjectVersion}", projectVersion);
 			textOfFile = textOfFile.Replace("{SetupFilename}", Path.GetFileName(setupFilename));

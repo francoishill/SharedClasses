@@ -93,7 +93,11 @@ public class SubversionInterop : INotifyPropertyChanged
 							if (outputLine.Data != null && outputLine.Data.Trim().Length > 0)
 							{
 								string outputText = outputLine.Data.Replace(VS2010projectsFolder, "...");
-								TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, string.Format("Output for {0}: {1}", humanfriendlyFoldername, outputText), outputLine.Data.ToLower().Contains("Status against revision".ToLower()) ? TextFeedbackType.Subtle : TextFeedbackType.Noteworthy);
+								TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(
+									textfeedbackSenderObject,
+									textFeedbackEvent,
+									string.Format("Output for {0}: {1}", humanfriendlyFoldername, outputText),
+									IsSubtleSubversionOutputMessage(outputLine.Data) ? TextFeedbackType.Subtle : TextFeedbackType.Noteworthy);
 								tmpReturnMessagesList[MessagesTypes.Output].Add(humanfriendlyFoldername + ": " + outputText);
 							}
 							//else appendLogTextbox("Svn output empty");
@@ -207,7 +211,7 @@ public class SubversionInterop : INotifyPropertyChanged
 
 					Dictionary<MessagesTypes, List<string>> tmpSubversionMessages =
 				PerformSubversionCommand(TextFeedbackSenderObject, subversionDir, SubversionCommand.Status, TextFeedbackEvent);
-					if (tmpSubversionMessages[MessagesTypes.Output].Count(s => !s.ToLower().Contains("Status against revision".ToLower())) > 0
+					if (tmpSubversionMessages[MessagesTypes.Output].Count(s => !IsSubtleSubversionOutputMessage(s)) > 0//Only counts the "non-subtle" messages
 						|| tmpSubversionMessages[MessagesTypes.Error].Count > 0)
 					{
 						SubversionChangesFound = true;
@@ -270,6 +274,13 @@ public class SubversionInterop : INotifyPropertyChanged
 				IsBusyChecking = false;
 			}
 		}
+	}
+
+	private static bool IsSubtleSubversionOutputMessage(string outputText)
+	{
+		return outputText.ToLower().Contains("Status against revision".ToLower()) ||
+			outputText.ToLower().Contains("Performing status on external item at".ToLower()) ||
+			outputText.ToLower().Contains("X                    ".ToLower());
 	}
 
 	//public static void CheckStatusAllVisualStudio2010Projects()

@@ -64,16 +64,23 @@ public class XmlRpcInterop
 		//HttpServerChannel httpServerChannel = new HttpServerChannel(
 		//	CreateDefaultChannelProperties(),
 		//	CreateDefaultServerProviderChain();
-		Lazy<HttpChannel> http = new Lazy<HttpChannel>(() => new HttpChannel());
-		HttpChannel httpChannel = new HttpChannel(
-			CreateDefaultChannelProperties(),
-			CreateDefaultClientProviderChain(),
-			CreateDefaultServerProviderChain());
-		ChannelServices.RegisterChannel(httpChannel, false);
-		RemotingConfiguration.RegisterWellKnownServiceType(
-			typeof(DynamicCodeInvokingServerClass),
-			GetDefaultRelativeUri(),//"DynamicCodeInvoking/xmlrpc",
-			WellKnownObjectMode.Singleton);
+		try
+		{
+			Lazy<HttpChannel> http = new Lazy<HttpChannel>(() => new HttpChannel());
+			HttpChannel httpChannel = new HttpChannel(
+				CreateDefaultChannelProperties(),
+				CreateDefaultClientProviderChain(),
+				CreateDefaultServerProviderChain());
+			ChannelServices.RegisterChannel(httpChannel, false);
+			RemotingConfiguration.RegisterWellKnownServiceType(
+				typeof(DynamicCodeInvokingServerClass),
+				GetDefaultRelativeUri(),//"DynamicCodeInvoking/xmlrpc",
+				WellKnownObjectMode.Singleton);
+		}
+		catch (Exception exc)
+		{
+			UserMessages.ShowWarningMessage(string.Format("Unable to start XmlRpc server, an exceptions occurred: {0}", exc.Message));
+		}
 	}
 
 	//public static void TestFromClient_DynamicCodeInvokingServer()

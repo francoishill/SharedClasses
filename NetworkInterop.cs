@@ -357,14 +357,23 @@ public class NetworkInterop
 		};
 	}
 
-	public static void SetupServerSocketSettings(ref Socket serverListeningSocketToUse, int listeningPort, int maxBufferPerTransfer, int maxNumberPendingConnections)
+	public static bool SetupServerSocketSettings(ref Socket serverListeningSocketToUse, int listeningPort, int maxBufferPerTransfer, int maxNumberPendingConnections)
 	{
-		serverListeningSocketToUse.NoDelay = true;
-		serverListeningSocketToUse.Ttl = 112;
-		serverListeningSocketToUse.ReceiveBufferSize = maxBufferPerTransfer;
-		serverListeningSocketToUse.SendBufferSize = maxBufferPerTransfer;
-		serverListeningSocketToUse.Bind(NetworkInterop.GetLocalIPEndPoint(listeningPort));
-		serverListeningSocketToUse.Listen(maxNumberPendingConnections);
+		try
+		{
+			serverListeningSocketToUse.NoDelay = true;
+			serverListeningSocketToUse.Ttl = 112;
+			serverListeningSocketToUse.ReceiveBufferSize = maxBufferPerTransfer;
+			serverListeningSocketToUse.SendBufferSize = maxBufferPerTransfer;
+			serverListeningSocketToUse.Bind(NetworkInterop.GetLocalIPEndPoint(listeningPort));
+			serverListeningSocketToUse.Listen(maxNumberPendingConnections);
+			return true;
+		}
+		catch (Exception exc)
+		{
+			UserMessages.ShowWarningMessage(string.Format("Unable to start socket server on port {0}, an exceptions occurred: {1}", listeningPort, exc.Message));
+			return false;
+		}
 	}
 
 	public static bool IsSocketTryingToCloseUponApplicationExit(SocketException sexc)
@@ -637,114 +646,117 @@ public class NetworkInterop
 		serverListeningSocketToUse = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 		if (formToHookSocketClosingIntoFormDisposedEvent != null)
 			HookIntoFormDisposedEventAndCloseSocket(serverListeningSocketToUse, formToHookSocketClosingIntoFormDisposedEvent);
-
-		SetupServerSocketSettings(ref serverListeningSocketToUse, listeningPort, maxBufferPerTransfer, maxNumberPendingConnections);
-
-		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, TextFeedbackEvent, "Server started, waiting for clients...");
-
-		while (true)
+		
+		if (!SetupServerSocketSettings(ref serverListeningSocketToUse, listeningPort, maxBufferPerTransfer, maxNumberPendingConnections))
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, TextFeedbackEvent, "Server was unable to start.");
+		else
 		{
-			Socket handler = null;
-			try { handler = serverListeningSocketToUse.Accept(); }
-			catch (SocketException sexc)
-			{
-				if (IsSocketTryingToCloseUponApplicationExit(sexc)) break;
-				else UserMessages.ShowErrorMessage("SocketException occurred: " + sexc.Message);
-			}
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, TextFeedbackEvent, "Server started, waiting for clients...");
 
-			if (handler == null) continue;
-			DateTime timeTransferStarted = DateTime.Now;
-
-			//TODO: receiving speed decreases over time quite hectically
-			long totalBytesProcessed = 0;
-			byte[] firstConstantBytesForGuidInfoandFilesize = new byte[lengthOfFirstConstantBuffer];
-			Guid receivedGuid = Guid.Empty;
-			long totalFileSizeToRead = -1;
-			long totalInfoSizeToRead = -1;
-			int availableBytes;
-			if (!Directory.Exists(defaultFolderToSaveIn)) Directory.CreateDirectory(defaultFolderToSaveIn);
-			string localFileName = null;
-			FileStream fileStreamIn = null;//new FileStream(defaultFilePathForSavingForServer, FileMode.Create);
-			MemoryStream memoryStreamForInfo = new MemoryStream();
 			while (true)
 			{
-				if (!GetBytesAvailable(ref handler, out availableBytes)) continue;
-				//Console.WriteLine("availableBytes " + availableBytes.ToString());
-
-				byte[] receivedBytes = new byte[availableBytes];
-				int actualReceivedLength = handler.Receive(receivedBytes);
-
-				EnsureFirstConstantBufferIsFullyPopulated(totalBytesProcessed, ref firstConstantBytesForGuidInfoandFilesize, ref receivedBytes, actualReceivedLength);
-				//DONE TODO: Fix this
-				//string tryingToSendDataToClientCrashesIt;//Assuming it has to do with client needs to be reset if bytes received as defined in infolength
-				if (totalBytesProcessed >= lengthOfFirstConstantBuffer && totalFileSizeToRead != -1 && totalInfoSizeToRead != -1)
+				Socket handler = null;
+				try { handler = serverListeningSocketToUse.Accept(); }
+				catch (SocketException sexc)
 				{
-					double totalSecondCurrently = new TimeSpan(DateTime.Now.Ticks - timeTransferStarted.Ticks).TotalSeconds;
-					double averabeBytesPerSecond = totalBytesProcessed / totalSecondCurrently;
-					InfoOfTransferToClient infoToTransferToClient_Inprogress = new InfoOfTransferToClient(
-						false,
-						totalSecondCurrently,
-						averabeBytesPerSecond,
-						totalBytesProcessed,
-						lengthOfFirstConstantBuffer + totalInfoSizeToRead + totalFileSizeToRead);
-					SendResponseToClient(ref handler, receivedGuid, infoToTransferToClient_Inprogress);
+					if (IsSocketTryingToCloseUponApplicationExit(sexc)) break;
+					else UserMessages.ShowErrorMessage("SocketException occurred: " + sexc.Message);
 				}
 
-				EnsureValuesForGuidAndTotalSizes(ProgressChangedEvent, totalBytesProcessed, firstConstantBytesForGuidInfoandFilesize, ref receivedGuid, ref totalFileSizeToRead, ref totalInfoSizeToRead, actualReceivedLength);
+				if (handler == null) continue;
+				DateTime timeTransferStarted = DateTime.Now;
 
-				WriteBytesToMemorystream(totalBytesProcessed, totalInfoSizeToRead, ref memoryStreamForInfo, ref receivedBytes, actualReceivedLength);
-
-				if (totalInfoSizeToRead != -1 && totalFileSizeToRead > 0 && totalBytesProcessed + actualReceivedLength >= lengthOfFirstConstantBuffer + totalInfoSizeToRead)
+				//TODO: receiving speed decreases over time quite hectically
+				long totalBytesProcessed = 0;
+				byte[] firstConstantBytesForGuidInfoandFilesize = new byte[lengthOfFirstConstantBuffer];
+				Guid receivedGuid = Guid.Empty;
+				long totalFileSizeToRead = -1;
+				long totalInfoSizeToRead = -1;
+				int availableBytes;
+				if (!Directory.Exists(defaultFolderToSaveIn)) Directory.CreateDirectory(defaultFolderToSaveIn);
+				string localFileName = null;
+				FileStream fileStreamIn = null;//new FileStream(defaultFilePathForSavingForServer, FileMode.Create);
+				MemoryStream memoryStreamForInfo = new MemoryStream();
+				while (true)
 				{
-					if (localFileName == null)
-						localFileName = ObtainOriginalFilenameFromInfoOfTransferToServer((InfoOfTransferToServer)SerializationInterop.DeserializeCustomObjectFromStream(memoryStreamForInfo, new InfoOfTransferToServer(), false), ref TextFeedbackEvent);
-					if (localFileName != null)
-						WriteBytesToFilestream(totalBytesProcessed, totalInfoSizeToRead, ref fileStreamIn, ref receivedBytes, actualReceivedLength, localFileName);
-				}
+					if (!GetBytesAvailable(ref handler, out availableBytes)) continue;
+					//Console.WriteLine("availableBytes " + availableBytes.ToString());
 
-				totalBytesProcessed += actualReceivedLength;
+					byte[] receivedBytes = new byte[availableBytes];
+					int actualReceivedLength = handler.Receive(receivedBytes);
 
-				//Console.WriteLine("FireProgressChangedEventForTransfer: TBP=" + totalBytesProcessed + ", TFS=" + totalFileSizeToRead + ", TIS=" + totalInfoSizeToRead);
-				FireProgressChangedEventForTransfer(ref ProgressChangedEvent, totalBytesProcessed, totalFileSizeToRead, totalInfoSizeToRead, timeTransferStarted);
-
-				if (IsAlldataCompletelyTransferred(totalBytesProcessed, totalFileSizeToRead, totalInfoSizeToRead))
-				{
-					double totalSeconds = new TimeSpan(DateTime.Now.Ticks - timeTransferStarted.Ticks).TotalSeconds;
-					double averageBytesPerSecond = totalBytesProcessed / totalSeconds;
-					InfoOfTransferToClient infoToTransferToClient_Completed = new InfoOfTransferToClient(
-							true,
-							totalSeconds,
-							averageBytesPerSecond,
+					EnsureFirstConstantBufferIsFullyPopulated(totalBytesProcessed, ref firstConstantBytesForGuidInfoandFilesize, ref receivedBytes, actualReceivedLength);
+					//DONE TODO: Fix this
+					//string tryingToSendDataToClientCrashesIt;//Assuming it has to do with client needs to be reset if bytes received as defined in infolength
+					if (totalBytesProcessed >= lengthOfFirstConstantBuffer && totalFileSizeToRead != -1 && totalInfoSizeToRead != -1)
+					{
+						double totalSecondCurrently = new TimeSpan(DateTime.Now.Ticks - timeTransferStarted.Ticks).TotalSeconds;
+						double averabeBytesPerSecond = totalBytesProcessed / totalSecondCurrently;
+						InfoOfTransferToClient infoToTransferToClient_Inprogress = new InfoOfTransferToClient(
+							false,
+							totalSecondCurrently,
+							averabeBytesPerSecond,
 							totalBytesProcessed,
-							lengthOfFirstConstantBuffer + totalFileSizeToRead + totalInfoSizeToRead);
+							lengthOfFirstConstantBuffer + totalInfoSizeToRead + totalFileSizeToRead);
+						SendResponseToClient(ref handler, receivedGuid, infoToTransferToClient_Inprogress);
+					}
 
-					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, TextFeedbackEvent, "Successfully received file = " + localFileName
-						+ Environment.NewLine + "size of " + (infoToTransferToClient_Completed.TotalNumberofBytesToTransfer / 1024).ToString("0,0.00") + "kB"
-						+ Environment.NewLine + "in " + infoToTransferToClient_Completed.DurationOfTransferInSeconds.ToString("0.0#") + " seconds"
-						+ Environment.NewLine + "at " + (infoToTransferToClient_Completed.AverageBytesPerSecond / 1024).ToString("0,0.00") + "kB/s");
-					SendResponseToClient(ref handler, receivedGuid, infoToTransferToClient_Completed);
+					EnsureValuesForGuidAndTotalSizes(ProgressChangedEvent, totalBytesProcessed, firstConstantBytesForGuidInfoandFilesize, ref receivedGuid, ref totalFileSizeToRead, ref totalInfoSizeToRead, actualReceivedLength);
 
-					break;
+					WriteBytesToMemorystream(totalBytesProcessed, totalInfoSizeToRead, ref memoryStreamForInfo, ref receivedBytes, actualReceivedLength);
+
+					if (totalInfoSizeToRead != -1 && totalFileSizeToRead > 0 && totalBytesProcessed + actualReceivedLength >= lengthOfFirstConstantBuffer + totalInfoSizeToRead)
+					{
+						if (localFileName == null)
+							localFileName = ObtainOriginalFilenameFromInfoOfTransferToServer((InfoOfTransferToServer)SerializationInterop.DeserializeCustomObjectFromStream(memoryStreamForInfo, new InfoOfTransferToServer(), false), ref TextFeedbackEvent);
+						if (localFileName != null)
+							WriteBytesToFilestream(totalBytesProcessed, totalInfoSizeToRead, ref fileStreamIn, ref receivedBytes, actualReceivedLength, localFileName);
+					}
+
+					totalBytesProcessed += actualReceivedLength;
+
+					//Console.WriteLine("FireProgressChangedEventForTransfer: TBP=" + totalBytesProcessed + ", TFS=" + totalFileSizeToRead + ", TIS=" + totalInfoSizeToRead);
+					FireProgressChangedEventForTransfer(ref ProgressChangedEvent, totalBytesProcessed, totalFileSizeToRead, totalInfoSizeToRead, timeTransferStarted);
+
+					if (IsAlldataCompletelyTransferred(totalBytesProcessed, totalFileSizeToRead, totalInfoSizeToRead))
+					{
+						double totalSeconds = new TimeSpan(DateTime.Now.Ticks - timeTransferStarted.Ticks).TotalSeconds;
+						double averageBytesPerSecond = totalBytesProcessed / totalSeconds;
+						InfoOfTransferToClient infoToTransferToClient_Completed = new InfoOfTransferToClient(
+								true,
+								totalSeconds,
+								averageBytesPerSecond,
+								totalBytesProcessed,
+								lengthOfFirstConstantBuffer + totalFileSizeToRead + totalInfoSizeToRead);
+
+						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, TextFeedbackEvent, "Successfully received file = " + localFileName
+							+ Environment.NewLine + "size of " + (infoToTransferToClient_Completed.TotalNumberofBytesToTransfer / 1024).ToString("0,0.00") + "kB"
+							+ Environment.NewLine + "in " + infoToTransferToClient_Completed.DurationOfTransferInSeconds.ToString("0.0#") + " seconds"
+							+ Environment.NewLine + "at " + (infoToTransferToClient_Completed.AverageBytesPerSecond / 1024).ToString("0,0.00") + "kB/s");
+						SendResponseToClient(ref handler, receivedGuid, infoToTransferToClient_Completed);
+
+						break;
+					}
 				}
+
+				CloseAndDisposeFileStream(ref fileStreamIn);
+
+				//RenameFileBasedOnInfoOfTransfer((InfoOfTransferToServer)SerializationInterop.DeserializeCustomObjectFromStream(memoryStreamForInfo, new InfoOfTransferToServer(), false), ref TextFeedbackEvent);
+
+				memoryStreamForInfo.CloseAndDispose();
+
+				RaiseProgressChangedEvent_Ifnotnull(ref ProgressChangedEvent, 0, 100);
+
+				totalBytesProcessed = 0;
+				firstConstantBytesForGuidInfoandFilesize = null;
+				receivedGuid = Guid.Empty;
+				totalFileSizeToRead = 0;
+				totalInfoSizeToRead = 0;
+				availableBytes = 0;
+				localFileName = null;
+				fileStreamIn = null;//new FileStream(defaultFilePathForSavingForServer, FileMode.Create);
+				memoryStreamForInfo = null;
 			}
-
-			CloseAndDisposeFileStream(ref fileStreamIn);
-
-			//RenameFileBasedOnInfoOfTransfer((InfoOfTransferToServer)SerializationInterop.DeserializeCustomObjectFromStream(memoryStreamForInfo, new InfoOfTransferToServer(), false), ref TextFeedbackEvent);
-
-			memoryStreamForInfo.CloseAndDispose();
-
-			RaiseProgressChangedEvent_Ifnotnull(ref ProgressChangedEvent, 0, 100);
-
-			totalBytesProcessed = 0;
-			firstConstantBytesForGuidInfoandFilesize = null;
-			receivedGuid = Guid.Empty;
-			totalFileSizeToRead = 0;
-			totalInfoSizeToRead = 0;
-			availableBytes = 0;
-			localFileName = null;
-			fileStreamIn = null;//new FileStream(defaultFilePathForSavingForServer, FileMode.Create);
-			memoryStreamForInfo = null;
 		}
 	}
 

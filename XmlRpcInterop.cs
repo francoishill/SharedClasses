@@ -59,7 +59,7 @@ public class XmlRpcInterop
 		return tmpUri;
 	}
 
-	public static void StartDynamicCodeInvokingServer_XmlRpc()
+	public static bool StartDynamicCodeInvokingServer_XmlRpc()
 	{
 		//HttpServerChannel httpServerChannel = new HttpServerChannel(
 		//	CreateDefaultChannelProperties(),
@@ -76,10 +76,12 @@ public class XmlRpcInterop
 				typeof(DynamicCodeInvokingServerClass),
 				GetDefaultRelativeUri(),//"DynamicCodeInvoking/xmlrpc",
 				WellKnownObjectMode.Singleton);
+			return true;
 		}
 		catch (Exception exc)
 		{
 			UserMessages.ShowWarningMessage(string.Format("Unable to start XmlRpc server, an exceptions occurred: {0}", exc.Message));
+			return false;
 		}
 	}
 
@@ -87,7 +89,7 @@ public class XmlRpcInterop
 	//{
 	//	SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
 	//	Iclientside_DynamicCodeInvokingServerClass proxy = XmlRpcProxyGen.Create<Iclientside_DynamicCodeInvokingServerClass>();
-	//	proxy.Url = SharedClassesSettings.tracXmlRpcInteropSettings.GetCominedUrlForDynamicInvokationServer();
+	//	proxy.Url = SharedClassesSettings.tracXmlRpcInteropSettings.GetCombinedUrlForDynamicInvokationServer();
 	//	//string[] TypeStringArray;
 	//	//object[] ParameterList;
 	//	//DynamicCodeInvoking.GetParameterListAndTypesStringArray(out TypeStringArray, out ParameterList, "Hallo", "Temp title", true);

@@ -584,9 +584,17 @@ namespace SharedClasses
 			[Setting("Please enter the Relative url of the Dynamic Invokation Server")]
 			public string DynamicInvokationServer_RelativePath { get; set; }
 
+			[Description("This is the section after the base url use for connecting to the dynamic invoking server. This may be different than DynamicInvokationServer_RelativePath as it supports proxy bypass method via http port (80). It must start with a front-slash / (example: /dynamicserver/xmlrpc).")]
+			[Setting("Please enter the Relative url for connecting to the Dynamic Invokation Server")]
+			public string ClientProxyBypass_RelativePath { get; set; }
+
 			[Description("The port number used for starting a server to allow Dynamic Invoking of code from a clientside pc.")]
 			[Setting("Please enter the Port number of the Dynamic Invoking Server")]
 			public int? DynamicInvokationServer_PortNumber { get; set; }
+
+			[Description("The port number used for connecting to a Dynamic Invoking server, this may be port 80 and therefore different to DynamicInvokationServer_PortNumber as it supports proxy bypass method via http port (80).")]
+			[Setting("Please enter the Port number for connecting to the Dynamic Invoking Server")]
+			public int? ClientProxyBypass_PortNumber { get; set; }
 
 			//TODO: Sort out how this list to string will work inside the PropertyInterceptor
 			private List<string> listedXmlRpcUrls;
@@ -618,9 +626,14 @@ namespace SharedClasses
 			//	listedXmlRpcUrls = ListedXmlRpcUrlsIn;
 			//}
 
-			public string GetCominedUrlForDynamicInvokationServer()
+			public string GetCombinedUrlForDynamicInvokationServer()
 			{
 				return DynamicInvokationServer_BasePath + ":" + DynamicInvokationServer_PortNumber + DynamicInvokationServer_RelativePath;
+			}
+
+			public string GetCombinedUrlForConnectingToDynamicInvokationServer()
+			{
+				return DynamicInvokationServer_BasePath + ":" + ClientProxyBypass_PortNumber + ClientProxyBypass_RelativePath;
 			}
 
 			public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")

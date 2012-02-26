@@ -29,5 +29,10 @@ namespace SharedClasses
 				return pickItemWindow.comboBox_ItemPicked.SelectedItem;
 			else return defaultItem;
 		}
+
+		public static object PickItem(Type ObjectType, Array itemArray, string Message, object defaultItem)
+		{
+			return SharedClasses.PickItemWPF.PickItem(ObjectType, itemArray, Message, defaultItem);
+		}
 	}
 }

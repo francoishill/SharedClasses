@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Windows.Forms;
 
 public partial class PickItemForm : Form
@@ -41,5 +42,32 @@ public partial class PickItemForm : Form
 		if (pickItemForm.ShowDialog(owner) == DialogResult.OK)
 			return pickItemForm.comboBox_ItemPicked.SelectedItem;
 		else return defaultItem;
+	}
+
+	public static T PickItem<T>(Array itemArray, string Message, T defaultItem)
+	{
+		return PickItem<T>(null, itemArray, Message, defaultItem);
+	}
+	public static object PickItem(Type ObjectType, Array itemArray, string Message, object defaultItem)
+	{
+		return PickItem(ObjectType, null, itemArray, Message, defaultItem);
+	}
+	public static T PickItem<T>(IWin32Window owner, Array itemArray, string Message, T defaultItem)
+	{
+		//return PickItemForm.PickItem<T>(itemArray, Message, defaultItem, owner);
+		return (T)PickItem(typeof(T), owner, itemArray, Message, defaultItem);
+	}
+	public static object PickItem(Type ObjectType, IWin32Window owner, Array itemArray, string Message, object defaultItem)
+	{
+		return PickItemForm.PickItem(ObjectType, itemArray, Message, defaultItem, owner);
+	}
+
+	public static T PickItem<T>(List<T> itemList, string Message, T defaultItem)
+	{
+		return PickItem<T>(null, itemList, Message, defaultItem);
+	}
+	public static T PickItem<T>(IWin32Window owner, List<T> itemList, string Message, T defaultItem)
+	{
+		return PickItemForm.PickItem<T>(itemList.ToArray(), Message, defaultItem, owner);
 	}
 }

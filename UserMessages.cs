@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
-using InlineCommandToolkit;
+//using InlineCommandToolkit;
 
 public class UserMessages
 {
@@ -165,49 +165,6 @@ public class UserMessages
 		return result;
 	}
 
-	public static string Prompt(string Message, string Title = "Prompt", string DefaultResponse = "", bool IsPassword = false)
-	{
-		//return Microsoft.VisualBasic.Interaction.InputBox(Message, Title, DefaultResponse);
-		return InputBoxWPF.Prompt(Message, Title, IsPassword);
-	}
-
-	public static object PickItemWPF(Type ObjectType, Array itemArray, string Message, object defaultItem)
-	{
-		return SharedClasses.PickItemWPF.PickItem(ObjectType, itemArray, Message, defaultItem);
-	}
-
-	public static T PickItem<T>(Array itemArray, string Message, T defaultItem)
-	{
-		return PickItem<T>(null, itemArray, Message, defaultItem);
-	}
-	public static object PickItem(Type ObjectType, Array itemArray, string Message, object defaultItem)
-	{
-		return PickItem(ObjectType, null, itemArray, Message, defaultItem);
-	}
-	public static T PickItem<T>(IWin32Window owner, Array itemArray, string Message, T defaultItem)
-	{
-		//return PickItemForm.PickItem<T>(itemArray, Message, defaultItem, owner);
-		return (T)PickItem(typeof(T), owner, itemArray, Message, defaultItem);
-	}
-	public static object PickItem(Type ObjectType, IWin32Window owner, Array itemArray, string Message, object defaultItem)
-	{
-		return PickItemForm.PickItem(ObjectType, itemArray, Message, defaultItem, owner);
-	}
-
-	public static T PickItem<T>(List<T> itemList, string Message, T defaultItem)
-	{
-		return PickItem<T>(null, itemList, Message, defaultItem);
-	}
-	public static T PickItem<T>(IWin32Window owner, List<T> itemList, string Message, T defaultItem)
-	{
-		return PickItemForm.PickItem<T>(itemList.ToArray(), Message, defaultItem, owner);
-	}
-
-	public static bool EnterStringAndListOfEnums<T>(string Message, out string OutString, out List<T> ListOfEnums)
-	{
-		return EnterStringAndListOfEnumsForm.EnterStringAndListOfEnums<T>(Message, out OutString, out ListOfEnums);
-	}
-
 	private static Form GetTopmostForm()
 	{
 		Form topmostForm = new Form();
@@ -227,6 +184,7 @@ public class UserMessages
 		// Finally show the MessageBox with the form just created as its owner
 	}
 
+	//Forms
 	public static string ChooseDirectory(string UserMessage, string SelectedPath = null, Environment.SpecialFolder RootFolder = Environment.SpecialFolder.SendTo, bool ShowNewFolderButton = false, IWin32Window owner = null)
 	{
 		bool useTempForm = false;

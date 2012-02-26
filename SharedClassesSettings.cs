@@ -596,7 +596,7 @@ namespace SharedClasses
 				get
 				{
 					if (listedXmlRpcUrls == null || listedXmlRpcUrls.Count == 0)
-						listedXmlRpcUrls = new List<string>(UserMessages.Prompt("Please enter a list of XmlRpc urls (comma separated)").Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries));
+						listedXmlRpcUrls = new List<string>(InputBoxWPF.Prompt("Please enter a list of XmlRpc urls (comma separated)").Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries));
 					return listedXmlRpcUrls == null ? null : string.Join("|", listedXmlRpcUrls);
 				}
 				set { listedXmlRpcUrls = value == null ? null : new List<string>(value.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)); }
@@ -753,7 +753,7 @@ namespace SharedClasses
 				get
 				{
 					if (listOfMonitoredSubversionDirectories == null || listOfMonitoredSubversionDirectories.Count == 0)
-						listOfMonitoredSubversionDirectories = new List<string>(UserMessages.Prompt("Please enter a list of monitored Subversion directories").Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries));
+						listOfMonitoredSubversionDirectories = new List<string>(InputBoxWPF.Prompt("Please enter a list of monitored Subversion directories").Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries));
 					return listOfMonitoredSubversionDirectories == null ? null : string.Join("|", listOfMonitoredSubversionDirectories);
 				}
 				set { listOfMonitoredSubversionDirectories = value == null ? null : new List<string>(value.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)); }

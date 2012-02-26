@@ -1631,7 +1631,7 @@ public class ClientOnClientSide
 		TcpClient server;
 
 		//System.Console.WriteLine("Please Enter the port number of Server:\n");
-		port = Int32.Parse(UserMessages.Prompt("Please Enter the port number of Server")); //System.Console.ReadLine());
+		port = Int32.Parse(InputBoxWPF.Prompt("Please Enter the port number of Server")); //System.Console.ReadLine());
 		try
 		{
 			server = new TcpClient("127.0.0.1", port);
@@ -1656,7 +1656,7 @@ public class ClientOnClientSide
 
 		while (true)
 		{
-			input = UserMessages.Prompt("Enter the message to send it to the Sever (type exit to exit)");//Console.ReadLine();
+			input = InputBoxWPF.Prompt("Enter the message to send it to the Sever (type exit to exit)");//Console.ReadLine();
 			if (input == "exit" || input == null)
 				break;
 			ns.Write(Encoding.ASCII.GetBytes(input), 0, input.Length);

@@ -166,7 +166,7 @@ public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable
 								string UserPrompt = "Please enter value for " + propName;
 								if (att != null && !string.IsNullOrWhiteSpace(att.UserPrompt))
 									UserPrompt = att.UserPrompt;
-								object tmpUnEncryptedAnswer = UserMessages.Prompt(UserPrompt, propOwnLongName, IsPassword: true);
+								object tmpUnEncryptedAnswer = InputBoxWPF.Prompt(UserPrompt, propOwnLongName, IsPassword: true);
 								if (tmpUnEncryptedAnswer != null)
 								{
 									encryptedPi.SetValue(target, GenericSettings.Encrypt(tmpUnEncryptedAnswer.ToString(), att.EncryptedPropertyName));
@@ -198,17 +198,17 @@ public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable
 								{
 									if (att == null || string.IsNullOrWhiteSpace(att.UserPrompt))
 										UserPrompt = "Please pick one of the following options for " + propName;
-									tmpUserAnswer = UserMessages.PickItemWPF(
+									tmpUserAnswer = PickItemWPF.PickItem(
 										pi.PropertyType,
 										Enum.GetValues(pi.PropertyType.IsEnum ? pi.PropertyType : Nullable.GetUnderlyingType(pi.PropertyType)),
 										UserPrompt,
 										null);
 								}
 								else if (IsOfTypeOrNullableType(pi.PropertyType, typeof(string)))
-									tmpUserAnswer = UserMessages.Prompt(UserPrompt, propOwnLongName, IsPassword: IsPasswordDoNotSave);
+									tmpUserAnswer = InputBoxWPF.Prompt(UserPrompt, propOwnLongName, IsPassword: IsPasswordDoNotSave);
 								else if (IsOfTypeOrNullableType(pi.PropertyType, typeof(short)))
 								{
-									tmpUserAnswer = UserMessages.Prompt(UserPrompt, propOwnLongName, IsPassword: IsPasswordDoNotSave);
+									tmpUserAnswer = InputBoxWPF.Prompt(UserPrompt, propOwnLongName, IsPassword: IsPasswordDoNotSave);
 									short tmpshort;
 									if (short.TryParse(tmpUserAnswer.ToString(), out tmpshort))
 										tmpUserAnswer = tmpshort;
@@ -220,7 +220,7 @@ public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable
 								}
 								else if (IsOfTypeOrNullableType(pi.PropertyType, typeof(int)))
 								{
-									tmpUserAnswer = UserMessages.Prompt(UserPrompt, propOwnLongName, IsPassword: IsPasswordDoNotSave);
+									tmpUserAnswer = InputBoxWPF.Prompt(UserPrompt, propOwnLongName, IsPassword: IsPasswordDoNotSave);
 									int tmpint;
 									if (int.TryParse(tmpUserAnswer.ToString(), out tmpint))
 										tmpUserAnswer = tmpint;
@@ -232,7 +232,7 @@ public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable
 								}
 								else if (IsOfTypeOrNullableType(pi.PropertyType, typeof(double)))
 								{
-									tmpUserAnswer = UserMessages.Prompt(UserPrompt, propOwnLongName, IsPassword: IsPasswordDoNotSave);
+									tmpUserAnswer = InputBoxWPF.Prompt(UserPrompt, propOwnLongName, IsPassword: IsPasswordDoNotSave);
 									double tmpdouble;
 									if (double.TryParse(tmpUserAnswer.ToString(), out tmpdouble))
 										tmpUserAnswer = tmpdouble;
@@ -254,7 +254,7 @@ public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable
 									string tmpstr = null;
 									do
 									{
-										tmpstr = UserMessages.Prompt(UserPrompt);
+										tmpstr = InputBoxWPF.Prompt(UserPrompt);
 										if (tmpstr == null) continue;
 										else
 										{

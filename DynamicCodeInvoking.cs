@@ -98,13 +98,49 @@ public class DynamicCodeInvoking
 				string successMsg = "Successfully performed command: ";
 				if (resultObj.MethodInvokeResultingObject is string && resultObj.MethodInvokeResultingObject.ToString() == DynamicCodeInvoking.VOID_RESULTSTRING)
 					successMsg += "Void method, no result returned";
+				else if (resultObj.MethodInvokeResultingObject is string)
+					successMsg += resultObj.MethodInvokeResultingObject as string;
 				else if (resultObj.MethodInvokeResultingObject is string[])
 					foreach (string s in resultObj.MethodInvokeResultingObject as string[])
 						successMsg += Environment.NewLine + s;
 				else if (resultObj.MethodInvokeResultingObject is List<string>)
 					foreach (string s in resultObj.MethodInvokeResultingObject as List<string>)
 						successMsg += Environment.NewLine + s;
-				else successMsg += resultObj.MethodInvokeResultingObject.ToString();
+				else if (resultObj.MethodInvokeResultingObject is object[])
+					foreach (object o in resultObj.MethodInvokeResultingObject as object[])
+						if (o != null)
+							successMsg += Environment.NewLine + o.ToString();
+						else successMsg += resultObj.MethodInvokeResultingObject.ToString();
+				else if (resultObj.MethodInvokeResultingObject is byte[])
+				{
+					if (UserMessages.Confirm("Array of bytes received as response, save this to a file now?", DefaultYesButton: true))
+					{
+						SaveFileDialog sfd = new SaveFileDialog();
+						sfd.Title = "Select the file to save the array of bytes to";
+						sfd.Filter = "All files (*.*)|*.*";
+						if (sfd.ShowDialog() == DialogResult.OK)
+						{
+							try
+							{
+								System.IO.File.WriteAllBytes(sfd.FileName, resultObj.MethodInvokeResultingObject as byte[]);
+								System.Diagnostics.Process.Start("explorer", @"/select, """ + sfd.FileName + @"""");
+								successMsg = "File successfully saved to file: " + sfd.FileName;
+							}
+							catch (Exception exc)
+							{
+								UserMessages.ShowErrorMessage("Could not write byte array to file: " + exc.Message);
+								successMsg = "Unable to write byte array to file: " + exc.Message;
+							}
+						}
+					}
+					else
+						successMsg = "Byte array received, user chose to not save to file.";
+				}
+				else
+				{
+					successMsg += resultObj.MethodInvokeResultingObject.ToString();
+					UserMessages.ShowWarningMessage("Unrecognized type = " + resultObj.MethodInvokeResultingObject.GetType().ToString());
+				}
 				UserMessages.ShowInfoMessage(successMsg);
 			}
 		}
@@ -289,8 +325,8 @@ public class DynamicCodeInvoking
 			//foreach (Assembly assembly in appAssemblies)
 			//	foreach (Type type in assembly.GetTypes())
 			foreach (Type type in GetAllUniqueSimpleTypesInCurrentAssembly)
-					if (tmpList.Contains(type.ToString())) tmpDuplicateList.Add(type.ToString());
-					else tmpList.Add(type.ToString());
+				if (tmpList.Contains(type.ToString())) tmpDuplicateList.Add(type.ToString());
+				else tmpList.Add(type.ToString());
 			foreach (string dup in tmpDuplicateList)
 				tmpList.RemoveAll((s) => s == dup);
 			AllUniqueSimpleTypeStringsInCurrentAssembly = tmpList;
@@ -331,7 +367,8 @@ public class DynamicCodeInvoking
 				if (hashTableOfParameters != null)
 					return hashTableOfParameters;
 				hashTableOfParameters = new Dictionary<string, ParameterNameAndType>();
-				foreach (ParameterInfo parInfo in methodInfo.GetParameters()){
+				foreach (ParameterInfo parInfo in methodInfo.GetParameters())
+				{
 					hashTableOfParameters.Add(parInfo.Name, new ParameterNameAndType(parInfo.Name, parInfo.ParameterType));//.DefaultValue);//GetDefault(.ParameterType));
 				}
 				return hashTableOfParameters;

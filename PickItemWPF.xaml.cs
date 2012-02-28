@@ -32,7 +32,7 @@ namespace SharedClasses
 
 		public static object PickItem(Type ObjectType, Array itemArray, string Message, object defaultItem)
 		{
-			return SharedClasses.PickItemWPF.PickItem(ObjectType, itemArray, Message, defaultItem);
+			return SharedClasses.PickItemWPF.PickItem(ObjectType, itemArray, Message, defaultItem, null);
 		}
 	}
 }

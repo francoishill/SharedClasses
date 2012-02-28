@@ -157,4 +157,9 @@ public class ParameterNameAndType
 		Name = NameIn;
 		type = typeIn;
 	}
+
+	public void OverrideValue(object Value)
+	{
+		this.Value = Value;
+	}
 }

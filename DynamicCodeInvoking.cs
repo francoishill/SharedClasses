@@ -68,7 +68,7 @@ public class DynamicCodeInvoking
 		}
 	}
 
-	public static void RunSelectedFunction(Dictionary<string, ParameterNameAndType> dict, string AssemblyQualifiedName, string MethodName)
+	public static DynamicCodeInvoking.RunCodeReturnStruct RunSelectedFunction(Dictionary<string, ParameterNameAndType> dict, string AssemblyQualifiedName, string MethodName, bool ShowResultMessage = true)
 	{
 		try
 		{
@@ -113,7 +113,7 @@ public class DynamicCodeInvoking
 						else successMsg += resultObj.MethodInvokeResultingObject.ToString();
 				else if (resultObj.MethodInvokeResultingObject is byte[])
 				{
-					if (UserMessages.Confirm("Array of bytes received as response, save this to a file now?", DefaultYesButton: true))
+					if (ShowResultMessage && UserMessages.Confirm("Array of bytes received as response, save this to a file now?", DefaultYesButton: true))
 					{
 						SaveFileDialog sfd = new SaveFileDialog();
 						sfd.Title = "Select the file to save the array of bytes to";
@@ -139,15 +139,22 @@ public class DynamicCodeInvoking
 				else
 				{
 					successMsg += resultObj.MethodInvokeResultingObject.ToString();
-					UserMessages.ShowWarningMessage("Unrecognized type = " + resultObj.MethodInvokeResultingObject.GetType().ToString());
+					if (ShowResultMessage)
+						UserMessages.ShowWarningMessage("Unrecognized type = " + resultObj.MethodInvokeResultingObject.GetType().ToString());
 				}
-				UserMessages.ShowInfoMessage(successMsg);
+				if (ShowResultMessage)
+					UserMessages.ShowInfoMessage(successMsg);
+				return resultObj;
 			}
 		}
 		catch (Exception exc)
 		{
 			UserMessages.ShowErrorMessage("Could not perform dynamic method remotely: " + Environment.NewLine + exc.Message + Environment.NewLine + Environment.NewLine + exc.StackTrace);
 		}
+
+		RunCodeReturnStruct rc = new RunCodeReturnStruct();
+		rc.Success = false;
+		return rc;
 	}
 
 	public static void RunBlockOfCodeNow(string block)

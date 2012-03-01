@@ -1720,7 +1720,7 @@ public class ClientOnClientSide
 			}
 
 		// Eat up exception....Hmmmm I'm loving eat!!!
-			catch (Exception exception)
+			catch (Exception)// exception)
 			{
 				//MessageBox.Show(exception.Message + "\n" + exception.StackTrace);
 

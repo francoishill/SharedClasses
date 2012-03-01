@@ -36,7 +36,7 @@ namespace TestingSharedClasses
 			treeViewAssemblies.AddHandler(TreeViewItem.ExpandedEvent, new RoutedEventHandler(TreeviewItemExpanded));
 		}
 
-		private new ObservableCollection<MethodToRun> ImportFromFile(string filepath = null)
+		private ObservableCollection<MethodClass> ImportFromFile(string filepath = null)
 		{
 			OpenFileDialog ofd = new OpenFileDialog();
 			ofd.Title = "Select a file to load from";
@@ -46,7 +46,7 @@ namespace TestingSharedClasses
 				if (filepath != null)
 					ofd.FileName = filepath;
 
-				var tmpMethodToRunList = new ObservableCollection<MethodToRun>();
+				var tmpMethodToRunList = new ObservableCollection<MethodClass>();
 
 				string tmpUsedClass_AssemblyQualifiedName = null;
 				string tmpMethodName = null;
@@ -93,7 +93,7 @@ namespace TestingSharedClasses
 
 						if (!errorOccurred)
 						{
-							tmpMethodToRunList.Add(new MethodToRun(
+							tmpMethodToRunList.Add(new MethodClass(
 								tmpParams,
 								tmpUsedClass_AssemblyQualifiedName,
 								tmpMethodName));
@@ -105,7 +105,7 @@ namespace TestingSharedClasses
 			return null;
 		}
 
-		private void ExportToFile(IEnumerable<MethodToRun> methodList, string filepath = null)
+		private void ExportToFile(IEnumerable<MethodClass> methodList, string filepath = null)
 		{
 			SaveFileDialog sfd = new SaveFileDialog();
 			sfd.Title = "Select a file to save to";
@@ -117,19 +117,19 @@ namespace TestingSharedClasses
 				using (var xw = new XmlTextWriter(sfd.FileName, System.Text.Encoding.ASCII) { Formatting = Formatting.Indented })
 				{
 					xw.WriteStartElement("ListOfMethodToRun");
-					foreach (MethodToRun mtr in methodList)
+					foreach (MethodClass mc in methodList)
 					{
 						xw.WriteStartElement("MethodToRun");
-						xw.WriteAttributeString("UsedClass_AssemblyQualifiedName", mtr.UsedClass_AssemblyQualifiedName);
-						xw.WriteAttributeString("MethodName", mtr.MethodName);
+						xw.WriteAttributeString("UsedClass_AssemblyQualifiedName", mc.ParentClass.ClassType.AssemblyQualifiedName);
+						xw.WriteAttributeString("MethodName", mc.Methodinfo.Name);
 						xw.WriteStartElement("Parameters");
-						var keys = mtr.Parameters.Keys.ToArray();
-						foreach (string key in keys)
+						//var keys = mc.PropertyGridAdapter._dictionary.Keys.ToArray();
+						foreach (var pi in mc.Parameters)
 						{
 							xw.WriteStartElement("Parameter");
-							xw.WriteAttributeString("Name", mtr.Parameters[key].Name);
-							xw.WriteAttributeString("AssemblyQualifiedName", mtr.Parameters[key].type.AssemblyQualifiedName);
-							xw.WriteValue(mtr.Parameters[key].Value);
+							xw.WriteAttributeString("Name", pi.Name);
+							xw.WriteAttributeString("AssemblyQualifiedName", pi.ParameterType.AssemblyQualifiedName);
+							xw.WriteValue(mc.GetParameterValue(pi));
 							xw.WriteEndElement();
 						}
 						xw.WriteEndElement();//Parameters
@@ -142,7 +142,7 @@ namespace TestingSharedClasses
 
 		const string appname = "RemoteXmlRpc";
 		const string listsSubfolder = "SavedListsOfMethodsToRun";
-		private ObservableCollection<MethodToRun> LoadListFromName()
+		private ObservableCollection<MethodClass> LoadListFromName()
 		{
 			string tmpdir = SettingsInterop.LocalAppdataPath(appname) + "\\" + listsSubfolder;
 			string[] tmpNamelist = Directory.GetFiles(tmpdir).Select(f => System.IO.Path.GetFileNameWithoutExtension(f)).ToArray();
@@ -167,7 +167,7 @@ namespace TestingSharedClasses
 			return null;
 		}
 
-		private void SaveListWithName(IEnumerable<MethodToRun> methodList)
+		private void SaveListWithName(IEnumerable<MethodClass> methodList)
 		{
 			string NameToUse = InputBoxWPF.Prompt("Please enter the desired name of this list to save to", "Name the list");
 			if (NameToUse != null)
@@ -219,7 +219,9 @@ namespace TestingSharedClasses
 
 		private void MenuItemRunRemotely_Click(object sender, RoutedEventArgs e)
 		{
-			MethodClass methodClass = (sender as MenuItem).DataContext as MethodClass;
+			MenuItem menuItem = sender as MenuItem;
+			treeViewAssemblies.Focus();
+			MethodClass methodClass = menuItem.DataContext as MethodClass;
 			DynamicCodeInvoking.RunCodeReturnStruct result = methodClass.Run();
 		}
 
@@ -315,32 +317,32 @@ namespace TestingSharedClasses
 		}
 	}
 
-	public class MethodToRun
-	{
-		public Dictionary<string, ParameterNameAndType> Parameters { get; set; }
-		public string UsedClass_AssemblyQualifiedName { get; set; }
-		public string MethodName { get; set; }
-		public MethodToRun(Dictionary<string, ParameterNameAndType> Parameters, string UsedClass_AssemblyQualifiedName, string MethodName)
-		{
-			this.Parameters = Parameters;
-			this.UsedClass_AssemblyQualifiedName = UsedClass_AssemblyQualifiedName;
-			this.MethodName = MethodName;
-		}
+	//public class MethodToRun
+	//{
+	//	public Dictionary<string, ParameterNameAndType> Parameters { get; set; }
+	//	public string UsedClass_AssemblyQualifiedName { get; set; }
+	//	public string MethodName { get; set; }
+	//	public MethodToRun(Dictionary<string, ParameterNameAndType> Parameters, string UsedClass_AssemblyQualifiedName, string MethodName)
+	//	{
+	//		this.Parameters = Parameters;
+	//		this.UsedClass_AssemblyQualifiedName = UsedClass_AssemblyQualifiedName;
+	//		this.MethodName = MethodName;
+	//	}
 
-		public string UsedClass_HumanName
-		{
-			get
-			{
-				if (string.IsNullOrEmpty(UsedClass_AssemblyQualifiedName))
-					return "";
-				else
-				{
-					string partbeforeFirstComma = UsedClass_AssemblyQualifiedName.Substring(0, UsedClass_AssemblyQualifiedName.IndexOf(','));
-					return partbeforeFirstComma.Substring(partbeforeFirstComma.LastIndexOf('.') + 1);
-				}
-			}
-		}
-	}
+	//	public string UsedClass_HumanName
+	//	{
+	//		get
+	//		{
+	//			if (string.IsNullOrEmpty(UsedClass_AssemblyQualifiedName))
+	//				return "";
+	//			else
+	//			{
+	//				string partbeforeFirstComma = UsedClass_AssemblyQualifiedName.Substring(0, UsedClass_AssemblyQualifiedName.IndexOf(','));
+	//				return partbeforeFirstComma.Substring(partbeforeFirstComma.LastIndexOf('.') + 1);
+	//			}
+	//		}
+	//	}
+	//}
 
 	#region Extension methods
 	public static class ExtensionMethods

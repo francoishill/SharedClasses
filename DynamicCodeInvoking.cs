@@ -2746,6 +2746,12 @@ public class MethodClass : INotifyPropertyChanged
 			LastFailureErrorMessage = value.ErrorMessage; OnPropertyChanged("LastFailureErrorMessage");
 		}
 	}
+
+	public object GetParameterValue(ParameterInfo parameterInfo)
+	{
+		return PropertyGridAdapter._dictionary[parameterInfo.Name].Value;
+	}
+
 	public MethodClass(MethodInfo Methodinfo, ClassWithStaticMethods ParentClass)
 	{
 		this.ParentClass = ParentClass;
@@ -2755,6 +2761,36 @@ public class MethodClass : INotifyPropertyChanged
 			tmpdict.Add(pi.Name, new ParameterNameAndType(pi.Name, pi.ParameterType));
 		PropertyGridAdapter = new DictionaryPropertyGridAdapter(tmpdict);
 	}
+	public MethodClass(Dictionary<string, ParameterNameAndType> Parameters, string ParentClass_AssemblyQualifiedName, string MethodName)
+	{
+		PropertyGridAdapter = new DictionaryPropertyGridAdapter(Parameters);
+		//Must improve the way to obtain a type
+		this.ParentClass = new ClassWithStaticMethods(DynamicCodeInvoking.GetTypeFromSimpleString(ParentClass_AssemblyQualifiedName.Substring(0, ParentClass_AssemblyQualifiedName.IndexOf(','))));
+
+		bool MethodFound = false;
+		foreach (var m in this.ParentClass.Methods)
+			if (m.Methodinfo.Name == MethodName)
+			{
+				if (m.Parameters.Length != Parameters.Count)
+					continue;
+
+				var tmpkeys = Parameters.Keys.ToArray();
+				bool ParameterMismatch = false;
+				for (int i = 0; i < Parameters.Count; i++)
+					if (Parameters[tmpkeys[i]].Name != m.Parameters[i].Name
+						|| Parameters[tmpkeys[i]].type != m.Parameters[i].ParameterType)
+						ParameterMismatch = true;
+				if (!ParameterMismatch)
+				{
+					MethodFound = true;
+					this.Methodinfo = m.Methodinfo;
+					break;
+				}
+			}
+		if (!MethodFound)
+			UserMessages.ShowWarningMessage("Unable to find metdho for " + MethodName);
+	}
+
 	public DynamicCodeInvoking.RunCodeReturnStruct Run()
 	{
 		LastResult =

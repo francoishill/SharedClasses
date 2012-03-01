@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -307,7 +309,7 @@ public class DynamicCodeInvoking
 			foreach (Assembly assembly in appAssemblies)
 				foreach (Type type in assembly.GetTypes())
 					AllUniqueSimpleTypesInCurrentAssembly.Add(type);
-			return AllUniqueSimpleTypesInCurrentAssembly;
+			return AllUniqueSimpleTypesInCurrentAssembly.OrderBy(t => t.FullName).ToList();
 		}
 	}
 	public static Type GetTypeFromSimpleString(string SimpleTypeString, bool IgnoreCase = false)
@@ -339,6 +341,28 @@ public class DynamicCodeInvoking
 			AllUniqueSimpleTypeStringsInCurrentAssembly = tmpList;
 			AllUniqueSimpleTypeStringsInCurrentAssembly.Sort();
 			return AllUniqueSimpleTypeStringsInCurrentAssembly;
+		}
+	}
+
+	private static ObservableCollection<ClassWithStaticMethods> _uniqueTypes = null;
+	public static ObservableCollection<ClassWithStaticMethods> UniqueTypes
+	{
+		get
+		{
+			if (_uniqueTypes != null)
+				return _uniqueTypes;
+			_uniqueTypes = new ObservableCollection<ClassWithStaticMethods>();
+			foreach (Type type in GetAllUniqueSimpleTypesInCurrentAssembly)
+				_uniqueTypes.Add(new ClassWithStaticMethods(type));
+			return _uniqueTypes;
+
+			//	if (tmpList.Contains(type.ToString())) tmpDuplicateList.Add(type.ToString());
+			//	else tmpList.Add(type.ToString());
+			//foreach (string dup in tmpDuplicateList)
+			//	tmpList.RemoveAll((s) => s == dup);
+			//AllUniqueSimpleTypeStringsInCurrentAssembly = tmpList;
+			//AllUniqueSimpleTypeStringsInCurrentAssembly.Sort();
+			//return AllUniqueSimpleTypeStringsInCurrentAssembly;
 		}
 	}
 
@@ -2636,4 +2660,117 @@ public class DynamicCodeInvoking
 		}
 
 	}
+}
+
+public class ClassWithAllAssemblies : INotifyPropertyChanged
+{
+	private AssemblyClass[] _assemblies;
+
+	public AssemblyClass[] Assemblies { get { return _assemblies ?? (_assemblies = System.AppDomain.CurrentDomain.GetAssemblies().OrderBy(a => a.FullName).Select(a => new AssemblyClass(a)).ToArray()); } }
+	private System.Windows.Visibility _visibility;
+	public System.Windows.Visibility Visibility { get { return _visibility; } set { _visibility = value; OnPropertyChanged("Visibility"); } }
+
+	public ClassWithAllAssemblies() { }
+
+	public event PropertyChangedEventHandler PropertyChanged = new PropertyChangedEventHandler(delegate { });
+	public void OnPropertyChanged(string propertyName) { PropertyChanged(this, new PropertyChangedEventArgs(propertyName)); }
+}
+
+public class AssemblyClass : INotifyPropertyChanged
+{
+	private ClassWithStaticMethods[] _types;
+
+	public Assembly ThisAssembly { get; private set; }
+	public ClassWithStaticMethods[] Types { get { return _types ?? (_types = ThisAssembly.GetTypes().OrderBy(t => t.Name).Select(t => new ClassWithStaticMethods(t)).ToArray()); } }
+	private System.Windows.Visibility _visibility;
+	public System.Windows.Visibility Visibility { get { return _visibility; } set { _visibility = value; OnPropertyChanged("Visibility"); } }
+
+	public AssemblyClass(Assembly ThisAssembly)
+	{
+		this.ThisAssembly = ThisAssembly;
+	}
+
+	public event PropertyChangedEventHandler PropertyChanged = new PropertyChangedEventHandler(delegate { });
+	public void OnPropertyChanged(string propertyName) { PropertyChanged(this, new PropertyChangedEventArgs(propertyName)); }
+}
+
+public class ClassWithStaticMethods : INotifyPropertyChanged
+{
+	private MethodClass[] _methods;
+
+	public Type ClassType { get; private set; }
+	public MethodClass[] Methods { get { return _methods ?? (_methods = ClassType.GetMethods().Where(mi => mi.IsStatic && mi.IsPublic).OrderBy(mi => mi.Name).Select<MethodInfo, MethodClass>(mi => new MethodClass(mi, this)).ToArray()); } }
+	//public MethodInfo SelectedMethod { get; private set; }
+	private System.Windows.Visibility _visibility;
+	public System.Windows.Visibility Visibility { get { return _visibility; } set { _visibility = value; OnPropertyChanged("Visibility"); } }
+
+	public ClassWithStaticMethods(Type ClassType)
+	{
+		this.ClassType = ClassType;
+	}
+
+	public event PropertyChangedEventHandler PropertyChanged = new PropertyChangedEventHandler(delegate { });
+	public void OnPropertyChanged(string propertyName) { PropertyChanged(this, new PropertyChangedEventArgs(propertyName)); }
+}
+
+public class MethodClass : INotifyPropertyChanged
+{
+	private ParameterInfo[] _parameters;
+
+	public ClassWithStaticMethods ParentClass { get; private set; }
+	public MethodInfo Methodinfo { get; private set; }
+	public ParameterInfo[] Parameters { get { return _parameters ?? (_parameters = Methodinfo.GetParameters()); } }
+	public DictionaryPropertyGridAdapter PropertyGridAdapter { get; private set; }
+	//private System.Windows.Visibility _visibility;
+	public System.Windows.Visibility Visibility { get { return System.Windows.Visibility.Visible; } }//return _visibility; } set { _visibility = value; OnPropertyChanged("Visibility"); } }
+
+	private bool _isselected;
+	public bool IsSelected { get { return _isselected; } set { _isselected = value; OnPropertyChanged("IsSelected"); } }
+
+	public bool LastSuccess { get; private set; }
+	public string LastFailureErrorMessage { get; private set; }
+	public string LastResultTypeString { get; private set; }
+	public object LastResultObject { get; private set; }
+	public DateTime LastResultTime { get; private set; }
+	private DynamicCodeInvoking.RunCodeReturnStruct _lastresult;
+	public DynamicCodeInvoking.RunCodeReturnStruct LastResult
+	{
+		get { return _lastresult; }
+		private set
+		{
+			_lastresult = value; OnPropertyChanged("LastResult");
+			LastResultTypeString = value.ResultingTypeString; OnPropertyChanged("LastResultTypeString");
+			LastResultObject = value.MethodInvokeResultingObject; OnPropertyChanged("LastResultObject");
+			LastResultTime = DateTime.Now; OnPropertyChanged("LastResultTime");
+			LastSuccess = value.Success; OnPropertyChanged("LastSuccess");
+			LastFailureErrorMessage = value.ErrorMessage; OnPropertyChanged("LastFailureErrorMessage");
+		}
+	}
+	public MethodClass(MethodInfo Methodinfo, ClassWithStaticMethods ParentClass)
+	{
+		this.ParentClass = ParentClass;
+		this.Methodinfo = Methodinfo;
+		Dictionary<string, ParameterNameAndType> tmpdict = new Dictionary<string, ParameterNameAndType>();
+		foreach (ParameterInfo pi in Parameters)
+			tmpdict.Add(pi.Name, new ParameterNameAndType(pi.Name, pi.ParameterType));
+		PropertyGridAdapter = new DictionaryPropertyGridAdapter(tmpdict);
+	}
+	public DynamicCodeInvoking.RunCodeReturnStruct Run()
+	{
+		LastResult =
+			DynamicCodeInvoking.RunSelectedFunction(
+			this.PropertyGridAdapter._dictionary,
+			this.ParentClass.ClassType.AssemblyQualifiedName,
+			this.Methodinfo.Name,
+			false);
+		return LastResult;
+	}
+
+	public override string ToString()
+	{
+		return Methodinfo.ToString();
+	}
+
+	public event PropertyChangedEventHandler PropertyChanged = new PropertyChangedEventHandler(delegate { });
+	public void OnPropertyChanged(string propertyName) { PropertyChanged(this, new PropertyChangedEventArgs(propertyName)); }
 }

@@ -1,0 +1,244 @@
+﻿<Window x:Class="TestingSharedClasses.RemoteXmlRpc"
+		xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:propgrid='clr-namespace:Microsoft.Windows.Controls.PropertyGrid;assembly=WPFToolkit.Extended'
+		xmlns:local='clr-namespace:TestingSharedClasses'
+		Title="RemoteXmlRpc"
+		Height="300"
+		Width="1000"
+		Topmost='True'
+		Loaded='Window_Loaded'>
+	<Window.Resources>
+		<local:MethodInfoToParameterListConverter x:Key='methodInfoToParameterListConverter' />
+		<local:TooltipMethodInfoToParameterListConverter x:Key='tooltipMethodInfoToParameterListConverter' />
+		<local:BooleanToVisibilityConverter x:Key='booleanToVisibilityConverter' />
+		<!--<SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
+						 Color="#e9e9e9" />-->
+		<SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
+						 Color="Transparent" />
+		<SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"
+						 Color="Black" />
+	</Window.Resources>
+	<DockPanel LastChildFill='True'>
+		<Menu IsMainMenu='True'
+			  DockPanel.Dock='Top'
+			  Margin='0,0,0,3'>
+			<MenuItem Header='_File'>
+				<!--<MenuItem Header='Load list'
+						  Click='MenuitemLoadList_Click' />
+				<MenuItem Header='Save list'
+						  Click='MenuitemSaveList_Click' />
+				<Separator />
+				<MenuItem Header='_Import from file'
+						  Click='MenuitemImportFromFile_Click' />
+				<MenuItem Header='_Export to file'
+						  Click='MenuitemExportToFile_Click' />
+				<Separator />-->
+				<MenuItem Header='E_xit'
+						  Click='MenuitemExit_Click' />
+			</MenuItem>
+		</Menu>
+		<DockPanel LastChildFill='True'>
+			<TextBox Name='textBoxFilter'
+					 FontSize='10'
+					 Margin='3,3,0,10'
+					 HorizontalAlignment='Left'
+					 Padding='0'
+					 MinWidth='100'
+					 DockPanel.Dock='Top'
+					 TextChanged='textBoxFilter_TextChanged' />
+			<TreeView Name='treeViewAssemblies'
+					  HorizontalAlignment='Stretch'
+					  HorizontalContentAlignment='Stretch'
+					  Width='auto'
+					  VirtualizingStackPanel.IsVirtualizing="True"
+					  VirtualizingStackPanel.VirtualizationMode="Standard"
+					  SelectedItemChanged='treeViewAssemblies_SelectedItemChanged'>
+				<TreeView.ItemTemplate>
+					<HierarchicalDataTemplate ItemsSource='{Binding Types}'>
+						<HierarchicalDataTemplate.ItemTemplate>
+							<HierarchicalDataTemplate ItemsSource='{Binding Methods}'>
+								<!--<HierarchicalDataTemplate.ItemContainerStyle>
+							<Style TargetType="TreeViewItem">
+								<Setter Property="ItemsPanel">
+									<Setter.Value>
+										<ItemsPanelTemplate>
+											<WrapPanel Orientation='Horizontal'/>
+										</ItemsPanelTemplate>
+									</Setter.Value>
+								</Setter>
+							</Style>
+						</HierarchicalDataTemplate.ItemContainerStyle>-->
+								<HierarchicalDataTemplate.ItemTemplate>
+									<DataTemplate>
+										<Border PreviewMouseRightButtonDown='MethodBorder_PreviewMouseRightButtonDown'
+												Margin='0,10,0,10'
+												Padding='4'
+												CornerRadius='5'
+												PreviewKeyDown='MethodBorder_PreviewKeyDown'>
+											<Border.Background>
+												<LinearGradientBrush StartPoint='0,0'
+																	 EndPoint='0,1'>
+													<GradientStop Color='#e0e0e0'
+																  Offset='0' />
+													<GradientStop Color='#eee'
+																  Offset='0.75' />
+													<GradientStop Color='#f0f0f0'
+																  Offset='1' />
+												</LinearGradientBrush>
+											</Border.Background>
+											<Border.ContextMenu>
+												<ContextMenu>
+													<MenuItem Header='Run _remotely'
+															  Click='MenuItemRunRemotely_Click' />
+												</ContextMenu>
+											</Border.ContextMenu>
+											<DockPanel>
+												<StackPanel Orientation='Horizontal'
+															DockPanel.Dock='Top'>
+													<TextBlock Text='{Binding Methodinfo.Name}'
+															   ToolTip='{Binding Methodinfo}'
+															   FontSize='20'
+															   Foreground='Green' />
+													<TextBlock Text=': '
+															   FontSize='20' />
+													<TextBlock Text='{Binding Methodinfo, Converter={StaticResource methodInfoToParameterListConverter}}'
+															   FontSize='20'
+															   Foreground='Maroon' />
+												</StackPanel>
+												<StackPanel Orientation='Horizontal'
+															DockPanel.Dock='Bottom'
+															Visibility='{Binding IsSelected, Converter={StaticResource booleanToVisibilityConverter}}'>
+													<propgrid:PropertyGrid Width='200'
+																		   SelectedObject='{Binding PropertyGridAdapter}'
+																		   ShowAdvancedOptions='False'
+																		   ShowSearchBox='False'
+																		   ShowSortOptions='False'
+																		   DisplaySummary='True'
+																		   IsCategorized='False'
+																		   NameColumnWidth='80' />
+													<StackPanel Orientation='Vertical'>
+														<CheckBox IsChecked='{Binding LastSuccess}'
+																  IsEnabled='False'
+																  Content='Success' />
+														<TextBlock Text='{Binding LastFailureErrorMessage}' />
+														<TextBlock Text='{Binding LastResultTypeString}' />
+														<TextBlock Text='{Binding LastResultObject}' />
+													</StackPanel>
+												</StackPanel>
+											</DockPanel>
+										</Border>
+									</DataTemplate>
+								</HierarchicalDataTemplate.ItemTemplate>
+								<StackPanel Orientation='Horizontal'
+											DockPanel.Dock='Top'>
+									<TextBlock Text='{Binding ClassType.Name}'
+											   ToolTip='{Binding ClassType.AssemblyQualifiedName}' />
+									<TextBlock Text=' (' />
+									<TextBlock Text='{Binding ClassType.FullName}' />
+									<TextBlock Text=')' />
+								</StackPanel>
+							</HierarchicalDataTemplate>
+						</HierarchicalDataTemplate.ItemTemplate>
+						<StackPanel Orientation='Horizontal'>
+							<TextBlock Text='{Binding ThisAssembly.FullName}' />
+						</StackPanel>
+					</HierarchicalDataTemplate>
+				</TreeView.ItemTemplate>
+				<TreeView.ItemContainerStyle>
+					<Style TargetType="TreeViewItem">
+						<Setter Property="Visibility"
+								Value="Collapsed" />
+						<Style.Triggers>
+							<DataTrigger Binding="{Binding Header.Visibility, RelativeSource={RelativeSource Self} }"
+										 Value="Visible">
+								<Setter Property="Visibility"
+										Value="Visible" />
+							</DataTrigger>
+						</Style.Triggers>
+					</Style>
+				</TreeView.ItemContainerStyle>
+			</TreeView>
+		</DockPanel>
+		<!--<TreeView Name='treeViewClasses'
+					  HorizontalAlignment='Stretch'
+					  HorizontalContentAlignment='Stretch'
+					  SelectedItemChanged='treeViewClasses_SelectedItemChanged'
+					  Visibility='Hidden'>
+				<TreeView.ItemTemplate>
+					<HierarchicalDataTemplate ItemsSource='{Binding Methods}'>
+						<HierarchicalDataTemplate.ItemTemplate>
+							<DataTemplate>
+								<Border PreviewMouseRightButtonDown='MethodBorder_PreviewMouseRightButtonDown'
+										Margin='0,10,0,10'
+										Padding='4'
+										CornerRadius='5'
+										PreviewKeyDown='MethodBorder_PreviewKeyDown'>
+									<Border.Background>
+										<LinearGradientBrush StartPoint='0,0'
+															 EndPoint='0,1'>
+											<GradientStop Color='#e0e0e0'
+														  Offset='0' />
+											<GradientStop Color='#eee'
+														  Offset='0.75' />
+											<GradientStop Color='#f0f0f0'
+														  Offset='1' />
+										</LinearGradientBrush>
+									</Border.Background>
+									<Border.ContextMenu>
+										<ContextMenu>
+											<MenuItem Header='Run _remotely'
+													  Click='MenuItemRunRemotely_Click' />
+										</ContextMenu>
+									</Border.ContextMenu>
+									<DockPanel>
+										<StackPanel Orientation='Horizontal'
+													DockPanel.Dock='Top'>
+											<TextBlock Text='{Binding Methodinfo.Name}'
+													   ToolTip='{Binding Methodinfo}'
+													   FontSize='20'
+													   Foreground='Green' />
+											<TextBlock Text=': '
+													   FontSize='20' />
+											<TextBlock Text='{Binding Methodinfo, Converter={StaticResource methodInfoToParameterListConverter}}'
+													   FontSize='20'
+													   Foreground='Maroon' />
+										</StackPanel>
+										<StackPanel Orientation='Horizontal'
+													DockPanel.Dock='Bottom'
+													Visibility='{Binding IsSelected, Converter={StaticResource booleanToVisibilityConverter}}'>
+											<propgrid:PropertyGrid Width='200'
+																   SelectedObject='{Binding PropertyGridAdapter}'
+																   ShowAdvancedOptions='False'
+																   ShowSearchBox='False'
+																   ShowSortOptions='False'
+																   DisplaySummary='True'
+																   IsCategorized='False'
+																   NameColumnWidth='80' />
+											<StackPanel Orientation='Vertical'>
+												<CheckBox IsChecked='{Binding LastSuccess}'
+														  IsEnabled='False'
+														  Content='Success' />
+												<TextBlock Text='{Binding LastFailureErrorMessage}' />
+												<TextBlock Text='{Binding LastResultTypeString}' />
+												<TextBlock Text='{Binding LastResultObject}' />
+											</StackPanel>
+										</StackPanel>
+									</DockPanel>
+								</Border>
+							</DataTemplate>
+						</HierarchicalDataTemplate.ItemTemplate>
+						<StackPanel Orientation='Horizontal'
+									DockPanel.Dock='Top'>
+							<TextBlock Text='{Binding ClassType.Name}'
+									   ToolTip='{Binding ClassType.AssemblyQualifiedName}' />
+							<TextBlock Text=' (' />
+							<TextBlock Text='{Binding ClassType.FullName}' />
+							<TextBlock Text=')' />
+						</StackPanel>
+					</HierarchicalDataTemplate>
+				</TreeView.ItemTemplate>
+			</TreeView>-->
+		<!--<propgrid:PropertyGrid DockPanel.Dock='Right'></propgrid:PropertyGrid>-->
+	</DockPanel>
+</Window>

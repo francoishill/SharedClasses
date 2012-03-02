@@ -9,6 +9,8 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.ComponentModel;
+using System.Drawing.Imaging;
 
 namespace SharedClasses
 {
@@ -75,6 +77,30 @@ namespace SharedClasses
 					BitmapSizeOptions.FromEmptyOptions());
 
 			return imageSource;
+		}
+
+		public static Bitmap ToBitmap(this BitmapSource source)
+		{
+			Bitmap bmp = new Bitmap(
+			  source.PixelWidth,
+			  source.PixelHeight,
+			  System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+			BitmapData data = bmp.LockBits(
+			  new Rectangle(System.Drawing.Point.Empty, bmp.Size),
+			  ImageLockMode.WriteOnly,
+			  System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+			source.CopyPixels(
+			  Int32Rect.Empty,
+			  data.Scan0,
+			  data.Height * data.Stride,
+			  data.Stride);
+			bmp.UnlockBits(data);
+			return bmp;
+		}
+
+		public static Icon ToIcon(this BitmapSource source)
+		{
+			return Icon.FromHandle(ToBitmap(source).GetHbitmap());
 		}
 
 		/// <summary>

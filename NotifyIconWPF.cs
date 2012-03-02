@@ -24,6 +24,9 @@ namespace SharedClasses
 		public static readonly RoutedEvent MouseDoubleClickEvent = EventManager.RegisterRoutedEvent(
 			"MouseDoubleClick", RoutingStrategy.Bubble, typeof(MouseButtonEventHandler), typeof(NotificationAreaIcon));
 
+		//public static readonly RoutedEvent BalloonTipClickedEvent = EventManager.RegisterRoutedEvent(
+		//    "BalloonTipClicked", RoutingStrategy.Bubble, typeof(EventHandler), typeof(NotificationAreaIcon));
+
 		public static readonly DependencyProperty IconProperty =
             DependencyProperty.Register("Icon", typeof(ImageSource), typeof(NotificationAreaIcon));
 
@@ -56,6 +59,7 @@ namespace SharedClasses
 			notifyIcon.MouseUp += OnMouseUp;
 			notifyIcon.MouseClick += OnMouseClick;
 			notifyIcon.MouseDoubleClick += OnMouseDoubleClick;
+			notifyIcon.BalloonTipClicked += OnBalloonTipClicked;
 
 			Dispatcher.ShutdownStarted += OnDispatcherShutdownStarted;
 		}
@@ -83,6 +87,12 @@ namespace SharedClasses
 				InputManager.Current.PrimaryMouseDevice, 0, ToMouseButton(e.Button)));
 		}
 
+		private void OnBalloonTipClicked(object sender, EventArgs e)
+		{
+			BalloonTipClicked(sender, e);
+			//OnRaiseEvent(BalloonTipClickedEvent, new EventArgs());
+		}
+
 		private void OnMouseClick(object sender, System.Windows.Forms.MouseEventArgs e)
 		{
 			OnRaiseEvent(MouseClickEvent, new MouseButtonEventArgs(
@@ -90,6 +100,12 @@ namespace SharedClasses
 		}
 
 		private void OnRaiseEvent(RoutedEvent handler, MouseButtonEventArgs e)
+		{
+			e.RoutedEvent = handler;
+			RaiseEvent(e);
+		}
+
+		private void OnRaiseEvent(RoutedEvent handler, RoutedEventArgs e)
 		{
 			e.RoutedEvent = handler;
 			RaiseEvent(e);
@@ -134,6 +150,12 @@ namespace SharedClasses
 			add { AddHandler(MouseDoubleClickEvent, value); }
 			remove { RemoveHandler(MouseDoubleClickEvent, value); }
 		}
+
+		public event EventHandler BalloonTipClicked = new EventHandler(delegate { });
+		//{
+		//    add { AddHandler(BalloonTipClickedEvent, value); }
+		//    remove { RemoveHandler(BalloonTipClickedEvent, value); }
+		//}
 
 		#region Conversion members
 

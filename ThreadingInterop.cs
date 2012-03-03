@@ -40,14 +40,12 @@ public class ThreadingInterop
 			while (th.IsAlive && !ForceExitAllTreads) { Application.DoEvents(); }
 	}
 
-	#if NET40
 	public static void UpdateGuiFromThread(Control controlToUpdate, Action action)
 	{
 		if (controlToUpdate.InvokeRequired)
 			controlToUpdate.Invoke(action);//, new object[] { });
 		else action();
 	}
-	#endif
 
 	delegate void AutocompleteCallback(ComboBox txtBox, String text);
 	delegate void ClearAutocompleteCallback(ComboBox txtBox);

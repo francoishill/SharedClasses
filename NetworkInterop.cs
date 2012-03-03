@@ -7,7 +7,9 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+#if NET40
 using System.Threading.Tasks;
+#endif
 using System.Windows.Forms;
 
 //TODO: Check out extension functions (a static class with methods which uses this as one of the parameters)
@@ -15,11 +17,12 @@ using System.Windows.Forms;
 //TODO: Check out cross-calling constructors: http://geekswithblogs.net/BlackRabbitCoder/archive/2010/12/16/c.net-little-wonders-ndash-cross-calling-constructors.aspx
 public static class StringExtensions
 {
-	public static bool IsFrancois(this string str, bool CaseSensitive)
-	{
-		return str.Equals("Francois", CaseSensitive ? StringComparison.InvariantCulture : StringComparison.InvariantCultureIgnoreCase);
-	}
+	//public static bool IsFrancois(this string str, bool CaseSensitive)
+	//{
+	//	return str.Equals("Francois", CaseSensitive ? StringComparison.InvariantCulture : StringComparison.InvariantCultureIgnoreCase);
+	//}
 
+#if NET40
 	public static bool IsNullOrEmpty(this string str)
 	{
 		return string.IsNullOrEmpty(str);
@@ -36,6 +39,7 @@ public static class StringExtensions
 		memorystream.Dispose();
 		memorystream = null;
 	}
+#endif
 }
 
 public static class SocketExtensions
@@ -646,7 +650,7 @@ public class NetworkInterop
 		serverListeningSocketToUse = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 		if (formToHookSocketClosingIntoFormDisposedEvent != null)
 			HookIntoFormDisposedEventAndCloseSocket(serverListeningSocketToUse, formToHookSocketClosingIntoFormDisposedEvent);
-		
+
 		if (!SetupServerSocketSettings(ref serverListeningSocketToUse, listeningPort, maxBufferPerTransfer, maxNumberPendingConnections))
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, TextFeedbackEvent, "Server was unable to start.");
 		else
@@ -1065,6 +1069,7 @@ public class NetworkInterop
 		//MessageBox.Show(this, "File assebled successfully");
 	}
 
+#if NET40
 	public async static Task FtpUploadFiles(Object textfeedbackSenderObject, string ftpRootUri, string userName, string password, string[] localFilenames, string urlWhenSuccessullyUploaded = null, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
 	{
 		try
@@ -1182,6 +1187,63 @@ public class NetworkInterop
 				return false;
 			}
 		}
+	}
+#endif
+
+	/// <summary>
+	/// Post data to php, maximum length of data is 8Mb
+	/// </summary>
+	/// <param name="url">The url of the php, do not include the ?</param>
+	/// <param name="data">The data, i.e. "name=koos&surname=koekemoer". Note to not include the ?</param>
+	/// <returns>Returns the data received from the php (usually the "echo" statements in the php.</returns>
+	public static string PostPHP(string url, string data)
+	{
+		string vystup = "";
+		try
+		{
+			data = data.Replace("+", "[|]");
+			//Our postvars
+			byte[] buffer = Encoding.ASCII.GetBytes(data);
+			//Initialisation, we use localhost, change if appliable
+			HttpWebRequest WebReq = (HttpWebRequest)WebRequest.Create(url);
+			//Our method is post, otherwise the buffer (postvars) would be useless
+			WebReq.Method = "POST";
+			//We use form contentType, for the postvars.
+			WebReq.ContentType = "application/x-www-form-urlencoded";
+			//The length of the buffer (postvars) is used as contentlength.
+			WebReq.ContentLength = buffer.Length;
+			//We open a stream for writing the postvars
+			Stream PostData = WebReq.GetRequestStream();
+			//Now we write, and afterwards, we close. Closing is always important!
+			PostData.Write(buffer, 0, buffer.Length);
+			PostData.Close();
+			//Get the response handle, we have no true response yet!
+			HttpWebResponse WebResp = (HttpWebResponse)WebReq.GetResponse();
+			//Let's show some information about the response
+			//System.Windows.Forms.MessageBox.Show(WebResp.StatusCode.ToString());
+			//System.Windows.Forms.MessageBox.Show(WebResp.Server);
+
+			//Now, we read the response (the string), and output it.
+			Stream Answer = WebResp.GetResponseStream();
+			StreamReader _Answer = new StreamReader(Answer);
+			vystup = _Answer.ReadToEnd();
+
+			//Congratulations, you just requested your first POST page, you
+			//can now start logging into most login forms, with your application
+			//Or other examples.
+			string tmpresult = vystup.Trim() + "\n";
+		}
+		catch (Exception exc)
+		{
+			UserMessages.ShowWarningMessage("Unable to do post php query: " + exc.Message);
+			//if (!exc.Message.ToUpper().StartsWith("The remote name could not be resolved:".ToUpper()))
+			//	//LoggingClass.AddToLogList(UserMessages.MessageTypes.PostPHP, exc.Message);
+			//	appendLogTextbox("Post php: " + exc.Message);
+			//else //LoggingClass.AddToLogList(UserMessages.MessageTypes.PostPHPremotename, exc.Message);
+			//	appendLogTextbox("Post php remote name: " + exc.Message);
+			//SysWinForms.MessageBox.Show("Error (092892): " + Environment.NewLine + exc.Message, "Exception error", SysWinForms.MessageBoxButtons.OK, SysWinForms.MessageBoxIcon.Error);
+		}
+		return vystup;
 	}
 
 	/*public static Socket CreateLocalServer(int portNumber, int maximumPendingConnections = 100)

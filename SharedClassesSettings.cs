@@ -199,7 +199,9 @@ namespace SharedClasses
 
 		public static string Decrypt(string OriginalString, string PropertyName, bool RequireFacialAutorisationEverytime)
 		{
-			if (!RequireFacialAutorisationEverytime && AuthorizationWasDoneOnce)
+			if (
+				(!RequireFacialAutorisationEverytime && AuthorizationWasDoneOnce)
+				|| (!(bool)GlobalSettings.FaceDetectionInteropSettings.Instance.RequireFaceAuthorizationForPasswordDecryption))
 			{
 				AuthorizationWasDoneOnce = true;
 				return EncodeAndDecodeInterop.DecodeString(OriginalString, GenericSettings.EncodingType);
@@ -364,6 +366,10 @@ namespace SharedClasses
 			[Description("The duration (in seconds) before automatically 'failing' face detection if no face was detected.")]
 			[Setting("Please enter the timeout for Face detection (in seconds), this is the maximum allowed time for recognizing a face, it will fail thereafter.")]
 			public int? TimeOutSecondsBeforeAutoFailing { get; set; }
+
+			[Description("Whether face detection is required to authorize decrypting passwords, otherwise they will just be decrypted.")]
+			[Setting("Must any face authorization be required before decrypting passwords?")]
+			public bool? RequireFaceAuthorizationForPasswordDecryption { get; set; }
 
 			public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
 			{

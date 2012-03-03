@@ -7,9 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-#if NET40
 using System.Threading.Tasks;
-#endif
 using System.Windows.Forms;
 
 //TODO: Check out extension functions (a static class with methods which uses this as one of the parameters)
@@ -22,7 +20,6 @@ public static class StringExtensions
 	//	return str.Equals("Francois", CaseSensitive ? StringComparison.InvariantCulture : StringComparison.InvariantCultureIgnoreCase);
 	//}
 
-#if NET40
 	public static bool IsNullOrEmpty(this string str)
 	{
 		return string.IsNullOrEmpty(str);
@@ -39,7 +36,6 @@ public static class StringExtensions
 		memorystream.Dispose();
 		memorystream = null;
 	}
-#endif
 }
 
 public static class SocketExtensions
@@ -1069,7 +1065,6 @@ public class NetworkInterop
 		//MessageBox.Show(this, "File assebled successfully");
 	}
 
-#if NET40
 	public async static Task FtpUploadFiles(Object textfeedbackSenderObject, string ftpRootUri, string userName, string password, string[] localFilenames, string urlWhenSuccessullyUploaded = null, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
 	{
 		try
@@ -1188,7 +1183,6 @@ public class NetworkInterop
 			}
 		}
 	}
-#endif
 
 	/// <summary>
 	/// Post data to php, maximum length of data is 8Mb

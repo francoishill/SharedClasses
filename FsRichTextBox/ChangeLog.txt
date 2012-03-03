@@ -1,0 +1,6 @@
+2010-03-17: Deleted Background button from formatting toolbar.
+2010-03-18: Added ToolbarBackground property to control.
+2010-03-18: Added ToolbarBorderBrush property to control.
+2010-03-18: Added ToolbarBorderThickness property to control.
+2010-03-22: Cleaned up numbered and bulleted list icons.
+2010-04-03: Enabled spell-checking

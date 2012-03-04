@@ -11,9 +11,8 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Xml;
 using Microsoft.Win32;
-using SharedClasses;
 
-namespace TestingSharedClasses
+namespace SharedClasses
 {
 	/// <summary>
 	/// Interaction logic for RemoteXmlRpc.xaml
@@ -381,22 +380,6 @@ namespace TestingSharedClasses
 	#endregion Extension methods
 
 	#region Converters
-	public class BooleanToVisibilityConverter : IValueConverter
-	{
-		public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-		{
-			if (parameter is string && parameter.ToString() == "opposite")
-				return !(value is bool) || ((bool)value) == false ? Visibility.Visible : Visibility.Collapsed;
-			else
-				return !(value is bool) || ((bool)value) == false ? Visibility.Collapsed : Visibility.Visible;
-		}
-
-		public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-		{
-			throw new NotImplementedException();
-		}
-	}
-
 	public class MethodInfoToParameterListConverter : IValueConverter
 	{
 		public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)

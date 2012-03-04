@@ -1,8 +1,8 @@
-﻿<Window x:Class="TestingSharedClasses.RemoteXmlRpc"
+﻿<Window x:Class="SharedClasses.RemoteXmlRpc"
 				xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
 				xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 				xmlns:propgrid='clr-namespace:Microsoft.Windows.Controls.PropertyGrid;assembly=WPFToolkit.Extended'
-				xmlns:local='clr-namespace:TestingSharedClasses'
+				xmlns:local='clr-namespace:SharedClasses'
 				Title="RemoteXmlRpc"
 				Height="300"
 				Width="1000"

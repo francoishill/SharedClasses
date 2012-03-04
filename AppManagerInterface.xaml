@@ -1,0 +1,69 @@
+﻿<Window x:Class="SharedClasses.AppManagerInterface"
+		xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:local='clr-namespace:SharedClasses'
+		Title="AppManagerInterface"
+		Height="300"
+		Width="800"
+		WindowStartupLocation='CenterScreen'
+		Topmost='True'
+		Loaded='Window_Loaded_1'>
+	<Window.Resources>
+		<local:BooleanToVisibilityConverter x:Key='booleanToVisibilityConverter' />
+		<SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
+						 Color="Transparent" />
+		<SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"
+						 Color="Black" />
+	</Window.Resources>
+	<Grid>
+		<ListBox Name="listBoxRegisteredApplications">
+			<ListBox.ItemTemplate>
+				<DataTemplate>
+					<Border PreviewMouseLeftButtonDown='Border_PreviewMouseLeftButtonDown_1'
+							FocusManager.FocusedElement='{Binding ElementName=textboxappname}'>
+						<StackPanel Orientation='Horizontal'>
+							<Button Content='Show' Click='Button_Click_1'/>
+							<Button Content='Hide'
+									Click='Button_Click_2' />
+							<Button Content='Close'
+									Click='Button_Click_3' />
+							<!--<Grid>-->
+							<TextBox Name='textboxappname' Text='{Binding AppName, UpdateSourceTrigger=PropertyChanged}'
+									 MinWidth='50'
+									 FontSize='20'
+									 Padding='0'
+									 Focusable='True'
+									 LostKeyboardFocus='textboxappname_LostKeyboardFocus_1'
+									 Visibility='{Binding AppNameTextboxVisible, Converter={StaticResource booleanToVisibilityConverter}}'
+									 VerticalAlignment='Center' />
+							<!--</Grid>-->
+							<TextBlock Text='{Binding AppName}'
+									   FontSize='20'
+									   Padding='0,3'
+									   Visibility='{Binding AppNameTextboxVisible, Converter={StaticResource booleanToVisibilityConverter}, ConverterParameter=opposite}'
+									   VerticalAlignment='Center' />
+							<TextBlock Text=' ('
+									   FontSize='20'
+									   Padding='0,3'
+									   Foreground='Gray'
+									   VerticalAlignment='Bottom' />
+							<TextBlock Text='{Binding AppId}'
+									   Width='auto'
+									   FontSize='20'
+									   Padding='0,3'
+									   Foreground='Gray'
+									   VerticalAlignment='Bottom' />
+							<TextBlock Text=')'
+									   FontSize='20'
+									   Padding='0,3'
+									   Foreground='Gray'
+									   VerticalAlignment='Bottom' />
+							<CheckBox Content='IsAlive'
+									  IsChecked='{Binding IsAlive, Mode=OneWay}' />
+						</StackPanel>
+					</Border>
+				</DataTemplate>
+			</ListBox.ItemTemplate>
+		</ListBox>
+	</Grid>
+</Window>

@@ -5,15 +5,73 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
 using System.Threading;
-//using System.Windows.Forms;
+using System.Diagnostics;
 
 namespace SharedClasses
 {
 	public static class WindowMessagesInterop
 	{
-		public enum MessageTypes { None, Poll, Show, Hide, Close };
+		#region Example of code (winforms and wpf)
+		#region client examples
+		//CLIENT
+		/*//To get working in winforms need to call WindowMessagesInterop.InitializeClientMessages (in form initialization)
+		protected override void WndProc(ref Message m)
+		{
+			WindowMessagesInterop.MessageTypes mt;
+			WindowMessagesInterop.ClientHandleMessage(m.Msg, m.WParam, m.LParam, out mt);
+			if (mt == WindowMessagesInterop.MessageTypes.Show)
+				this.Show();
+			else
+				base.WndProc(ref m);
+		}*/
 
-		//public delegate void EventHandler(object sender, TextFeedbackEventArgs e);
+		/*//To get working in WPF need to call WindowMessagesInterop.InitializeClientMessages (in the window initialization)
+		protected override void OnSourceInitialized(EventArgs e)
+		{
+			base.OnSourceInitialized(e);
+			HwndSource source = PresentationSource.FromVisual(this) as HwndSource;
+			source.AddHook(WndProc);
+		}
+
+		private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+		{
+			WindowMessagesInterop.MessageTypes mt;
+			WindowMessagesInterop.ClientHandleMessage(msg, wParam, lParam, out mt);
+			if (mt == WindowMessagesInterop.MessageTypes.Show)
+				this.Show();
+			return IntPtr.Zero;
+		}*/
+		#endregion client examples
+
+		#region application manager examples
+		//MANAGER (not client)
+		/*//To get application manager working (wpf)
+		protected override void OnSourceInitialized(EventArgs e)
+		{
+			base.OnSourceInitialized(e);
+			HwndSource source = PresentationSource.FromVisual(this) as HwndSource;
+			source.AddHook(WndProc);
+		}
+
+		private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+		{
+			string errMsg;
+			if (!WindowMessagesInterop.ApplicationManagerHandleMessage(msg, wParam, lParam, out errMsg))
+				MessageBox.Show(errMsg);
+			return IntPtr.Zero;
+		}*/
+
+		/*//To get application manager working (winforms)
+		protected override void WndProc(ref Message m)
+		{
+			string errMsg;
+			if (!WindowMessagesInterop.ApplicationManagerHandleMessage(m.Msg, m.WParam, m.LParam, out errMsg))
+				MessageBox.Show(errMsg);
+		}*/
+		#endregion application manager examples
+		#endregion Example of code (winforms and wpf)
+
+		public enum MessageTypes { None, Poll, Show, Hide, Close };
 
 		[DllImport("user32")]
 		public static extern bool PostMessage(IntPtr hwnd, int msg, IntPtr wparam, IntPtr lparam);
@@ -29,7 +87,11 @@ namespace SharedClasses
 			}
 		}
 
+		//private static string ClientAppName;
 		private static int ClientAppId;
+		private static bool SuccessfullyRegistered_Client = false;
+		private static Timer timerToRegisterWithAppManager_Client;
+		private static DateTime TimeLastPollReceived_Client = DateTime.MinValue;
 		private static Timer timerClientPolling;
 		private static void timerClientPolling_Tick(object state)
 		{
@@ -42,11 +104,74 @@ namespace SharedClasses
 		public const int WM_FROMMANAGER = 0xEEFF;
 		public const int WM_CLIENTPOLLING = 0xFEFE;
 
-		public static void RegisterWithAppManager(string AppName, out int AppId)
+		public static void InitializeClientMessages()//string Appname)
 		{
-			AppId = AppName.GetHashCode();
-			ClientAppId = AppId;
-			PostMessage((IntPtr)HWND_BROADCAST, WM_REGISTER, (IntPtr)WM_REGISTER, (IntPtr)AppId);
+			//Process currentProc = Process.GetCurrentProcess();
+			//currentProc.Id;
+			//ClientAppName = Appname;
+			ClientAppId = Process.GetCurrentProcess().Id;//Environment.GetCommandLineArgs()[0];//Appname;
+			timerToRegisterWithAppManager_Client = new Timer(
+				timerToRegisterWithAppManager_Client_Tick,
+				null,
+				0,
+				1000);
+		}
+
+		public static bool ClientHandleMessage(int message, IntPtr wparam, IntPtr lparam, out MessageTypes messageType)
+		{
+			messageType = MessageTypes.None;
+			if (!SuccessfullyRegistered_Client && WindowMessagesInterop.IsRegistrationAcknowlegementFromManager(
+				message, wparam, lparam, ClientAppId))
+			{
+				SuccessfullyRegistered_Client = true;
+			}
+			else if (WindowMessagesInterop.IsMessageFromManager(message, wparam, lparam, ClientAppId, out messageType))
+			{
+				if (messageType == WindowMessagesInterop.MessageTypes.Poll)
+				{
+					TimeLastPollReceived_Client = DateTime.Now;
+				}
+				else if (messageType != WindowMessagesInterop.MessageTypes.None)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
+		private static void timerToRegisterWithAppManager_Client_Tick(object state)//, EventArgs e)
+		{
+			if (!SuccessfullyRegistered_Client || DateTime.Now.Subtract(TimeLastPollReceived_Client).TotalSeconds > 4)
+			{
+				WindowMessagesInterop.RegisterWithAppManager();//ClientAppName);//, out ThisAppId);
+			}
+			else
+			{
+			}
+		}
+
+		public static bool ApplicationManagerHandleMessage(int msg, IntPtr wParam, IntPtr lParam, out string errorMessage)
+		{
+			string failureReason;
+			if (IsPollFromClient_UpdatePollTime(msg, wParam, lParam)
+				|| IsMessageRegistrationRequest_AddToList(msg, wParam, lParam, out failureReason))
+			{
+				//Either poll received from client OR application registered
+			}
+			else if (!failureReason.Equals(NotRegistrationMessageText))
+			{
+				errorMessage = "Unable to register application: " + failureReason;
+				return false;
+			}
+			errorMessage = "";
+			return true;
+		}
+
+		public static void RegisterWithAppManager()//string AppName)//, out int AppId)
+		{
+			//int AppId = AppName.GetHashCode();
+			//ClientAppId = AppName.GetHashCode();//AppId;
+			PostMessage((IntPtr)HWND_BROADCAST, WM_REGISTER, (IntPtr)WM_REGISTER, (IntPtr)ClientAppId);
 			if (timerClientPolling == null)
 				timerClientPolling = new System.Threading.Timer(timerClientPolling_Tick, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2));
 		}
@@ -68,6 +193,14 @@ namespace SharedClasses
 			return null;
 		}
 
+		public static RegisteredApp GetRegisteredAppFromList(string appName)
+		{
+			foreach (RegisteredApp ra in RegisteredApplications)
+				if (ra.AppName == appName)
+					return ra;
+			return null;
+		}
+
 		public const string NotRegistrationMessageText = "Not a registration message.";
 		public static ObservableCollection<RegisteredApp> RegisteredApplications = new ObservableCollection<RegisteredApp>();//ID, Name
 		public static bool IsMessageRegistrationRequest_AddToList(int message, IntPtr wparam, IntPtr lparam, out string FailReason)
@@ -78,6 +211,13 @@ namespace SharedClasses
 				RegisteredApp ra = GetRegisteredAppFromList(lparam.ToInt32());
 				if (ra == null)
 				{
+					Process tmpproc = Process.GetProcessById(lparam.ToInt32());
+					if (tmpproc != null)
+						ra = GetRegisteredAppFromList(tmpproc.ProcessName);
+				}
+
+				if (ra == null)
+				{
 					FailReason = null;
 					PostMessage((IntPtr)HWND_BROADCAST, WM_REGISTRATIONACKNOWLEDGEMENT, (IntPtr)WM_REGISTRATIONACKNOWLEDGEMENT, (IntPtr)lparam.ToInt32());
 					RegisteredApplications.Add(new RegisteredApp(lparam.ToInt32()));
@@ -86,6 +226,7 @@ namespace SharedClasses
 				}
 				else
 				{
+					ra.UpdateAppId(lparam.ToInt32());
 					ra.UpdatePollReceivedTime();
 					FailReason = "";// "AppId already registered.";
 					result = true;
@@ -161,13 +302,19 @@ namespace SharedClasses
 			public RegisteredApp(int AppId)
 			{
 				this.AppId = AppId;
-				this.AppName = "";
+				Process tmpproc = Process.GetProcessById(AppId);
+				this.AppName = tmpproc == null ? "" : tmpproc.ProcessName;
 				this.LastPollFromClient = DateTime.Now;
 			}
 
 			public void UpdateAppName(string newAppName)
 			{
 				this.AppName = newAppName;
+			}
+
+			public void UpdateAppId(int newAppId)
+			{
+				this.AppId = newAppId;
 			}
 
 			public bool BroadCastMessage(MessageTypes messageType)

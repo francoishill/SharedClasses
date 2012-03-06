@@ -1,7 +1,7 @@
 ﻿<Window x:Class="SharedClasses.AppManagerInterface"
 		xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-		xmlns:local='clr-namespace:SharedClasses'
+		xmlns:sharedclasses='clr-namespace:SharedClasses'
 		Title="AppManagerInterface"
 		Height="300"
 		Width="800"
@@ -9,7 +9,7 @@
 		Topmost='True'
 		Loaded='Window_Loaded_1'>
 	<Window.Resources>
-		<local:BooleanToVisibilityConverter x:Key='booleanToVisibilityConverter' />
+		<sharedclasses:BooleanToVisibilityConverter x:Key='booleanToVisibilityConverter' />
 		<SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
 						 Color="Transparent" />
 		<SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"
@@ -22,6 +22,8 @@
 					<Border PreviewMouseLeftButtonDown='Border_PreviewMouseLeftButtonDown_1'
 							FocusManager.FocusedElement='{Binding ElementName=textboxappname}'>
 						<StackPanel Orientation='Horizontal'>
+							<Button Content='Start'
+									Click='Button_Click_4' />
 							<Button Content='Show' Click='Button_Click_1'/>
 							<Button Content='Hide'
 									Click='Button_Click_2' />

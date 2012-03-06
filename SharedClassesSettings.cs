@@ -328,6 +328,58 @@ namespace SharedClasses
 
 	public class GlobalSettings
 	{
+		[Serializable]
+		public sealed class ApplicationManagerSettings : GenericSettings
+		{
+			private static volatile ApplicationManagerSettings instance;
+			private static object lockingObject = new Object();
+
+			public static ApplicationManagerSettings Instance
+			{
+				get
+				{
+					if (instance == null)
+					{
+						lock (lockingObject)
+						{
+							if (instance == null)
+							{
+								instance = Interceptor<ApplicationManagerSettings>.Create();
+								instance.LoadFromFile(RootApplicationNameForSharedClasses);
+							}
+						}
+					}
+					return instance;
+				}
+			}
+
+			//private List<string> listedApplicationNames;
+			[Description("A list of application names to be managed.")]
+			public string ListedApplicationNames { get; set; }
+			//public string ListedApplicationNames
+			//{
+			//	get
+			//	{
+			//		if (listedApplicationNames == null || listedApplicationNames.Count == 0)
+			//			listedApplicationNames = new List<string>(InputBoxWPF.Prompt("Please enter a list of application names to manage.").Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries));
+			//		return listedApplicationNames == null ? null : string.Join("|", listedApplicationNames);
+			//	}
+			//	set { listedApplicationNames = value == null ? null : new List<string>(value.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)); }
+			//}
+			//public List<string> GetListedApplicationNames() { string tmp = ListedApplicationNames; tmp = null; return listedApplicationNames ?? new List<string>(); }
+			public List<string> GetListedApplicationNames() { return new List<string>(ListedApplicationNames.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)); }
+
+			public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+			{
+				instance = Interceptor<ApplicationManagerSettings>.Create(SettingsInterop.GetSettings<ApplicationManagerSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
+			}
+
+			public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+			{
+				SettingsInterop.FlushSettings<ApplicationManagerSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
+			}
+		}
+
 		//TODO: Check out INotifyPropertyChanged (in System.ComponentModel)
 		[Serializable]
 		public sealed class FaceDetectionInteropSettings : GenericSettings
@@ -622,14 +674,14 @@ namespace SharedClasses
 			{
 				//Username = null;
 				//Password = null;
-				//ListedXmlRpcUrls = null;
+				//ListedApplicationNames = null;
 			}
 
 			//public TracXmlRpcInteropSettings(string UsernameIn, string PasswordIn, List<string> ListedXmlRpcUrlsIn)
 			//{
 			//	Username = UsernameIn;
 			//	Password = PasswordIn;
-			//	listedXmlRpcUrls = ListedXmlRpcUrlsIn;
+			//	listedApplicationNames = ListedXmlRpcUrlsIn;
 			//}
 
 			public string GetCombinedUrlForDynamicInvokationServer()

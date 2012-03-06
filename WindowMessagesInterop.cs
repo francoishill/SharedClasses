@@ -71,6 +71,16 @@ namespace SharedClasses
 		#endregion application manager examples
 		#endregion Example of code (winforms and wpf)
 
+		#region Constants
+		private static readonly TimeSpan CLIENT_NO_POLL_FROM_APPMANAGER_REREGISTER_TIMEOUT = TimeSpan.FromSeconds(3);
+		private static readonly TimeSpan CLIENT_DELAY_BEFORE_POLLING_TO_APP_MANAGER = TimeSpan.FromSeconds(0);
+		private static readonly TimeSpan CLIENT_INTERVAL_FOR_POLLING_TO_APP_MANAGER = TimeSpan.FromSeconds(2);
+		private static readonly TimeSpan APPMANAGER_DELAY_BEFORE_POLLING_TO_CLIENTS = TimeSpan.FromSeconds(0);
+		private static readonly TimeSpan APPMANAGER_INTERVAL_FOR_POLLING_TO_CLIENTS = TimeSpan.FromSeconds(2);
+		private static readonly TimeSpan APPMANAGER_IS_ALIVE_TIMEOUT = TimeSpan.FromSeconds(2);
+		private static readonly int APPMANAGER_APPID_UNAVAILABLE = -1;
+		#endregion Constants
+
 		public enum MessageTypes { None, Poll, Show, Hide, Close };
 
 		[DllImport("user32")]
@@ -81,10 +91,8 @@ namespace SharedClasses
 		private static Timer timerAppManagerPolling;
 		private static void timerAppManagerPolling_Tick(object state)
 		{
-			foreach (RegisteredApp ra in RegisteredApplications)
-			{
-				ra.Poll();
-			}
+			for (int i = 0; i < RegisteredApplications.Count; i++)
+				RegisteredApplications[i].Poll();
 		}
 
 		//private static string ClientAppName;
@@ -141,13 +149,13 @@ namespace SharedClasses
 
 		private static void timerToRegisterWithAppManager_Client_Tick(object state)//, EventArgs e)
 		{
-			if (!SuccessfullyRegistered_Client || DateTime.Now.Subtract(TimeLastPollReceived_Client).TotalSeconds > 4)
+			if (!SuccessfullyRegistered_Client || DateTime.Now.Subtract(TimeLastPollReceived_Client) > CLIENT_NO_POLL_FROM_APPMANAGER_REREGISTER_TIMEOUT)
 			{
 				WindowMessagesInterop.RegisterWithAppManager();//ClientAppName);//, out ThisAppId);
 			}
-			else
-			{
-			}
+			//else
+			//{
+			//}
 		}
 
 		public static bool ApplicationManagerHandleMessage(int msg, IntPtr wParam, IntPtr lParam, out string errorMessage)
@@ -173,7 +181,11 @@ namespace SharedClasses
 			//ClientAppId = AppName.GetHashCode();//AppId;
 			PostMessage((IntPtr)HWND_BROADCAST, WM_REGISTER, (IntPtr)WM_REGISTER, (IntPtr)ClientAppId);
 			if (timerClientPolling == null)
-				timerClientPolling = new System.Threading.Timer(timerClientPolling_Tick, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2));
+				timerClientPolling = new System.Threading.Timer(
+					timerClientPolling_Tick,
+					null,
+					CLIENT_DELAY_BEFORE_POLLING_TO_APP_MANAGER,
+					CLIENT_INTERVAL_FOR_POLLING_TO_APP_MANAGER);
 		}
 
 		public static bool BroadcastMessageFromManager(MessageTypes messageType, int appId)
@@ -201,36 +213,91 @@ namespace SharedClasses
 			return null;
 		}
 
-		public const string NotRegistrationMessageText = "Not a registration message.";
-		public static ObservableCollection<RegisteredApp> RegisteredApplications = new ObservableCollection<RegisteredApp>();//ID, Name
-		public static bool IsMessageRegistrationRequest_AddToList(int message, IntPtr wparam, IntPtr lparam, out string FailReason)
+		public class RegisteredApplicationCollection : ObservableCollection<RegisteredApp>
 		{
-			bool result = message == WM_REGISTER && wparam.ToInt32() == WM_REGISTER;
-			if (result)
+			[Obsolete("Please use the other overload, which requires the AppId_lparam.", true)]
+			public new void Add(RegisteredApp item)
 			{
-				RegisteredApp ra = GetRegisteredAppFromList(lparam.ToInt32());
+			}
+
+			public void Add(IntPtr AppId_lparam)
+			{
+				RegisteredApp ra = GetRegisteredAppFromList(AppId_lparam.ToInt32());
 				if (ra == null)
 				{
-					Process tmpproc = Process.GetProcessById(lparam.ToInt32());
+					Process tmpproc = Process.GetProcessById(AppId_lparam.ToInt32());
 					if (tmpproc != null)
 						ra = GetRegisteredAppFromList(tmpproc.ProcessName);
 				}
 
 				if (ra == null)
 				{
-					FailReason = null;
-					PostMessage((IntPtr)HWND_BROADCAST, WM_REGISTRATIONACKNOWLEDGEMENT, (IntPtr)WM_REGISTRATIONACKNOWLEDGEMENT, (IntPtr)lparam.ToInt32());
-					RegisteredApplications.Add(new RegisteredApp(lparam.ToInt32()));
+					base.Add(new RegisteredApp(AppId_lparam.ToInt32()));
 					if (timerAppManagerPolling == null)
-						timerAppManagerPolling = new System.Threading.Timer(timerAppManagerPolling_Tick, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2));
+						timerAppManagerPolling = new System.Threading.Timer(
+							timerAppManagerPolling_Tick,
+							null,
+							APPMANAGER_DELAY_BEFORE_POLLING_TO_CLIENTS,
+							APPMANAGER_INTERVAL_FOR_POLLING_TO_CLIENTS);
 				}
 				else
 				{
-					ra.UpdateAppId(lparam.ToInt32());
+					ra.UpdateAppId(AppId_lparam.ToInt32());
 					ra.UpdatePollReceivedTime();
-					FailReason = "";// "AppId already registered.";
-					result = true;
 				}
+				PostMessage((IntPtr)HWND_BROADCAST, WM_REGISTRATIONACKNOWLEDGEMENT, (IntPtr)WM_REGISTRATIONACKNOWLEDGEMENT, AppId_lparam);
+			}
+
+			public void Add(string AppName)
+			{
+				RegisteredApp ra = GetRegisteredAppFromList(AppName);
+
+				if (ra == null)
+				{
+					base.Add(new RegisteredApp(AppName));
+					if (timerAppManagerPolling == null)
+						timerAppManagerPolling = new System.Threading.Timer(
+							timerAppManagerPolling_Tick,
+							null,
+							APPMANAGER_DELAY_BEFORE_POLLING_TO_CLIENTS,
+							APPMANAGER_INTERVAL_FOR_POLLING_TO_CLIENTS);
+				}
+				else
+				{
+					ra.UpdatePollReceivedTime();
+				}
+				//PostMessage((IntPtr)HWND_BROADCAST, WM_REGISTRATIONACKNOWLEDGEMENT, (IntPtr)WM_REGISTRATIONACKNOWLEDGEMENT, AppId_lparam);
+			}
+		}
+
+		public const string NotRegistrationMessageText = "Not a registration message.";
+		public static RegisteredApplicationCollection RegisteredApplications = new RegisteredApplicationCollection();//ID, Name
+		public static bool IsMessageRegistrationRequest_AddToList(int message, IntPtr wparam, IntPtr lparam, out string FailReason)
+		{
+			bool result = message == WM_REGISTER && wparam.ToInt32() == WM_REGISTER;
+			if (result)
+			{
+				FailReason = "";
+				RegisteredApplications.Add(lparam);
+				//RegisteredApp ra = GetRegisteredAppFromList(AppId_lparam.ToInt32());
+				//if (ra == null)
+				//{
+				//	Process tmpproc = Process.GetProcessById(AppId_lparam.ToInt32());
+				//	if (tmpproc != null)
+				//		ra = GetRegisteredAppFromList(tmpproc.ProcessName);
+				//}
+
+				//if (ra == null)
+				//{
+				//	FailReason = null;
+				//	RegisteredApplications.Add(new RegisteredApp(AppId_lparam.ToInt32()), AppId_lparam);
+				//}
+				//else
+				//{
+				//	ra.UpdateAppId(AppId_lparam.ToInt32());
+				//	ra.UpdatePollReceivedTime();
+				//	FailReason = "";// "AppId already registered.";
+				//}
 			}
 			else
 				FailReason = NotRegistrationMessageText;
@@ -288,7 +355,7 @@ namespace SharedClasses
 			private bool _appnametextboxvisible;
 			public bool AppNameTextboxVisible { get { return _appnametextboxvisible; } set { _appnametextboxvisible = value; OnPropertyChanged("AppNameTextboxVisible"); } }
 
-			public bool IsAlive { get { return DateTime.Now.Subtract(LastPollFromClient).TotalSeconds <= 3; } }
+			public bool IsAlive { get { bool result = DateTime.Now.Subtract(LastPollFromClient) <= APPMANAGER_IS_ALIVE_TIMEOUT; if (!result) AppId = APPMANAGER_APPID_UNAVAILABLE; return result; } }
 
 			private DateTime _lastpollfromclient;
 
@@ -307,6 +374,13 @@ namespace SharedClasses
 				this.LastPollFromClient = DateTime.Now;
 			}
 
+			public RegisteredApp(string AppName)
+			{
+				this.AppId = -1;
+				this.AppName = AppName;
+				this.LastPollFromClient = DateTime.MinValue;
+			}
+
 			public void UpdateAppName(string newAppName)
 			{
 				this.AppName = newAppName;
@@ -320,6 +394,27 @@ namespace SharedClasses
 			public bool BroadCastMessage(MessageTypes messageType)
 			{
 				return BroadcastMessageFromManager(messageType, AppId);
+			}
+
+			public bool Start(out string errorMessageIfFail)
+			{
+				if (string.IsNullOrWhiteSpace(this.AppName))
+				{
+					errorMessageIfFail = "Cannot start application with blank name.";
+					return false;
+				}
+				try
+				{
+					Process.Start(this.AppName);
+					errorMessageIfFail = null;
+					return true;
+				}
+				catch (Exception exc)
+				{
+					errorMessageIfFail = "Exception trying to start application: " + exc.Message;
+					return false;
+				}
+
 			}
 
 			public void Poll()
@@ -378,10 +473,10 @@ namespace SharedClasses
 		//        RegisteredMessages.Add(this);
 		//    }
 
-		//    public static MessageTypes GetMessageType(int message, Int64 wparam, Int64 lparam)
+		//    public static MessageTypes GetMessageType(int message, Int64 wparam, Int64 AppId_lparam)
 		//    {
 		//        MessageTypes result = MessageTypes.None;
-		//        if (wparam == BaseUniquewparam && lparam == Uniquelparam)
+		//        if (wparam == BaseUniquewparam && AppId_lparam == Uniquelparam)
 		//            result = (MessageTypes)message;
 		//        return result;
 		//    }

@@ -446,7 +446,7 @@ public class VisualStudioInterop
 
 	public static string GetTracXmlRpcHttpPathFromProjectName(string projectName)
 	{
-		foreach (string tmpuri in GlobalSettings.TracXmlRpcInteropSettings.Instance.GetListedXmlRpcUrls())//GlobalSettings.TracXmlRpcInteropSettings.Instance.ListedXmlRpcUrls.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+		foreach (string tmpuri in GlobalSettings.TracXmlRpcInteropSettings.Instance.GetListedXmlRpcUrls())//GlobalSettings.TracXmlRpcInteropSettings.Instance.ListedApplicationNames.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
 			if (tmpuri.ToLower().Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries).Contains(projectName.ToLower()))
 				return tmpuri;
 		return null;

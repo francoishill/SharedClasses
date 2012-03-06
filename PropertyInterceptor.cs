@@ -147,7 +147,7 @@ public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable
 
 					if (result.ReturnValue == null)
 					{
-						if (att.IsEncrypted)
+						if (att != null && att.IsEncrypted)
 						{
 							PropertyInfo encryptedPi = target.GetType().GetProperty(att.EncryptedPropertyName);
 							object encryptedVal = encryptedPi.GetValue(target);
@@ -179,7 +179,7 @@ public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable
 						else
 						{
 							//It does not ask for userinput if the current value is null
-							if (att.IgnoredByPropertyInterceptor_EncryptingAnother)
+							if (att != null && att.IgnoredByPropertyInterceptor_EncryptingAnother)
 								return result;
 
 							string UserPrompt = "Please enter value for " + propName;

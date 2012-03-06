@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -28,6 +29,10 @@ namespace SharedClasses
 
 		private void Window_Loaded_1(object sender, RoutedEventArgs e)
 		{
+			GenericSettings.EnsureAllSettingsAreInitialized();
+
+			foreach (string app in GlobalSettings.ApplicationManagerSettings.Instance.GetListedApplicationNames())
+				WindowMessagesInterop.RegisteredApplications.Add(app);//(IntPtr)Process.GetCurrentProcess().Id);
 			listBoxRegisteredApplications.ItemsSource = WindowMessagesInterop.RegisteredApplications;
 			System.Windows.Forms.Integration.ElementHost.EnableModelessKeyboardInterop(this);
 		}
@@ -108,6 +113,17 @@ namespace SharedClasses
 			if (ra == null)
 				return;
 			ra.BroadCastMessage(WindowMessagesInterop.MessageTypes.Close);
+		}
+
+		private void Button_Click_4(object sender, RoutedEventArgs e)
+		{
+			Button button = sender as Button;
+			WindowMessagesInterop.RegisteredApp ra = button.DataContext as WindowMessagesInterop.RegisteredApp;
+			if (ra == null)
+				return;
+			string errStarting;
+			if (!ra.Start(out errStarting))
+				UserMessages.ShowErrorMessage(errStarting);
 		}
 	}
 }

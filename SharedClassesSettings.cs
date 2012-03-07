@@ -249,7 +249,7 @@ namespace SharedClasses
 							PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Instance);//Find all properties of class
 							foreach (PropertyInfo pi in properties)
 							{
-								object obj = spi.GetValue(null); 
+								object obj = spi.GetValue(null);
 								if (obj != null)
 									pi.GetValue(obj);//This will invoke the _get method which will run through the InterceptorProxy and therefore ask userinput if the value is null
 							}
@@ -354,7 +354,7 @@ namespace SharedClasses
 			}
 
 			//private List<string> listedApplicationNames;
-			[Description("A list of application names to be managed.")]
+			[Description("A list of application names to be managed split with pipe character |.")]
 			public string ListedApplicationNames { get; set; }
 			//public string ListedApplicationNames
 			//{
@@ -791,6 +791,45 @@ namespace SharedClasses
 			}
 		}
 
+		public class PublishSettings : GenericSettings
+		{
+			private static volatile PublishSettings instance;
+			private static object lockingObject = new Object();
+
+			public static PublishSettings Instance
+			{
+				get
+				{
+					if (instance == null)
+					{
+						lock (lockingObject)
+						{
+							if (instance == null)
+							{
+								instance = Interceptor<PublishSettings>.Create();//new TracXmlRpcInteropSettings();
+								instance.LoadFromFile(RootApplicationNameForSharedClasses);
+							}
+						}
+					}
+					return instance;
+				}
+			}
+
+			[Description("A list of application names to be added defaultly to the list to pick, split with pipe character |.")]
+			public string ListedApplicationNames { get; set; }
+			public List<string> GetListedApplicationNames() { return new List<string>(ListedApplicationNames.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)); }
+
+			public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+			{
+				instance = Interceptor<PublishSettings>.Create(SettingsInterop.GetSettings<PublishSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
+			}
+
+			public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+			{
+				SettingsInterop.FlushSettings<PublishSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
+			}
+		}
+
 		[Serializable]
 		public class SubversionSettings : GenericSettings
 		{
@@ -830,6 +869,49 @@ namespace SharedClasses
 				set { listOfMonitoredSubversionDirectories = value == null ? null : new List<string>(value.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)); }
 			}
 			public List<string> GetListOfMonitoredSubversionDirectories() { return listOfMonitoredSubversionDirectories ?? new List<string>(); }
+
+			private Dictionary<string, List<string>> groupedMonitoredList;
+			[Description("The list of monitored list (divided into groups)")]
+			public string GroupedMonitoredList
+			{
+				get
+				{
+					string promptResult = null;
+					if (groupedMonitoredList == null || groupedMonitoredList.Count == 0)
+					{
+						promptResult = InputBoxWPF.Prompt("Please enter a list of grouped items in format Category|first\\path,seconds\\path|Second category|third\\path");
+						groupedMonitoredList = new Dictionary<string, List<string>>();
+						string[] splits = promptResult.Split('|');
+						for (int i = 0; i < splits.Length / 2; i++)
+							groupedMonitoredList.Add(splits[i * 2], new List<string>(splits[i * 2 + 1].Split(',')));
+					}
+					string onestring = "";
+					if (groupedMonitoredList != null)
+						foreach (string key in groupedMonitoredList.Keys)
+						{
+							onestring += (onestring.Length > 0 ? "|" : "") + key;
+							for (int i = 0; i < groupedMonitoredList[key].Count; i++)
+								onestring += (i > 0 ? "," : "") + groupedMonitoredList[key][i];
+						}
+					return onestring;
+				}
+				set
+				{
+					if (value == null)
+						groupedMonitoredList = null;
+					else
+					{
+						groupedMonitoredList = new Dictionary<string, List<string>>();
+						string[] splits = value.Split('|');
+						for (int i = 0; i < splits.Length / 2; i++)
+							groupedMonitoredList.Add(splits[i * 2], new List<string>(splits[i * 2 + 1].Split(',')));
+					}
+				}
+			}
+			public Dictionary<string, List<string>> GetGroupedMonitoredList()
+			{
+				return groupedMonitoredList ?? new Dictionary<string, List<string>>();
+			}
 
 			[Description("The interval (in milliseconds) for checking the monitored subversion directories.")]
 			public int? IntervalForMonitoring_Milliseconds { get; set; }

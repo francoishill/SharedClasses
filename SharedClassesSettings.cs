@@ -367,7 +367,7 @@ namespace SharedClasses
 			//	set { listedApplicationNames = value == null ? null : new List<string>(value.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)); }
 			//}
 			//public List<string> GetListedApplicationNames() { string tmp = ListedApplicationNames; tmp = null; return listedApplicationNames ?? new List<string>(); }
-			public List<string> GetListedApplicationNames() { return new List<string>(ListedApplicationNames.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)); }
+			public List<string> GetListedApplicationNames() { if (ListedApplicationNames == null) return new List<string>(); else return new List<string>(ListedApplicationNames.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)); }
 
 			public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
 			{

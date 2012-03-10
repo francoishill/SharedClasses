@@ -13,6 +13,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using ApplicationManager;
 
 namespace SharedClasses
 {
@@ -21,36 +22,43 @@ namespace SharedClasses
 	/// </summary>
 	public partial class AppManagerInterface : Window
 	{
+		TempForm tempForm;
+
 		public AppManagerInterface()
 		{
-			System.Windows.Forms.Application.EnableVisualStyles();
 			InitializeComponent();
 		}
 
 		private void Window_Loaded_1(object sender, RoutedEventArgs e)
 		{
-			GenericSettings.EnsureAllSettingsAreInitialized();
+			//GenericSettings.EnsureAllSettingsAreInitialized();
 
 			foreach (string app in GlobalSettings.ApplicationManagerSettings.Instance.GetListedApplicationNames())
 				WindowMessagesInterop.RegisteredApplications.Add(app);//(IntPtr)Process.GetCurrentProcess().Id);
 			listBoxRegisteredApplications.ItemsSource = WindowMessagesInterop.RegisteredApplications;
-			System.Windows.Forms.Integration.ElementHost.EnableModelessKeyboardInterop(this);
+			//System.Windows.Forms.Integration.ElementHost.EnableModelessKeyboardInterop(this);
+			this.Hide();
+
+			//TODO: This form is critically important, becuase this form has ShowInTaskbar=false, an additional form is required with ShowInTaskbar=true.
+			tempForm = new TempForm();
+			tempForm.Show();
+			tempForm.Hide();
 		}
 
-		protected override void OnSourceInitialized(EventArgs e)
-		{
-			base.OnSourceInitialized(e);
-			HwndSource source = PresentationSource.FromVisual(this) as HwndSource;
-			source.AddHook(WndProc);
-		}
+		//protected override void OnSourceInitialized(EventArgs e)
+		//{
+		//	base.OnSourceInitialized(e);
+		//	HwndSource source = PresentationSource.FromVisual(this) as HwndSource;
+		//	source.AddHook(WndProc);
+		//}
 
-		private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-		{
-			string errMsg;
-			if (!WindowMessagesInterop.ApplicationManagerHandleMessage(msg, wParam, lParam, out errMsg))
-				MessageBox.Show(errMsg);
-			return IntPtr.Zero;
-		}
+		//private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+		//{
+		//	string errMsg;
+		//	if (!WindowMessagesInterop.ApplicationManagerHandleMessage(msg, wParam, lParam, out errMsg))
+		//		MessageBox.Show(errMsg);
+		//	return IntPtr.Zero;
+		//}
 
 		private void Border_PreviewMouseLeftButtonDown_1(object sender, MouseButtonEventArgs e)
 		{
@@ -125,5 +133,76 @@ namespace SharedClasses
 			if (!ra.Start(out errStarting))
 				UserMessages.ShowErrorMessage(errStarting);
 		}
+
+		private void Window_StateChanged_1(object sender, EventArgs e)
+		{
+			if (this.WindowState == System.Windows.WindowState.Normal)
+				PositionWindowBottomRight();
+		}
+
+		private void Window_IsVisibleChanged_1(object sender, DependencyPropertyChangedEventArgs e)
+		{
+			if (this.Visibility == System.Windows.Visibility.Visible)
+				PositionWindowBottomRight();
+		}
+
+		private void Window_SizeChanged_1(object sender, SizeChangedEventArgs e)
+		{
+			PositionWindowBottomRight();
+		}
+
+		private void PositionWindowBottomRight()
+		{
+			if (this.WindowState != System.Windows.WindowState.Minimized)
+			{
+				this.Left = System.Windows.SystemParameters.WorkArea.Right - this.ActualWidth;
+				this.Top = System.Windows.SystemParameters.WorkArea.Bottom - this.ActualHeight;
+			}
+		}
+
+		private void ShowNow()
+		{
+			this.Show();
+			this.BringIntoView();
+			this.Activate();
+		}
+
+		private void OnMenuItemShowClick(object sender, EventArgs e)
+		{
+			this.ShowNow();
+		}
+
+		private void OnMenuItemExitClick(object sender, EventArgs e)
+		{
+			if (tempForm != null)
+				tempForm.Close();
+			this.Close();
+		}
+
+		private void OnMenuItem_MouseClick(object sender, MouseButtonEventArgs e)
+		{
+			if (this.IsVisible)
+				this.Hide();
+			else
+				this.ShowNow();
+		}
 	}
+
+	#region Converters
+	public class BoolIsAliveToBrushConverter : IValueConverter
+	{
+		public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			if (!(value is bool) || !(bool)value)
+				return new SolidColorBrush(Colors.LightGray);
+			else
+				return new SolidColorBrush(Colors.Green);
+		}
+
+		public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			throw new NotImplementedException();
+		}
+	}
+	#endregion Converters
 }

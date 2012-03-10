@@ -16,6 +16,29 @@ namespace SharedClasses
 	[DefaultEvent("MouseDoubleClick")]
 	public class NotificationAreaIcon : FrameworkElement
 	{
+		/*		
+		Usage is as follows in XAML
+		 * using a resource file in the root (of the visual studio project) named "app.ico":
+		 * The MenuItem with Text="-" will be a separator
+		 * Note also a reference to the System.Windows.Forms & System.Drawing assemblies will be required
+		
+		 * Add the following to your window's namespace lines:
+			xmlns:sharedclasses='clr-namespace:SharedClasses'
+			xmlns:forms="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
+		 
+		 * Inside the Window's first child (by default the Grid), CANNOT be inside the window root
+		<sharedclasses:NotificationAreaIcon x:Name='trayIcon'
+											Text="Text when hovering over tray icon"
+											Icon="app.ico">
+			<sharedclasses:NotificationAreaIcon.MenuItems>
+				<forms:MenuItem Text="Show"
+								Click="OnMenuItemShowClick"
+								DefaultItem="True" />
+				<forms:MenuItem Text="-" />
+				<forms:MenuItem Text="Exit"
+								Click="OnMenuItemExitClick" />
+			</sharedclasses:NotificationAreaIcon.MenuItems>
+		</sharedclasses:NotificationAreaIcon>*/
 		System.Windows.Forms.NotifyIcon notifyIcon;
 
 		public static readonly RoutedEvent MouseClickEvent = EventManager.RegisterRoutedEvent(

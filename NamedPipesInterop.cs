@@ -7,7 +7,7 @@ using System.Threading;
 
 namespace SharedClasses
 {
-	public enum PipeMessageTypes { unknown, ClientRegistrationRequest, AcknowledgeClientRegistration, ServerDisconnected, ClientDisconnected/*, ServerPolling, ReceivedPollFromServer */};
+	public enum PipeMessageTypes { unknown, ClientRegistrationRequest, AcknowledgeClientRegistration, ServerDisconnected, ClientDisconnected/*, ServerPolling, ReceivedPollFromServer */, Close};
 	public delegate void PipeMessageRecievedEventHandler(object sender, PipeMessageRecievedEventArgs e);
 	public class PipeMessageRecievedEventArgs : EventArgs
 	{
@@ -64,7 +64,10 @@ namespace SharedClasses
 			EventWaitHandle terminateHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
 			public string PipeName { get; set; }
 
-			public NamedPipeServer(string PipeName)
+			public NamedPipeServer(
+				string PipeName, 
+				Action<ErrorEventArgs> ActionOnError,
+				Action<PipeMessageRecievedEventArgs, NamedPipeServer> ActionOnMessageReceived)
 			{
 				this.PipeName = PipeName;
 				if (serverCheckConnectionsAlive == null)
@@ -83,6 +86,8 @@ namespace SharedClasses
 						null,
 						TimeSpan.FromSeconds(0),
 						TimeSpan.FromMilliseconds(500));
+				OnError += (s, e) => { ActionOnError(e); };
+				OnMessageReceived += (s, m) => { ActionOnMessageReceived(m, this); };
 			}
 
 			public void SendMessageToClient(PipeMessageTypes messageType, string clientName, string additionalText = null)
@@ -92,7 +97,9 @@ namespace SharedClasses
 			}
 
 			public void ProcessClientThread(object o)
+			//public void ProcessClientThread(IAsyncResult ar)
 			{
+				//NamedPipeServerStream pipeStream = (NamedPipeServerStream)ar.AsyncState;
 				NamedPipeServerStream pipeStream = (NamedPipeServerStream)o;
 
 				while (pipeStream.IsConnected)
@@ -119,6 +126,8 @@ namespace SharedClasses
 				}
 				while (pipeStream.IsConnected)
 				{
+					if (!running)
+						break;
 				}
 				OnMessageReceived(this, new PipeMessageRecievedEventArgs(PipeMessageTypes.ClientDisconnected, "Client disconnected"));
 			}
@@ -133,29 +142,43 @@ namespace SharedClasses
 				terminateHandle.Set();
 			}
 
-			public void Run()
+			public NamedPipeServer Start()
 			{
 				running = true;
 				runningThread = new Thread(ServerLoop);
 				runningThread.Start();
+				return this;
 			}
 
 			public void Stop()
 			{
 				running = false;
-				terminateHandle.WaitOne();
+				//terminateHandle.WaitOne();
 			}
 
+			private NamedPipeServerStream lastPipeStream;
 			public void ProcessNextClient()
 			{
 				try
 				{
-					NamedPipeServerStream pipeStream = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 254, PipeTransmissionMode.Message);
-					pipeStream.WaitForConnection();
+					NamedPipeServerStream pipeStream = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 254, PipeTransmissionMode.Message, PipeOptions.Asynchronous);
+					lastPipeStream = pipeStream;
+					//pipeStream.WaitForConnection();
+					var asyncResult = pipeStream.BeginWaitForConnection((ar) =>
+					{
+						Thread t = new Thread(ProcessClientThread);
+						t.Start(ar.AsyncState);
+					},
+					pipeStream);
+
+					if (asyncResult.AsyncWaitHandle.WaitOne(1000))
+					{
+						pipeStream.EndWaitForConnection(asyncResult);
+					}
 
 					//Spawn a new thread for each request and continue waiting
-					Thread t = new Thread(ProcessClientThread);
-					t.Start(pipeStream);
+					//Thread t = new Thread(ProcessClientThread);
+					//t.Start(pipeStream);
 				}
 				catch (Exception)// e)
 				{
@@ -170,44 +193,72 @@ namespace SharedClasses
 			public ErrorEventHandler OnError = new ErrorEventHandler(delegate { });
 			public PipeMessageRecievedEventHandler OnMessageReceived = new PipeMessageRecievedEventHandler(delegate { });
 
-			public NamedPipeClient() { }
-
-			public void Start()
+			public NamedPipeClient(
+				Action<ErrorEventArgs> ActionOnError,
+				Action<PipeMessageRecievedEventArgs> ActionOnMessageReceived)
 			{
-				using (NamedPipeClientStream pipeClient = new NamedPipeClientStream(".", NamedPipesInterop.APPMANAGER_PIPE_NAME, PipeDirection.InOut))
-				{
-					try
-					{
-						pipeClient.Connect(1000);
-						pipeClient.ReadMode = PipeTransmissionMode.Message;
-						pipeClient.WriteMessage(PipeMessageTypes.ClientRegistrationRequest + ":" + Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]));
-					}
-					catch (Exception exc)
-					{
-						OnError(this, new ErrorEventArgs(exc));
-					}
+				OnError += (s, e) => { ActionOnError(e); };
+				OnMessageReceived += (s, m) => { ActionOnMessageReceived(m); };
+			}
 
-					while (pipeClient.IsConnected && pipeClient.CanWrite)
+			public NamedPipeClient Start()
+			//public void Start()
+			{
+				//Timer clientCheckConnectionsAlive = null;
+
+				Thread th = new Thread(() =>
+				{
+					using (NamedPipeClientStream pipeClient = new NamedPipeClientStream(".", NamedPipesInterop.APPMANAGER_PIPE_NAME, PipeDirection.InOut))
 					{
-						string tmpMessage;
-						if (pipeClient.ReadMessage(out tmpMessage))
+						try
 						{
-							PipeMessageTypes messageType;
-							string additionalText;
-							if (GetPipeMessageTypeFromString(tmpMessage, out messageType, out additionalText))
-							{
-								if (messageType == PipeMessageTypes.AcknowledgeClientRegistration)
-									RegistrationSuccess = true;
-								//if (messageType == PipeMessageTypes.ServerPolling)
-								//    pipeClient.WriteMessage(PipeMessageTypes.ReceivedPollFromServer.ToString());
-								OnMessageReceived(this, new PipeMessageRecievedEventArgs(messageType, additionalText));
-							}
-							else if (!string.IsNullOrWhiteSpace(tmpMessage))
-								OnMessageReceived(this, new PipeMessageRecievedEventArgs(PipeMessageTypes.unknown, tmpMessage));
+							pipeClient.Connect(1000);
+							pipeClient.ReadMode = PipeTransmissionMode.Message;
+							pipeClient.WriteMessage(PipeMessageTypes.ClientRegistrationRequest + ":" + Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]));
 						}
+						catch (Exception exc)
+						{
+							OnError(this, new ErrorEventArgs(exc));
+						}
+
+
+						//clientCheckConnectionsAlive = new Timer(
+						//    delegate
+						//    {
+						//        if (!pipeClient.IsConnected)
+						//        {
+						//            OnError(this, new ErrorEventArgs(new Exception("Server disconnected without notice")));
+						//        }
+						//    },
+						//    null,
+						//    TimeSpan.FromSeconds(0),
+						//    TimeSpan.FromMilliseconds(500));
+
+						while (pipeClient.IsConnected && pipeClient.CanWrite)
+						{
+							string tmpMessage;
+							if (pipeClient.ReadMessage(out tmpMessage))
+							{
+								PipeMessageTypes messageType;
+								string additionalText;
+								if (GetPipeMessageTypeFromString(tmpMessage, out messageType, out additionalText))
+								{
+									if (messageType == PipeMessageTypes.AcknowledgeClientRegistration)
+										RegistrationSuccess = true;
+									//if (messageType == PipeMessageTypes.ServerPolling)
+									//    pipeClient.WriteMessage(PipeMessageTypes.ReceivedPollFromServer.ToString());
+									OnMessageReceived(this, new PipeMessageRecievedEventArgs(messageType, additionalText));
+								}
+								else if (!string.IsNullOrWhiteSpace(tmpMessage))
+									OnMessageReceived(this, new PipeMessageRecievedEventArgs(PipeMessageTypes.unknown, tmpMessage));
+							}
+						}
+						OnMessageReceived(this, new PipeMessageRecievedEventArgs(PipeMessageTypes.ServerDisconnected, "Server disconnected"));
 					}
-					OnMessageReceived(this, new PipeMessageRecievedEventArgs(PipeMessageTypes.ServerDisconnected, "Server disconnected"));
-				}
+					//clientCheckConnectionsAlive.Dispose();
+				});
+				th.Start();
+				return this;
 			}
 		}
 	}

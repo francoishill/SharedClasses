@@ -29,7 +29,7 @@ namespace InlineCommandToolkit
 			if (!command.ValidateArguments(out errorMsg, arguments)
 				&& UserMessages.ShowWarningMessage("Invalid command arguments: " + errorMsg))
 				return false;
-			if (!command.PerformCommand(out errorMsg, textfeedbackEvent, progresschangedEvent, arguments)
+			if (!command.PerformAndLogCommand(out errorMsg, textfeedbackEvent, progresschangedEvent, arguments)
 				&& UserMessages.ShowWarningMessage("Cannot perform command: " + errorMsg))
 				return false;
 			//TODO: For some reason (maybe not using async/await) this "Successfully performed command" message gets through before the PerformPublishOnline step is finished
@@ -160,6 +160,8 @@ namespace InlineCommandToolkit
 			bool PreValidateArgument(out string errorMessage, int Index, string argumentValue);
 			bool ValidateArguments(out string errorMessage, params string[] arguments);
 			bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments);
+			List<string[]> ArgumentsHistory { get; set; }
+			bool PerformAndLogCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments);
 			ObservableCollection<string> GetPredefinedArgumentsList(int Index, bool SuppressErrors = false);
 			Dictionary<string, string> GetArgumentReplaceKeyValuePair(int Index, bool SuppressErrors = false);
 			//void Add_AfterClearing_AllBlankArguments();
@@ -186,6 +188,19 @@ namespace InlineCommandToolkit
 			public abstract bool PreValidateArgument(out string errorMessage, int Index, string argumentValue);
 			public abstract bool ValidateArguments(out string errorMessage, params string[] arguments);
 			public abstract bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments);
+
+			private List<string[]> _argumentshistory;
+			public List<string[]> ArgumentsHistory
+			{
+				get { if (_argumentshistory == null) _argumentshistory = new List<string[]>(); return _argumentshistory; }
+				set { _argumentshistory = value; }
+			}
+
+			public bool PerformAndLogCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments)
+			{
+				ArgumentsHistory.Add(arguments);
+				return PerformCommand(out errorMessage, textFeedbackEvent, progressChangedEvent, arguments);
+			}
 
 			public abstract CommandArgument[] AvailableArguments { get; set; }
 			protected ObservableCollectionWithValidationOnAdd<CommandArgument> currentArguments;

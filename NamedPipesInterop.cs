@@ -1,13 +1,20 @@
 using System;
 using System.Text;
+using System.Linq;
 using System.IO.Pipes;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Windows.Threading;
+using System.Collections.Specialized;
+//using System.Windows.Threading;
 
 namespace SharedClasses
 {
-	public enum PipeMessageTypes { unknown, ClientRegistrationRequest, AcknowledgeClientRegistration, ServerDisconnected, ClientDisconnected/*, ServerPolling, ReceivedPollFromServer */, Close};
+	public enum PipeMessageTypes { unknown, ClientRegistrationRequest, AcknowledgeClientRegistration, ServerDisconnected, ClientDisconnected/*, ServerPolling, ReceivedPollFromServer */, Close, Show, Hide };
 	public delegate void PipeMessageRecievedEventHandler(object sender, PipeMessageRecievedEventArgs e);
 	public class PipeMessageRecievedEventArgs : EventArgs
 	{
@@ -17,6 +24,32 @@ namespace SharedClasses
 		{
 			this.MessageType = MessageType;
 			this.AdditionalText = AdditionalText;
+		}
+	}
+
+	public class MTObservableCollection<T> : ObservableCollection<T>
+	{
+		public override event NotifyCollectionChangedEventHandler CollectionChanged;
+		protected override void OnCollectionChanged(NotifyCollectionChangedEventArgs e)
+		{
+			var eh = CollectionChanged;
+			if (eh != null)
+			{
+				Dispatcher dispatcher = (from NotifyCollectionChangedEventHandler nh in eh.GetInvocationList()
+										 let dpo = nh.Target as DispatcherObject
+										 where dpo != null
+										 select dpo.Dispatcher).FirstOrDefault();
+
+				if (dispatcher != null && dispatcher.CheckAccess() == false)
+				{
+					dispatcher.Invoke(DispatcherPriority.DataBind, (Action)(() => OnCollectionChanged(e)));
+				}
+				else
+				{
+					foreach (NotifyCollectionChangedEventHandler nh in eh.GetInvocationList())
+						nh.Invoke(this, e);
+				}
+			}
 		}
 	}
 
@@ -54,8 +87,10 @@ namespace SharedClasses
 
 		public class NamedPipeServer
 		{
-			//private static Dictionary<NamedPipeServerStream, string> PipeStreamAndNameList = new Dictionary<NamedPipeServerStream, string>();
-			private static Dictionary<string, NamedPipeServerStream> PipeStreamAndNameList = new Dictionary<string, NamedPipeServerStream>();
+			//public static ObservableCollection<ClientApplication> ConnectedClientApplications = new ObservableCollection<ClientApplication>();
+			//public static ClientApplicationCollection ConnectedClientApplications = new ClientApplicationCollection();
+			public static MTObservableCollection<ClientApplication> ConnectedClientApplications = new MTObservableCollection<ClientApplication>();
+
 			public ErrorEventHandler OnError = new ErrorEventHandler(delegate { });
 			public PipeMessageRecievedEventHandler OnMessageReceived = new PipeMessageRecievedEventHandler(delegate { });
 
@@ -65,23 +100,33 @@ namespace SharedClasses
 			public string PipeName { get; set; }
 
 			public NamedPipeServer(
-				string PipeName, 
+				string PipeName,
 				Action<ErrorEventArgs> ActionOnError,
 				Action<PipeMessageRecievedEventArgs, NamedPipeServer> ActionOnMessageReceived)
 			{
 				this.PipeName = PipeName;
+
 				if (serverCheckConnectionsAlive == null)
 					serverCheckConnectionsAlive = new Timer(
 						delegate
 						{
-							var keys = new List<string>(PipeStreamAndNameList.Keys);
-							//foreach (string name in keys)
-							for (int i = 0; i < keys.Count; i++)
-								if (!PipeStreamAndNameList[keys[i]].IsConnected)
-								{
-									PipeStreamAndNameList.Remove(keys[i]);
-									OnError(this, new ErrorEventArgs(new Exception("Client disconnected without notice, removed from registered list.")));
-								}
+							lock (this)
+							{
+								if (ConnectedClientApplications != null)
+									for (int i = ConnectedClientApplications.Count - 1; i >= 0; i--)
+									{
+										var tmpclientApp = ConnectedClientApplications[i];
+										if (tmpclientApp.PipeStream != null)
+											tmpclientApp.PipeStream.WriteMessage("Polling");
+										if (tmpclientApp.PipeStream != null && !tmpclientApp.PipeStream.IsConnected)
+										{
+											var tmpclientapp = ConnectedClientApplications[i];
+											ConnectedClientApplications.RemoveAt(i);
+											tmpclientapp.OnPropertyChanged("IsAlive");
+											OnError(this, new ErrorEventArgs(new Exception("Client disconnected without notice, removed from registered list.")));
+										}
+									}
+							}
 						},
 						null,
 						TimeSpan.FromSeconds(0),
@@ -92,12 +137,12 @@ namespace SharedClasses
 
 			public void SendMessageToClient(PipeMessageTypes messageType, string clientName, string additionalText = null)
 			{
-				if (PipeStreamAndNameList.ContainsKey(clientName))
-					PipeStreamAndNameList[clientName].WriteMessage(messageType.ToString() + (string.IsNullOrWhiteSpace(additionalText) ? "" : ":" + additionalText));
+				foreach (ClientApplication ca in ConnectedClientApplications.Where(ca => ca.PipeName.Equals(clientName, StringComparison.InvariantCultureIgnoreCase)))
+					ca.PipeStream.WriteMessage(messageType.ToString() + (string.IsNullOrWhiteSpace(additionalText) ? "" : ":" + additionalText));
 			}
 
-			public void ProcessClientThread(object o)
 			//public void ProcessClientThread(IAsyncResult ar)
+			public void ProcessClientThread(object o)
 			{
 				//NamedPipeServerStream pipeStream = (NamedPipeServerStream)ar.AsyncState;
 				NamedPipeServerStream pipeStream = (NamedPipeServerStream)o;
@@ -117,11 +162,12 @@ namespace SharedClasses
 							string clientName = additionalText.TrimStart(':');
 							OnMessageReceived(this, new PipeMessageRecievedEventArgs(messageType, additionalText));
 							pipeStream.WriteMessage(PipeMessageTypes.AcknowledgeClientRegistration.ToString());
-							PipeStreamAndNameList.Add(clientName, pipeStream);
+							var newclientApp = new ClientApplication(clientName, pipeStream);
+							ConnectedClientApplications.Add(newclientApp);
 							break;
 						}
-					}					
-					
+					}
+
 					message = null;
 				}
 				while (pipeStream.IsConnected)
@@ -163,7 +209,6 @@ namespace SharedClasses
 				{
 					NamedPipeServerStream pipeStream = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 254, PipeTransmissionMode.Message, PipeOptions.Asynchronous);
 					lastPipeStream = pipeStream;
-					//pipeStream.WaitForConnection();
 					var asyncResult = pipeStream.BeginWaitForConnection((ar) =>
 					{
 						Thread t = new Thread(ProcessClientThread);
@@ -174,16 +219,87 @@ namespace SharedClasses
 					if (asyncResult.AsyncWaitHandle.WaitOne(1000))
 					{
 						pipeStream.EndWaitForConnection(asyncResult);
+						return;
 					}
-
-					//Spawn a new thread for each request and continue waiting
-					//Thread t = new Thread(ProcessClientThread);
-					//t.Start(pipeStream);
+					pipeStream.Close();
+					pipeStream.Dispose();
+					pipeStream = null;
 				}
 				catch (Exception)// e)
 				{
 					//If there are no more avail connections (254 is in use already) then just keep looping until one is avail
 				}
+			}
+
+			//public class ClientApplicationCollection : ObservableCollection<ClientApplication>
+			//{
+			//	public new void Add(ClientApplication item)
+			//	{
+			//		if (item == null)
+			//			return;
+
+			//		if (this.Count > 0)
+			//		{
+			//			var tmpitem = this.First(
+			//				ca =>
+			//					ca.PipeName.Equals(item.PipeName, StringComparison.InvariantCultureIgnoreCase)
+			//					&& ca.PipeStream == null);
+			//			if (tmpitem != null)
+			//				tmpitem.PipeStream = item.PipeStream;
+			//			else
+			//				base.Add(item);
+			//		}
+			//		else
+			//			base.Add(item);
+			//	}
+			//}
+
+			public class ClientApplication : INotifyPropertyChanged
+			{
+				private string _pipename;
+				public string PipeName { get { return _pipename; } private set { _pipename = value; OnPropertyChanged("PipeName"); } }
+				private NamedPipeServerStream _pipestream;
+				public NamedPipeServerStream PipeStream { get { return _pipestream; } set { _pipestream = value; OnPropertyChanged("PipeStream"); } }
+				private bool _appnametextboxvisible;
+				public bool AppNameTextboxVisible { get { return _appnametextboxvisible; } set { _appnametextboxvisible = value; OnPropertyChanged("AppNameTextboxVisible"); } }
+				public bool IsAlive { get { return PipeStream != null && PipeStream.IsConnected; } }
+
+				public ClientApplication(string PipeName, NamedPipeServerStream PipeStream)
+				{
+					this.PipeName = PipeName;
+					this.PipeStream = PipeStream;
+				}
+
+				public void SendMessage(PipeMessageTypes messageType)
+				{
+					if (PipeStream == null)
+						return;
+					PipeStream.WriteMessage(messageType.ToString());
+				}
+
+				public bool StartProcessWithName(out string errorMessageIfFail)
+				{
+					if (string.IsNullOrWhiteSpace(this.PipeName))
+					{
+						errorMessageIfFail = "Cannot start application with blank name.";
+						return false;
+					}
+					try
+					{
+						Process.Start(this.PipeName);
+						errorMessageIfFail = null;
+						return true;
+					}
+					catch (Exception exc)
+					{
+						errorMessageIfFail = "Exception trying to start application: " + exc.Message;
+						return false;
+					}
+
+				}
+
+				public event PropertyChangedEventHandler PropertyChanged = new PropertyChangedEventHandler(delegate { });
+				public void OnPropertyChanged(string propertyName) { PropertyChanged(this, new PropertyChangedEventArgs(propertyName)); }
 			}
 		}
 
@@ -192,6 +308,7 @@ namespace SharedClasses
 			private bool RegistrationSuccess = false;
 			public ErrorEventHandler OnError = new ErrorEventHandler(delegate { });
 			public PipeMessageRecievedEventHandler OnMessageReceived = new PipeMessageRecievedEventHandler(delegate { });
+			public bool ForceCancelRetryLoop = false;
 
 			public NamedPipeClient(
 				Action<ErrorEventArgs> ActionOnError,
@@ -199,6 +316,12 @@ namespace SharedClasses
 			{
 				OnError += (s, e) => { ActionOnError(e); };
 				OnMessageReceived += (s, m) => { ActionOnMessageReceived(m); };
+			}
+
+			public static NamedPipeClient StartNewPipeClient(Action<ErrorEventArgs> ActionOnError,
+				Action<PipeMessageRecievedEventArgs> ActionOnMessageReceived)
+			{
+				return new NamedPipeClient(ActionOnError, ActionOnMessageReceived).Start();
 			}
 
 			public NamedPipeClient Start()
@@ -210,6 +333,7 @@ namespace SharedClasses
 				{
 					using (NamedPipeClientStream pipeClient = new NamedPipeClientStream(".", NamedPipesInterop.APPMANAGER_PIPE_NAME, PipeDirection.InOut))
 					{
+					retryconnect:
 						try
 						{
 							pipeClient.Connect(1000);
@@ -218,6 +342,9 @@ namespace SharedClasses
 						}
 						catch (Exception exc)
 						{
+							if (exc.Message == "The operation has timed out.")
+								if (!ForceCancelRetryLoop)
+									goto retryconnect;
 							OnError(this, new ErrorEventArgs(exc));
 						}
 
@@ -234,7 +361,7 @@ namespace SharedClasses
 						//    TimeSpan.FromSeconds(0),
 						//    TimeSpan.FromMilliseconds(500));
 
-						while (pipeClient.IsConnected && pipeClient.CanWrite)
+						while (pipeClient.IsConnected && pipeClient.CanWrite && !ForceCancelRetryLoop)
 						{
 							string tmpMessage;
 							if (pipeClient.ReadMessage(out tmpMessage))

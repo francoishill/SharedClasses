@@ -1,19 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Interop;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using ApplicationManager;
 
 namespace SharedClasses
 {
@@ -22,7 +11,7 @@ namespace SharedClasses
 	/// </summary>
 	public partial class AppManagerInterface : Window
 	{
-		TempForm tempForm;
+		NamedPipesInterop.NamedPipeServer server;
 
 		public AppManagerInterface()
 		{
@@ -31,107 +20,87 @@ namespace SharedClasses
 
 		private void Window_Loaded_1(object sender, RoutedEventArgs e)
 		{
-			//GenericSettings.EnsureAllSettingsAreInitialized();
-
 			foreach (string app in GlobalSettings.ApplicationManagerSettings.Instance.GetListedApplicationNames())
-				WindowMessagesInterop.RegisteredApplications.Add(app);//(IntPtr)Process.GetCurrentProcess().Id);
-			listBoxRegisteredApplications.ItemsSource = WindowMessagesInterop.RegisteredApplications;
-			//System.Windows.Forms.Integration.ElementHost.EnableModelessKeyboardInterop(this);
-			this.Hide();
+				NamedPipesInterop.NamedPipeServer.ConnectedClientApplications.Add(new NamedPipesInterop.NamedPipeServer.ClientApplication(app, null));
+			listBoxRegisteredApplications.ItemsSource = NamedPipesInterop.NamedPipeServer.ConnectedClientApplications;
+			//this.Hide();
 
-			//TODO: This form is critically important, becuase this form has ShowInTaskbar=false, an additional form is required with ShowInTaskbar=true.
-			tempForm = new TempForm();
-			tempForm.Show();
-			tempForm.Hide();
+			server = new NamedPipesInterop.NamedPipeServer(
+			NamedPipesInterop.APPMANAGER_PIPE_NAME,
+			ActionOnError: (e1) => { Console.WriteLine("Error: " + e1.GetException().Message); },
+			ActionOnMessageReceived: (m, serv) => { Console.WriteLine("Message received, " + m.MessageType.ToString() + ": " + (m.AdditionalText ?? "")); }
+			).Start();
+			this.Closing += delegate { server.Stop(); };
 		}
 
-		//protected override void OnSourceInitialized(EventArgs e)
-		//{
-		//	base.OnSourceInitialized(e);
-		//	HwndSource source = PresentationSource.FromVisual(this) as HwndSource;
-		//	source.AddHook(WndProc);
-		//}
+		private void Button_Click_1(object sender, RoutedEventArgs e)
+		{
+			SendMessageToFrameworkElementDataContext(sender as FrameworkElement, PipeMessageTypes.Show);
+		}
 
-		//private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-		//{
-		//	string errMsg;
-		//	if (!WindowMessagesInterop.ApplicationManagerHandleMessage(msg, wParam, lParam, out errMsg))
-		//		MessageBox.Show(errMsg);
-		//	return IntPtr.Zero;
-		//}
+		private void Button_Click_2(object sender, RoutedEventArgs e)
+		{
+			SendMessageToFrameworkElementDataContext(sender as FrameworkElement, PipeMessageTypes.Hide);
+		}
+
+		private void Button_Click_3(object sender, RoutedEventArgs e)
+		{
+			SendMessageToFrameworkElementDataContext(sender as FrameworkElement, PipeMessageTypes.Close);
+		}
+
+		private void Button_Click_4(object sender, RoutedEventArgs e)
+		{
+			NamedPipesInterop.NamedPipeServer.ClientApplication ca = (sender as FrameworkElement).DataContext as NamedPipesInterop.NamedPipeServer.ClientApplication;
+			if (ca == null)
+				return;
+
+			string errStarting;
+			if (!ca.StartProcessWithName(out errStarting))
+				UserMessages.ShowErrorMessage(errStarting);
+		}
 
 		private void Border_PreviewMouseLeftButtonDown_1(object sender, MouseButtonEventArgs e)
 		{
-			if (e.ClickCount == 2)
+			if (e.ClickCount == 2)//Show textbox on double click
 			{
-				Border border = sender as Border;
-				if (border == null)
+				NamedPipesInterop.NamedPipeServer.ClientApplication ca = GetClientApplicationFromFrameworkElementDataContext(sender as FrameworkElement);
+				if (ca == null)
 					return;
-				WindowMessagesInterop.RegisteredApp ra = border.DataContext as WindowMessagesInterop.RegisteredApp;
-				if (ra == null)
-					return;
-				ra.AppNameTextboxVisible = true;
+				ca.AppNameTextboxVisible = true;
 			}
 		}
 
 		private void Border_LostKeyboardFocus_1(object sender, KeyboardFocusChangedEventArgs e)
 		{
-			Border border = sender as Border;
-			if (border == null)
+			NamedPipesInterop.NamedPipeServer.ClientApplication ca = GetClientApplicationFromFrameworkElementDataContext(sender as FrameworkElement);
+			if (ca == null)
 				return;
-			WindowMessagesInterop.RegisteredApp ra = border.DataContext as WindowMessagesInterop.RegisteredApp;
-			if (ra == null)
-				return;
-			ra.AppNameTextboxVisible = false;
+			ca.AppNameTextboxVisible = false;
 		}
 
 		private void textboxappname_LostKeyboardFocus_1(object sender, KeyboardFocusChangedEventArgs e)
 		{
-			TextBox textbox = sender as TextBox;
-			if (textbox == null)
+			NamedPipesInterop.NamedPipeServer.ClientApplication ca = GetClientApplicationFromFrameworkElementDataContext(sender as FrameworkElement);
+			if (ca == null)
 				return;
-			WindowMessagesInterop.RegisteredApp ra = textbox.DataContext as WindowMessagesInterop.RegisteredApp;
-			if (ra == null)
-				return;
-			ra.AppNameTextboxVisible = false;
+			ca.AppNameTextboxVisible = false;
 		}
 
-		private void Button_Click_1(object sender, RoutedEventArgs e)
+		private NamedPipesInterop.NamedPipeServer.ClientApplication GetClientApplicationFromFrameworkElementDataContext(FrameworkElement frameworkElement)
 		{
-			Button button = sender as Button;
-			WindowMessagesInterop.RegisteredApp ra = button.DataContext as WindowMessagesInterop.RegisteredApp;
-			if (ra == null)
-				return;
-			ra.BroadCastMessage(WindowMessagesInterop.MessageTypes.Show);
+			if (frameworkElement == null)
+				return null;
+			return frameworkElement.DataContext as NamedPipesInterop.NamedPipeServer.ClientApplication;
 		}
 
-		private void Button_Click_2(object sender, RoutedEventArgs e)
+		private void SendMessageToFrameworkElementDataContext(FrameworkElement frameworkElement, PipeMessageTypes messageType)
 		{
-			Button button = sender as Button;
-			WindowMessagesInterop.RegisteredApp ra = button.DataContext as WindowMessagesInterop.RegisteredApp;
-			if (ra == null)
+			//Button button = sender as Button;
+			//WindowMessagesInterop.RegisteredApp ra = button.DataContext as WindowMessagesInterop.RegisteredApp;
+			NamedPipesInterop.NamedPipeServer.ClientApplication ca = GetClientApplicationFromFrameworkElementDataContext(frameworkElement);
+			if (ca == null)
 				return;
-			ra.BroadCastMessage(WindowMessagesInterop.MessageTypes.Hide);
-		}
-
-		private void Button_Click_3(object sender, RoutedEventArgs e)
-		{
-			Button button = sender as Button;
-			WindowMessagesInterop.RegisteredApp ra = button.DataContext as WindowMessagesInterop.RegisteredApp;
-			if (ra == null)
-				return;
-			ra.BroadCastMessage(WindowMessagesInterop.MessageTypes.Close);
-		}
-
-		private void Button_Click_4(object sender, RoutedEventArgs e)
-		{
-			Button button = sender as Button;
-			WindowMessagesInterop.RegisteredApp ra = button.DataContext as WindowMessagesInterop.RegisteredApp;
-			if (ra == null)
-				return;
-			string errStarting;
-			if (!ra.Start(out errStarting))
-				UserMessages.ShowErrorMessage(errStarting);
+			ca.SendMessage(messageType);
 		}
 
 		private void Window_StateChanged_1(object sender, EventArgs e)
@@ -174,8 +143,8 @@ namespace SharedClasses
 
 		private void OnMenuItemExitClick(object sender, EventArgs e)
 		{
-			if (tempForm != null)
-				tempForm.Close();
+			//if (tempForm != null)
+			//	tempForm.Close();
 			this.Close();
 		}
 

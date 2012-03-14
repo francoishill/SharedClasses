@@ -20,10 +20,14 @@ namespace SharedClasses
 
 		private void Window_Loaded_1(object sender, RoutedEventArgs e)
 		{
-			foreach (string app in GlobalSettings.ApplicationManagerSettings.Instance.GetListedApplicationNames())
-				NamedPipesInterop.NamedPipeServer.ConnectedClientApplications.Add(new NamedPipesInterop.NamedPipeServer.ClientApplication(app, null));
-			listBoxRegisteredApplications.ItemsSource = NamedPipesInterop.NamedPipeServer.ConnectedClientApplications;
-			//this.Hide();
+			//foreach (string app in GlobalSettings.ApplicationManagerSettings.Instance.GetListedApplicationNames())
+			//	NamedPipesInterop.NamedPipeServer.AddtoPredefinedAvailableClientNames(app);
+				//NamedPipesInterop.NamedPipeServer.ConnectedClientApplications.Add(new NamedPipesInterop.NamedPipeServer.ClientApplication(app, null));
+			listBoxRegisteredApplications.ItemsSource = NamedPipesInterop.NamedPipeServer.GetConnectedClientApplications();
+
+			//NamedPipesInterop.NamedPipeServer.GetConnectedClientApplications().CollectionChanged += delegate { };
+
+			this.Hide();
 
 			server = new NamedPipesInterop.NamedPipeServer(
 			NamedPipesInterop.APPMANAGER_PIPE_NAME,

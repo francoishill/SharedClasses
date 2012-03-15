@@ -256,12 +256,18 @@ namespace SharedClasses
 			{
 				try
 				{
+					//Thread t1 = new Thread(() =>
+					//{
 					NamedPipeServerStream pipeStream = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 254, PipeTransmissionMode.Message, PipeOptions.Asynchronous);
 					lastPipeStream = pipeStream;
+					Console.WriteLine("Handle:" + pipeStream.SafePipeHandle.IsClosed);
+					Thread.Sleep(2000);
 					var asyncResult = pipeStream.BeginWaitForConnection((ar) =>
 					{
 						Thread t = new Thread(ProcessClientThread);
 						t.Start(ar.AsyncState);
+						while (t.ThreadState == System.Threading.ThreadState.Running)
+							Thread.Sleep(2000);
 					},
 					pipeStream);
 
@@ -273,6 +279,10 @@ namespace SharedClasses
 					pipeStream.Close();
 					pipeStream.Dispose();
 					pipeStream = null;
+					//});
+					//t1.Start();
+					//while (t1.ThreadState == System.Threading.ThreadState.Running)
+					//	Thread.Sleep(2000);
 				}
 				catch (Exception)// e)
 				{
@@ -386,16 +396,20 @@ namespace SharedClasses
 					retryconnect:
 						try
 						{
-							pipeClient.Connect(1000);
+							if (!pipeClient.IsConnected)
+								pipeClient.Connect(100);
 							pipeClient.ReadMode = PipeTransmissionMode.Message;
 							pipeClient.WriteMessage(PipeMessageTypes.ClientRegistrationRequest + ":" + Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]));
 						}
 						catch (Exception exc)
 						{
+							OnError(this, new ErrorEventArgs(exc));
 							if (exc.Message == "The operation has timed out.")
 								if (!ForceCancelRetryLoop)
+								{
+									Thread.Sleep(2000);
 									goto retryconnect;
-							OnError(this, new ErrorEventArgs(exc));
+								}
 						}
 
 
@@ -433,7 +447,10 @@ namespace SharedClasses
 						OnMessageReceived(this, new PipeMessageRecievedEventArgs(PipeMessageTypes.ServerDisconnected, "Server disconnected"));
 					}
 					if (!ForceCancelRetryLoop)
+					{
+						Thread.Sleep(2000);
 						goto retryafterserverdisconnected;
+					}
 					//clientCheckConnectionsAlive.Dispose();
 				});
 				th.Start();

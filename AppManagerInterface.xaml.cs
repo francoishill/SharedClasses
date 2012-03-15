@@ -30,10 +30,11 @@ namespace SharedClasses
 			this.Hide();
 
 			server = new NamedPipesInterop.NamedPipeServer(
-			NamedPipesInterop.APPMANAGER_PIPE_NAME,
-			ActionOnError: (e1) => { Console.WriteLine("Error: " + e1.GetException().Message); },
-			ActionOnMessageReceived: (m, serv) => { Console.WriteLine("Message received, " + m.MessageType.ToString() + ": " + (m.AdditionalText ?? "")); }
-			).Start();
+				NamedPipesInterop.APPMANAGER_PIPE_NAME,
+				ActionOnError: (e1) => { Console.WriteLine("Error: " + e1.GetException().Message); },
+				ActionOnMessageReceived: (m, serv) => { Console.WriteLine("Message received, " + m.MessageType.ToString() + ": " + (m.AdditionalText ?? "")); }
+				)
+				.Start();
 			this.Closing += delegate { server.Stop(); };
 		}
 

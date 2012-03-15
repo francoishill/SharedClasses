@@ -78,10 +78,10 @@ namespace SharedClasses
 		#region Constants
 		private static readonly TimeSpan CLIENT_NO_POLL_FROM_APPMANAGER_REREGISTER_TIMEOUT = TimeSpan.FromSeconds(3);
 		private static readonly TimeSpan CLIENT_DELAY_BEFORE_POLLING_TO_APP_MANAGER = TimeSpan.FromSeconds(0);
-		private static readonly TimeSpan CLIENT_INTERVAL_FOR_POLLING_TO_APP_MANAGER = TimeSpan.FromSeconds(2);
+		private static readonly TimeSpan CLIENT_INTERVAL_FOR_POLLING_TO_APP_MANAGER = TimeSpan.FromSeconds(0.4);
 		private static readonly TimeSpan APPMANAGER_DELAY_BEFORE_POLLING_TO_CLIENTS = TimeSpan.FromSeconds(0);
-		private static readonly TimeSpan APPMANAGER_INTERVAL_FOR_POLLING_TO_CLIENTS = TimeSpan.FromSeconds(2);
-		private static readonly TimeSpan APPMANAGER_IS_ALIVE_TIMEOUT = TimeSpan.FromSeconds(2);
+		private static readonly TimeSpan APPMANAGER_INTERVAL_FOR_POLLING_TO_CLIENTS = TimeSpan.FromSeconds(0.4);
+		private static readonly TimeSpan APPMANAGER_IS_ALIVE_TIMEOUT = TimeSpan.FromSeconds(1);
 		private static readonly int APPMANAGER_APPID_UNAVAILABLE = -1;
 		#endregion Constants
 
@@ -274,6 +274,15 @@ namespace SharedClasses
 			}
 		}
 
+		public static List<string> PredefinedApplicationList = new List<string>();
+
+		public static void AddPredefinedApplication(string appname)
+		{
+			if (!PredefinedApplicationList.Contains(appname))
+				PredefinedApplicationList.Add(appname);
+			RegisteredApplications.Add(appname);
+		}
+
 		public const string NotRegistrationMessageText = "Not a registration message.";
 		public static RegisteredApplicationCollection RegisteredApplications = new RegisteredApplicationCollection();//ID, Name
 		public static bool IsMessageRegistrationRequest_AddToList(int message, IntPtr wparam, IntPtr lparam, out string FailReason)
@@ -359,7 +368,20 @@ namespace SharedClasses
 			private bool _appnametextboxvisible;
 			public bool AppNameTextboxVisible { get { return _appnametextboxvisible; } set { _appnametextboxvisible = value; OnPropertyChanged("AppNameTextboxVisible"); } }
 
-			public bool IsAlive { get { bool result = DateTime.Now.Subtract(LastPollFromClient) <= APPMANAGER_IS_ALIVE_TIMEOUT; if (!result) AppId = APPMANAGER_APPID_UNAVAILABLE; return result; } }
+			public bool IsAlive
+			{
+				get
+				{
+					bool result = DateTime.Now.Subtract(LastPollFromClient) <= APPMANAGER_IS_ALIVE_TIMEOUT;
+					if (!result)
+					{
+						AppId = APPMANAGER_APPID_UNAVAILABLE;
+						if (!PredefinedApplicationList.Contains(this.AppName))
+							RegisteredApplications.Remove(this);
+					}
+					return result;
+				}
+			}
 
 			private DateTime _lastpollfromclient;
 
@@ -397,10 +419,13 @@ namespace SharedClasses
 
 			public bool BroadCastMessage(MessageTypes messageType)
 			{
-				return BroadcastMessageFromManager(messageType, AppId);
+				bool result = BroadcastMessageFromManager(messageType, AppId);
+				if (messageType == MessageTypes.Close && result)
+					this.LastPollFromClient = DateTime.Now.Subtract(TimeSpan.FromSeconds(5));
+				return result;
 			}
 
-			public bool Start(out string errorMessageIfFail)
+			public bool StartProcessWithName(out string errorMessageIfFail)
 			{
 				if (string.IsNullOrWhiteSpace(this.AppName))
 				{

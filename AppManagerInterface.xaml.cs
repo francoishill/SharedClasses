@@ -11,7 +11,8 @@ namespace SharedClasses
 	/// </summary>
 	public partial class AppManagerInterface : Window
 	{
-		NamedPipesInterop.NamedPipeServer server;
+		//NamedPipesInterop.NamedPipeServer server;
+		TempFormAppManager tempForm;
 
 		public AppManagerInterface()
 		{
@@ -20,47 +21,53 @@ namespace SharedClasses
 
 		private void Window_Loaded_1(object sender, RoutedEventArgs e)
 		{
-			//foreach (string app in GlobalSettings.ApplicationManagerSettings.Instance.GetListedApplicationNames())
-			//	NamedPipesInterop.NamedPipeServer.AddtoPredefinedAvailableClientNames(app);
-				//NamedPipesInterop.NamedPipeServer.ConnectedClientApplications.Add(new NamedPipesInterop.NamedPipeServer.ClientApplication(app, null));
-			listBoxRegisteredApplications.ItemsSource = NamedPipesInterop.NamedPipeServer.GetConnectedClientApplications();
+			foreach (string app in GlobalSettings.ApplicationManagerSettings.Instance.GetListedApplicationNames())
+				WindowMessagesInterop.AddPredefinedApplication(app);
+
+			listBoxRegisteredApplications.ItemsSource = WindowMessagesInterop.RegisteredApplications;//NamedPipesInterop.NamedPipeServer.GetConnectedClientApplications();
 
 			//NamedPipesInterop.NamedPipeServer.GetConnectedClientApplications().CollectionChanged += delegate { };
 
 			this.Hide();
 
-			server = new NamedPipesInterop.NamedPipeServer(
-				NamedPipesInterop.APPMANAGER_PIPE_NAME,
-				ActionOnError: (e1) => { Console.WriteLine("Error: " + e1.GetException().Message); },
-				ActionOnMessageReceived: (m, serv) => { Console.WriteLine("Message received, " + m.MessageType.ToString() + ": " + (m.AdditionalText ?? "")); }
-				)
-				.Start();
-			this.Closing += delegate { server.Stop(); };
+			//TODO: This form is critically important, becuase this form has ShowInTaskbar=false, an additional form is required with ShowInTaskbar=true.
+			tempForm = new TempFormAppManager();
+			tempForm.Show();
+			tempForm.Hide();
+
+			//server = new NamedPipesInterop.NamedPipeServer(
+			//	NamedPipesInterop.APPMANAGER_PIPE_NAME,
+			//	ActionOnError: (e1) => { Console.WriteLine("Error: " + e1.GetException().Message); },
+			//	ActionOnMessageReceived: (m, serv) => { Console.WriteLine("Message received, " + m.MessageType.ToString() + ": " + (m.AdditionalText ?? "")); }
+			//	)
+			//	.Start();
+			//this.Closing += delegate { server.Stop(); };
 		}
 
 		private void Button_Click_1(object sender, RoutedEventArgs e)
 		{
-			SendMessageToFrameworkElementDataContext(sender as FrameworkElement, PipeMessageTypes.Show);
+			SendMessageToFrameworkElementDataContext(sender as FrameworkElement, WindowMessagesInterop.MessageTypes.Show);//PipeMessageTypes.Show);
 		}
 
 		private void Button_Click_2(object sender, RoutedEventArgs e)
 		{
-			SendMessageToFrameworkElementDataContext(sender as FrameworkElement, PipeMessageTypes.Hide);
+			SendMessageToFrameworkElementDataContext(sender as FrameworkElement, WindowMessagesInterop.MessageTypes.Hide);//PipeMessageTypes.Hide);
 		}
 
 		private void Button_Click_3(object sender, RoutedEventArgs e)
 		{
-			SendMessageToFrameworkElementDataContext(sender as FrameworkElement, PipeMessageTypes.Close);
+			SendMessageToFrameworkElementDataContext(sender as FrameworkElement, WindowMessagesInterop.MessageTypes.Close);//PipeMessageTypes.Close);
 		}
 
 		private void Button_Click_4(object sender, RoutedEventArgs e)
 		{
-			NamedPipesInterop.NamedPipeServer.ClientApplication ca = (sender as FrameworkElement).DataContext as NamedPipesInterop.NamedPipeServer.ClientApplication;
-			if (ca == null)
+			//NamedPipesInterop.NamedPipeServer.ClientApplication ra = (sender as FrameworkElement).DataContext as NamedPipesInterop.NamedPipeServer.ClientApplication;
+			WindowMessagesInterop.RegisteredApp ra = (sender as FrameworkElement).DataContext as WindowMessagesInterop.RegisteredApp;
+			if (ra == null)
 				return;
 
 			string errStarting;
-			if (!ca.StartProcessWithName(out errStarting))
+			if (!ra.StartProcessWithName(out errStarting))
 				UserMessages.ShowErrorMessage(errStarting);
 		}
 
@@ -68,44 +75,55 @@ namespace SharedClasses
 		{
 			if (e.ClickCount == 2)//Show textbox on double click
 			{
-				NamedPipesInterop.NamedPipeServer.ClientApplication ca = GetClientApplicationFromFrameworkElementDataContext(sender as FrameworkElement);
-				if (ca == null)
+				//NamedPipesInterop.NamedPipeServer.ClientApplication ra = GetClientApplicationFromFrameworkElementDataContext(sender as FrameworkElement);
+				WindowMessagesInterop.RegisteredApp ra = GetClientApplicationFromFrameworkElementDataContext(sender as FrameworkElement);
+				if (ra == null)
 					return;
-				ca.AppNameTextboxVisible = true;
+				ra.AppNameTextboxVisible = true;
 			}
 		}
 
 		private void Border_LostKeyboardFocus_1(object sender, KeyboardFocusChangedEventArgs e)
 		{
-			NamedPipesInterop.NamedPipeServer.ClientApplication ca = GetClientApplicationFromFrameworkElementDataContext(sender as FrameworkElement);
-			if (ca == null)
+			//NamedPipesInterop.NamedPipeServer.ClientApplication ra = GetClientApplicationFromFrameworkElementDataContext(sender as FrameworkElement);
+			WindowMessagesInterop.RegisteredApp ra = GetClientApplicationFromFrameworkElementDataContext(sender as FrameworkElement);
+			if (ra == null)
 				return;
-			ca.AppNameTextboxVisible = false;
+			ra.AppNameTextboxVisible = false;
 		}
 
 		private void textboxappname_LostKeyboardFocus_1(object sender, KeyboardFocusChangedEventArgs e)
 		{
-			NamedPipesInterop.NamedPipeServer.ClientApplication ca = GetClientApplicationFromFrameworkElementDataContext(sender as FrameworkElement);
-			if (ca == null)
+			//NamedPipesInterop.NamedPipeServer.ClientApplication ra = GetClientApplicationFromFrameworkElementDataContext(sender as FrameworkElement);
+			WindowMessagesInterop.RegisteredApp ra = GetClientApplicationFromFrameworkElementDataContext(sender as FrameworkElement);
+			if (ra == null)
 				return;
-			ca.AppNameTextboxVisible = false;
+			ra.AppNameTextboxVisible = false;
 		}
 
-		private NamedPipesInterop.NamedPipeServer.ClientApplication GetClientApplicationFromFrameworkElementDataContext(FrameworkElement frameworkElement)
+		//private NamedPipesInterop.NamedPipeServer.ClientApplication GetClientApplicationFromFrameworkElementDataContext(FrameworkElement frameworkElement)
+		private WindowMessagesInterop.RegisteredApp GetClientApplicationFromFrameworkElementDataContext(FrameworkElement frameworkElement)
 		{
 			if (frameworkElement == null)
 				return null;
-			return frameworkElement.DataContext as NamedPipesInterop.NamedPipeServer.ClientApplication;
+			return frameworkElement.DataContext as WindowMessagesInterop.RegisteredApp;//NamedPipesInterop.NamedPipeServer.ClientApplication;
 		}
 
-		private void SendMessageToFrameworkElementDataContext(FrameworkElement frameworkElement, PipeMessageTypes messageType)
+		private void SendMessageToFrameworkElementDataContext(FrameworkElement frameworkElement, WindowMessagesInterop.MessageTypes messageType)
+		//private void SendMessageToFrameworkElementDataContext(FrameworkElement frameworkElement, PipeMessageTypes messageType)
 		{
-			//Button button = sender as Button;
-			//WindowMessagesInterop.RegisteredApp ra = button.DataContext as WindowMessagesInterop.RegisteredApp;
-			NamedPipesInterop.NamedPipeServer.ClientApplication ca = GetClientApplicationFromFrameworkElementDataContext(frameworkElement);
-			if (ca == null)
+			if (frameworkElement == null)
 				return;
-			ca.SendMessage(messageType);
+			WindowMessagesInterop.RegisteredApp ra = frameworkElement.DataContext as WindowMessagesInterop.RegisteredApp;
+			if (ra == null)
+				return;
+			ra.AppNameTextboxVisible = false;
+			ra.BroadCastMessage(messageType);
+
+			//NamedPipesInterop.NamedPipeServer.ClientApplication ra = GetClientApplicationFromFrameworkElementDataContext(frameworkElement);
+			//if (ra == null)
+			//	return;
+			//ra.SendMessage(messageType);
 		}
 
 		private void Window_StateChanged_1(object sender, EventArgs e)
@@ -148,8 +166,8 @@ namespace SharedClasses
 
 		private void OnMenuItemExitClick(object sender, EventArgs e)
 		{
-			//if (tempForm != null)
-			//	tempForm.Close();
+			if (tempForm != null)
+				tempForm.Close();
 			this.Close();
 		}
 

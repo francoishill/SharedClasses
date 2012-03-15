@@ -79,7 +79,7 @@
 							<!--<Grid>-->
 							<TextBox Name='textboxappname'
 									 Margin='15,3,0,0'
-									 Text='{Binding PipeName, UpdateSourceTrigger=PropertyChanged}'
+									 Text='{Binding AppName, UpdateSourceTrigger=PropertyChanged}'
 									 MinWidth='50'
 									 FontSize='20'
 									 Padding='0'
@@ -88,7 +88,7 @@
 									 Visibility='{Binding AppNameTextboxVisible, Converter={StaticResource booleanToVisibilityConverter}}'
 									 VerticalAlignment='Center' />
 							<!--</Grid>-->
-							<TextBlock Text='{Binding PipeName}'
+							<TextBlock Text='{Binding AppName}'
 									   FontSize='20'
 									   Margin='15,3,0,0'
 									   Padding='0,3'

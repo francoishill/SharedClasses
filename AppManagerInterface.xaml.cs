@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Linq;
 
 namespace SharedClasses
 {
@@ -21,7 +22,7 @@ namespace SharedClasses
 
 		private void Window_Loaded_1(object sender, RoutedEventArgs e)
 		{
-			foreach (string app in GlobalSettings.ApplicationManagerSettings.Instance.GetListedApplicationNames())
+			foreach (string app in GlobalSettings.ApplicationManagerSettings.Instance.GetListedApplicationNames().OrderBy(a => a))
 				WindowMessagesInterop.AddPredefinedApplication(app);
 
 			listBoxRegisteredApplications.ItemsSource = WindowMessagesInterop.RegisteredApplications;//NamedPipesInterop.NamedPipeServer.GetConnectedClientApplications();

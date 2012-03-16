@@ -275,7 +275,8 @@ namespace SharedClasses
 				//XmlRpcInterop.SampleServer();
 				XmlRpcInterop.StartDynamicCodeInvokingServer_XmlRpc();
 
-				foreach (IQuickAccessPluginInterface iqa in DynamicDLLsInterop.DynamicDLLs.PluginList)
+				//TODO:Taken out the monitoring of subversion, it's redundant because TestingMonitorSubversion application already does that
+				/*foreach (IQuickAccessPluginInterface iqa in DynamicDLLsInterop.DynamicDLLs.PluginList)
 					if (iqa is ICommandWithHandler)
 					{
 						ICommandWithHandler comm = iqa as ICommandWithHandler;
@@ -284,7 +285,8 @@ namespace SharedClasses
 							SubversionInterop.StartMonitoringSubversionDirectories(textFeedbackEvent, comm);
 							break;
 						}
-					}
+					}*/
+
 				//SubversionInterop.StartMonitoringSubversionDirectories(textFeedbackEvent);
 
 				//firstHalve = MyDoubleAnim(0, -90, 0.2);

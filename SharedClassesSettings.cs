@@ -3,11 +3,25 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Reflection;
 using System.Xml.Serialization;
+#if WPF && HAVEPLUGINS
 using DynamicDLLsInterop;
+#endif
 //using System.Windows.Forms;
 
 namespace SharedClasses
 {
+#if NOTUSEINTERCEPTOR
+	public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable, new()
+	{
+		public static T Create(T instance = null)
+		{
+			if (instance == null)
+				return new T();
+			return instance;
+		}
+	}
+#endif
+
 	[AttributeUsage(AttributeTargets.All)]
 	public class SettingAttribute : Attribute
 	{
@@ -182,6 +196,12 @@ namespace SharedClasses
 	//	}
 	//}
 
+	public interface IInterceptorNotifiable
+	{
+		void OnPropertySet(string propertyName);
+		void OnPropertyGet(string propertyName);
+	}
+
 	public abstract class GenericSettings : MarshalByRefObject, IInterceptorNotifiable, INotifyPropertyChanged// : IGenericSettings
 	{
 		//private TempClass tc = new TempClass();//Leave this here as it ensures all settings are initialized
@@ -208,22 +228,24 @@ namespace SharedClasses
 			}
 			else
 			{
-				string manualPasswordEnterd;
-				bool? confirmedFaceDetection = ConfirmUsingFaceDetection.ConfirmUsingFacedetection(GlobalSettings.FaceDetectionInteropSettings.Instance.FaceName, "Face detection for '" + PropertyName + "'", TimeOutSeconds_nullIfNever: GlobalSettings.FaceDetectionInteropSettings.Instance.TimeOutSecondsBeforeAutoFailing, PasswordFromTextbox: out manualPasswordEnterd);
-				if (confirmedFaceDetection == true)//Face was confirmed
-				{
-					AuthorizationWasDoneOnce = true;
-					return EncodeAndDecodeInterop.DecodeString(OriginalString, GenericSettings.EncodingType);
-				}
-				else if (confirmedFaceDetection == null)//Face was not recognized but manual password was entered
-				{
-					AuthorizationWasDoneOnce = true;
-					return manualPasswordEnterd;
-				}
-				else// if (confirmedFaceDetection == false)//Window was cancelled or timeout has ocurred
-				{
-					return null;
-				}
+				//TODO: Removed face detection for now, has too many dependencies
+
+				//string manualPasswordEnterd;
+				//bool? confirmedFaceDetection = ConfirmUsingFaceDetection.ConfirmUsingFacedetection(GlobalSettings.FaceDetectionInteropSettings.Instance.FaceName, "Face detection for '" + PropertyName + "'", TimeOutSeconds_nullIfNever: GlobalSettings.FaceDetectionInteropSettings.Instance.TimeOutSecondsBeforeAutoFailing, PasswordFromTextbox: out manualPasswordEnterd);
+				//if (confirmedFaceDetection == true)//Face was confirmed
+				//{
+				AuthorizationWasDoneOnce = true;
+				return EncodeAndDecodeInterop.DecodeString(OriginalString, GenericSettings.EncodingType);
+				//}
+				//else if (confirmedFaceDetection == null)//Face was not recognized but manual password was entered
+				//{
+				//	AuthorizationWasDoneOnce = true;
+				//	return manualPasswordEnterd;
+				//}
+				//else// if (confirmedFaceDetection == false)//Window was cancelled or timeout has ocurred
+				//{
+				//	return null;
+				//}
 			}
 		}
 
@@ -257,6 +279,7 @@ namespace SharedClasses
 				}
 		}
 
+#if WPF && HAVEPLUGINS
 		public static void ShowAndEditAllSettings()
 		{
 			List<object> objList = new List<object>();
@@ -282,6 +305,7 @@ namespace SharedClasses
 			pe.ShowDialog();
 			pe = null;
 		}
+#endif
 
 		//TODO: Have a look at Lazy<> in c#, being able to initialize an object the first time it is used.
 		public abstract void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH");
@@ -318,6 +342,7 @@ namespace SharedClasses
 		}
 	}
 
+#if WPF && HAVEPLUGINS
 	public class TempClass
 	{
 		public static readonly TempClass Instance = new TempClass();
@@ -325,9 +350,18 @@ namespace SharedClasses
 		public string LoadedPlugins { get { return string.Join(Environment.NewLine, DynamicDLLs.AllSuccessfullyLoadedDllFiles); } }
 		public TempClass() { }
 	}
+#endif
 
 	public class GlobalSettings
 	{
+#if CONSOLE
+		public static string ReadConsole(string promptMessage)
+		{
+			Console.WriteLine(promptMessage);
+			return Console.ReadLine();
+		}
+#endif
+
 		[Serializable]
 		public sealed class ApplicationManagerSettings : GenericSettings
 		{
@@ -662,7 +696,15 @@ namespace SharedClasses
 				get
 				{
 					if (listedXmlRpcUrls == null || listedXmlRpcUrls.Count == 0)
-						listedXmlRpcUrls = new List<string>(InputBoxWPF.Prompt("Please enter a list of XmlRpc urls (comma separated)").Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries));
+						listedXmlRpcUrls = new List<string>(
+#if WPF
+					InputBoxWPF.Prompt(
+#elif WINFORMS
+					DialogBoxStuff.InputDialog(
+#elif CONSOLE
+GlobalSettings.ReadConsole(
+#endif
+"Please enter a list of XmlRpc urls (comma separated)").Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries));
 					return listedXmlRpcUrls == null ? null : string.Join("|", listedXmlRpcUrls);
 				}
 				set { listedXmlRpcUrls = value == null ? null : new List<string>(value.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)); }
@@ -863,7 +905,18 @@ namespace SharedClasses
 				get
 				{
 					if (listOfMonitoredSubversionDirectories == null || listOfMonitoredSubversionDirectories.Count == 0)
-						listOfMonitoredSubversionDirectories = new List<string>(InputBoxWPF.Prompt("Please enter a list of monitored Subversion directories").Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries));
+#if WPF
+							listOfMonitoredSubversionDirectories =
+								new List<string>(InputBoxWPF.Prompt("Please enter a list of monitored Subversion directories")
+#elif WINFORMS
+							listOfMonitoredSubversionDirectories =
+								new List<string>(DialogBoxStuff.InputDialog("Please enter a list of monitored Subversion directories")
+#elif CONSOLE
+						Console.WriteLine("Please enter a list of monitored Subversion directories");
+					listOfMonitoredSubversionDirectories = new List<string>(Console.ReadLine()
+#endif
+
+.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries));
 					return listOfMonitoredSubversionDirectories == null ? null : string.Join("|", listOfMonitoredSubversionDirectories);
 				}
 				set { listOfMonitoredSubversionDirectories = value == null ? null : new List<string>(value.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)); }
@@ -879,7 +932,16 @@ namespace SharedClasses
 					string promptResult = null;
 					if (groupedMonitoredList == null || groupedMonitoredList.Count == 0)
 					{
-						promptResult = InputBoxWPF.Prompt("Please enter a list of grouped items in format Category|first\\path,seconds\\path|Second category|third\\path");
+						promptResult =
+#if WPF
+							InputBoxWPF.Prompt(
+#elif WINFORMS
+							DialogBoxStuff.InputDialog(
+#elif CONSOLE
+ GlobalSettings.ReadConsole(
+#endif
+
+"Please enter a list of grouped items in format Category|first\\path,seconds\\path|Second category|third\\path");
 						groupedMonitoredList = new Dictionary<string, List<string>>();
 						string[] splits = promptResult.Split('|');
 						for (int i = 0; i < splits.Length / 2; i++)

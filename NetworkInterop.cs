@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using SharedClasses;
 
 //TODO: Check out extension functions (a static class with methods which uses this as one of the parameters)
 //TODO: Check out BeforeFieldInit and NotBeforeFieldInit for static initializers: http://geekswithblogs.net/BlackRabbitCoder/archive/2010/09/02/c.net-five-more-little-wonders-that-make-code-better-2.aspx
@@ -504,7 +505,7 @@ public class NetworkInterop
 			if (totalBytesProcessed <= lengthOfFirstConstantBuffer + totalInfoSizeToRead)
 			{
 				long memoryStreamStartBytes = 0;
-				long memoryStreamNumberBytesToRead = 
+				long memoryStreamNumberBytesToRead =
 							(int)
 					(totalBytesProcessed + actualReceivedLength > lengthOfFirstConstantBuffer + totalInfoSizeToRead
 					? lengthOfFirstConstantBuffer + totalInfoSizeToRead - totalBytesProcessed
@@ -1027,10 +1028,10 @@ public class NetworkInterop
 		//Assembling starts from here
 		BinaryWriter bw = new BinaryWriter(File.Open(orgFile, FileMode.Append));
 		string nextFileName = "";
-		byte []buffer=new byte[bw.BaseStream.Length];
+		byte[] buffer = new byte[bw.BaseStream.Length];
 
 
-		int counter=int.Parse(endPart);
+		int counter = int.Parse(endPart);
 		while (true)
 		{
 			nextFileName = orgFile + "." + counter.ToString();
@@ -1331,7 +1332,7 @@ public class StateObject
 
 public class MyEventArgs : EventArgs
 {
-	private TcpClient  sock;
+	private TcpClient sock;
 	public TcpClient clientSock
 	{
 		get { return sock; }
@@ -1687,7 +1688,16 @@ public class ClientOnClientSide
 		TcpClient server;
 
 		//System.Console.WriteLine("Please Enter the port number of Server:\n");
-		port = Int32.Parse(InputBoxWPF.Prompt("Please Enter the port number of Server")); //System.Console.ReadLine());
+		port = Int32.Parse(
+#if WPF
+					InputBoxWPF.Prompt(
+#elif WINFORMS
+DialogBoxStuff.InputDialog(
+#elif CONSOLE
+GlobalSettings.ReadConsole(
+#endif
+
+"Please Enter the port number of Server")); //System.Console.ReadLine());
 		try
 		{
 			server = new TcpClient("127.0.0.1", port);
@@ -1712,7 +1722,15 @@ public class ClientOnClientSide
 
 		while (true)
 		{
-			input = InputBoxWPF.Prompt("Enter the message to send it to the Sever (type exit to exit)");//Console.ReadLine();
+			input =
+#if WPF
+					InputBoxWPF.Prompt(
+#elif WINFORMS
+ DialogBoxStuff.InputDialog(
+#elif CONSOLE
+GlobalSettings.ReadConsole(
+#endif
+				"Enter the message to send it to the Sever (type exit to exit)");//Console.ReadLine();
 			if (input == "exit" || input == null)
 				break;
 			ns.Write(Encoding.ASCII.GetBytes(input), 0, input.Length);

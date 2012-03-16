@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms;
+//using System.Windows.Forms;
 
 namespace SharedClasses
 {
@@ -34,10 +34,10 @@ namespace SharedClasses
 			/// UTF8 encoding or decoding.
 			/// </summary>
 			UTF8,
-			/// <summary>
-			/// None is not a encoding type but just means no type chosen yet.
-			/// </summary>
-			None
+			///// <summary>
+			///// None is not a encoding type but just means no type chosen yet.
+			///// </summary>
+			//None
 		}
 		//public enum EncodingType { UTF8, None }
 
@@ -60,7 +60,7 @@ namespace SharedClasses
 				else if (encodingType == EncodingType.UTF32) encData_byte = System.Text.Encoding.UTF32.GetBytes(data);
 				else if (encodingType == EncodingType.UTF7) encData_byte = System.Text.Encoding.UTF7.GetBytes(data);
 				else if (encodingType == EncodingType.UTF8) encData_byte = System.Text.Encoding.UTF8.GetBytes(data);
-				else { MessageBox.Show("No encoding type selected", "No type", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+				//else { MessageBox.Show("No encoding type selected", "No type", MessageBoxButtons.OK, MessageBoxIcon.Error); }
 				string encodedData = Convert.ToBase64String(encData_byte);
 				return encodedData;
 			}
@@ -158,7 +158,8 @@ namespace SharedClasses
 			else if (TypeName.ToUpper() == EncodingType.UTF32.ToString().ToUpper()) return EncodingType.UTF32;
 			else if (TypeName.ToUpper() == EncodingType.UTF7.ToString().ToUpper()) return EncodingType.UTF7;
 			if (TypeName.ToUpper() == EncodingType.UTF8.ToString().ToUpper()) return EncodingType.UTF8;
-			else return EncodingType.None;
+			//else return EncodingType.None;
+			else return EncodingType.ASCII;
 		}
 	}
 }

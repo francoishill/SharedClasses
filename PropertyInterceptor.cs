@@ -75,12 +75,6 @@ namespace PropertyInterceptor
 	}
 }
 
-public interface IInterceptorNotifiable
-{
-	void OnPropertySet(string propertyName);
-	void OnPropertyGet(string propertyName);
-}
-
 /// <summary>
 /// A simple RealProxy based property interceptor
 /// Will call OnPropertyChanged whenever and property on the child object is changed

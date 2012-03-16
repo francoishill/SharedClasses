@@ -1,11 +1,20 @@
 using System;
 using System.Collections.Generic;
+#if CONSOLE
+#else
 using System.Drawing;
 using System.Windows.Forms;
+#endif
 //using InlineCommandToolkit;
 
 public class UserMessages
 {
+#if CONSOLE
+	public static void ShowWarningMessage(string message)
+	{
+		Console.WriteLine(string.Format("Warning: {0}", message));
+	}
+#else
 	public static Icon iconForMessages;
 
 	/*All methods to show messages that is of type boolean (except Confirm) will return true
@@ -218,4 +227,5 @@ public class UserMessages
 			((Form)owner).TopMost = ownerOriginalTopmostState;
 		}
 	}
+#endif
 }

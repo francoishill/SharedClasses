@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Reflection;
 using System.Xml.Serialization;
+using System.Linq;
 #if WPF && HAVEPLUGINS
 using DynamicDLLsInterop;
 #endif
@@ -859,7 +860,10 @@ GlobalSettings.ReadConsole(
 
 			[Description("A list of application names to be added defaultly to the list to pick, split with pipe character |.")]
 			public string ListedApplicationNames { get; set; }
-			public List<string> GetListedApplicationNames() { return new List<string>(ListedApplicationNames.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)); }
+			public List<string> GetListedApplicationNames()
+			{
+				return new List<string>(ListedApplicationNames.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries));
+			}
 
 			public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
 			{

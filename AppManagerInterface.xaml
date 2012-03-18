@@ -68,6 +68,13 @@
 									Background='Transparent'
 									VerticalAlignment='Center'
 									Click='Button_Click_2' />
+							<!--<Button Content='StringMsg'
+									Margin='3,10,0,0'
+									Foreground='Gray'
+									FontSize='20'
+									Background='Transparent'
+									VerticalAlignment='Center'
+									Click='Button_Click_5' />-->
 							<Button Content='X'
 									Margin='3,10,0,0'
 									Padding='3,0'

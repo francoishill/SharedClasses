@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Threading;
 using System.Diagnostics;
+using System.Text;
 
 namespace SharedClasses
 {
@@ -114,7 +115,11 @@ namespace SharedClasses
 		public const int WM_REGISTER = 0xFFEE;
 		public const int WM_REGISTRATIONACKNOWLEDGEMENT = 0xEFEF;
 		public const int WM_FROMMANAGER = 0xEEFF;
+		public const int WM_FROMMANAGER_STRINGSTART = 0xFEEF;
+		public const int WM_FROMMANAGER_STRINGINTERMEDIATE = 0xEFFE;
+		public const int WM_FROMMANAGER_STRINGEND = 0xEEEE;
 		public const int WM_CLIENTPOLLING = 0xFEFE;
+		public const int WM_CLIENTRECEIVEDSTRINGMESSAGE = 0xEEEF;//Received a character
 
 		public static void InitializeClientMessages()//string Appname)
 		{
@@ -151,6 +156,31 @@ namespace SharedClasses
 			return false;
 		}
 
+		private static StringBuilder stringBuilder = new StringBuilder();
+		public static bool ClientHandleStringMessage(int message, IntPtr wparam, IntPtr lparam, out string messageString)
+		{
+			char tmpchar;
+			WindowMessagesInterop.CharacterPosition charPos;
+			if (WindowMessagesInterop.IsMessageStringFromManager(message, wparam, lparam, ClientAppId, out tmpchar, out charPos))
+			{
+				messageString = "";
+				if (charPos == CharacterPosition.First)
+					stringBuilder.Clear();
+				stringBuilder.Append(tmpchar);
+				if (charPos == CharacterPosition.Last)
+				{
+					messageString = stringBuilder.ToString();
+					stringBuilder.Clear();
+				}
+				PostMessage((IntPtr)HWND_BROADCAST, WM_CLIENTRECEIVEDSTRINGMESSAGE, (IntPtr)WM_CLIENTRECEIVEDSTRINGMESSAGE, (IntPtr)ClientAppId);
+
+				if (charPos == CharacterPosition.Last)
+					return true;
+			}
+			messageString = null;
+			return false;
+		}
+
 		private static void timerToRegisterWithAppManager_Client_Tick(object state)//, EventArgs e)
 		{
 			if (!SuccessfullyRegistered_Client || DateTime.Now.Subtract(TimeLastPollReceived_Client) > CLIENT_NO_POLL_FROM_APPMANAGER_REREGISTER_TIMEOUT)
@@ -165,10 +195,19 @@ namespace SharedClasses
 		public static bool ApplicationManagerHandleMessage(int msg, IntPtr wParam, IntPtr lParam, out string errorMessage)
 		{
 			string failureReason;
-			if (IsPollFromClient_UpdatePollTime(msg, wParam, lParam)
-				|| IsMessageRegistrationRequest_AddToList(msg, wParam, lParam, out failureReason))
+			if (IsPollFromClient_UpdatePollTime(msg, wParam, lParam))
 			{
-				//Either poll received from client OR application registered
+				//Poll received from client
+			}
+			else if (IsMessageRegistrationRequest_AddToList(msg, wParam, lParam, out failureReason))
+			{
+				//Client application registered
+			}
+			else if (IsMessageFromClientSuccessfullyReceivedString(msg, wParam, lParam))
+			{
+				foreach (RegisteredApp ra in RegisteredApplications)
+					if (ra.AppId == lParam.ToInt32())
+						ra.successfullyReceivedByClient = true;
 			}
 			else if (!failureReason.Equals(NotRegistrationMessageText))
 			{
@@ -199,6 +238,33 @@ namespace SharedClasses
 					WindowMessagesInterop.WM_FROMMANAGER,
 					(IntPtr)messageType,
 					(IntPtr)appId);
+		}
+
+		public static bool BroadcastBeginCharacterFromManager(char character, int appId)
+		{
+			return WindowMessagesInterop.PostMessage(
+					  (IntPtr)WindowMessagesInterop.HWND_BROADCAST,
+					  WindowMessagesInterop.WM_FROMMANAGER_STRINGSTART,
+					  (IntPtr)character,
+					  (IntPtr)appId);
+		}
+
+		public static bool BroadcastIntermediateCharacterFromManager(char character, int appId)
+		{
+			return WindowMessagesInterop.PostMessage(
+					  (IntPtr)WindowMessagesInterop.HWND_BROADCAST,
+					  WindowMessagesInterop.WM_FROMMANAGER_STRINGINTERMEDIATE,
+					  (IntPtr)character,
+					  (IntPtr)appId);
+		}
+
+		public static bool BroadcastEndCharacterFromManager(char character, int appId)
+		{
+			return WindowMessagesInterop.PostMessage(
+					  (IntPtr)WindowMessagesInterop.HWND_BROADCAST,
+					  WindowMessagesInterop.WM_FROMMANAGER_STRINGEND,
+					  (IntPtr)character,
+					  (IntPtr)appId);
 		}
 
 		public static RegisteredApp GetRegisteredAppFromList(int AppId)
@@ -317,12 +383,38 @@ namespace SharedClasses
 			return result;
 		}
 
+		public static bool IsMessageFromClientSuccessfullyReceivedString(int message, IntPtr wparam, IntPtr lparam)
+		{
+			return message == WM_CLIENTRECEIVEDSTRINGMESSAGE
+				&& wparam.ToInt32() == WM_CLIENTRECEIVEDSTRINGMESSAGE;
+				//&& lparam.ToInt32() == ClientAppId;
+		}
+
 		public static bool IsMessageFromManager(int message, IntPtr wparam, IntPtr lparam, int AppId, out MessageTypes messageType)
 		{
 			messageType = MessageTypes.None;
 			bool result = message == WM_FROMMANAGER && lparam.ToInt32() == AppId;
 			if (result)
 				messageType = (MessageTypes)wparam.ToInt32();
+			return result;
+		}
+
+		public enum CharacterPosition {First, Intermediate, Last};
+		public static bool IsMessageStringFromManager(int message, IntPtr wparam, IntPtr lparam, int AppId, out char character, out CharacterPosition characterPosition)
+		{
+			bool result = (message == WM_FROMMANAGER_STRINGSTART || message == WM_FROMMANAGER_STRINGINTERMEDIATE || message == WM_FROMMANAGER_STRINGEND) && lparam.ToInt32() == AppId;
+			if (result)
+			{
+				character = (char)wparam;
+				characterPosition =
+					message == WM_FROMMANAGER_STRINGSTART ? CharacterPosition.First :
+					message == WM_FROMMANAGER_STRINGINTERMEDIATE ? CharacterPosition.Intermediate :
+					message == WM_FROMMANAGER_STRINGEND ? CharacterPosition.Last :
+					CharacterPosition.Last;
+				return true;
+			}
+			character = '\0';
+			characterPosition = CharacterPosition.Last;
 			return result;
 		}
 
@@ -422,6 +514,34 @@ namespace SharedClasses
 				bool result = BroadcastMessageFromManager(messageType, AppId);
 				if (messageType == MessageTypes.Close && result)
 					this.LastPollFromClient = DateTime.Now.Subtract(TimeSpan.FromSeconds(5));
+				return result;
+			}
+
+			public bool successfullyReceivedByClient = false;
+			public bool BroadcastStringMessage(string message)
+			{
+				if (string.IsNullOrWhiteSpace(message) || message.Length < 2)
+				{
+					UserMessages.ShowWarningMessage("May not send message to user smaller than 2 characters");
+					return false;
+				}
+
+				successfullyReceivedByClient = false;
+				bool result = BroadcastBeginCharacterFromManager(message[0], AppId);
+				while (!successfullyReceivedByClient)
+					System.Windows.Forms.Application.DoEvents();
+
+				for (int i = 1; i < message.Length - 1; i++)
+				{
+					result = result && BroadcastIntermediateCharacterFromManager(message[i], AppId);
+					while (!successfullyReceivedByClient)
+						System.Windows.Forms.Application.DoEvents();
+				}
+
+				result = result && BroadcastEndCharacterFromManager(message[message.Length - 1], AppId);
+				while (!successfullyReceivedByClient)
+					System.Windows.Forms.Application.DoEvents();
+
 				return result;
 			}
 

@@ -72,6 +72,16 @@ namespace SharedClasses
 				UserMessages.ShowErrorMessage(errStarting);
 		}
 
+		private void Button_Click_5(object sender, RoutedEventArgs e)
+		{
+			//NamedPipesInterop.NamedPipeServer.ClientApplication ra = (sender as FrameworkElement).DataContext as NamedPipesInterop.NamedPipeServer.ClientApplication;
+			WindowMessagesInterop.RegisteredApp ra = (sender as FrameworkElement).DataContext as WindowMessagesInterop.RegisteredApp;
+			if (ra == null)
+				return;
+
+			ra.BroadcastStringMessage("Hallo there sexy");
+		}
+
 		private void Border_PreviewMouseLeftButtonDown_1(object sender, MouseButtonEventArgs e)
 		{
 			if (e.ClickCount == 2)//Show textbox on double click

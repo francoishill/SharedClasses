@@ -522,25 +522,26 @@ namespace SharedClasses
 			{
 				if (string.IsNullOrWhiteSpace(message) || message.Length < 2)
 				{
-					UserMessages.ShowWarningMessage("May not send message to user smaller than 2 characters");
-					return false;
+					//UserMessages.ShowWarningMessage("May not send message to user smaller than 2 characters");
+					throw new Exception("May not send message to user smaller than 2 characters");
+					//return false;
 				}
 
 				successfullyReceivedByClient = false;
 				bool result = BroadcastBeginCharacterFromManager(message[0], AppId);
 				while (!successfullyReceivedByClient)
-					System.Windows.Forms.Application.DoEvents();
+				{ }
 
 				for (int i = 1; i < message.Length - 1; i++)
 				{
 					result = result && BroadcastIntermediateCharacterFromManager(message[i], AppId);
 					while (!successfullyReceivedByClient)
-						System.Windows.Forms.Application.DoEvents();
+					{ }
 				}
 
 				result = result && BroadcastEndCharacterFromManager(message[message.Length - 1], AppId);
 				while (!successfullyReceivedByClient)
-					System.Windows.Forms.Application.DoEvents();
+				{ }
 
 				return result;
 			}

@@ -47,6 +47,11 @@
 					<Border PreviewMouseLeftButtonDown='Border_PreviewMouseLeftButtonDown_1'
 							FocusManager.FocusedElement='{Binding ElementName=textboxappname}'>
 						<StackPanel Orientation='Horizontal'>
+							<Image Source='{Binding AppIconPath}'
+								   
+								   Margin='3,10,0,0'
+								   Height='20'
+								   Width='20'/>
 							<Button Content='Start'
 									Margin='3,10,0,0'
 									Foreground='Gray'

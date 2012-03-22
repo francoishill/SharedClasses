@@ -293,16 +293,32 @@ namespace SharedClasses
 			public void Add(IntPtr AppId_lparam)
 			{
 				RegisteredApp ra = GetRegisteredAppFromList(AppId_lparam.ToInt32());
+				string tmpAppIcon = "";//ra.AppIconPath;
 				if (ra == null)
 				{
 					Process tmpproc = Process.GetProcessById(AppId_lparam.ToInt32());
 					if (tmpproc != null)
+					{
 						ra = GetRegisteredAppFromList(tmpproc.ProcessName);
+						string tmpIconFile = System.IO.Path.GetDirectoryName(tmpproc.MainModule.FileName).TrimEnd('\\') + "\\app.ico";
+						if (!System.IO.File.Exists(tmpIconFile))
+							System.Drawing.Icon.ExtractAssociatedIcon(tmpproc.MainModule.FileName).ToBitmap().Save(tmpIconFile);
+						tmpAppIcon = tmpIconFile;//tmpproc.MainModule.FileName;
+					}
 				}
 
 				if (ra == null)
 				{
-					base.Add(new RegisteredApp(AppId_lparam.ToInt32()));
+					ra = new RegisteredApp(AppId_lparam.ToInt32());
+					base.Add(ra);
+					Process tmpproc = Process.GetProcessById(ra.AppId);
+					if (tmpproc != null)
+					{
+						string tmpIconFile = System.IO.Path.GetDirectoryName(tmpproc.MainModule.FileName).TrimEnd('\\') + "\\app.ico";
+						if (!System.IO.File.Exists(tmpIconFile))
+							System.Drawing.Icon.ExtractAssociatedIcon(tmpproc.MainModule.FileName).ToBitmap().Save(tmpIconFile);
+						tmpAppIcon = tmpIconFile;//tmpproc.MainModule.FileName;
+					}
 					if (timerAppManagerPolling == null)
 						timerAppManagerPolling = new System.Threading.Timer(
 							timerAppManagerPolling_Tick,
@@ -315,6 +331,7 @@ namespace SharedClasses
 					ra.UpdateAppId(AppId_lparam.ToInt32());
 					ra.UpdatePollReceivedTime();
 				}
+				ra.AppIconPath = tmpAppIcon;
 				PostMessage((IntPtr)HWND_BROADCAST, WM_REGISTRATIONACKNOWLEDGEMENT, (IntPtr)WM_REGISTRATIONACKNOWLEDGEMENT, AppId_lparam);
 			}
 
@@ -387,7 +404,7 @@ namespace SharedClasses
 		{
 			return message == WM_CLIENTRECEIVEDSTRINGMESSAGE
 				&& wparam.ToInt32() == WM_CLIENTRECEIVEDSTRINGMESSAGE;
-				//&& lparam.ToInt32() == ClientAppId;
+			//&& lparam.ToInt32() == ClientAppId;
 		}
 
 		public static bool IsMessageFromManager(int message, IntPtr wparam, IntPtr lparam, int AppId, out MessageTypes messageType)
@@ -399,7 +416,7 @@ namespace SharedClasses
 			return result;
 		}
 
-		public enum CharacterPosition {First, Intermediate, Last};
+		public enum CharacterPosition { First, Intermediate, Last };
 		public static bool IsMessageStringFromManager(int message, IntPtr wparam, IntPtr lparam, int AppId, out char character, out CharacterPosition characterPosition)
 		{
 			bool result = (message == WM_FROMMANAGER_STRINGSTART || message == WM_FROMMANAGER_STRINGINTERMEDIATE || message == WM_FROMMANAGER_STRINGEND) && lparam.ToInt32() == AppId;
@@ -460,6 +477,9 @@ namespace SharedClasses
 			private bool _appnametextboxvisible;
 			public bool AppNameTextboxVisible { get { return _appnametextboxvisible; } set { _appnametextboxvisible = value; OnPropertyChanged("AppNameTextboxVisible"); } }
 
+			private string _appiconpath;
+			public string AppIconPath { get { return _appiconpath; } set { _appiconpath = value; OnPropertyChanged("AppIconPath"); } }
+
 			public bool IsAlive
 			{
 				get
@@ -488,6 +508,13 @@ namespace SharedClasses
 			{
 				this.AppId = AppId;
 				Process tmpproc = Process.GetProcessById(AppId);
+				if (tmpproc != null)
+				{
+					string tmpIconFile = System.IO.Path.GetDirectoryName(tmpproc.MainModule.FileName).TrimEnd('\\') + "\\app.ico";
+					if (!System.IO.File.Exists(tmpIconFile))
+						System.Drawing.Icon.ExtractAssociatedIcon(tmpproc.MainModule.FileName).ToBitmap().Save(tmpIconFile);
+					this.AppIconPath = tmpIconFile;//tmpproc.MainModule.FileName;
+				}
 				this.AppName = tmpproc == null ? "" : tmpproc.ProcessName;
 				this.LastPollFromClient = DateTime.Now;
 			}

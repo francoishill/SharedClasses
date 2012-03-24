@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Reflection;
 using System.Xml.Serialization;
-using System.Linq;
+//using System.Linq;
+using System.Runtime;
 #if WPF && HAVEPLUGINS
 using DynamicDLLsInterop;
 #endif
@@ -23,7 +24,7 @@ namespace SharedClasses
 	}
 #endif
 
-	[AttributeUsage(AttributeTargets.All)]
+	[AttributeUsage(AttributeTargets.Property)]
 	public class SettingAttribute : Attribute
 	{
 		// Private fields.
@@ -34,7 +35,11 @@ namespace SharedClasses
 		public bool IgnoredByPropertyInterceptor_EncryptingAnother { get; private set; }
 		public bool RequireFacialAutorisationEverytime { get; private set; }
 
-		public SettingAttribute(string UserPrompt, bool DoNoSaveToFile = false, bool IsEncrypted = false, bool RequireFacialAutorisationEverytime = true, string EncryptedPropertyName = null, bool IgnoredByPropertyInterceptor_EncryptingAnother = false)
+		public SettingAttribute()
+		{
+
+		}
+		public SettingAttribute(string UserPrompt, bool DoNoSaveToFile, bool IsEncrypted, bool RequireFacialAutorisationEverytime, string EncryptedPropertyName, bool IgnoredByPropertyInterceptor_EncryptingAnother)
 		{
 			this.UserPrompt = UserPrompt;
 			this.DoNoSaveToFile = DoNoSaveToFile;
@@ -42,6 +47,52 @@ namespace SharedClasses
 			this.RequireFacialAutorisationEverytime = RequireFacialAutorisationEverytime;
 			this.EncryptedPropertyName = EncryptedPropertyName;
 			this.IgnoredByPropertyInterceptor_EncryptingAnother = IgnoredByPropertyInterceptor_EncryptingAnother;
+		}
+
+		public SettingAttribute(string UserPrompt)
+		{
+			this.UserPrompt = UserPrompt;
+			this.DoNoSaveToFile = false;
+			this.IsEncrypted = false;
+			this.RequireFacialAutorisationEverytime = true;
+			this.EncryptedPropertyName = null;
+			this.IgnoredByPropertyInterceptor_EncryptingAnother = false;
+		}
+		public SettingAttribute(string UserPrompt, bool DoNoSaveToFile)
+		{
+			this.UserPrompt = UserPrompt;
+			this.DoNoSaveToFile = DoNoSaveToFile;
+			this.IsEncrypted = false;
+			this.RequireFacialAutorisationEverytime = true;
+			this.EncryptedPropertyName = null;
+			this.IgnoredByPropertyInterceptor_EncryptingAnother = false;
+		}
+		public SettingAttribute(string UserPrompt, bool DoNoSaveToFile, bool IsEncrypted)
+		{
+			this.UserPrompt = UserPrompt;
+			this.DoNoSaveToFile = DoNoSaveToFile;
+			this.IsEncrypted = IsEncrypted;
+			this.RequireFacialAutorisationEverytime = true;
+			this.EncryptedPropertyName = null;
+			this.IgnoredByPropertyInterceptor_EncryptingAnother = false;
+		}
+		public SettingAttribute(string UserPrompt, bool DoNoSaveToFile, bool IsEncrypted, bool RequireFacialAutorisationEverytime)
+		{
+			this.UserPrompt = UserPrompt;
+			this.DoNoSaveToFile = DoNoSaveToFile;
+			this.IsEncrypted = IsEncrypted;
+			this.RequireFacialAutorisationEverytime = RequireFacialAutorisationEverytime;
+			this.EncryptedPropertyName = null;
+			this.IgnoredByPropertyInterceptor_EncryptingAnother = false;
+		}
+		public SettingAttribute(string UserPrompt, bool DoNoSaveToFile, bool IsEncrypted, bool RequireFacialAutorisationEverytime, string EncryptedPropertyName)
+		{
+			this.UserPrompt = UserPrompt;
+			this.DoNoSaveToFile = DoNoSaveToFile;
+			this.IsEncrypted = IsEncrypted;
+			this.RequireFacialAutorisationEverytime = RequireFacialAutorisationEverytime;
+			this.EncryptedPropertyName = EncryptedPropertyName;
+			this.IgnoredByPropertyInterceptor_EncryptingAnother = false;
 		}
 
 		//public string UserPrompt { get { return UserPrompt; } }//public virtual string UserPrompt { get { return UserPrompt; } }
@@ -469,7 +520,6 @@ namespace SharedClasses
 			}
 		}
 
-
 		[Serializable]
 		public sealed class GoogleApiInteropSettings : GenericSettings
 		{
@@ -505,7 +555,7 @@ namespace SharedClasses
 			[XmlIgnore]
 			public string ClientSecret { get; set; }
 			[Browsable(false)]
-			[Setting(null, true, IgnoredByPropertyInterceptor_EncryptingAnother: true)]
+			[Setting(null, true, false, true, null, true)]
 			[XmlElement("ClientSecret")]
 			public string ClientSecretEncrypted { get; set; }
 
@@ -524,6 +574,7 @@ namespace SharedClasses
 			}
 		}
 
+		
 		[Serializable]
 		public sealed class VisualStudioInteropSettings : GenericSettings
 		{
@@ -580,7 +631,7 @@ namespace SharedClasses
 			[XmlIgnore]//TODO: Must explicitly set the attribute as [XmlIgnore] otherwise if ANOTHER property is changed and the settings are flushed, the password will also be saved
 			public string FtpPassword { get; set; }//{ get { return Decrypt(FtpPasswordEncrypted, ); } set { FtpPasswordEncrypted = Encrypt(value); } }//{ get; set; }
 			[Browsable(false)]
-			[Setting(null, true, IgnoredByPropertyInterceptor_EncryptingAnother: true)]
+			[Setting(null, true, false, true, null, true)]
 			[XmlElement("FtpPassword")]
 			public string FtpPasswordEncrypted { get; set; }//{ return Encrypt(FtpPassword); } set { FtpPassword = Decrypt(value); } }
 
@@ -719,7 +770,7 @@ namespace SharedClasses
 			[XmlIgnore]
 			public string Password { get; set; }
 			[Browsable(false)]
-			[Setting(null, true, IgnoredByPropertyInterceptor_EncryptingAnother: true)]
+			[Setting(null, true, false, true, null, true)]
 			[XmlElement("Password")]
 			public string PasswordEncrypted { get; set; }//{ get { return Encrypt(Password); } set { Password = Decrypt(value); } }
 

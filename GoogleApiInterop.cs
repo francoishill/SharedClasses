@@ -31,16 +31,24 @@ namespace SharedClasses
 		public static ErrorEventHandler OnError = new ErrorEventHandler(delegate { });
 
 		/*Additional dependencies and sample code:
-		File: ..\SharedClasses\GoogleAPIs\Google.Apis.Tasks.v1.cs
-		File: ..\SharedClasses\GoogleAPIs\Google.Apis.Plus.v1.cs
+		Minimum winforms
+		Full framework
+		Class: EncodeAndDecodeInterop
+		Class: FileSystemInterop
+		Class: SettingsInterop
+		Class: SharedClassesSettings
+		Winforms: Form: InputBox
+		WPF: Window: InputBoxWPF
+		WPF: Class: WPFdraggableCanvas
+		File: GoogleAPIs\Google.Apis.Tasks.v1.cs
+		File: GoogleAPIs\Google.Apis.Plus.v1.cs
 		The following assemblies should be located in c:\francois\other\dlls\GoogleApis:
 		Assembly: System.Security
-		Assembly: System.Windows.Forms
-		Assembly: DotNetOpenAuth
-		Assembly: Google.Apis.Authentication.OAuth2
-		Assembly: Google.Apis
-		Assembly: Google.Apis.Samples.Helper
-		Assembly: Newtonsoft.JSon.Net35
+		Assembly own: DotNetOpenAuth
+		Assembly own: Google.Apis.Authentication.OAuth2
+		Assembly own: Google.Apis
+		Assembly own: Google.Apis.Samples.Helper
+		Assembly own: Newtonsoft.JSon.Net35
 
 		//Sample code for using this class:
 		//TasksService and PlusService

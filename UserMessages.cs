@@ -5,10 +5,15 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 #endif
-//using InlineCommandToolkit;
 
 public class UserMessages
 {
+	/*
+	Additional dependencies
+	Minimum winforms
+	*/
+
+
 #if CONSOLE
 	public static void ShowWarningMessage(string message)
 	{

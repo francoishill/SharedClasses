@@ -210,7 +210,7 @@ namespace SharedClasses
 		private static bool AuthorizationWasDoneOnce = false;
 
 		public static string RootApplicationNameForSharedClasses = "SharedClasses";
-		private static EncodeAndDecodeInterop.EncodingType EncodingType = EncodeAndDecodeInterop.EncodingType.ASCII;
+		public static EncodeAndDecodeInterop.EncodingType EncodingType = EncodeAndDecodeInterop.EncodingType.ASCII;
 
 		public static string Encrypt(string OriginalString, string PropertyName)
 		{
@@ -272,9 +272,9 @@ namespace SharedClasses
 							PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Instance);//Find all properties of class
 							foreach (PropertyInfo pi in properties)
 							{
-								object obj = spi.GetValue(null);
+								object obj = spi.GetValue(null, new object[0]);
 								if (obj != null)
-									pi.GetValue(obj);//This will invoke the _get method which will run through the InterceptorProxy and therefore ask userinput if the value is null
+									pi.GetValue(obj, new object[0]);//This will invoke the _get method which will run through the InterceptorProxy and therefore ask userinput if the value is null
 							}
 						}
 				}
@@ -389,14 +389,14 @@ namespace SharedClasses
 			}
 
 			//private List<string> listedApplicationNames;
-			[Description("A list of application names to be managed split with pipe character |.")]
+			[Description("A tasklist of application names to be managed split with pipe character |.")]
 			public string ListedApplicationNames { get; set; }
 			//public string ListedApplicationNames
 			//{
 			//	get
 			//	{
 			//		if (listedApplicationNames == null || listedApplicationNames.Count == 0)
-			//			listedApplicationNames = new List<string>(InputBoxWPF.Prompt("Please enter a list of application names to manage.").Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries));
+			//			listedApplicationNames = new List<string>(InputBoxWPF.Prompt("Please enter a tasklist of application names to manage.").Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries));
 			//		return listedApplicationNames == null ? null : string.Join("|", listedApplicationNames);
 			//	}
 			//	set { listedApplicationNames = value == null ? null : new List<string>(value.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)); }
@@ -466,6 +466,61 @@ namespace SharedClasses
 			public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
 			{
 				SettingsInterop.FlushSettings<FaceDetectionInteropSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
+			}
+		}
+
+
+		[Serializable]
+		public sealed class GoogleApiInteropSettings : GenericSettings
+		{
+			private static volatile GoogleApiInteropSettings instance;
+			private static object lockingObject = new Object();
+
+			public static GoogleApiInteropSettings Instance
+			{
+				get
+				{
+					if (instance == null)
+					{
+						lock (lockingObject)
+						{
+							if (instance == null)
+							{
+								instance = Interceptor<GoogleApiInteropSettings>.Create();
+								instance.LoadFromFile(RootApplicationNameForSharedClasses);
+							}
+						}
+					}
+					return instance;
+				}
+			}
+
+			[Description("Your google client ID associated with your installed application (https://code.google.com/apis/console/#access).")]
+			[Setting("Please enter your google client ID associated with your installed application (https://code.google.com/apis/console/#access).")]
+			public string ClientID { get; set; }
+
+			[Browsable(false)]
+			[Description("Your google client secret associated with your installed application (https://code.google.com/apis/console/#access).")]
+			[Setting("Please enter your google client secret associated with your installed application (https://code.google.com/apis/console/#access).", true, true, false, "ClientSecretEncrypted")]
+			[XmlIgnore]
+			public string ClientSecret { get; set; }
+			[Browsable(false)]
+			[Setting(null, true, IgnoredByPropertyInterceptor_EncryptingAnother: true)]
+			[XmlElement("ClientSecret")]
+			public string ClientSecretEncrypted { get; set; }
+
+			[Description("Your google API key associated with your server app (https://code.google.com/apis/console/#access).")]
+			[Setting("Please enter your google API key associated with your server app (https://code.google.com/apis/console/#access).")]
+			public string ApiKey { get; set; }
+
+			public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+			{
+				instance = Interceptor<GoogleApiInteropSettings>.Create(SettingsInterop.GetSettings<GoogleApiInteropSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
+			}
+
+			public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+			{
+				SettingsInterop.FlushSettings<GoogleApiInteropSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
 			}
 		}
 
@@ -689,9 +744,9 @@ namespace SharedClasses
 			[Setting("Please enter the Port number for connecting to the Dynamic Invoking Server")]
 			public int? ClientProxyBypass_PortNumber { get; set; }
 
-			//TODO: Sort out how this list to string will work inside the PropertyInterceptor
+			//TODO: Sort out how this tasklist to string will work inside the PropertyInterceptor
 			private List<string> listedXmlRpcUrls;
-			[Description("A list of XmlRpc urls used for obtaining Trac ticketing information when publishing an application.")]
+			[Description("A tasklist of XmlRpc urls used for obtaining Trac ticketing information when publishing an application.")]
 			public string ListedXmlRpcUrls
 			{
 				get
@@ -705,7 +760,7 @@ namespace SharedClasses
 #elif CONSOLE
 GlobalSettings.ReadConsole(
 #endif
-"Please enter a list of XmlRpc urls (comma separated)").Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries));
+"Please enter a tasklist of XmlRpc urls (comma separated)").Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries));
 					return listedXmlRpcUrls == null ? null : string.Join("|", listedXmlRpcUrls);
 				}
 				set { listedXmlRpcUrls = value == null ? null : new List<string>(value.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)); }
@@ -774,10 +829,10 @@ GlobalSettings.ReadConsole(
 			}
 
 			//public enum GestureDirection { Up, Down, Left, Right };
-			//[Setting("Please define the list of gestures to use")]
+			//[Setting("Please define the tasklist of gestures to use")]
 			//public Dictionary<string, List<GestureDirection>> ListOfGesturesAndMessages { get; set; }
 			private Dictionary<string, string> gesturesWithGesturePluginName;
-			[Description("The list of gestures with a message to display, each on a new line (example: URDL=Hallo there you have gestured Up-Right-Down-Left).")]
+			[Description("The tasklist of gestures with a message to display, each on a new line (example: URDL=Hallo there you have gestured Up-Right-Down-Left).")]
 			public string GesturesWithGesturePluginName
 			{
 				get
@@ -800,7 +855,7 @@ GlobalSettings.ReadConsole(
 					{
 						if (!pair.Contains("=") || pair.Split('=').Length != 2)
 						{
-							UserMessages.ShowWarningMessage("Cannot get gesture and message from: " + pair);
+							//UserMessages.ShowWarningMessage("Cannot get gesture and message from: " + pair);
 							continue;
 						}
 						string[] keyvalue = pair.Split('=');
@@ -809,7 +864,7 @@ GlobalSettings.ReadConsole(
 							if (chr != 'U' && chr != 'D' && chr != 'L' && chr != 'R')
 							{
 								AllCharsIsUDLR = false;
-								UserMessages.ShowWarningMessage("Gesture may only consist of characters U, D, L, R. For example URDL (this means up-right-down-left: " + Environment.NewLine + keyvalue);
+								//UserMessages.ShowWarningMessage("Gesture may only consist of characters U, D, L, R. For example URDL (this means up-right-down-left: " + Environment.NewLine + keyvalue);
 								break;
 							}
 						if (!AllCharsIsUDLR)
@@ -858,7 +913,7 @@ GlobalSettings.ReadConsole(
 				}
 			}
 
-			[Description("A list of application names to be added defaultly to the list to pick, split with pipe character |.")]
+			[Description("A tasklist of application names to be added defaultly to the tasklist to pick, split with pipe character |.")]
 			public string ListedApplicationNames { get; set; }
 			public List<string> GetListedApplicationNames()
 			{
@@ -903,7 +958,7 @@ GlobalSettings.ReadConsole(
 
 			//TODO: add custom types to XAML: http://blogs.msdn.com/b/mikehillberg/archive/2006/10/06/limitedgenericssupportinxaml.aspx
 			private List<string> listOfMonitoredSubversionDirectories;
-			[Description("The list of subversion directories to automatically check for any changes/updates.")]
+			[Description("The tasklist of subversion directories to automatically check for any changes/updates.")]
 			public string ListOfMonitoredSubversionDirectories
 			{
 				get
@@ -911,7 +966,7 @@ GlobalSettings.ReadConsole(
 					if (listOfMonitoredSubversionDirectories == null || listOfMonitoredSubversionDirectories.Count == 0)
 #if WPF
 							listOfMonitoredSubversionDirectories =
-								new List<string>(InputBoxWPF.Prompt("Please enter a list of monitored Subversion directories")
+								new List<string>(InputBoxWPF.Prompt("Please enter a tasklist of monitored Subversion directories")
 #elif WINFORMS
 							listOfMonitoredSubversionDirectories =
 								new List<string>(DialogBoxStuff.InputDialog("Please enter a list of monitored Subversion directories")
@@ -928,7 +983,7 @@ GlobalSettings.ReadConsole(
 			public List<string> GetListOfMonitoredSubversionDirectories() { return listOfMonitoredSubversionDirectories ?? new List<string>(); }
 
 			private Dictionary<string, List<string>> groupedMonitoredList;
-			[Description("The list of monitored list (divided into groups)")]
+			[Description("The tasklist of monitored tasklist (divided into groups)")]
 			public string GroupedMonitoredList
 			{
 				get
@@ -945,7 +1000,7 @@ GlobalSettings.ReadConsole(
  GlobalSettings.ReadConsole(
 #endif
 
-"Please enter a list of grouped items in format Category|first\\path,seconds\\path|Second category|third\\path");
+"Please enter a tasklist of grouped items in format Category|first\\path,seconds\\path|Second category|third\\path");
 						groupedMonitoredList = new Dictionary<string, List<string>>();
 						string[] splits = promptResult.Split('|');
 						for (int i = 0; i < splits.Length / 2; i++)

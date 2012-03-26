@@ -373,32 +373,26 @@ namespace SharedClasses
 						string absolutePath = GetAbsolutePath(csFile, relativePath);
 						EnsureCsProjectHasCompileIndependantCsFile(ref csProject, absolutePath);
 					}
-					else if (line.Trim().StartsWith("WinformOrWpf:", StringComparison.InvariantCultureIgnoreCase))
+					else if (line.Trim().StartsWith("Form:", StringComparison.InvariantCultureIgnoreCase))
 					{
-						if (line.Trim().StartsWith("Form:", StringComparison.InvariantCultureIgnoreCase))
-						{
-							string relativePath = line.Trim().Replace("Form:", "").Trim();
-							if (!relativePath.EndsWith(".cs", StringComparison.InvariantCultureIgnoreCase))
-								relativePath += ".cs";
-							string absolutePath = GetAbsolutePath(csFile, relativePath);
-							EnsureCsProjectHasCompileWinformCsFile(ref csProject, absolutePath);
-							EnsureCsProjectHasCompileWinformDesignerCsFile(ref csProject, FullPathAndDisplayName.GetLinkedDesignerCsFileFromWinformCsFile(absolutePath));
-							EnsureCsProjectHasEmbeddedResourceWinformResxFile(ref csProject, FullPathAndDisplayName.GetLinkedResxFileFromWinformCsFile(absolutePath));
-						}
-						else
-						{
-							if (line.Trim().StartsWith("Window:", StringComparison.InvariantCultureIgnoreCase))
-							{
-								string relativePath = line.Trim().Replace("Window:", "").Trim();
-								if (!relativePath.EndsWith(".xaml", StringComparison.InvariantCultureIgnoreCase))
-									relativePath += ".xaml";
-								string absolutePath = GetAbsolutePath(csFile, relativePath);
-								EnsureCsProjectHasPageXamlFile(ref csProject, absolutePath);
-								EnsureCsProjectHasCompileXamlCsFile(ref csProject, FullPathAndDisplayName.GetLinkedXamlCsFileFromXamlFile(absolutePath));
-							}
-						}
-						//WinformOrWpf: Form: InputBox, Window: InputBoxWPF
+						string relativePath = line.Trim().Replace("Form:", "").Trim();
+						if (!relativePath.EndsWith(".cs", StringComparison.InvariantCultureIgnoreCase))
+							relativePath += ".cs";
+						string absolutePath = GetAbsolutePath(csFile, relativePath);
+						EnsureCsProjectHasCompileWinformCsFile(ref csProject, absolutePath);
+						EnsureCsProjectHasCompileWinformDesignerCsFile(ref csProject, FullPathAndDisplayName.GetLinkedDesignerCsFileFromWinformCsFile(absolutePath));
+						EnsureCsProjectHasEmbeddedResourceWinformResxFile(ref csProject, FullPathAndDisplayName.GetLinkedResxFileFromWinformCsFile(absolutePath));
 					}
+					else if (line.Trim().StartsWith("Window:", StringComparison.InvariantCultureIgnoreCase))
+					{
+						string relativePath = line.Trim().Replace("Window:", "").Trim();
+						if (!relativePath.EndsWith(".xaml", StringComparison.InvariantCultureIgnoreCase))
+							relativePath += ".xaml";
+						string absolutePath = GetAbsolutePath(csFile, relativePath);
+						EnsureCsProjectHasPageXamlFile(ref csProject, absolutePath);
+						EnsureCsProjectHasCompileXamlCsFile(ref csProject, FullPathAndDisplayName.GetLinkedXamlCsFileFromXamlFile(absolutePath));
+					}
+					//WinformOrWpf: Form: InputBox, Window: InputBoxWPF
 					else if (line.Trim().StartsWith("File:", StringComparison.InvariantCultureIgnoreCase))
 					{
 						string relativePath = line.Trim().Replace("File:", "").Trim();

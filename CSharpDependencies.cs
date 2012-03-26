@@ -434,7 +434,9 @@ namespace SharedClasses
 			Project project = new Project(csprojFile);
 
 			foreach (FullPathAndDisplayName file in files)
-				file.EnsureExistanceInCsProject_IncludeAllLinks(project);
+				file.EnsureExistanceInCsProject_IncludeAllLinks(ref project);
+
+			project = null;
 
 			//.xaml (also .xaml.cs)
 			//.cs   (also .Designer.cs AND .resx)
@@ -539,7 +541,7 @@ namespace SharedClasses
 			return Path.ChangeExtension(winformCsFile, ".resx");
 		}
 
-		public void EnsureExistanceInCsProject_IncludeAllLinks(Project csProject)
+		public void EnsureExistanceInCsProject_IncludeAllLinks(ref Project csProject)
 		{
 			if (this.FileType == FileTypes.Xaml)
 			{

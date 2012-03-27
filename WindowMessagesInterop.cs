@@ -15,7 +15,8 @@ namespace SharedClasses
 		#region Example of code (winforms and wpf)
 		#region client examples
 		//CLIENT
-		/*//To get working in winforms need to call WindowMessagesInterop.InitializeClientMessages (in form initialization)
+		/*
+		//To get working in winforms need to call WindowMessagesInterop.InitializeClientMessages (in form initialization)
 		protected override void WndProc(ref Message m)
 		{
 			WindowMessagesInterop.MessageTypes mt;
@@ -30,7 +31,8 @@ namespace SharedClasses
 				base.WndProc(ref m);
 		}*/
 
-		/*//To get working in WPF need to call WindowMessagesInterop.InitializeClientMessages (in the window initialization)
+		/*
+		//To get working in WPF need to call WindowMessagesInterop.InitializeClientMessages (in the window initialization)
 		protected override void OnSourceInitialized(EventArgs e)
 		{
 			base.OnSourceInitialized(e);

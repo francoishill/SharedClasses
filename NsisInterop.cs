@@ -664,6 +664,12 @@ public class NsisInterop
 			tmpList.Add(@"Section -Post");
 			if (InstTypes != null && InstTypes.Count > 0) tmpList.Add(SectionInAllInstTypes);
 			tmpList.Add(Spacer + @"SetShellVarContext " + (InstallForAllUsers ? "all" : "current"));
+
+			tmpList.Add(Spacer + ";Rewrite version file");
+			tmpList.Add(Spacer + @"FileOpen $9 ""$INSTDIR\${PRODUCT_EXE_NAME}.version"" w ;Opens a Empty File an fills it");
+			tmpList.Add(Spacer + @"FileWrite $9 ""${PRODUCT_VERSION}""");
+			tmpList.Add(Spacer + @"FileClose $9 ;Closes the filled file");
+			tmpList.Add(Spacer + ";Write application information to Registry");
 			tmpList.Add(Spacer + @"WriteUninstaller ""$INSTDIR\Uninstall.exe""");
 			tmpList.Add(Spacer + @"WriteRegStr HKLM ""${PRODUCT_DIR_REGKEY}"" """" ""$INSTDIR\${PRODUCT_EXE_NAME}""");
 			tmpList.Add(Spacer + @"WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} ""${PRODUCT_UNINST_KEY}"" ""DisplayName"" ""$(^Name)""");

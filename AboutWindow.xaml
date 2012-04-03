@@ -1,0 +1,43 @@
+﻿<Window x:Class="SharedClasses.AboutWindow"
+		xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		Title="About"
+		Height="250"
+		Width="700"
+		FontSize='20'
+		WindowStartupLocation='CenterScreen'>
+	<Window.Resources>
+		<ControlTemplate x:Key="tempOutlinedLabel"
+						 TargetType="Label">
+			<Border Margin='0,0,0,10'>
+				<StackPanel Orientation='Horizontal'>
+					<ContentPresenter TextBlock.Foreground='Gray'/>
+					<TextBlock Text=' :' />
+					<TextBlock Text='{TemplateBinding Tag}'
+							   Foreground='Green'
+							   FontWeight='Bold'
+							   Margin='20,0,0,0' />
+				</StackPanel>
+			</Border>
+		</ControlTemplate>
+	</Window.Resources>
+	<!--<DockPanel LastChildFill='True'
+			   Margin='10,10,10,0'>-->
+		<!--<Button DockPanel.Dock='Top'
+				HorizontalAlignment='Right'
+				Content='X'
+				Padding='7,0'
+				Background='Transparent'
+				Click='Button_Click' />-->
+	<Grid Margin='10'>
+		<StackPanel Name='stackpanelKeyAndValuePairs'>			
+			<Label Content='Hallo'
+				   Tag='lksdfdsfj'
+				   Template='{StaticResource tempOutlinedLabel}' />
+			<!--<Label Content='Hallo'
+				   Tag='lksdfdsfj'
+				   Template='{StaticResource tempOutlinedLabel}' />-->
+		</StackPanel>
+	</Grid>
+		<!--</DockPanel>-->
+</Window>

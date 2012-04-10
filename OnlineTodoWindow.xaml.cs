@@ -103,6 +103,7 @@ namespace SharedClasses
 
 		private bool SetStopSnoozeOnline(bool newValue)
 		{
+			bool oldval = this.StopSnooze;
 			bool result = PerformDesktopAppDoTask(
 				this.textFeedbackEventHandler,
 				this.updateStatusEventHandler,
@@ -112,7 +113,7 @@ namespace SharedClasses
 				true,
 				"1");
 			if (!result)
-				StopSnooze = false;
+				StopSnooze = oldval;
 			return result;
 		}
 

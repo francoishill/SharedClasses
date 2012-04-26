@@ -35,6 +35,12 @@ namespace SharedClasses
 			if (e.KeyChar == (char)Keys.Escape) this.Close();
 			else if (e.KeyChar == (char)Keys.Enter) this.DialogResult = System.Windows.Forms.DialogResult.OK;
 		}
+
+		private void InputBox_Shown(object sender, EventArgs e)
+		{
+			this.Activate();
+			textBox_INPUT.Focus();
+		}
 	}
 
 	/// <summary>
@@ -48,7 +54,7 @@ namespace SharedClasses
 		/// <param name="Message">The message to show to the user.</param>
 		/// <param name="ParentForm">The parent form for when starting in center of parent</param>
 		/// <returns>The input string that the user entered.</returns>
-		public static String InputDialog(String Message, String Title = null, Form ParentForm = null)
+		public static String InputDialog(String Message, String Title = null, Form ParentForm = null, int? overrideWidth = null, int? overrideHeight = null)
 		{
 			//InputBox iBox = new InputBox(ParentForm, MessageIn, InitialName, DescriptionVisible, InitialDescription, AutoCompleteList, PreventIllegalPathChars);
 			//Form ownerForm = new Form();
@@ -58,6 +64,10 @@ namespace SharedClasses
 			//ownerForm.TopMost = true;
 
 			InputBox iBox = new InputBox(Message);
+			if (overrideWidth.HasValue)
+				iBox.Width = overrideWidth.Value;
+			if (overrideHeight.HasValue)
+				iBox.Height = overrideHeight.Value;
 			iBox.TopMost = true;
 			if (Title != null && Title.Length > 0) iBox.Text = Title;
 

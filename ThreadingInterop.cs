@@ -38,6 +38,8 @@ public class ThreadingInterop
 		//th.Join();
 		if (WaitUntilFinish)
 			while (th.IsAlive && !ForceExitAllTreads) { Application.DoEvents(); }
+		else
+			Application.DoEvents();
 		//th.Join();Cannot use this, makes QuickAccess not work (window does not want to show when clicking on tray icon)
 		th.Abort();
 		th = null;

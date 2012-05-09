@@ -26,11 +26,14 @@ public class UserMessages
 	Reason being is that it makes it easy to show a message in a method which would should exit when the message is shown*/
 	private static bool ShowMsg(IWin32Window owner, string Message, string Title, MessageBoxIcon icon, bool AlwaysOnTop)
 	{
-		if (owner == null && Form.ActiveForm != null) owner = Form.ActiveForm;
+		//AlwayOnTop is currently broken if no owner assigned
+		UserMessageBox.ShowUserMessage(owner, Message, Title, icon, AlwaysOnTop);
+		return true;
+		/*if (owner == null && Form.ActiveForm != null && AlwaysOnTop) owner = Form.ActiveForm;
 		bool useTempForm = false;
 		//Form tempForm = null;
 		Form topmostForm = null;
-		if (owner == null)
+		if (owner == null && AlwaysOnTop)
 		{
 			useTempForm = true;
 			topmostForm = GetTopmostForm();// new Form();
@@ -39,18 +42,24 @@ public class UserMessages
 
 		Action showConfirmAction = delegate
 		{
-			bool ownerOriginalTopmostState = ((Form)owner).TopMost;
-			((Form)owner).TopMost = AlwaysOnTop;
+			bool ownerOriginalTopmostState = false;
+			if (owner != null)
+			{
+				ownerOriginalTopmostState = ((Form)owner).TopMost;
+				((Form)owner).TopMost = AlwaysOnTop;
+			}
 			if (iconForMessages != null) ((Form)owner).Icon = iconForMessages;
-			MessageBox.Show(owner, Message, Title, MessageBoxButtons.OK, icon);
+			//MessageBox.Show(owner, Message, Title, MessageBoxButtons.OK, icon);
+			UserMessageBox.ShowUserMessage(owner, Message, Title, icon, AlwaysOnTop);
 			if (useTempForm && topmostForm != null && !topmostForm.IsDisposed) topmostForm.Dispose();
-			((Form)owner).TopMost = ownerOriginalTopmostState;
+			if (owner != null)
+				((Form)owner).TopMost = ownerOriginalTopmostState;
 		};
 
-		if (((Form)owner).InvokeRequired)
-			((Form)owner).Invoke(showConfirmAction, new object[] { });
-		else showConfirmAction();
-		return true;
+			if (owner != null && ((Form)owner).InvokeRequired)
+				((Form)owner).Invoke(showConfirmAction, new object[] { });
+			else showConfirmAction();
+		return true;*/
 	}
 
 	public static bool ShowErrorMessage(string Message, string Title = "Error", bool AlwaysOnTop = true)

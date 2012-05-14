@@ -10,21 +10,22 @@ public class ThreadingInterop
 	private static bool AlreadyAttachedToApplicationExitEvent = false;
 	//TODO: Have a look at this function (automatically queues to a thread) - System.Threading.ThreadPool.QueueUserWorkItem()
 	//PerformVoidFunctionSeperateThread(() => { MessageBox.Show("Test"); MessageBox.Show("Test1"); });
-	public static Thread PerformVoidFunctionSeperateThread(MethodInvoker method, bool WaitUntilFinish = true, string ThreadName = "UnknownName", bool CheckInvokeRequired = false, Control controlToCheckInvokeRequired = null)
+	public static Thread PerformVoidFunctionSeperateThread(MethodInvoker method, bool WaitUntilFinish = true, string ThreadName = "UnknownName", bool CheckInvokeRequired = false, Control controlToCheckInvokeRequired = null, bool AttachForceExitToFormClose = true)
 	{
-		if (!AlreadyAttachedToApplicationExitEvent)
-		{
-			if (Application.OpenForms.Count > 0)
-				Application.OpenForms[0].FormClosing += delegate
-				{
-					ForceExitAllTreads = true;
-				};
-			//Application.ApplicationExit += delegate
-			//{
-			//  ForceExitAllTreads = true;
-			//};
-			AlreadyAttachedToApplicationExitEvent = true;
-		}
+		if (AttachForceExitToFormClose)
+			if (!AlreadyAttachedToApplicationExitEvent)
+			{
+				if (Application.OpenForms.Count > 0)
+					Application.OpenForms[0].FormClosing += delegate
+					{
+						ForceExitAllTreads = true;
+					};
+				//Application.ApplicationExit += delegate
+				//{
+				//  ForceExitAllTreads = true;
+				//};
+				AlreadyAttachedToApplicationExitEvent = true;
+			}
 
 		System.Threading.Thread th = new System.Threading.Thread(() =>
 		{

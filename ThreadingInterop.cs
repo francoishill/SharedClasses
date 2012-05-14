@@ -10,7 +10,7 @@ public class ThreadingInterop
 	private static bool AlreadyAttachedToApplicationExitEvent = false;
 	//TODO: Have a look at this function (automatically queues to a thread) - System.Threading.ThreadPool.QueueUserWorkItem()
 	//PerformVoidFunctionSeperateThread(() => { MessageBox.Show("Test"); MessageBox.Show("Test1"); });
-	public static void PerformVoidFunctionSeperateThread(MethodInvoker method, bool WaitUntilFinish = true, string ThreadName = "UnknownName", bool CheckInvokeRequired = false, Control controlToCheckInvokeRequired = null)
+	public static Thread PerformVoidFunctionSeperateThread(MethodInvoker method, bool WaitUntilFinish = true, string ThreadName = "UnknownName", bool CheckInvokeRequired = false, Control controlToCheckInvokeRequired = null)
 	{
 		if (!AlreadyAttachedToApplicationExitEvent)
 		{
@@ -37,12 +37,18 @@ public class ThreadingInterop
 		th.Start();
 		//th.Join();
 		if (WaitUntilFinish)
+		{
 			while (th.IsAlive && !ForceExitAllTreads) { Application.DoEvents(); }
+			//th.Join();Cannot use this, makes QuickAccess not work (window does not want to show when clicking on tray icon)
+			th.Abort();
+			th = null;
+			return null;
+		}
 		else
+		{
 			Application.DoEvents();
-		//th.Join();Cannot use this, makes QuickAccess not work (window does not want to show when clicking on tray icon)
-		th.Abort();
-		th = null;
+			return th;
+		}
 	}
 
 	public static void UpdateGuiFromThread(Control controlToUpdate, Action action)

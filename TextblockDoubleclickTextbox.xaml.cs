@@ -84,20 +84,20 @@ namespace SharedClasses
 					Brushes.Black
 					).WidthIncludingTrailingWhitespace;
 
-				bool match = false;
+				//bool match = false;
 				double centerLeftHalveX = r.Left + (r.Width / 4);
 				if (Math.Abs(mousePos.X - centerLeftHalveX) < currentCharClosestXToMouse)
 				{
 					currentCharClosestXToMouse = Math.Abs(mousePos.X - centerLeftHalveX);
 					currentCharIndex = i;
-					match = true;
+					//match = true;
 				}
 				double centerRightHalveX = r.Right - (r.Width / 4);
 				if (Math.Abs(mousePos.X - centerRightHalveX) < currentCharClosestXToMouse)
 				{
 					currentCharClosestXToMouse = Math.Abs(mousePos.X - centerRightHalveX);
 					currentCharIndex = i + 1;
-					match = true;
+					//match = true;
 				}
 				//if (match && i == txtBox.Text.Length - 1 && mousePos.X > r.Right)
 				//    currentCharIndex++;

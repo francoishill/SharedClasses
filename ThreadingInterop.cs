@@ -10,7 +10,7 @@ public class ThreadingInterop
 	private static bool AlreadyAttachedToApplicationExitEvent = false;
 	//TODO: Have a look at this function (automatically queues to a thread) - System.Threading.ThreadPool.QueueUserWorkItem()
 	//PerformVoidFunctionSeperateThread(() => { MessageBox.Show("Test"); MessageBox.Show("Test1"); });
-	public static Thread PerformVoidFunctionSeperateThread(MethodInvoker method, bool WaitUntilFinish = true, string ThreadName = "UnknownName", bool CheckInvokeRequired = false, Control controlToCheckInvokeRequired = null, bool AttachForceExitToFormClose = true)
+	public static Thread PerformOneArgFunctionSeperateThread(Action<object> action, object arg, bool WaitUntilFinish = true, string ThreadName = "UnknownName", bool CheckInvokeRequired = false, Control controlToCheckInvokeRequired = null, bool AttachForceExitToFormClose = true)
 	{
 		if (AttachForceExitToFormClose)
 			if (!AlreadyAttachedToApplicationExitEvent)
@@ -30,9 +30,9 @@ public class ThreadingInterop
 		System.Threading.Thread th = new System.Threading.Thread(() =>
 		{
 			if (CheckInvokeRequired && controlToCheckInvokeRequired != null)
-				controlToCheckInvokeRequired.Invoke(method);
+				controlToCheckInvokeRequired.Invoke((Action)delegate { action(arg); });
 			else
-				method();
+				action(arg);
 		});
 		th.Name = ThreadName;
 		th.Start();
@@ -50,6 +50,17 @@ public class ThreadingInterop
 			Application.DoEvents();
 			return th;
 		}
+	}
+	public static Thread PerformVoidFunctionSeperateThread(MethodInvoker method, bool WaitUntilFinish = true, string ThreadName = "UnknownName", bool CheckInvokeRequired = false, Control controlToCheckInvokeRequired = null, bool AttachForceExitToFormClose = true)
+	{
+		return PerformOneArgFunctionSeperateThread(
+			(Action<object>)delegate(object arg) { method(); },
+			null,
+			WaitUntilFinish,
+			ThreadName,
+			CheckInvokeRequired,
+			controlToCheckInvokeRequired,
+			AttachForceExitToFormClose);
 	}
 
 	public static void UpdateGuiFromThread(Control controlToUpdate, Action action)

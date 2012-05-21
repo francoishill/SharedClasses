@@ -13,6 +13,7 @@ public partial class UserMessageBox : Form
 
 	public MessageBoxButtons CurrentButtons;
 
+	[ThreadStatic]
 	private static Dictionary<MessageBoxIcon, Image> _mappedIcons;
 	private static Dictionary<MessageBoxIcon, Image> MappedIcons
 	{
@@ -21,8 +22,9 @@ public partial class UserMessageBox : Form
 			if (_mappedIcons == null)
 			{
 				_mappedIcons = new Dictionary<MessageBoxIcon, Image>();
-				_mappedIcons.Add(MessageBoxIcon.Error, SystemIcons.Error.ToBitmap());
-				_mappedIcons.Add(MessageBoxIcon.Warning, SystemIcons.Warning.ToBitmap());
+
+				_mappedIcons.Add(MessageBoxIcon.Error, SystemIcons.Error.ToBitmap());				
+				_mappedIcons.Add(MessageBoxIcon.Warning, SystemIcons.Warning.ToBitmap());				
 				_mappedIcons.Add(MessageBoxIcon.Information, SystemIcons.Information.ToBitmap());
 				_mappedIcons.Add(MessageBoxIcon.Question, SystemIcons.Question.ToBitmap());
 			}

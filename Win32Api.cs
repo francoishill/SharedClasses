@@ -37,6 +37,7 @@ public static class Win32Api
 	public static readonly uint MOD_WIN = 8;
 	public static readonly int Hotkey1 = 500;
 	public static readonly int Hotkey2 = 501;
+	public static readonly int MultipleHotkeyStart = 550;
 
 	[DllImport("user32.dll")]
 	public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
@@ -84,6 +85,9 @@ public static class Win32Api
 
 	[DllImport("user32.dll", CharSet = CharSet.Auto)]
 	public static extern int SendMessage(IntPtr hWnd, int wMsg, IntPtr wParam, IntPtr lParam);
+
+	[DllImport("user32.dll")]
+	public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, uint dwExtraInfo);
 
 	public static readonly int SW_SHOWNOACTIVATE = 4;
 	public static readonly uint SWP_NOACTIVATE = 0x0010;

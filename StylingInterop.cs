@@ -8,11 +8,11 @@ public class StylingInterop
 		Win32Api.SetWindowTheme(ControlHandle, "explorer", null);
 	}
 
-	public static void SetTreeviewVistaStyle(TreeView treeview)
+	public static void SetTreeviewVistaStyle(Control control)
 	{
 		if (Environment.OSVersion.Platform == PlatformID.Win32NT && Environment.OSVersion.Version.Major >= 6)
 		{
-			Func<TreeView, bool> SetTreeviewVistaStyleNow = new Func<TreeView, bool>((tv) =>
+			Func<Control, bool> SetTreeviewVistaStyleNow = new Func<Control, bool>((tv) =>
 			{
 				int dw = Win32Api.SendMessage(tv.Handle, Win32Api.TVM_GETEXTENDEDSTYLE, 0, 0);
 
@@ -29,10 +29,10 @@ public class StylingInterop
 				return true;
 			});
 
-			if (treeview.Handle != IntPtr.Zero)
-				SetTreeviewVistaStyleNow.Invoke(treeview);
+			if (control.Handle != IntPtr.Zero)
+				SetTreeviewVistaStyleNow(control);
 			else
-				treeview.HandleCreated += delegate { SetTreeviewVistaStyleNow(treeview); };
+				control.HandleCreated += delegate { SetTreeviewVistaStyleNow(control); };
 		}
 	}
 }

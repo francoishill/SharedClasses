@@ -23,8 +23,8 @@ public partial class UserMessageBox : Form
 			{
 				_mappedIcons = new Dictionary<MessageBoxIcon, Image>();
 
-				_mappedIcons.Add(MessageBoxIcon.Error, SystemIcons.Error.ToBitmap());				
-				_mappedIcons.Add(MessageBoxIcon.Warning, SystemIcons.Warning.ToBitmap());				
+				_mappedIcons.Add(MessageBoxIcon.Error, SystemIcons.Error.ToBitmap());
+				_mappedIcons.Add(MessageBoxIcon.Warning, SystemIcons.Warning.ToBitmap());
 				_mappedIcons.Add(MessageBoxIcon.Information, SystemIcons.Information.ToBitmap());
 				_mappedIcons.Add(MessageBoxIcon.Question, SystemIcons.Question.ToBitmap());
 			}
@@ -44,12 +44,13 @@ public partial class UserMessageBox : Form
 	{
 		if (!alreadyAttached)
 		{
-			Application.OpenForms[0].FormClosing += delegate
-			{
-				var keys = ListOfShowingMessages.Keys.ToArray();
-				for (int i = keys.Length - 1; i >= 0; i--)
-					ListOfShowingMessages[keys[i]].Close();
-			};
+			if (Application.OpenForms.Count > 0)
+				Application.OpenForms[0].FormClosing += delegate
+				{
+					var keys = ListOfShowingMessages.Keys.ToArray();
+					for (int i = keys.Length - 1; i >= 0; i--)
+						ListOfShowingMessages[keys[i]].Close();
+				};
 			alreadyAttached = true;
 		}
 	}

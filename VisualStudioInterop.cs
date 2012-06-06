@@ -37,9 +37,24 @@ public class VisualStudioInterop
 		return false;
 	}
 
+	//private static string GetPlatformTargetString(PlatformTarget platformTarget)
+	//{
+	//	switch (platformTarget)
+	//	{
+	//		case PlatformTarget.x86:
+	//			return "x86";
+	//		case PlatformTarget.x64:
+	//			return "x64";
+	//		case PlatformTarget.AnyCPU:
+	//			return "Any CPU";
+	//		default:
+	//			return "Any CPU";
+	//	}
+	//}
+
 	public enum BuildType { Rebuild, Build };
 	public enum ProjectConfiguration { Debug, Release };
-	public enum PlatformTarget { x86, x64 };
+	public enum PlatformTarget { x86, x64, AnyCPU };
 	public static string BuildVsProjectReturnNewversionString(string projName, string csprojFilename, string slnFilename, bool SolutionTrueProjectFalse, BuildType buildType, ProjectConfiguration configuration, PlatformTarget platformTarget, bool AutomaticallyUpdateRevision, Object textfeedbackSenderObject, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
 		string msbuildpath;
@@ -60,7 +75,7 @@ public class VisualStudioInterop
 				"/t:" + buildType.ToString().ToLower() +
 				" /p:configuration=" + configuration.ToString().ToLower() +
 				" /p:AllowUnsafeBlocks=true" +
-				" /p:PlatformTarget=" + platformTarget.ToString() +
+				" /p:PlatformTarget=" + platformTarget.ToString().ToLower() +
 				" \"" + (SolutionTrueProjectFalse ? slnFilename : csprojFilename) + "\"");
 
 			//startinfo.UseShellExecute = false;
@@ -266,7 +281,7 @@ public class VisualStudioInterop
 				true,
 				BuildType.Rebuild,
 				ProjectConfiguration.Release,
-				PlatformTarget.x86,//.x64,
+				PlatformTarget.AnyCPU,//.x86,//.x64,
 				AutomaticallyUpdateRevision,
 				textfeedbackSenderObject,
 				textFeedbackEvent);

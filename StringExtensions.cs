@@ -11,5 +11,16 @@ namespace SharedClasses
 					return true;
 			return false;
 		}
+
+		public static string InsertSpacesBeforeCamelCase(this string str)
+		{
+			if (str == null) return str;
+			for (int i = str.Length - 1; i >= 1; i--)
+			{
+				if (str[i].ToString().ToUpper() == str[i].ToString())
+					str = str.Insert(i, " ");
+			}
+			return str;
+		}
 	}
 }

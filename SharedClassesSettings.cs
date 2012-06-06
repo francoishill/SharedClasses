@@ -442,6 +442,10 @@ namespace SharedClasses
 			//private List<string> listedApplicationNames;
 			[Description("A tasklist of application names to be managed split with pipe character |.")]
 			public string ListedApplicationNames { get; set; }
+			[Description("A tasklist of application names to be started with windows, split with pipe character |.")]
+			public string ListedStartupApplicationNames { get; set; }
+			[Description("A list of excecutable commands, arguments come after a | character.")]
+			public List<string> RunCommands { get; set; }
 			//public string ListedApplicationNames
 			//{
 			//	get
@@ -454,6 +458,7 @@ namespace SharedClasses
 			//}
 			//public List<string> GetListedApplicationNames() { string tmp = ListedApplicationNames; tmp = null; return listedApplicationNames ?? new List<string>(); }
 			public List<string> GetListedApplicationNames() { if (ListedApplicationNames == null) return new List<string>(); else return new List<string>(ListedApplicationNames.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)); }
+			public List<string> GetListedStartupApplicationNames() { if (ListedStartupApplicationNames == null) return new List<string>(); else return new List<string>(ListedStartupApplicationNames.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)); }
 
 			public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
 			{
@@ -1096,6 +1101,53 @@ GlobalSettings.ReadConsole(
 			public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
 			{
 				SettingsInterop.FlushSettings<SubversionSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
+			}
+		}
+
+		[Serializable]
+		public sealed class MovieOrganizerSettings : GenericSettings
+		{
+			private static volatile MovieOrganizerSettings instance;
+			private static object lockingObject = new Object();
+
+			public static MovieOrganizerSettings Instance
+			{
+				get
+				{
+					if (instance == null)
+					{
+						lock (lockingObject)
+						{
+							if (instance == null)
+							{
+								instance = Interceptor<MovieOrganizerSettings>.Create();
+								instance.LoadFromFile(RootApplicationNameForSharedClasses);
+							}
+						}
+					}
+					return instance;
+				}
+			}
+
+			[Description("A list of file extensions of movies.")]
+			public List<string> MovieFileExtensions { get; set; }
+			[Description("Root directory of movies.")]
+			public string MoviesRootDirectory { get; set; }
+			[Description("A list of non-word characters, type them as one long string.")]
+			public string NonWordChars { get; set; }
+			[Description("A list of irrelevant phrases for movie names (be careful with this).")]
+			public List<string> IrrelevantPhrases { get; set; }
+			[Description("A list of irrelevant words, almost same as phrases but are removed after splitting the full name into words at the NonWordChars.")]
+			public List<string> IrrelevantWords { get; set; }
+
+			public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+			{
+				instance = Interceptor<MovieOrganizerSettings>.Create(SettingsInterop.GetSettings<MovieOrganizerSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
+			}
+
+			public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+			{
+				SettingsInterop.FlushSettings<MovieOrganizerSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
 			}
 		}
 	}

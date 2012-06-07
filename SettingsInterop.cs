@@ -5,7 +5,7 @@ using System.Xml.Serialization;
 
 public class SettingsInterop
 {
-	private const string SettingsFileExtension = ".fset";
+	public const string SettingsFileExtension = ".fset";
 
 	/// <summary>
 	/// Always returned without leading backslash.
@@ -146,8 +146,7 @@ public class SettingsInterop
 		{
 			if (!File.Exists(file)) return ObjectType.GetConstructor(new Type[] { }).Invoke(new object[] { });
 			XmlSerializer xs 
-            = new XmlSerializer(
-						ObjectType);
+            = new XmlSerializer(ObjectType);
 			StreamReader reader = File.OpenText(file);
 			object c = xs.Deserialize(reader);
 			reader.Close();

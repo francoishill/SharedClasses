@@ -8,7 +8,10 @@ using System.Runtime;
 #if WPF && HAVEPLUGINS
 using DynamicDLLsInterop;
 #endif
-//using System.Windows.Forms;
+using System.Windows.Forms;
+using System.IO;
+using System.Globalization;
+
 
 namespace SharedClasses
 {
@@ -579,7 +582,7 @@ namespace SharedClasses
 			}
 		}
 
-		
+
 		[Serializable]
 		public sealed class VisualStudioInteropSettings : GenericSettings
 		{
@@ -812,7 +815,7 @@ namespace SharedClasses
 #if WPF
 					InputBoxWPF.Prompt(
 #elif WINFORMS
-					DialogBoxStuff.InputDialog(
+DialogBoxStuff.InputDialog(
 #elif CONSOLE
 GlobalSettings.ReadConsole(
 #endif
@@ -1024,8 +1027,8 @@ GlobalSettings.ReadConsole(
 							listOfMonitoredSubversionDirectories =
 								new List<string>(InputBoxWPF.Prompt("Please enter a tasklist of monitored Subversion directories")
 #elif WINFORMS
-							listOfMonitoredSubversionDirectories =
-								new List<string>(DialogBoxStuff.InputDialog("Please enter a list of monitored Subversion directories")
+						listOfMonitoredSubversionDirectories =
+							new List<string>(DialogBoxStuff.InputDialog("Please enter a list of monitored Subversion directories")
 #elif CONSOLE
 						Console.WriteLine("Please enter a list of monitored Subversion directories");
 					listOfMonitoredSubversionDirectories = new List<string>(Console.ReadLine()
@@ -1051,7 +1054,7 @@ GlobalSettings.ReadConsole(
 #if WPF
 							InputBoxWPF.Prompt(
 #elif WINFORMS
-							DialogBoxStuff.InputDialog(
+ DialogBoxStuff.InputDialog(
 #elif CONSOLE
  GlobalSettings.ReadConsole(
 #endif
@@ -1129,16 +1132,8 @@ GlobalSettings.ReadConsole(
 				}
 			}
 
-			[Description("A list of file extensions of movies.")]
-			public List<string> MovieFileExtensions { get; set; }
 			[Description("Root directory of movies.")]
 			public string MoviesRootDirectory { get; set; }
-			[Description("A list of non-word characters, type them as one long string.")]
-			public string NonWordChars { get; set; }
-			[Description("A list of irrelevant phrases for movie names (be careful with this).")]
-			public List<string> IrrelevantPhrases { get; set; }
-			[Description("A list of irrelevant words, almost same as phrases but are removed after splitting the full name into words at the NonWordChars.")]
-			public List<string> IrrelevantWords { get; set; }
 
 			public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
 			{
@@ -1148,6 +1143,227 @@ GlobalSettings.ReadConsole(
 			public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
 			{
 				SettingsInterop.FlushSettings<MovieOrganizerSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
+			}
+		}
+	}
+
+	public static class OnlineSettings
+	{
+		public abstract class BaseOnlineClass
+		{
+			private const string LocalCacheDateFormat = "yyyy-MM-dd HH:mm:ss";
+			private const string SettingsCategory = "globalsettings";
+
+			private string SettingName { get { var thisType = this.GetType(); return thisType.Name.Split('+')[thisType.Name.Split('+').Length - 1]; } }
+			private string SettingsFileName { get { return SettingName + SettingsInterop.SettingsFileExtension; } }
+			private string SettingsFilePath { get { return SettingsInterop.GetFullFilePathInLocalAppdata(SettingsFileName, "SharedClasses", "OnlineCached", "FJH"); } }
+			private string LocalCachedDateFilePath { get { return SettingsFilePath + ".mdate"; } }
+			public DateTime OnlineModifiedDate = DateTime.MinValue;
+			public DateTime LocalCachedModifiedDate { get { return GetLocalCahcedModifiedDate(); } }
+			private bool IsBusyComparingOnSeparateThread = false;
+
+			public bool? PopulateFromOnline()//true success, false error, null means not found online
+			{
+				string errIfFail;
+				if (!WebInterop.PopulateObjectFromOnline(SettingsCategory, SettingName, this, out errIfFail))
+				{
+					if (errIfFail.Equals(WebInterop.cErrorIfNotFoundOnline, StringComparison.InvariantCultureIgnoreCase))
+					{
+						//Set default settings, should already be populated with default values
+						return null;
+					}
+					else
+					{
+						UserMessages.ShowErrorMessage("Error reading object online: " + errIfFail);
+						return false;
+					}
+				}
+
+				GetOnlineModifiedDate();
+
+				return true;
+				//else
+				//    UserMessages.ShowInfoMessage(string.Format("Successfully obtained MovieSettings, file extensions: {0}", string.Join(", ", MovieSettings.MovieFileExtensions)));
+			}
+
+			private bool? GetOnlineModifiedDate()//true success, false error, null means not found online
+			{
+				string errIfFail;
+				DateTime dt;
+				if (WebInterop.GetModifiedTimeFromOnline(SettingsCategory, SettingName, out dt, out errIfFail))
+				{
+					OnlineModifiedDate = dt;
+					return true;
+				}
+				else if (errIfFail == WebInterop.cErrorIfNotFoundOnline)
+				{
+					OnlineModifiedDate = DateTime.MinValue.AddDays(1);
+					return null;
+				}
+				return false;
+			}
+
+			private DateTime GetLocalCahcedModifiedDate()
+			{
+				if (!File.Exists(LocalCachedDateFilePath))
+					return DateTime.MinValue;
+
+				DateTime dt;
+				var fileContents = File.ReadAllText(LocalCachedDateFilePath);
+				if (DateTime.TryParseExact(fileContents, LocalCacheDateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out dt))
+					return dt;
+
+				return DateTime.MinValue;
+			}
+
+			private object lockObj = new object();
+			public bool SaveOnline()
+			{
+				while (IsBusyComparingOnSeparateThread)
+				{ }//Application.DoEvents(); }
+
+				lock (lockObj)
+				{
+					string errIfFail;
+					if (!WebInterop.SaveObjectOnline(SettingsCategory, SettingName, this, out errIfFail))
+						UserMessages.ShowErrorMessage("Error while saving online: " + errIfFail);
+					else
+					{
+						//UserMessages.ShowInfoMessage("Successfully saved online.");
+						GetOnlineModifiedDate();
+						SaveToLocalCache();
+						return true;
+					}
+					return false;
+				}
+			}
+
+			public bool GetLocalCached()
+			{
+				if (!File.Exists(SettingsFilePath)) return false;
+
+				var fileJsondata = File.ReadAllText(SettingsFilePath);
+				try
+				{
+					SetStaticJsonSettings();
+					fastJSON.JSON.Instance.FillObject(this, fileJsondata);
+					return true;
+				}
+				catch// (Exception exc)
+				{ return false; }
+			}
+
+			public void SaveToLocalCache()
+			{
+				SetStaticJsonSettings();
+				var json = fastJSON.JSON.Instance.Beautify(fastJSON.JSON.Instance.ToJSON(this, false));
+				File.WriteAllText(SettingsFilePath, json);
+				File.WriteAllText(LocalCachedDateFilePath, OnlineModifiedDate.ToString(LocalCacheDateFormat));
+			}
+
+			public void PopulateThis()
+			{
+				Application.EnableVisualStyles();
+				if (this.GetLocalCached())
+				{
+					ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+					{
+						IsBusyComparingOnSeparateThread = true;
+						try
+						{
+							if (GetOnlineModifiedDate() != false)//Will run through this if not found online
+							{
+								if (!GetLocalCahcedModifiedDate().Equals(OnlineModifiedDate))
+								{
+									bool? populatedFromOnline = this.PopulateFromOnline();
+									if (populatedFromOnline.HasValue == true)
+										this.SaveToLocalCache();
+									else if (populatedFromOnline == null)//Not stored online yet
+									{
+										//Weird scenario as it's cached but not online yet...so save cache online
+										IsBusyComparingOnSeparateThread = false;
+										SaveOnline();
+									}
+								}
+							}
+						}
+						finally
+						{
+							IsBusyComparingOnSeparateThread = false;
+						}
+					},
+					false);
+				}
+				else
+				{
+					bool? populatedFromOnline = this.PopulateFromOnline();
+					if (populatedFromOnline == true)//Found online
+					{
+						this.SaveToLocalCache();
+					}
+					else if (populatedFromOnline == null)//Not found online
+					{
+						//if (!instance.SaveOnline())
+						//    UserMessages.ShowErrorMessage("Could not save setting online: ");
+						if (this.SaveOnline())
+							this.SaveToLocalCache();
+					}
+					else if (populatedFromOnline == false)//Error occurred, not internet, etc
+					{
+						UserMessages.ShowWarningMessage("Warning: could not get cached NOR local settings, using defaults.");
+					}
+				}
+			}
+
+			private void SetStaticJsonSettings()
+			{
+				fastJSON.JSON.Instance.SerializeNullValues = true;
+				fastJSON.JSON.Instance.ShowReadOnlyProperties = true;
+				fastJSON.JSON.Instance.UseUTCDateTime = true;
+				fastJSON.JSON.Instance.UsingGlobalTypes = false;
+			}
+		}
+
+		public class MovieOrganizerSettings : BaseOnlineClass
+		{
+			private static volatile MovieOrganizerSettings instance;
+			private static object lockingObject = new Object();
+
+			public static MovieOrganizerSettings Instance
+			{
+				get
+				{
+					if (instance == null)
+					{
+						lock (lockingObject)
+						{
+							if (instance == null)
+							{
+								instance = new MovieOrganizerSettings();
+								instance.PopulateThis();
+							}
+						}
+					}
+					return instance;
+				}
+			}
+
+			[Description("A list of file extensions of movies.")]
+			public List<string> MovieFileExtensions { get; set; }
+			[Description("A list of non-word characters, type them as one long string.")]
+			public string NonWordChars { get; set; }
+			[Description("A list of irrelevant phrases for movie names (be careful with this).")]
+			public List<string> IrrelevantPhrases { get; set; }
+			[Description("A list of irrelevant words, almost same as phrases but are removed after splitting the full name into words at the NonWordChars.")]
+			public List<string> IrrelevantWords { get; set; }
+
+			public MovieOrganizerSettings()
+			{
+				//Defaults
+				MovieFileExtensions = new List<string>() { "asf", "3gp", "avi", "divx", "flv", "ifo", "mkv", "mp4", "mpeg", "mpg", "vob", "wmv" };
+				NonWordChars = "&()`:[]_{} ,.-";
+				IrrelevantPhrases = new List<string>() { "1 of 2", "2 of 2", "imagine sample", "ts imagine", "rio heist ts v3 imagine", "861_", "862_", "863_", "-illustrated", "brrip noir", "r5 line goldfish", "line x264 ac3 vision", "hive cm8", "flawl3ss sample", "line ac3", "t0xic ink", "r5 line readnfo imagine", "cam readnfo imagine", "ts devise", "line ltt", "r5.line.", "line.xvid" };
+				IrrelevantWords = new List<string>() { "01", "02", "03", "1of2", "1989", "1996", "1997", "1998", "1999", "2000", "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010", "2011", "2012", "1080p", "1337x", "3xforum", "dvdscr", "noscr", "torentz", "www", "maxspeed", "ro", "axxo", "divx", "dvdrip", "xvid", "faf2009", "opt", "2hd", "hdtv", "vtv", "2of2", "cd1", "cd2", "imbt", "dmd", "ac3", "rc5", "eng", "fxg", "vaper", "brrip", "extratorrentrg", "ts", "20th", "h", "264", "newarriot", "jr", "r5", "x264", "bdrip", "hq", "cm8", "flawl3ss", "t0xic", "nydic", "dd", "avi", "sample", "ii", "rvj", "readnfo", "tfe", "vrxuniique", "ika", "ltrg", "tdc", "m00dy", "gfw", "noir", "nikonxp", "vmt", "ltt", "mxmg", "osht", "NewArtRiot", "qcf", "tnan", "ppvrip", "timpe", "rx" };
 			}
 		}
 	}

@@ -528,59 +528,62 @@ namespace SharedClasses
 			}
 		}
 
-		[Serializable]
-		public sealed class GoogleApiInteropSettings : GenericSettings
-		{
-			private static volatile GoogleApiInteropSettings instance;
-			private static object lockingObject = new Object();
+		///
+		///See OnlineSettings below
+		///
+		//[Serializable]
+		//public sealed class GoogleApiInteropSettings : GenericSettings
+		//{
+		//    private static volatile GoogleApiInteropSettings instance;
+		//    private static object lockingObject = new Object();
 
-			public static GoogleApiInteropSettings Instance
-			{
-				get
-				{
-					if (instance == null)
-					{
-						lock (lockingObject)
-						{
-							if (instance == null)
-							{
-								instance = Interceptor<GoogleApiInteropSettings>.Create();
-								instance.LoadFromFile(RootApplicationNameForSharedClasses);
-							}
-						}
-					}
-					return instance;
-				}
-			}
+		//    public static GoogleApiInteropSettings Instance
+		//    {
+		//        get
+		//        {
+		//            if (instance == null)
+		//            {
+		//                lock (lockingObject)
+		//                {
+		//                    if (instance == null)
+		//                    {
+		//                        instance = Interceptor<GoogleApiInteropSettings>.Create();
+		//                        instance.LoadFromFile(RootApplicationNameForSharedClasses);
+		//                    }
+		//                }
+		//            }
+		//            return instance;
+		//        }
+		//    }
 
-			[Description("Your google client ID associated with your installed application (https://code.google.com/apis/console/#access).")]
-			[Setting("Please enter your google client ID associated with your installed application (https://code.google.com/apis/console/#access).")]
-			public string ClientID { get; set; }
+		//    [Description("Your google client ID associated with your installed application (https://code.google.com/apis/console/#access).")]
+		//    [Setting("Please enter your google client ID associated with your installed application (https://code.google.com/apis/console/#access).")]
+		//    public string ClientID { get; set; }
 
-			[Browsable(false)]
-			[Description("Your google client secret associated with your installed application (https://code.google.com/apis/console/#access).")]
-			[Setting("Please enter your google client secret associated with your installed application (https://code.google.com/apis/console/#access).", true, true, false, "ClientSecretEncrypted")]
-			[XmlIgnore]
-			public string ClientSecret { get; set; }
-			[Browsable(false)]
-			[Setting(null, true, false, true, null, true)]
-			[XmlElement("ClientSecret")]
-			public string ClientSecretEncrypted { get; set; }
+		//    [Browsable(false)]
+		//    [Description("Your google client secret associated with your installed application (https://code.google.com/apis/console/#access).")]
+		//    [Setting("Please enter your google client secret associated with your installed application (https://code.google.com/apis/console/#access).", true, true, false, "ClientSecretEncrypted")]
+		//    [XmlIgnore]
+		//    public string ClientSecret { get; set; }
+		//    [Browsable(false)]
+		//    [Setting(null, true, false, true, null, true)]
+		//    [XmlElement("ClientSecret")]
+		//    public string ClientSecretEncrypted { get; set; }
 
-			[Description("Your google API key associated with your server app (https://code.google.com/apis/console/#access).")]
-			[Setting("Please enter your google API key associated with your server app (https://code.google.com/apis/console/#access).")]
-			public string ApiKey { get; set; }
+		//    [Description("Your google API key associated with your server app (https://code.google.com/apis/console/#access).")]
+		//    [Setting("Please enter your google API key associated with your server app (https://code.google.com/apis/console/#access).")]
+		//    public string ApiKey { get; set; }
 
-			public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
-			{
-				instance = Interceptor<GoogleApiInteropSettings>.Create(SettingsInterop.GetSettings<GoogleApiInteropSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
-			}
+		//    public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+		//    {
+		//        instance = Interceptor<GoogleApiInteropSettings>.Create(SettingsInterop.GetSettings<GoogleApiInteropSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
+		//    }
 
-			public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
-			{
-				SettingsInterop.FlushSettings<GoogleApiInteropSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
-			}
-		}
+		//    public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
+		//    {
+		//        SettingsInterop.FlushSettings<GoogleApiInteropSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
+		//    }
+		//}
 
 
 		[Serializable]
@@ -813,7 +816,7 @@ namespace SharedClasses
 					if (listedXmlRpcUrls == null || listedXmlRpcUrls.Count == 0)
 						listedXmlRpcUrls = new List<string>(
 #if WPF
-					InputBoxWPF.Prompt(
+InputBoxWPF.Prompt(
 #elif WINFORMS
 DialogBoxStuff.InputDialog(
 #elif CONSOLE
@@ -1024,8 +1027,8 @@ GlobalSettings.ReadConsole(
 				{
 					if (listOfMonitoredSubversionDirectories == null || listOfMonitoredSubversionDirectories.Count == 0)
 #if WPF
-							listOfMonitoredSubversionDirectories =
-								new List<string>(InputBoxWPF.Prompt("Please enter a tasklist of monitored Subversion directories")
+						listOfMonitoredSubversionDirectories =
+							new List<string>(InputBoxWPF.Prompt("Please enter a tasklist of monitored Subversion directories")
 #elif WINFORMS
 						listOfMonitoredSubversionDirectories =
 							new List<string>(DialogBoxStuff.InputDialog("Please enter a list of monitored Subversion directories")
@@ -1052,7 +1055,7 @@ GlobalSettings.ReadConsole(
 					{
 						promptResult =
 #if WPF
-							InputBoxWPF.Prompt(
+ InputBoxWPF.Prompt(
 #elif WINFORMS
  DialogBoxStuff.InputDialog(
 #elif CONSOLE
@@ -1149,7 +1152,7 @@ GlobalSettings.ReadConsole(
 
 	public static class OnlineSettings
 	{
-		public abstract class BaseOnlineClass
+		public abstract class BaseOnlineClass<T> where T : BaseOnlineClass<T>, new()
 		{
 			private const string LocalCacheDateFormat = "yyyy-MM-dd HH:mm:ss";
 			private const string SettingsCategory = "globalsettings";
@@ -1158,9 +1161,32 @@ GlobalSettings.ReadConsole(
 			private string SettingsFileName { get { return SettingName + SettingsInterop.SettingsFileExtension; } }
 			private string SettingsFilePath { get { return SettingsInterop.GetFullFilePathInLocalAppdata(SettingsFileName, "SharedClasses", "OnlineCached", "FJH"); } }
 			private string LocalCachedDateFilePath { get { return SettingsFilePath + ".mdate"; } }
+			[XmlIgnore]
 			public DateTime OnlineModifiedDate = DateTime.MinValue;
+			[XmlIgnore]
 			public DateTime LocalCachedModifiedDate { get { return GetLocalCahcedModifiedDate(); } }
 			private bool IsBusyComparingOnSeparateThread = false;
+
+			private static T instance;
+			private static object lockingObject = new Object();
+			public static T Instance
+			{
+				get
+				{
+					if (instance == null)
+					{
+						lock (lockingObject)
+						{
+							if (instance == null)
+							{
+								instance = new T();
+								instance.PopulateThis();
+							}
+						}
+					}
+					return instance;
+				}
+			}
 
 			public bool? PopulateFromOnline()//true success, false error, null means not found online
 			{
@@ -1324,30 +1350,8 @@ GlobalSettings.ReadConsole(
 			}
 		}
 
-		public class MovieOrganizerSettings : BaseOnlineClass
+		public class MovieOrganizerSettings : BaseOnlineClass<MovieOrganizerSettings>
 		{
-			private static volatile MovieOrganizerSettings instance;
-			private static object lockingObject = new Object();
-
-			public static MovieOrganizerSettings Instance
-			{
-				get
-				{
-					if (instance == null)
-					{
-						lock (lockingObject)
-						{
-							if (instance == null)
-							{
-								instance = new MovieOrganizerSettings();
-								instance.PopulateThis();
-							}
-						}
-					}
-					return instance;
-				}
-			}
-
 			[Description("A list of file extensions of movies.")]
 			public List<string> MovieFileExtensions { get; set; }
 			[Description("A list of non-word characters, type them as one long string.")]
@@ -1357,13 +1361,40 @@ GlobalSettings.ReadConsole(
 			[Description("A list of irrelevant words, almost same as phrases but are removed after splitting the full name into words at the NonWordChars.")]
 			public List<string> IrrelevantWords { get; set; }
 
-			public MovieOrganizerSettings()
+			public MovieOrganizerSettings()//Defaults
 			{
-				//Defaults
 				MovieFileExtensions = new List<string>() { "asf", "3gp", "avi", "divx", "flv", "ifo", "mkv", "mp4", "mpeg", "mpg", "vob", "wmv" };
 				NonWordChars = "&()`:[]_{} ,.-";
 				IrrelevantPhrases = new List<string>() { "1 of 2", "2 of 2", "imagine sample", "ts imagine", "rio heist ts v3 imagine", "861_", "862_", "863_", "-illustrated", "brrip noir", "r5 line goldfish", "line x264 ac3 vision", "hive cm8", "flawl3ss sample", "line ac3", "t0xic ink", "r5 line readnfo imagine", "cam readnfo imagine", "ts devise", "line ltt", "r5.line.", "line.xvid" };
 				IrrelevantWords = new List<string>() { "01", "02", "03", "1of2", "1989", "1996", "1997", "1998", "1999", "2000", "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010", "2011", "2012", "1080p", "1337x", "3xforum", "dvdscr", "noscr", "torentz", "www", "maxspeed", "ro", "axxo", "divx", "dvdrip", "xvid", "faf2009", "opt", "2hd", "hdtv", "vtv", "2of2", "cd1", "cd2", "imbt", "dmd", "ac3", "rc5", "eng", "fxg", "vaper", "brrip", "extratorrentrg", "ts", "20th", "h", "264", "newarriot", "jr", "r5", "x264", "bdrip", "hq", "cm8", "flawl3ss", "t0xic", "nydic", "dd", "avi", "sample", "ii", "rvj", "readnfo", "tfe", "vrxuniique", "ika", "ltrg", "tdc", "m00dy", "gfw", "noir", "nikonxp", "vmt", "ltt", "mxmg", "osht", "NewArtRiot", "qcf", "tnan", "ppvrip", "timpe", "rx" };
+			}
+		}
+
+		public class GoogleApiInteropSettings : BaseOnlineClass<GoogleApiInteropSettings>
+		{
+			[Description("Your google client ID associated with your installed application (https://code.google.com/apis/console/#access).")]
+			[Setting("Please enter your google client ID associated with your installed application (https://code.google.com/apis/console/#access).")]
+			public string ClientID { get; set; }
+
+			[Browsable(false)]
+			[Description("Your google client secret associated with your installed application (https://code.google.com/apis/console/#access).")]
+			[Setting("Please enter your google client secret associated with your installed application (https://code.google.com/apis/console/#access).", true, true, false, "ClientSecretEncrypted")]
+			[XmlIgnore]
+			public string ClientSecret { get; set; }
+			[Browsable(false)]
+			[Setting(null, true, false, true, null, true)]
+			[XmlElement("ClientSecret")]
+			public string ClientSecretEncrypted { get; set; }
+
+			[Description("Your google API key associated with your server app (https://code.google.com/apis/console/#access).")]
+			[Setting("Please enter your google API key associated with your server app (https://code.google.com/apis/console/#access).")]
+			public string ApiKey { get; set; }
+			public GoogleApiInteropSettings()//Defaults
+			{
+				ClientID = "";
+				ClientSecret = "";
+				ClientSecretEncrypted = "";
+				ApiKey = "";
 			}
 		}
 	}

@@ -84,6 +84,24 @@ namespace SharedClasses
 		public const string cErrorIfNotFoundOnline = "Value does not exist online";
 		public const string NORESULT_STRING = "[NO RESULT]";
 		public const string rootUrl = "http://fjh.dyndns.org";
+
+		public enum OnlineOperations { GetModifiedTime, GetValue, SetValue };
+
+		public static string GetOperationUri(OnlineOperations onlineOperation)
+		{
+			switch (onlineOperation)
+			{
+				case OnlineOperations.GetModifiedTime:
+					return rootUrl + "/json/getdatemodified";
+				case OnlineOperations.GetValue:
+					return rootUrl + "/json/getvalue";
+				case OnlineOperations.SetValue:
+					return rootUrl + "/json/setvalue";
+				default:
+					return "";
+			}
+		}
+
 		public static bool GetModifiedTimeFromOnline(string category, string name, out DateTime ModifiedTimeOut, out string errorStringIfFail)
 		{
 			fastJSON.JSON.Instance.SerializeNullValues = true;
@@ -93,7 +111,7 @@ namespace SharedClasses
 
 			string response;
 			if (WebInterop.PostPHP(
-				rootUrl + "/json/getdatemodified",
+				GetOperationUri(OnlineOperations.GetModifiedTime),
 				new Dictionary<string, string>() { { "category", category }, { "name", name } },
 				out response))
 			{
@@ -137,7 +155,7 @@ namespace SharedClasses
 
 			string response;
 			if (WebInterop.PostPHP(
-				rootUrl + "/json/getvalue",//rootUrl + "/json/getvaluepretty",
+				GetOperationUri(OnlineOperations.GetValue),//rootUrl + "/json/getvaluepretty",
 				new Dictionary<string, string>() { { "category", category }, { "name", name } },
 				out response))
 			{
@@ -161,7 +179,15 @@ namespace SharedClasses
 			}
 		}
 
-		public static bool SaveObjectOnline(string category, string name, object obj, out string errorStringIfFail)
+		public static string GetJsonStringFromObject(object obj, bool Beautify)
+		{
+			string tmpJson = fastJSON.JSON.Instance.ToJSON(obj, false);
+			if (Beautify)
+				tmpJson = fastJSON.JSON.Instance.Beautify(tmpJson);
+			return tmpJson;
+		}
+
+		public static bool SaveObjectOnline(string category, string name, object obj, out string errorStringIfFailElseJsonString)
 		{
 			fastJSON.JSON.Instance.SerializeNullValues = true;
 			fastJSON.JSON.Instance.ShowReadOnlyProperties = true;
@@ -170,26 +196,26 @@ namespace SharedClasses
 
 			string response;
 			//string newvalue = fastJSON.JSON.Instance.Beautify(fastJSON.JSON.Instance.ToJSON(obj, false));
-			string newvalue = fastJSON.JSON.Instance.ToJSON(obj, false);
+			string newvalue = GetJsonStringFromObject(obj, false);
 			if (WebInterop.PostPHP(
-				rootUrl + "/json/setvalue",
+				GetOperationUri(OnlineOperations.SetValue),
 				new Dictionary<string, string>() { { "category", category }, { "name", name }, { "jsonstring", newvalue } },
 				out response))
 			{
 				if (response.Equals("1") || response.Equals("0"))
 				{
-					errorStringIfFail = null;
+					errorStringIfFailElseJsonString = newvalue;
 					return true;
 				}
 				else
 				{
-					errorStringIfFail = response;
+					errorStringIfFailElseJsonString = response;
 					return false;
 				}
 			}
 			else
 			{
-				errorStringIfFail = response;
+				errorStringIfFailElseJsonString = response;
 				return false;
 			}
 		}

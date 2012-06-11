@@ -640,7 +640,8 @@ namespace SharedClasses
 			[Browsable(false)]
 			[Setting("Please enter ftp password user for Visual Studio publishing", true, true, false, "FtpPasswordEncrypted")]
 			[XmlIgnore]//TODO: Must explicitly set the attribute as [XmlIgnore] otherwise if ANOTHER property is changed and the settings are flushed, the password will also be saved
-			public string FtpPassword { get; set; }//{ get { return Decrypt(FtpPasswordEncrypted, ); } set { FtpPasswordEncrypted = Encrypt(value); } }//{ get; set; }
+			//TODO: Now does not use facedetection/password to get decrypted value
+			public string FtpPassword { get { return Decrypt(FtpPasswordEncrypted, "", true); } set { FtpPasswordEncrypted = Encrypt(value, ""); } }//{ get; set; }
 			[Browsable(false)]
 			[Setting(null, true, false, true, null, true)]
 			[XmlElement("FtpPassword")]
@@ -779,7 +780,8 @@ namespace SharedClasses
 			[Browsable(false)]
 			[Setting("Please enter ftp password for Trac XmlRpc, username ", true, true, false, "PasswordEncrypted")]
 			[XmlIgnore]
-			public string Password { get; set; }
+			//TODO: Now does not use facedetection/password to get decrypted value
+			public string Password { get { return Decrypt(PasswordEncrypted, "", true); } set { PasswordEncrypted = Encrypt(value, ""); } }
 			[Browsable(false)]
 			[Setting(null, true, false, true, null, true)]
 			[XmlElement("Password")]

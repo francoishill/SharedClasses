@@ -299,7 +299,8 @@ namespace SharedClasses
 				//if (this.Resources.MergedDictionaries[0] is GeneralResourceDictionary)
 					//System.Windows.Forms.MessageBox.Show(this.Resources.MergedDictionaries[0].GetType().Name);
 
-				FaceDetectionInterop.InitializeFaceDetection();
+				//TODO: Facedetection disabled for now
+				//FaceDetectionInterop.InitializeFaceDetection();
 				GenericSettings.EnsureAllSettingsAreInitialized();
 
 				textFeedbackEventInitialized = true;

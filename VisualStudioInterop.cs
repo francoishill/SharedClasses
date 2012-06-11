@@ -65,7 +65,7 @@ public class VisualStudioInterop
 		}
 		//Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox,
 		//"msbuild /t:publish /p:configuration=release /p:buildenvironment=DEV /p:applicationversion=" + newversionstring + " \"" + csprojFileName + "\"");
-		while (msbuildpath.EndsWith("\\")) msbuildpath = msbuildpath.Substring(0, msbuildpath.Length - 1);
+		msbuildpath = msbuildpath.TrimEnd('\\');
 		msbuildpath += "\\msbuild.exe";
 
 		bool errorOccurred = false;
@@ -370,7 +370,7 @@ public class VisualStudioInterop
 		return string.Format("<{0}{2}>{1}</{0}>", tagName, textToSurround, className == null ? "" : " class='" + className + "'");
 	}
 
-	public static string CreateHtmlPageReturnFilename(string projectName, string projectVersion, string setupFilename, List<string> BugsFixed, List<string> Improvements, List<string> NewFeatures)
+	public static string CreateHtmlPageReturnFilename(string projectName, string projectVersion, string setupFilename, List<string> BugsFixed, List<string> Improvements, List<string> NewFeatures, PublishDetails publishDetails = null)
 	{
 		string tempFilename = Path.GetTempPath() + "index.html";
 
@@ -398,6 +398,8 @@ public class VisualStudioInterop
 			textOfFile = textOfFile.Replace("{BugsFixedList}", bugsfixed);
 			textOfFile = textOfFile.Replace("{ImprovementList}", improvements);
 			textOfFile = textOfFile.Replace("{NewFeaturesList}", newfeatures);
+			if (publishDetails != null)
+				textOfFile = textOfFile.Replace("{JsonText}", WebInterop.GetJsonStringFromObject(publishDetails, true));
 			File.WriteAllText(tempFilename, textOfFile);
 		}
 
@@ -432,7 +434,8 @@ public class VisualStudioInterop
 					//#pragma warning restore
 
 					//TODO: When pulling buglist/improvement etc from Trac repository for a project, must also check in the project's .csproj file whether it uses/references SharedClasses. Then it must also pull the changes from the SharedClasses Trac repository.
-					GetChangeLogs(textfeedbackSenderObject, projName, out BugsFixed, out Improvements, out NewFeatures, textFeedbackEvent: textFeedbackEvent);
+					GetChangeLogs(textfeedbackSenderObject, projName, out BugsFixed, out Improvements, out NewFeatures,
+						textFeedbackEvent: textFeedbackEvent);
 				});
 		});
 
@@ -440,12 +443,27 @@ public class VisualStudioInterop
 		{
 			string validatedUrlsectionForProjname = HttpUtility.UrlPathEncode(projName).ToLower();
 
-			string htmlFilePath = CreateHtmlPageReturnFilename(projName, versionString, publishedSetupPath, BugsFixed, Improvements, NewFeatures);
+			PublishDetails publishDetails = new PublishDetails(
+				projName, versionString, new FileInfo(publishedSetupPath).Length, DateTime.Now);
+			string errorStringIfFailElseJsonString;
+			bool savedOnline = false;
+			if (WebInterop.SaveObjectOnline("Own Applications", projName + " - " + versionString, publishDetails, out errorStringIfFailElseJsonString))
+				if (WebInterop.SaveObjectOnline("Own Applications", projName + " - latest", publishDetails, out errorStringIfFailElseJsonString))
+					savedOnline = true;
+
+			string htmlFilePath = CreateHtmlPageReturnFilename(
+				projName,
+				versionString,
+				publishedSetupPath,
+				BugsFixed,
+				Improvements,
+				NewFeatures,
+				savedOnline ? publishDetails : null);
 
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent,
 				"Attempting Ftp Uploading of Setup file and index file for " + projName);
 			await NetworkInterop.FtpUploadFiles(
-			//Task uploadTask = NetworkInterop.FtpUploadFiles(
+				//Task uploadTask = NetworkInterop.FtpUploadFiles(
 				textfeedbackSenderObject,
 				GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForVsPublishing() + "/" + validatedUrlsectionForProjname,
 				GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,//NetworkInterop.ftpUsername,
@@ -456,6 +474,21 @@ public class VisualStudioInterop
 				progressChanged: progressChanged);
 			//uploadTask.Start();
 			//uploadTask.Wait();
+		}
+	}
+
+	public class PublishDetails
+	{
+		public string ApplicationName;
+		public string ApplicationVersion;
+		public long SetupSize;
+		public DateTime PublishedDate;
+		public PublishDetails(string ApplicationName, string ApplicationVersion, long SetupSize, DateTime PublishedDate)
+		{
+			this.ApplicationName = ApplicationName;
+			this.ApplicationVersion = ApplicationVersion;
+			this.SetupSize = SetupSize;
+			this.PublishedDate = PublishedDate;
 		}
 	}
 

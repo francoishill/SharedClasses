@@ -1,6 +1,14 @@
 using System;
 using System.Windows.Forms;
 
+public static class TreeviewExtensions
+{
+	public static void SetVistaStyle(this TreeView tv)
+	{
+		StylingInterop.SetTreeviewVistaStyle(tv);
+	}
+}
+
 public class StylingInterop
 {
 	public static void SetVistaStyleOnControlHandle(IntPtr ControlHandle)

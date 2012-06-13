@@ -399,7 +399,7 @@ public class VisualStudioInterop
 			textOfFile = textOfFile.Replace("{ImprovementList}", improvements);
 			textOfFile = textOfFile.Replace("{NewFeaturesList}", newfeatures);
 			if (publishDetails != null)
-				textOfFile = textOfFile.Replace("{JsonText}", WebInterop.GetJsonStringFromObject(publishDetails, true));
+				textOfFile = textOfFile.Replace("{JsonText}", publishDetails.GetJsonString());
 			File.WriteAllText(tempFilename, textOfFile);
 		}
 
@@ -443,12 +443,17 @@ public class VisualStudioInterop
 		{
 			string validatedUrlsectionForProjname = HttpUtility.UrlPathEncode(projName).ToLower();
 
+			string rootFtpUri = GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForVsPublishing() + "/" + validatedUrlsectionForProjname;
 			PublishDetails publishDetails = new PublishDetails(
-				projName, versionString, new FileInfo(publishedSetupPath).Length, DateTime.Now);
+				projName,
+				versionString,
+				new FileInfo(publishedSetupPath).Length,
+				DateTime.Now,
+				rootFtpUri + "/" + (new FileInfo(publishedSetupPath).Name));
 			string errorStringIfFailElseJsonString;
 			bool savedOnline = false;
-			if (WebInterop.SaveObjectOnline("Own Applications", projName + " - " + versionString, publishDetails, out errorStringIfFailElseJsonString))
-				if (WebInterop.SaveObjectOnline("Own Applications", projName + " - latest", publishDetails, out errorStringIfFailElseJsonString))
+			if (WebInterop.SaveObjectOnline(PublishDetails.OnlineJsonCategory, projName + " - " + versionString, publishDetails, out errorStringIfFailElseJsonString))
+				if (WebInterop.SaveObjectOnline(PublishDetails.OnlineJsonCategory, projName + PublishDetails.LastestVersionJsonNamePostfix, publishDetails, out errorStringIfFailElseJsonString))
 					savedOnline = true;
 
 			string htmlFilePath = CreateHtmlPageReturnFilename(
@@ -465,7 +470,7 @@ public class VisualStudioInterop
 			await NetworkInterop.FtpUploadFiles(
 				//Task uploadTask = NetworkInterop.FtpUploadFiles(
 				textfeedbackSenderObject,
-				GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForVsPublishing() + "/" + validatedUrlsectionForProjname,
+				rootFtpUri,
 				GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,//NetworkInterop.ftpUsername,
 				GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,//NetworkInterop.ftpPassword,
 				new string[] { publishedSetupPath, htmlFilePath },
@@ -474,21 +479,6 @@ public class VisualStudioInterop
 				progressChanged: progressChanged);
 			//uploadTask.Start();
 			//uploadTask.Wait();
-		}
-	}
-
-	public class PublishDetails
-	{
-		public string ApplicationName;
-		public string ApplicationVersion;
-		public long SetupSize;
-		public DateTime PublishedDate;
-		public PublishDetails(string ApplicationName, string ApplicationVersion, long SetupSize, DateTime PublishedDate)
-		{
-			this.ApplicationName = ApplicationName;
-			this.ApplicationVersion = ApplicationVersion;
-			this.SetupSize = SetupSize;
-			this.PublishedDate = PublishedDate;
 		}
 	}
 

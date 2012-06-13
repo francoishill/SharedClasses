@@ -74,6 +74,7 @@ public partial class UserMessageBox : Form
 		}
 
 		UserMessageBox umb = new UserMessageBox();
+		umb.TopMost = AlwaysOnTop;
 		ListOfShowingMessages.Add(Message, umb);
 
 		if (icon == MessageBoxIcon.None)

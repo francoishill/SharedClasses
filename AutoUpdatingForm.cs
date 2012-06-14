@@ -21,11 +21,12 @@ namespace SharedClasses
 		Class: WebInterop
 		*/
 
+        private Action exitApplicationAction;
 		private const string ftpUsername = "ownapps";
 		private const string ftpPassword = "ownappsverylongpassword";
 
 		private PublishDetails newerversionDetails;
-		private AutoUpdatingForm(string currentVersion, PublishDetails newerversionDetails)
+        private AutoUpdatingForm(string currentVersion, PublishDetails newerversionDetails, Action exitApplicationAction)
 		{
 			InitializeComponent();
 			this.newerversionDetails = newerversionDetails;
@@ -37,6 +38,7 @@ namespace SharedClasses
 				"Newest version online is {0} ({1} kBs to be downloaded)",
 				newerversionDetails.ApplicationVersion,
 				GetKilobytesFromBytes(newerversionDetails.SetupSize));
+            this.exitApplicationAction = exitApplicationAction;
 		}
 
 		private static double GetKilobytesFromBytes(long bytes, int decimals = 3)
@@ -120,7 +122,7 @@ namespace SharedClasses
 			}
 		}
 
-		public static void CheckForUpdates(bool ShowModally = true)//string ApplicationName, string InstalledVersion)
+		public static void CheckForUpdates(Action exitApplicationAction, bool ShowModally = true)//string ApplicationName, string InstalledVersion)
 		{
 			ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 			{
@@ -137,7 +139,7 @@ namespace SharedClasses
 					UserMessages.ShowWarningMessage("Unable to check for updates: " + errIfFail);
 				else if (uptodate == false)
 				{
-					var tmpform = new AutoUpdatingForm(InstalledVersion, detailsIfNewer);
+                    var tmpform = new AutoUpdatingForm(InstalledVersion, detailsIfNewer, exitApplicationAction);
 					if (ShowModally)
 						tmpform.ShowDialog();
 					else
@@ -210,7 +212,11 @@ namespace SharedClasses
 					labelStatus.Visible = false;
 					Application.DoEvents();
 					Process.Start(downloadFilename);
-					Application.Exit();
+                    if (exitApplicationAction == null)
+                        Application.Exit();
+                    else
+                        exitApplicationAction();
+                    this.Close();
 				}
 				else
 					Process.Start("explorer", "/select,\"" + downloadFilename + "\"");

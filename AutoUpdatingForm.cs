@@ -22,9 +22,15 @@ namespace SharedClasses
 
 			this.labelMessage.Text = newerversionDetails.ApplicationName + " has an update available";
 			this.labelCurrentVersion.Text = "Current version is " + currentVersion;
-			this.labelNewVersion.Text = "Newest version online is " + newerversionDetails.ApplicationVersion;
+			this.labelNewVersion.Text = string.Format(
+				"Newest version online is {0} ({1} kBs to be downloaded)",
+				newerversionDetails.ApplicationVersion,
+				GetKilobytesFromBytes(newerversionDetails.SetupSize));
+		}
 
-
+		private static double GetKilobytesFromBytes(long bytes, int decimals = 3)
+		{
+			return Math.Round((double)bytes / (double)1024, decimals);
 		}
 
 		public static void CheckForUpdates(bool ShowModally = true)//string ApplicationName, string InstalledVersion)
@@ -80,12 +86,12 @@ namespace SharedClasses
 					if (!isComplete)
 					{
 						int progressPercentage = (int)Math.Round((double)100 * (double)ev.BytesReceived / (double)newerversionDetails.SetupSize);//ev.ProgressPercentage;
-						double bytesPerSecond = Math.Round((double)ev.BytesReceived / (DateTime.Now.Subtract(startTime).TotalSeconds * (double)1024), 3);
+						double kiloBytesPerSecond = Math.Round(GetKilobytesFromBytes(ev.BytesReceived) / DateTime.Now.Subtract(startTime).TotalSeconds, 3);
 						string statusMessage = string.Format(
 									"Downloading {0}/{1} at {2} kB/s",
 									ev.BytesReceived,
 									newerversionDetails.SetupSize, //ev.TotalBytesToReceive,
-									bytesPerSecond);
+									kiloBytesPerSecond);
 						//if (this.InvokeRequired)
 						//    this.Invoke((Action)delegate
 						//    {

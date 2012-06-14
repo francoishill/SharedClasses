@@ -104,10 +104,10 @@ namespace SharedClasses
 
 		public static bool GetModifiedTimeFromOnline(string category, string name, out DateTime ModifiedTimeOut, out string errorStringIfFail)
 		{
-			fastJSON.JSON.Instance.SerializeNullValues = true;
-			fastJSON.JSON.Instance.ShowReadOnlyProperties = true;
-			fastJSON.JSON.Instance.UseUTCDateTime = true;
-			fastJSON.JSON.Instance.UsingGlobalTypes = false;
+			JSON.Instance.SerializeNullValues = true;
+			JSON.Instance.ShowReadOnlyProperties = true;
+			JSON.Instance.UseUTCDateTime = true;
+			JSON.Instance.UsingGlobalTypes = false;
 
 			string response;
 			if (WebInterop.PostPHP(
@@ -148,10 +148,10 @@ namespace SharedClasses
 
 		public static bool PopulateObjectFromOnline(string category, string name, object objectToPopulate, out string errorStringIfFail)
 		{
-			fastJSON.JSON.Instance.SerializeNullValues = true;
-			fastJSON.JSON.Instance.ShowReadOnlyProperties = true;
-			fastJSON.JSON.Instance.UseUTCDateTime = true;
-			fastJSON.JSON.Instance.UsingGlobalTypes = false;
+			JSON.Instance.SerializeNullValues = true;
+			JSON.Instance.ShowReadOnlyProperties = true;
+			JSON.Instance.UseUTCDateTime = true;
+			JSON.Instance.UsingGlobalTypes = false;
 
 			string response;
 			if (WebInterop.PostPHP(
@@ -167,8 +167,8 @@ namespace SharedClasses
 				else
 				{
 					errorStringIfFail = null;
-					fastJSON.JSON.Instance.FillObject(objectToPopulate, response);
-					//objectToPopulate = fastJSON.JSON.Instance.ToObject<Settings>(response);
+					JSON.Instance.FillObject(objectToPopulate, response);
+					//objectToPopulate = JSON.Instance.ToObject<Settings>(response);
 					return true;
 				}
 			}
@@ -181,21 +181,21 @@ namespace SharedClasses
 
 		public static string GetJsonStringFromObject(object obj, bool Beautify)
 		{
-			string tmpJson = fastJSON.JSON.Instance.ToJSON(obj, false);
+			string tmpJson = JSON.Instance.ToJSON(obj, false);
 			if (Beautify)
-				tmpJson = fastJSON.JSON.Instance.Beautify(tmpJson);
+				tmpJson = JSON.Instance.Beautify(tmpJson);
 			return tmpJson;
 		}
 
 		public static bool SaveObjectOnline(string category, string name, object obj, out string errorStringIfFailElseJsonString)
 		{
-			fastJSON.JSON.Instance.SerializeNullValues = true;
-			fastJSON.JSON.Instance.ShowReadOnlyProperties = true;
-			fastJSON.JSON.Instance.UseUTCDateTime = true;
-			fastJSON.JSON.Instance.UsingGlobalTypes = false;
+			JSON.Instance.SerializeNullValues = true;
+			JSON.Instance.ShowReadOnlyProperties = true;
+			JSON.Instance.UseUTCDateTime = true;
+			JSON.Instance.UsingGlobalTypes = false;
 
 			string response;
-			//string newvalue = fastJSON.JSON.Instance.Beautify(fastJSON.JSON.Instance.ToJSON(obj, false));
+			//string newvalue = JSON.Instance.Beautify(JSON.Instance.ToJSON(obj, false));
 			string newvalue = GetJsonStringFromObject(obj, false);
 			if (WebInterop.PostPHP(
 				GetOperationUri(OnlineOperations.SetValue),

@@ -1274,7 +1274,7 @@ GlobalSettings.ReadConsole(
 				try
 				{
 					SetStaticJsonSettings();
-					fastJSON.JSON.Instance.FillObject(this, fileJsondata);
+					JSON.Instance.FillObject(this, fileJsondata);
 					return true;
 				}
 				catch// (Exception exc)
@@ -1284,7 +1284,7 @@ GlobalSettings.ReadConsole(
 			public void SaveToLocalCache()
 			{
 				SetStaticJsonSettings();
-				var json = fastJSON.JSON.Instance.Beautify(fastJSON.JSON.Instance.ToJSON(this, false));
+				var json = JSON.Instance.Beautify(JSON.Instance.ToJSON(this, false));
 				File.WriteAllText(SettingsFilePath, json);
 				File.WriteAllText(LocalCachedDateFilePath, OnlineModifiedDate.ToString(LocalCacheDateFormat));
 			}
@@ -1345,10 +1345,10 @@ GlobalSettings.ReadConsole(
 
 			private void SetStaticJsonSettings()
 			{
-				fastJSON.JSON.Instance.SerializeNullValues = true;
-				fastJSON.JSON.Instance.ShowReadOnlyProperties = true;
-				fastJSON.JSON.Instance.UseUTCDateTime = true;
-				fastJSON.JSON.Instance.UsingGlobalTypes = false;
+				JSON.Instance.SerializeNullValues = true;
+				JSON.Instance.ShowReadOnlyProperties = true;
+				JSON.Instance.UseUTCDateTime = true;
+				JSON.Instance.UsingGlobalTypes = false;
 			}
 		}
 

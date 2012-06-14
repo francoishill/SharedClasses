@@ -191,6 +191,12 @@ namespace SharedClasses
 						//{
 						progressBar1.Value = progressPercentage;
 						labelStatus.Text = statusMessage;
+
+						if (ev.BytesReceived == newerversionDetails.SetupSize)
+						{
+							labelStatus.Text = string.Format("Download complete ({0} bytes)", ev.BytesReceived);
+							progressBar1.Visible = false;
+						}
 						//}
 					}
 				};
@@ -224,6 +230,13 @@ namespace SharedClasses
 
 			if (restartDownloadRequired)
 				goto restartDownload;
+		}
+
+		private void AutoUpdatingForm_Shown(object sender, EventArgs e)
+		{
+			this.BringToFront();
+			this.TopMost = false;
+			this.TopMost = true;
 		}
 	}
 

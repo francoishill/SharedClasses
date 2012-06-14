@@ -129,8 +129,8 @@ namespace SharedClasses
 				var appfullpath = Environment.GetCommandLineArgs()[0];
 				//var appdir = Path.GetDirectoryName(appfullpath);
 				var ApplicationName = Path.GetFileNameWithoutExtension(appfullpath);
-				var versionfileFullpath = appfullpath + ".version";
-				var InstalledVersion = File.Exists(versionfileFullpath) ? File.ReadAllText(versionfileFullpath).Trim() : "";
+                //var versionfileFullpath = appfullpath + ".version";
+                var InstalledVersion = System.Diagnostics.FileVersionInfo.GetVersionInfo(appfullpath).FileVersion;//File.Exists(versionfileFullpath) ? File.ReadAllText(versionfileFullpath).Trim() : "";
 
 				PublishDetails detailsIfNewer;
 				string errIfFail;

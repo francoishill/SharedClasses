@@ -57,7 +57,123 @@ public class VisualStudioInterop
 	public enum PlatformTarget { x86, x64, AnyCPU };
 	public static string BuildVsProjectReturnNewversionString(string projName, string csprojFilename, string slnFilename, bool SolutionTrueProjectFalse, BuildType buildType, ProjectConfiguration configuration, PlatformTarget platformTarget, bool AutomaticallyUpdateRevision, Object textfeedbackSenderObject, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
-		string msbuildpath;
+        string assemblyInfoFilePath = Path.GetDirectoryName(csprojFilename).TrimEnd('\\') + "\\Properties\\AssemblyInfo.cs";
+
+        //const string apprevstart = "<ApplicationRevision>";
+        //const string apprevend = "</ApplicationRevision>";
+        //const string appverstart = "<ApplicationVersion>";
+        //const string appverend = "</ApplicationVersion>";
+
+        //int apprevision = -1;
+        //int apprevlinenum = -1;
+        //string appversion = "";
+        int versionlinenum = -1;
+        string newversionstring = null;
+        string newversionLine = null;
+        List<string> newFileLines = File.ReadAllLines(assemblyInfoFilePath).ToList();//new List<string>();
+        //StreamReader sr = new StreamReader(csprojFilename);
+        //try { while (!sr.EndOfStream) newFileLines.Add(sr.ReadLine()); }
+        //finally { sr.Close(); }
+
+        string requiredStart = "[assembly: AssemblyFileVersion(\"";
+        string requiredEnd = "\")]";
+        for (int i = 0; i < newFileLines.Count; i++)
+        {
+            string line = newFileLines[i].ToLower().Trim();
+            if (line.StartsWith(requiredStart.ToLower()) && line.EndsWith(requiredEnd))
+            {
+                int versionStartPos = requiredStart.Length;
+                int versionLength = line.Length - requiredStart.Length - requiredEnd.Length;
+                string versionLine = line.Substring(versionStartPos, versionLength);
+                string[] dotsplitted = versionLine.Split('.');
+                if (dotsplitted.Length != 4)
+                    TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Invalid version string for AssemblyFileVersion (must be format 1.0.0.0): " + line);
+                else
+                {
+                    bool fail = false;
+                    int tmpint;
+                    dotsplitted.ToList().ForEach((s) => { if (!int.TryParse(s, out tmpint)) fail = true; });
+                    if (fail)
+                        TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Version must have integers between dots: " + line);
+                    else
+                    {
+                        versionlinenum = i;
+                        int newBuildVersion = int.Parse(dotsplitted[3]) +
+                            (AutomaticallyUpdateRevision ? 1 : 0);//Only increase if must update
+                        dotsplitted[3] = newBuildVersion.ToString();
+                        newversionstring = string.Join(".", dotsplitted);
+                        newversionLine = requiredStart + newversionstring + requiredEnd;
+                    }
+                }
+            }
+        }
+
+        if (versionlinenum == -1 || newversionLine == null)
+        {
+            TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Unable to find AssemblyFileVersion in file " + assemblyInfoFilePath);
+            return null;
+        }
+
+        newFileLines[versionlinenum] = newversionLine;
+        File.WriteAllLines(assemblyInfoFilePath, newFileLines);
+
+        #region Comments1
+        /*for (int i = 0; i < newFileLines.Count; i++)
+        {
+            string line = newFileLines[i].ToLower().Trim();
+
+            if (line.StartsWith(apprevstart.ToLower()) && line.EndsWith(apprevend.ToLower()))
+            {
+                int tmpint;
+                if (int.TryParse(line.Substring(apprevstart.Length, line.Length - apprevstart.Length - apprevend.Length), out tmpint))
+                {
+                    apprevlinenum = i;
+                    apprevision = tmpint;
+                }
+                else TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not obtain revision int from string: " + line);
+            }
+            else if (line.StartsWith(appverstart.ToLower()) && line.EndsWith(appverend.ToLower()))
+            {
+                appverlinenum = i;
+                appversion = line.Substring(appverstart.Length, line.Length - appverstart.Length - appverend.Length);
+            }
+        }
+        if (apprevision == -1) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Unable to obtain app revision");
+        else if (appversion.Trim().Length == 0) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Unable to obtain app version string");
+        else
+        {
+            string oldversionstring = appversion.Substring(0, appversion.LastIndexOf('.') + 1) + apprevision;
+            if (AutomaticallyUpdateRevision)
+            {
+                bool autoIncreaseRevision = appversion.Contains("%2a");
+                int newrevisionnum = apprevision + 1;
+                newFileLines[apprevlinenum] = newFileLines[apprevlinenum].Substring(0, newFileLines[apprevlinenum].IndexOf(apprevstart) + apprevstart.Length)
+                    + newrevisionnum
+                    + newFileLines[apprevlinenum].Substring(newFileLines[apprevlinenum].IndexOf(apprevend));
+                //Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, newFileLines[apprevlinenum]);
+
+                string newversionstring = appversion.Substring(0, appversion.LastIndexOf('.') + 1) + newrevisionnum;
+                if (!autoIncreaseRevision)
+                    newFileLines[appverlinenum] = newFileLines[appverlinenum].Substring(0, newFileLines[appverlinenum].IndexOf(appverstart) + appverstart.Length)
+                        + appversion.Substring(0, appversion.LastIndexOf('.') + 1) + (apprevision + 1)
+                        + newFileLines[appverlinenum].Substring(newFileLines[appverlinenum].IndexOf(appverend));
+                //Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, newFileLines[appverlinenum]);
+
+                StreamWriter sw = new StreamWriter(csprojFilename);
+                try
+                {
+                    foreach (string line in newFileLines)
+                        sw.WriteLine(line);
+                }
+                finally { sw.Close(); }
+
+                return newversionstring;
+            }
+            else return oldversionstring;
+        }*/
+        #endregion Comments1
+
+        string msbuildpath;
 		if (!FindMsbuildPath4(out msbuildpath))
 		{
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Unable to find msbuild path: " + msbuildpath);
@@ -164,73 +280,8 @@ public class VisualStudioInterop
 
 		if (!errorOccurred)
 		{
-			const string apprevstart = "<ApplicationRevision>";
-			const string apprevend = "</ApplicationRevision>";
-			const string appverstart = "<ApplicationVersion>";
-			const string appverend = "</ApplicationVersion>";
-
-			int apprevision = -1;
-			int apprevlinenum = -1;
-			string appversion = "";
-			int appverlinenum = -1;
-			List<string> newFileLines = new List<string>();
-			StreamReader sr = new StreamReader(csprojFilename);
-			try { while (!sr.EndOfStream) newFileLines.Add(sr.ReadLine()); }
-			finally { sr.Close(); }
-
-			for (int i = 0; i < newFileLines.Count; i++)
-			{
-				string line = newFileLines[i].ToLower().Trim();
-
-				if (line.StartsWith(apprevstart.ToLower()) && line.EndsWith(apprevend.ToLower()))
-				{
-					int tmpint;
-					if (int.TryParse(line.Substring(apprevstart.Length, line.Length - apprevstart.Length - apprevend.Length), out tmpint))
-					{
-						apprevlinenum = i;
-						apprevision = tmpint;
-					}
-					else TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not obtain revision int from string: " + line);
-				}
-				else if (line.StartsWith(appverstart.ToLower()) && line.EndsWith(appverend.ToLower()))
-				{
-					appverlinenum = i;
-					appversion = line.Substring(appverstart.Length, line.Length - appverstart.Length - appverend.Length);
-				}
-			}
-			if (apprevision == -1) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Unable to obtain app revision");
-			else if (appversion.Trim().Length == 0) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Unable to obtain app version string");
-			else
-			{
-				string oldversionstring = appversion.Substring(0, appversion.LastIndexOf('.') + 1) + apprevision;
-				if (AutomaticallyUpdateRevision)
-				{
-					bool autoIncreaseRevision = appversion.Contains("%2a");
-					int newrevisionnum = apprevision + 1;
-					newFileLines[apprevlinenum] = newFileLines[apprevlinenum].Substring(0, newFileLines[apprevlinenum].IndexOf(apprevstart) + apprevstart.Length)
-						+ newrevisionnum
-						+ newFileLines[apprevlinenum].Substring(newFileLines[apprevlinenum].IndexOf(apprevend));
-					//Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, newFileLines[apprevlinenum]);
-
-					string newversionstring = appversion.Substring(0, appversion.LastIndexOf('.') + 1) + newrevisionnum;
-					if (!autoIncreaseRevision)
-						newFileLines[appverlinenum] = newFileLines[appverlinenum].Substring(0, newFileLines[appverlinenum].IndexOf(appverstart) + appverstart.Length)
-							+ appversion.Substring(0, appversion.LastIndexOf('.') + 1) + (apprevision + 1)
-							+ newFileLines[appverlinenum].Substring(newFileLines[appverlinenum].IndexOf(appverend));
-					//Logging.appendLogTextbox_OfPassedTextbox(messagesTextbox, newFileLines[appverlinenum]);
-
-					StreamWriter sw = new StreamWriter(csprojFilename);
-					try
-					{
-						foreach (string line in newFileLines)
-							sw.WriteLine(line);
-					}
-					finally { sw.Close(); }
-
-					return newversionstring;
-				}
-				else return oldversionstring;
-			}
+            //Moved version updating to before building
+            return newversionstring;
 		}
 		return null;
 	}

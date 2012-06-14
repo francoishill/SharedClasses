@@ -56,12 +56,14 @@ namespace SharedClasses
 
 		private void linkLabelClickHereLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
 		{
+			bool restartDownloadRequired;
+		restartDownload:
+			restartDownloadRequired = false;
 			labelStatus.Visible = true;
 			labelStatus.Text = "Please wait, downloading...";
 			progressBar1.Visible = true;
 			progressBar1.Maximum = 100;
-			//ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
-			//{
+
 			DateTime startTime = DateTime.Now;
 			using (System.Net.WebClient client = new System.Net.WebClient())
 			{
@@ -77,10 +79,11 @@ namespace SharedClasses
 				{
 					if (!isComplete)
 					{
+						int progressPercentage = (int)Math.Round((double)100 * (double)ev.BytesReceived / (double)newerversionDetails.SetupSize);//ev.ProgressPercentage;
 						string statusMessage = string.Format(
 									"Downloaded {0}/{1} at {2}",
 									ev.BytesReceived,
-									ev.TotalBytesToReceive,
+									newerversionDetails.SetupSize, //ev.TotalBytesToReceive,
 									ev.BytesReceived / DateTime.Now.Subtract(startTime).TotalSeconds);
 						//if (this.InvokeRequired)
 						//    this.Invoke((Action)delegate
@@ -90,7 +93,7 @@ namespace SharedClasses
 						//    });
 						//else
 						//{
-						progressBar1.Value = ev.ProgressPercentage;
+						progressBar1.Value = progressPercentage;
 						labelStatus.Text = statusMessage;
 						//}
 					}
@@ -98,7 +101,12 @@ namespace SharedClasses
 				var downloadFilename = Path.GetTempPath().TrimEnd('\\') + "\\Setup_Newest_" + newerversionDetails.ApplicationName + ".exe";
 				client.DownloadFileAsync(new Uri(newerversionDetails.FtpUrl), downloadFilename);
 				while (!isComplete) { Application.DoEvents(); }
-				if (UserMessages.Confirm("The download is complete, do you want to close this application and install new version?"))
+				if (downloadFilename.FileToMD5Hash() != newerversionDetails.MD5Hash)
+				{
+					if (UserMessages.Confirm("The downloaded file is corrupt (different MD5Hash), download it again?"))
+						restartDownloadRequired = true;
+				}
+				else if (UserMessages.Confirm("The download is complete, do you want to close this application and install new version?"))
 				{
 					labelMessage.Text = "Please be patient, busy closing application to install download...";
 					labelCurrentVersion.Visible = false;
@@ -113,8 +121,9 @@ namespace SharedClasses
 				else
 					Process.Start("explorer", "/select,\"" + downloadFilename + "\"");
 			}
-			//},
-			//false);
+
+			if (restartDownloadRequired)
+				goto restartDownload;
 		}
 	}
 }

@@ -448,6 +448,7 @@ public class VisualStudioInterop
 				projName,
 				versionString,
 				new FileInfo(publishedSetupPath).Length,
+                publishedSetupPath.FileToMD5Hash(),
 				DateTime.Now,
 				rootFtpUri + "/" + (new FileInfo(publishedSetupPath).Name));
 			string errorStringIfFailElseJsonString;

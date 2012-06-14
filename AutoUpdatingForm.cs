@@ -80,11 +80,12 @@ namespace SharedClasses
 					if (!isComplete)
 					{
 						int progressPercentage = (int)Math.Round((double)100 * (double)ev.BytesReceived / (double)newerversionDetails.SetupSize);//ev.ProgressPercentage;
+						double bytesPerSecond = Math.Round((double)ev.BytesReceived / (DateTime.Now.Subtract(startTime).TotalSeconds * (double)1024), 3);
 						string statusMessage = string.Format(
-									"Downloaded {0}/{1} at {2}",
+									"Downloading {0}/{1} at {2} kB/s",
 									ev.BytesReceived,
 									newerversionDetails.SetupSize, //ev.TotalBytesToReceive,
-									ev.BytesReceived / DateTime.Now.Subtract(startTime).TotalSeconds);
+									bytesPerSecond);
 						//if (this.InvokeRequired)
 						//    this.Invoke((Action)delegate
 						//    {

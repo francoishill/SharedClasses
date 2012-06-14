@@ -328,7 +328,7 @@ namespace SharedClasses
 			csProject.Save();
 		}
 
-		public static void EnsureCsProjectHasAdditionalDependenciesAddedToCsProject(ref Project csProject, string csFile)
+		public static void EnsureCsProjectHasAdditionalDependenciesAddedToCsProject(ref Project csProject, string csFile, bool addNestedDependencies)
 		{
 			int blockCommentNestedCount = 0;
 			bool additionalLineFound = false;
@@ -371,6 +371,8 @@ namespace SharedClasses
 					{
 						string relativePath = line.Trim().Replace("Class:", "").Trim() + ".cs";
 						string absolutePath = GetAbsolutePath(csFile, relativePath);
+						if (addNestedDependencies)
+							CSharpDependencies.EnsureCsProjectHasAdditionalDependenciesAddedToCsProject(ref csProject, absolutePath, addNestedDependencies);
 						EnsureCsProjectHasCompileIndependantCsFile(ref csProject, absolutePath);
 					}
 					else if (line.Trim().StartsWith("Form:", StringComparison.InvariantCultureIgnoreCase))
@@ -379,6 +381,8 @@ namespace SharedClasses
 						if (!relativePath.EndsWith(".cs", StringComparison.InvariantCultureIgnoreCase))
 							relativePath += ".cs";
 						string absolutePath = GetAbsolutePath(csFile, relativePath);
+						if (addNestedDependencies)
+							CSharpDependencies.EnsureCsProjectHasAdditionalDependenciesAddedToCsProject(ref csProject, absolutePath, addNestedDependencies);
 						EnsureCsProjectHasCompileWinformCsFile(ref csProject, absolutePath);
 						EnsureCsProjectHasCompileWinformDesignerCsFile(ref csProject, FullPathAndDisplayName.GetLinkedDesignerCsFileFromWinformCsFile(absolutePath));
 						EnsureCsProjectHasEmbeddedResourceWinformResxFile(ref csProject, FullPathAndDisplayName.GetLinkedResxFileFromWinformCsFile(absolutePath));
@@ -389,6 +393,8 @@ namespace SharedClasses
 						if (!relativePath.EndsWith(".xaml", StringComparison.InvariantCultureIgnoreCase))
 							relativePath += ".xaml";
 						string absolutePath = GetAbsolutePath(csFile, relativePath);
+						if (addNestedDependencies)
+							CSharpDependencies.EnsureCsProjectHasAdditionalDependenciesAddedToCsProject(ref csProject, absolutePath, addNestedDependencies);
 						EnsureCsProjectHasPageXamlFile(ref csProject, absolutePath);
 						EnsureCsProjectHasCompileXamlCsFile(ref csProject, FullPathAndDisplayName.GetLinkedXamlCsFileFromXamlFile(absolutePath));
 					}
@@ -397,6 +403,8 @@ namespace SharedClasses
 					{
 						string relativePath = line.Trim().Replace("File:", "").Trim();
 						string absolutePath = GetAbsolutePath(csFile, relativePath);
+						if (addNestedDependencies)
+							CSharpDependencies.EnsureCsProjectHasAdditionalDependenciesAddedToCsProject(ref csProject, absolutePath, addNestedDependencies);
 						EnsureCsProjectHasCompileIndependantCsFile(ref csProject, absolutePath);
 					}
 					else if (line.Trim().StartsWith("Assembly:", StringComparison.InvariantCultureIgnoreCase))
@@ -429,12 +437,12 @@ namespace SharedClasses
 			}
 		}
 
-		public static void EnsureCorrectFileDependancies(string csprojFile, FullPathAndDisplayName[] files)
+		public static void EnsureCorrectFileDependancies(string csprojFile, FullPathAndDisplayName[] files, bool addNestedDependencies)
 		{
 			Project project = new Project(csprojFile);
 
 			foreach (FullPathAndDisplayName file in files)
-				file.EnsureExistanceInCsProject_IncludeAllLinks(ref project);
+				file.EnsureExistanceInCsProject_IncludeAllLinks(ref project, addNestedDependencies);
 
 			project = null;
 
@@ -541,7 +549,7 @@ namespace SharedClasses
 			return Path.ChangeExtension(winformCsFile, ".resx");
 		}
 
-		public void EnsureExistanceInCsProject_IncludeAllLinks(ref Project csProject)
+		public void EnsureExistanceInCsProject_IncludeAllLinks(ref Project csProject, bool addNestedDependencies)
 		{
 			if (this.FileType == FileTypes.Xaml)
 			{
@@ -564,7 +572,7 @@ namespace SharedClasses
 			}
 
 			if (this.FileType == FileTypes.Cs || this.FileType == FileTypes.WinFormCs)
-				CSharpDependencies.EnsureCsProjectHasAdditionalDependenciesAddedToCsProject(ref csProject, this.FullPath);
+				CSharpDependencies.EnsureCsProjectHasAdditionalDependenciesAddedToCsProject(ref csProject, this.FullPath, addNestedDependencies);
 		}
 
 		public override string ToString()

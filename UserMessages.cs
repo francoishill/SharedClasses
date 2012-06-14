@@ -11,6 +11,7 @@ public class UserMessages
 	/*
 	Additional dependencies
 	Minimum winforms
+	Winforms: Form: UserMessageBox
 	*/
 
 

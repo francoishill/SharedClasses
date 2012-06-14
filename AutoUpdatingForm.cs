@@ -14,6 +14,13 @@ namespace SharedClasses
 {
 	public partial class AutoUpdatingForm : Form
 	{
+		/*Additional dependencies and sample code:
+		Class: fastJSON
+		Class: ThreadingInterop
+		Class: UserMessages
+		Class: WebInterop
+		*/
+
 		private const string ftpUsername = "ownapps";
 		private const string ftpPassword = "ownappsverylongpassword";
 
@@ -37,6 +44,82 @@ namespace SharedClasses
 			return Math.Round((double)bytes / (double)1024, decimals);
 		}
 
+		//true=uptodate,false=neweravailable,null=errorCheckMessage
+		public static bool? IsApplicationUpToDate(string ApplicationName, string installedVersion, out string errorIfNull, out PublishDetails detailsIfNewer)
+		{
+			detailsIfNewer = null;//Only details if newer version available
+			PublishDetails onlineAppDetails = new PublishDetails();
+			string errIfFail;
+			bool populatesuccess = WebInterop.PopulateObjectFromOnline(
+				PublishDetails.OnlineJsonCategory,
+				ApplicationName + PublishDetails.LastestVersionJsonNamePostfix,
+				onlineAppDetails,
+				out errIfFail);
+			if (populatesuccess)
+			{
+				//return CompareVersions(installedVersion, onlineAppDetails.ApplicationVersion);
+				string onlineVersion = onlineAppDetails.ApplicationVersion;
+				string versionsConcatenated = string.Format("InstalledVersion = {0}, OnlineVersion = {1}", installedVersion ?? "", onlineVersion ?? "");
+				if (string.IsNullOrWhiteSpace(installedVersion) || string.IsNullOrWhiteSpace(onlineVersion))
+				{
+					errorIfNull = "InstalledVersion AND/OR OnlineVersion is empty: " + versionsConcatenated;
+					return null;
+				}
+				string[] installedSplitted = installedVersion.Split('.');
+				string[] onlineSplitted = onlineVersion.Split('.');
+				if (installedSplitted.Length != onlineSplitted.Length)
+				{
+					errorIfNull = "InstalledVersion and OnlineVersion not in same format: " + versionsConcatenated;
+					return null;
+				}
+
+				int tmpint;
+				bool fail = false;
+				installedSplitted.ToList().ForEach((s) => { if (!int.TryParse(s, out tmpint)) fail = true; });
+				onlineSplitted.ToList().ForEach((s) => { if (!int.TryParse(s, out tmpint)) fail = true; });
+				if (fail)
+				{
+					errorIfNull = "InstalledVersion and OnlineVersion must have integers between dots: " + versionsConcatenated;
+					return null;
+				}
+
+				//if (installedAppVersion.Equals(onlineVersion, StringComparison.InvariantCultureIgnoreCase))
+				//    return VersionComparison.UpToDate;
+
+				for (int i = 0; i < installedSplitted.Length; i++)
+				{
+					int tmpInstalledInt;
+					int tmpOnlineInt;
+					tmpInstalledInt = int.Parse(installedSplitted[i]);
+					tmpOnlineInt = int.Parse(onlineSplitted[i]);
+
+					if (tmpInstalledInt == tmpOnlineInt)
+						continue;
+					if (tmpInstalledInt > tmpOnlineInt)
+					{
+						errorIfNull = "InstalledVersion is newer than OnlineVersion: " + versionsConcatenated;
+						return null;
+					}
+					else
+					{
+						errorIfNull = null;
+						detailsIfNewer = onlineAppDetails;
+						return false;
+					}
+				}
+				errorIfNull = null;
+				return true;
+			}
+			else
+			{
+				if (errIfFail == WebInterop.cErrorIfNotFoundOnline)
+					errorIfNull = "Update information not stored online yet for " + ApplicationName + ".";
+				else
+					errorIfNull = errIfFail;
+				return null;
+			}
+		}
+
 		public static void CheckForUpdates(bool ShowModally = true)//string ApplicationName, string InstalledVersion)
 		{
 			ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
@@ -49,7 +132,7 @@ namespace SharedClasses
 
 				PublishDetails detailsIfNewer;
 				string errIfFail;
-				bool? uptodate = AutoUpdating.IsApplicationUpToDate(ApplicationName, InstalledVersion, out errIfFail, out detailsIfNewer);
+				bool? uptodate = IsApplicationUpToDate(ApplicationName, InstalledVersion, out errIfFail, out detailsIfNewer);
 				if (uptodate == null)
 					UserMessages.ShowWarningMessage("Unable to check for updates: " + errIfFail);
 				else if (uptodate == false)
@@ -180,87 +263,5 @@ namespace SharedClasses
 			this.FtpUrl = FtpUrl;
 		}
 		public string GetJsonString() { return WebInterop.GetJsonStringFromObject(this, true); }
-	}
-
-	public class AutoUpdating
-	{
-		//public enum VersionComparison { UpToDate, NewerAvailable, Invalid };
-		//Invalid if app version is newer than online or not found online
-
-		//true=uptodate,false=neweravailable,null=errorCheckMessage
-		public static bool? IsApplicationUpToDate(string ApplicationName, string installedVersion, out string errorIfNull, out PublishDetails detailsIfNewer)
-		{
-			detailsIfNewer = null;//Only details if newer version available
-			PublishDetails onlineAppDetails = new PublishDetails();
-			string errIfFail;
-			bool populatesuccess = WebInterop.PopulateObjectFromOnline(
-				PublishDetails.OnlineJsonCategory,
-				ApplicationName + PublishDetails.LastestVersionJsonNamePostfix,
-				onlineAppDetails,
-				out errIfFail);
-			if (populatesuccess)
-			{
-				//return CompareVersions(installedVersion, onlineAppDetails.ApplicationVersion);
-				string onlineVersion = onlineAppDetails.ApplicationVersion;
-				string versionsConcatenated = string.Format("InstalledVersion = {0}, OnlineVersion = {1}", installedVersion ?? "", onlineVersion ?? "");
-				if (string.IsNullOrWhiteSpace(installedVersion) || string.IsNullOrWhiteSpace(onlineVersion))
-				{
-					errorIfNull = "InstalledVersion AND/OR OnlineVersion is empty: " + versionsConcatenated;
-					return null;
-				}
-				string[] installedSplitted = installedVersion.Split('.');
-				string[] onlineSplitted = onlineVersion.Split('.');
-				if (installedSplitted.Length != onlineSplitted.Length)
-				{
-					errorIfNull = "InstalledVersion and OnlineVersion not in same format: " + versionsConcatenated;
-					return null;
-				}
-
-				int tmpint;
-				bool fail = false;
-				installedSplitted.ToList().ForEach((s) => { if (!int.TryParse(s, out tmpint)) fail = true; });
-				onlineSplitted.ToList().ForEach((s) => { if (!int.TryParse(s, out tmpint)) fail = true; });
-				if (fail)
-				{
-					errorIfNull = "InstalledVersion and OnlineVersion must have integers between dots: " + versionsConcatenated;
-					return null;
-				}
-
-				//if (installedAppVersion.Equals(onlineVersion, StringComparison.InvariantCultureIgnoreCase))
-				//    return VersionComparison.UpToDate;
-
-				for (int i = 0; i < installedSplitted.Length; i++)
-				{
-					int tmpInstalledInt;
-					int tmpOnlineInt;
-					tmpInstalledInt = int.Parse(installedSplitted[i]);
-					tmpOnlineInt = int.Parse(onlineSplitted[i]);
-
-					if (tmpInstalledInt == tmpOnlineInt)
-						continue;
-					if (tmpInstalledInt > tmpOnlineInt)
-					{
-						errorIfNull = "InstalledVersion is newer than OnlineVersion: " + versionsConcatenated;
-						return null;
-					}
-					else
-					{
-						errorIfNull = null;
-						detailsIfNewer = onlineAppDetails;
-						return false;
-					}
-				}
-				errorIfNull = null;
-				return true;
-			}
-			else
-			{
-				if (errIfFail == WebInterop.cErrorIfNotFoundOnline)
-					errorIfNull = "Update information not stored online yet for " + ApplicationName + ".";
-				else
-					errorIfNull = errIfFail;
-				return null;
-			}
-		}
 	}
 }

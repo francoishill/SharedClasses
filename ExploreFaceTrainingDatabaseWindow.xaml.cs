@@ -536,7 +536,7 @@ namespace SharedClasses
 
 		private void buttonTrainFaces_Click(object sender, RoutedEventArgs e)
 		{
-			FaceTrainingForm.ShowFacetraining();
+			//FaceTrainingForm.ShowFacetraining();
 		}
 	}
 }

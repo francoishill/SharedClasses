@@ -57,68 +57,68 @@ public class VisualStudioInterop
 	public enum PlatformTarget { x86, x64, AnyCPU };
 	public static string BuildVsProjectReturnNewversionString(string projName, string csprojFilename, string slnFilename, bool SolutionTrueProjectFalse, BuildType buildType, ProjectConfiguration configuration, PlatformTarget platformTarget, bool AutomaticallyUpdateRevision, Object textfeedbackSenderObject, TextFeedbackEventHandler textFeedbackEvent = null)
 	{
-        string assemblyInfoFilePath = Path.GetDirectoryName(csprojFilename).TrimEnd('\\') + "\\Properties\\AssemblyInfo.cs";
+		string assemblyInfoFilePath = Path.GetDirectoryName(csprojFilename).TrimEnd('\\') + "\\Properties\\AssemblyInfo.cs";
 
-        //const string apprevstart = "<ApplicationRevision>";
-        //const string apprevend = "</ApplicationRevision>";
-        //const string appverstart = "<ApplicationVersion>";
-        //const string appverend = "</ApplicationVersion>";
+		//const string apprevstart = "<ApplicationRevision>";
+		//const string apprevend = "</ApplicationRevision>";
+		//const string appverstart = "<ApplicationVersion>";
+		//const string appverend = "</ApplicationVersion>";
 
-        //int apprevision = -1;
-        //int apprevlinenum = -1;
-        //string appversion = "";
-        int versionlinenum = -1;
-        string newversionstring = null;
-        string newversionLine = null;
-        List<string> newFileLines = File.ReadAllLines(assemblyInfoFilePath).ToList();//new List<string>();
-        //StreamReader sr = new StreamReader(csprojFilename);
-        //try { while (!sr.EndOfStream) newFileLines.Add(sr.ReadLine()); }
-        //finally { sr.Close(); }
+		//int apprevision = -1;
+		//int apprevlinenum = -1;
+		//string appversion = "";
+		int versionlinenum = -1;
+		string newversionstring = null;
+		string newversionLine = null;
+		List<string> newFileLines = File.ReadAllLines(assemblyInfoFilePath).ToList();//new List<string>();
+		//StreamReader sr = new StreamReader(csprojFilename);
+		//try { while (!sr.EndOfStream) newFileLines.Add(sr.ReadLine()); }
+		//finally { sr.Close(); }
 
-        string requiredStart = "[assembly: AssemblyFileVersion(\"";
-        string requiredEnd = "\")]";
-        for (int i = 0; i < newFileLines.Count; i++)
-        {
-            string line = newFileLines[i].ToLower().Trim();
-            if (line.StartsWith(requiredStart.ToLower()) && line.EndsWith(requiredEnd))
-            {
-                int versionStartPos = requiredStart.Length;
-                int versionLength = line.Length - requiredStart.Length - requiredEnd.Length;
-                string versionLine = line.Substring(versionStartPos, versionLength);
-                string[] dotsplitted = versionLine.Split('.');
-                if (dotsplitted.Length != 4)
-                    TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Invalid version string for AssemblyFileVersion (must be format 1.0.0.0): " + line);
-                else
-                {
-                    bool fail = false;
-                    int tmpint;
-                    dotsplitted.ToList().ForEach((s) => { if (!int.TryParse(s, out tmpint)) fail = true; });
-                    if (fail)
-                        TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Version must have integers between dots: " + line);
-                    else
-                    {
-                        versionlinenum = i;
-                        int newBuildVersion = int.Parse(dotsplitted[3]) +
-                            (AutomaticallyUpdateRevision ? 1 : 0);//Only increase if must update
-                        dotsplitted[3] = newBuildVersion.ToString();
-                        newversionstring = string.Join(".", dotsplitted);
-                        newversionLine = requiredStart + newversionstring + requiredEnd;
-                    }
-                }
-            }
-        }
+		string requiredStart = "[assembly: AssemblyFileVersion(\"";
+		string requiredEnd = "\")]";
+		for (int i = 0; i < newFileLines.Count; i++)
+		{
+			string line = newFileLines[i].ToLower().Trim();
+			if (line.StartsWith(requiredStart.ToLower()) && line.EndsWith(requiredEnd))
+			{
+				int versionStartPos = requiredStart.Length;
+				int versionLength = line.Length - requiredStart.Length - requiredEnd.Length;
+				string versionLine = line.Substring(versionStartPos, versionLength);
+				string[] dotsplitted = versionLine.Split('.');
+				if (dotsplitted.Length != 4)
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Invalid version string for AssemblyFileVersion (must be format 1.0.0.0): " + line);
+				else
+				{
+					bool fail = false;
+					int tmpint;
+					dotsplitted.ToList().ForEach((s) => { if (!int.TryParse(s, out tmpint)) fail = true; });
+					if (fail)
+						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Version must have integers between dots: " + line);
+					else
+					{
+						versionlinenum = i;
+						int newBuildVersion = int.Parse(dotsplitted[3]) +
+							(AutomaticallyUpdateRevision ? 1 : 0);//Only increase if must update
+						dotsplitted[3] = newBuildVersion.ToString();
+						newversionstring = string.Join(".", dotsplitted);
+						newversionLine = requiredStart + newversionstring + requiredEnd;
+					}
+				}
+			}
+		}
 
-        if (versionlinenum == -1 || newversionLine == null)
-        {
-            TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Unable to find AssemblyFileVersion in file " + assemblyInfoFilePath);
-            return null;
-        }
+		if (versionlinenum == -1 || newversionLine == null)
+		{
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Unable to find AssemblyFileVersion in file " + assemblyInfoFilePath);
+			return null;
+		}
 
-        newFileLines[versionlinenum] = newversionLine;
-        File.WriteAllLines(assemblyInfoFilePath, newFileLines);
+		newFileLines[versionlinenum] = newversionLine;
+		File.WriteAllLines(assemblyInfoFilePath, newFileLines);
 
-        #region Comments1
-        /*for (int i = 0; i < newFileLines.Count; i++)
+		#region Comments1
+		/*for (int i = 0; i < newFileLines.Count; i++)
         {
             string line = newFileLines[i].ToLower().Trim();
 
@@ -171,9 +171,9 @@ public class VisualStudioInterop
             }
             else return oldversionstring;
         }*/
-        #endregion Comments1
+		#endregion Comments1
 
-        string msbuildpath;
+		string msbuildpath;
 		if (!FindMsbuildPath4(out msbuildpath))
 		{
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Unable to find msbuild path: " + msbuildpath);
@@ -280,8 +280,8 @@ public class VisualStudioInterop
 
 		if (!errorOccurred)
 		{
-            //Moved version updating to before building
-            return newversionstring;
+			//Moved version updating to before building
+			return newversionstring;
 		}
 		return null;
 	}
@@ -298,7 +298,7 @@ public class VisualStudioInterop
 	}
 
 	//TODO: Start building own publishing platform (FTP, the html page, etc)
-	public static string PerformPublish(Object textfeedbackSenderObject, string projName, out string versionString, bool HasPlugins, bool AutomaticallyUpdateRevision = false, bool OpenFolderAndSetupFileAfterSuccessfullNSIS = true, bool WriteIntoRegistryForWindowsAutostartup = true, TextFeedbackEventHandler textFeedbackEvent = null)
+	public static string PerformPublish(Object textfeedbackSenderObject, string projName, out string versionString, bool HasPlugins, bool AutomaticallyUpdateRevision = false, bool InstallLocallyAfterSuccessfullNSIS = true, bool WriteIntoRegistryForWindowsAutostartup = true, TextFeedbackEventHandler textFeedbackEvent = null, bool SelectInFolderAfterSuccessfullNSIS = false)
 	{
 		versionString = "";
 		string projDir =
@@ -398,11 +398,51 @@ public class VisualStudioInterop
 
 					if (File.Exists(resultSetupFileName))
 					{
-						if (OpenFolderAndSetupFileAfterSuccessfullNSIS)
+						if (InstallLocallyAfterSuccessfullNSIS || SelectInFolderAfterSuccessfullNSIS)
 						{
-							TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Publish success, opening folder and running setup file...");
-							Process.Start("explorer", "/select, \"" + resultSetupFileName + "\"");
-							Process.Start(resultSetupFileName);
+							TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Publish success, opening folder and/or running setup file...");
+							if (SelectInFolderAfterSuccessfullNSIS)
+								Process.Start("explorer", "/select, \"" + resultSetupFileName + "\"");
+							if (InstallLocallyAfterSuccessfullNSIS)
+							{
+								Process curproc = Process.GetCurrentProcess();
+								bool TryingToInstallOverThisApp = projName.Equals(curproc.ProcessName, StringComparison.InvariantCultureIgnoreCase);
+
+								if (!TryingToInstallOverThisApp)
+								{
+									//Kill process if open
+									Process[] openProcs = Process.GetProcessesByName(projName);
+									if (openProcs.Length > 1)
+									{
+										if (UserMessages.Confirm("There are " + openProcs.Length + " processes with the name '" + projName + "', manually close the correct one or click yes to close all?"))
+										{
+											TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Killing all open processes named " + projName);
+											foreach (Process proc in openProcs)
+												proc.Kill();
+										}
+									}
+									else if (openProcs.Length == 1)
+									{
+										TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Killing open process named {0}".Fmt(projName));
+										openProcs[0].Kill();
+									}
+								}
+
+								if (TryingToInstallOverThisApp)
+								{
+									TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Launching setup for '{0}', not running silently because same application name as current.".Fmt(projName));
+									Process.Start(resultSetupFileName);
+								}
+								else
+								{
+									TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Installing '{0}' silently.".Fmt(projName));
+									var setupProc = Process.Start(resultSetupFileName, "/S");
+									setupProc.WaitForExit();
+									TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Launching '{0}'.".Fmt(projName));
+									try { Process.Start(projName + ".exe"); }
+									catch (Exception exc) { TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Error launching '{0}': {1}".Fmt(projName, exc.Message), TextFeedbackType.Error); }
+								}
+							}
 						}
 						successfullyCreatedNSISfile = true;
 					}
@@ -457,7 +497,7 @@ public class VisualStudioInterop
 		return tempFilename;
 	}
 
-	public async static void PerformPublishOnline(Object textfeedbackSenderObject, string projName, bool HasPlugins, bool AutomaticallyUpdateRevision = false, bool WriteIntoRegistryForWindowsAutostartup = true, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
+	public static void PerformPublishOnline(Object textfeedbackSenderObject, string projName, bool HasPlugins, bool AutomaticallyUpdateRevision = false, bool WriteIntoRegistryForWindowsAutostartup = true, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null, bool OpenSetupFileAfterSuccessfullNSIS = true, bool OpenFolderAfterSuccessfullNSIS = false, bool OpenWebsite = true)
 	{
 		string versionString = null;
 		string publishedSetupPath = null;
@@ -469,68 +509,72 @@ public class VisualStudioInterop
 		//TODO: this (ServicePointManager.DefaultConnectionLimit) is actually very annoying, is there no other workaround?
 		ServicePointManager.DefaultConnectionLimit = 10000;
 
-		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
-		{
-			Parallel.Invoke(
-				() =>
-				{
-					publishedSetupPath = PerformPublish(textfeedbackSenderObject, projName, out versionString, HasPlugins, AutomaticallyUpdateRevision, false, WriteIntoRegistryForWindowsAutostartup, textFeedbackEvent);
-				},
-				() =>
-				{
-					//System.Net.ServicePointManager.DefaultConnectionLimit = 1;
-					//#pragma warning disable
-					//DONE: There is no proper items for bugs fixed etc in next function
-					//bool ThereIsNoProperItemsForBugsFixedEtcInNextFunction;
-					//#pragma warning restore
+		//ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+		//{
+		//	Parallel.Invoke(
+		//		() =>
+		//		{
+		publishedSetupPath = PerformPublish(textfeedbackSenderObject, projName, out versionString, HasPlugins, AutomaticallyUpdateRevision, OpenSetupFileAfterSuccessfullNSIS, WriteIntoRegistryForWindowsAutostartup, textFeedbackEvent, OpenFolderAfterSuccessfullNSIS);
+		//		},
+		//		() =>
+		//		{
+		//			//System.Net.ServicePointManager.DefaultConnectionLimit = 1;
+		//			//#pragma warning disable
+		//			//DONE: There is no proper items for bugs fixed etc in next function
+		//			//bool ThereIsNoProperItemsForBugsFixedEtcInNextFunction;
+		//			//#pragma warning restore
 
-					//TODO: When pulling buglist/improvement etc from Trac repository for a project, must also check in the project's .csproj file whether it uses/references SharedClasses. Then it must also pull the changes from the SharedClasses Trac repository.
-					GetChangeLogs(textfeedbackSenderObject, projName, out BugsFixed, out Improvements, out NewFeatures,
-						textFeedbackEvent: textFeedbackEvent);
-				});
-		});
+		//			//TODO: When pulling buglist/improvement etc from Trac repository for a project, must also check in the project's .csproj file whether it uses/references SharedClasses. Then it must also pull the changes from the SharedClasses Trac repository.
+		//			GetChangeLogs(textfeedbackSenderObject, projName, out BugsFixed, out Improvements, out NewFeatures,
+		//				textFeedbackEvent: textFeedbackEvent);
+		//		});
+		//});
 
 		if (publishedSetupPath != null)
 		{
-			string validatedUrlsectionForProjname = HttpUtility.UrlPathEncode(projName).ToLower();
+			ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+			{
+				string validatedUrlsectionForProjname = HttpUtility.UrlPathEncode(projName).ToLower();
 
-			string rootFtpUri = GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForVsPublishing() + "/" + validatedUrlsectionForProjname;
-			PublishDetails publishDetails = new PublishDetails(
-				projName,
-				versionString,
-				new FileInfo(publishedSetupPath).Length,
-                publishedSetupPath.FileToMD5Hash(),
-				DateTime.Now,
-				rootFtpUri + "/" + (new FileInfo(publishedSetupPath).Name));
-			string errorStringIfFailElseJsonString;
-			bool savedOnline = false;
-			if (WebInterop.SaveObjectOnline(PublishDetails.OnlineJsonCategory, projName + " - " + versionString, publishDetails, out errorStringIfFailElseJsonString))
-				if (WebInterop.SaveObjectOnline(PublishDetails.OnlineJsonCategory, projName + PublishDetails.LastestVersionJsonNamePostfix, publishDetails, out errorStringIfFailElseJsonString))
-					savedOnline = true;
+				string rootFtpUri = GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForVsPublishing() + "/" + validatedUrlsectionForProjname;
+				PublishDetails publishDetails = new PublishDetails(
+					projName,
+					versionString,
+					new FileInfo(publishedSetupPath).Length,
+					publishedSetupPath.FileToMD5Hash(),
+					DateTime.Now,
+					rootFtpUri + "/" + (new FileInfo(publishedSetupPath).Name));
+				string errorStringIfFailElseJsonString;
+				bool savedOnline = false;
+				if (WebInterop.SaveObjectOnline(PublishDetails.OnlineJsonCategory, projName + " - " + versionString, publishDetails, out errorStringIfFailElseJsonString))
+					if (WebInterop.SaveObjectOnline(PublishDetails.OnlineJsonCategory, projName + PublishDetails.LastestVersionJsonNamePostfix, publishDetails, out errorStringIfFailElseJsonString))
+						savedOnline = true;
 
-			string htmlFilePath = CreateHtmlPageReturnFilename(
-				projName,
-				versionString,
-				publishedSetupPath,
-				BugsFixed,
-				Improvements,
-				NewFeatures,
-				savedOnline ? publishDetails : null);
+				string htmlFilePath = CreateHtmlPageReturnFilename(
+					projName,
+					versionString,
+					publishedSetupPath,
+					BugsFixed,
+					Improvements,
+					NewFeatures,
+					savedOnline ? publishDetails : null);
 
-			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent,
-				"Attempting Ftp Uploading of Setup file and index file for " + projName);
-			await NetworkInterop.FtpUploadFiles(
-				//Task uploadTask = NetworkInterop.FtpUploadFiles(
-				textfeedbackSenderObject,
-				rootFtpUri,
-				GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,//NetworkInterop.ftpUsername,
-				GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,//NetworkInterop.ftpPassword,
-				new string[] { publishedSetupPath, htmlFilePath },
-				GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForAFTERvspublishing() + "/" + validatedUrlsectionForProjname,
-				textFeedbackEvent: textFeedbackEvent,
-				progressChanged: progressChanged);
-			//uploadTask.Start();
-			//uploadTask.Wait();
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent,
+					"Attempting Ftp Uploading of Setup file and index file for " + projName);
+				NetworkInterop.FtpUploadFiles(
+					//Task uploadTask = NetworkInterop.FtpUploadFiles(
+					textfeedbackSenderObject,
+					rootFtpUri,
+					GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,//NetworkInterop.ftpUsername,
+					GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,//NetworkInterop.ftpPassword,
+					new string[] { publishedSetupPath, htmlFilePath },
+					OpenWebsite ? GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForAFTERvspublishing() + "/" + validatedUrlsectionForProjname : null,
+					textFeedbackEvent: textFeedbackEvent,
+					progressChanged: progressChanged);
+				//uploadTask.Start();
+				//uploadTask.Wait();
+			},
+			true);
 		}
 	}
 

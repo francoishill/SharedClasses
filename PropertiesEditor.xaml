@@ -1,13 +1,16 @@
-﻿<Window xmlns:extToolkit="http://schemas.microsoft.com/winfx/2006/xaml/presentation/toolkit/extended"  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-				xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-				xmlns:Custom="http://schemas.denisvuyka.wordpress.com/wpfpropertygrid"
-				xmlns:local='clr-namespace:SharedClasses'
-				xmlns:System="clr-namespace:System;assembly=mscorlib"
-				x:Class="SharedClasses.PropertiesEditor"
-				Title="PropertiesEditor"
-				Height="400"
-				Width="1000"
-				WindowStartupLocation='CenterScreen'>
+﻿<Window
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:Custom="http://schemas.denisvuyka.wordpress.com/wpfpropertygrid"
+	xmlns:local='clr-namespace:SharedClasses'
+	xmlns:System="clr-namespace:System;assembly=mscorlib"
+	xmlns:System2="clr-namespace:System.Collections.Generic;assembly=mscorlib"
+	xmlns:extToolkit="http://schemas.xceed.com/wpf/xaml/toolkit"
+	x:Class="SharedClasses.PropertiesEditor"
+	Title="PropertiesEditor"
+	Height="400"
+	Width="1000"
+	WindowStartupLocation='CenterScreen'>
 	<Window.Resources>
 		<!--<local:TmpClass x:Key='tmpclass' />
 		<local:FontList x:Key="FontFamilyList" />
@@ -15,36 +18,53 @@
 		<local:FontStyleConverter x:Key="FontStyleConverter" />
 		<local:FontWeightConverter x:Key="FontWeightConverter" />-->
 		<!--<local:XmlLanguageList x:Key="XmlLanguageList" />-->
-		<local:PipesToNewlinesConverter x:Key='pipesToNewlinesConverter' />
-		<DataTemplate x:Key="String_InlineTemplate">
+		<local:PipesToNewlinesConverter
+			x:Key='pipesToNewlinesConverter' />
+
+		<DataTemplate
+			x:Key='StringListEditor'>
+			<ListBox
+				Background="Red"
+				ItemsSource="{Binding Value}" />
+		</DataTemplate>
+
+		<DataTemplate
+			x:Key="String_InlineTemplate">
 			<Grid>
 				<Grid.ColumnDefinitions>
-					<ColumnDefinition Width="1*" />
-					<ColumnDefinition Width="Auto" />
+					<ColumnDefinition
+						Width="1*" />
+					<ColumnDefinition
+						Width="Auto" />
 				</Grid.ColumnDefinitions>
-				<TextBox Grid.Column="0"
-								 Text="{Binding StringValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-								 IsReadOnly="{Binding IsReadOnly}" />
-				<Button Grid.Column="1"
-								Margin="2,0,0,0"
-								Content="[...]"
-								Width="20"
-								Command="Custom:PropertyEditorCommands.ShowExtendedEditor"
-								CommandParameter="{Binding}" />
+				<TextBox
+					Grid.Column="0"
+					Text="{Binding StringValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+					IsReadOnly="{Binding IsReadOnly}" />
+				<Button
+					Grid.Column="1"
+					Margin="2,0,0,0"
+					Content="[...]"
+					Width="20"
+					Command="Custom:PropertyEditorCommands.ShowExtendedEditor"
+					CommandParameter="{Binding}" />
 			</Grid>
 		</DataTemplate>
-		<DataTemplate x:Key="String_ExtendedTemplate">
+		<DataTemplate
+			x:Key="String_ExtendedTemplate">
 			<Grid>
 				<Grid.RowDefinitions>
-					<RowDefinition Height="*" />
+					<RowDefinition
+						Height="*" />
 				</Grid.RowDefinitions>
-				<TextBox Grid.Row="0"
-								 Text="{Binding StringValue, Converter={StaticResource pipesToNewlinesConverter}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-								 IsReadOnly="{Binding IsReadOnly}"
-								 TextWrapping="Wrap"
-								 AcceptsReturn='True'
-								 IsUndoEnabled='True'
-								 UndoLimit='100' />
+				<TextBox
+					Grid.Row="0"
+					Text="{Binding StringValue, Converter={StaticResource pipesToNewlinesConverter}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+					IsReadOnly="{Binding IsReadOnly}"
+					TextWrapping="Wrap"
+					AcceptsReturn='True'
+					IsUndoEnabled='True'
+					UndoLimit='100' />
 			</Grid>
 		</DataTemplate>
 		<!--<DataTemplate x:Key="StringList_InlineTemplateKey">
@@ -97,88 +117,115 @@
 	</Window.Resources>
 	<Grid>
 		<Grid.ColumnDefinitions>
-			<ColumnDefinition Width='auto' />
+			<ColumnDefinition
+				Width='auto' />
 			<!--<ColumnDefinition Width='100' />-->
 			<ColumnDefinition />
 		</Grid.ColumnDefinitions>
-		<ListBox x:Name='listBox1'
-						 MinWidth='200'
-						 HorizontalAlignment='Stretch'
-						 SelectionChanged="listBox1_SelectionChanged"
-						 SelectionMode='Single'
-						 HorizontalContentAlignment='Stretch'>
+		<ListBox
+			x:Name='listBox1'
+			MinWidth='200'
+			HorizontalAlignment='Stretch'
+			SelectionChanged="listBox1_SelectionChanged"
+			SelectionMode='Single'
+			HorizontalContentAlignment='Stretch'>
 			<ListBox.Resources>
-				<SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}"
-												 Color="Transparent" />
-				<SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
-												 Color="Transparent" />
-				<SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"
-												 Color="Black" />
-				<Style TargetType="{x:Type ListBoxItem}">
-					<Setter Property="ContentTemplate">
+				<SolidColorBrush
+					x:Key="{x:Static SystemColors.ControlBrushKey}"
+					Color="Transparent" />
+				<SolidColorBrush
+					x:Key="{x:Static SystemColors.HighlightBrushKey}"
+					Color="Transparent" />
+				<SolidColorBrush
+					x:Key="{x:Static SystemColors.HighlightTextBrushKey}"
+					Color="Black" />
+				<Style
+					TargetType="{x:Type ListBoxItem}">
+					<Setter
+						Property="ContentTemplate">
 						<Setter.Value>
 							<DataTemplate>
-								<Border x:Name='listboxitemBorder'
-												CornerRadius='5'
-												Margin='5,5,5,0'
-												HorizontalAlignment='Stretch'
-												Padding='5,3'>
+								<Border
+									x:Name='listboxitemBorder'
+									CornerRadius='5'
+									Margin='5,5,5,0'
+									HorizontalAlignment='Stretch'
+									Padding='5,3'>
 									<Border.Background>
-										<LinearGradientBrush StartPoint='0,0'
-																				 EndPoint='0,1'>
-											<GradientStop Color='#fff'
-																		Offset='0' />
-											<GradientStop Color='#ddd'
-																		Offset='0.7' />
-											<GradientStop Color='#ccc'
-																		Offset='1' />
+										<LinearGradientBrush
+											StartPoint='0,0'
+											EndPoint='0,1'>
+											<GradientStop
+												Color='#fff'
+												Offset='0' />
+											<GradientStop
+												Color='#ddd'
+												Offset='0.7' />
+											<GradientStop
+												Color='#ccc'
+												Offset='1' />
 										</LinearGradientBrush>
 									</Border.Background>
-									<TextBlock x:Name='listboxitemTextBlock'
-														 FontSize='20'
-														 Foreground='#333'
-														 Text='{Binding}' />
+									<TextBlock
+										x:Name='listboxitemTextBlock'
+										FontSize='20'
+										Foreground='#333'
+										Text='{Binding}' />
 								</Border>
 								<DataTemplate.Triggers>
-									<DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource TemplatedParent}}"
-															 Value="True">
-										<Setter Property="Background"
-														TargetName="listboxitemBorder">
+									<DataTrigger
+										Binding="{Binding IsMouseOver, RelativeSource={RelativeSource TemplatedParent}}"
+										Value="True">
+										<Setter
+											Property="Background"
+											TargetName="listboxitemBorder">
 											<Setter.Value>
-												<LinearGradientBrush StartPoint='0,0'
-																						 EndPoint='0,1'>
-													<GradientStop Color='#555'
-																				Offset='0' />
-													<GradientStop Color='#222'
-																				Offset='0.7' />
-													<GradientStop Color='#000'
-																				Offset='1' />
+												<LinearGradientBrush
+													StartPoint='0,0'
+													EndPoint='0,1'>
+													<GradientStop
+														Color='#555'
+														Offset='0' />
+													<GradientStop
+														Color='#222'
+														Offset='0.7' />
+													<GradientStop
+														Color='#000'
+														Offset='1' />
 												</LinearGradientBrush>
 											</Setter.Value>
 										</Setter>
-										<Setter Property="Foreground"
-														TargetName="listboxitemTextBlock"
-														Value='#fff' />
+										<Setter
+											Property="Foreground"
+											TargetName="listboxitemTextBlock"
+											Value='#fff' />
 									</DataTrigger>
-									<DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource TemplatedParent}}"
-															 Value="True">
-										<Setter Property="Background"
-														TargetName="listboxitemBorder">
+									<DataTrigger
+										Binding="{Binding IsSelected, RelativeSource={RelativeSource TemplatedParent}}"
+										Value="True">
+										<Setter
+											Property="Background"
+											TargetName="listboxitemBorder">
 											<Setter.Value>
-												<LinearGradientBrush StartPoint='0,0'
-																						 EndPoint='0,1'>
-													<GradientStop Color='#79b'
-																				Offset='0' />
-													<GradientStop Color='#468'
-																				Offset='0.7' />
-													<GradientStop Color='#357'
-																				Offset='1' />
+												<LinearGradientBrush
+													StartPoint='0,0'
+													EndPoint='0,1'>
+													<GradientStop
+														Color='#79b'
+														Offset='0' />
+													<GradientStop
+														Color='#468'
+														Offset='0.7' />
+													<GradientStop
+														Color='#357'
+														Offset='1' />
 												</LinearGradientBrush>
 											</Setter.Value>
 										</Setter>
-										<Setter Property="Foreground"
-														TargetName="listboxitemTextBlock"
-														Value='#fff' />
+										<Setter
+											Property="Foreground"
+											TargetName="listboxitemTextBlock"
+											Value='#fff' />
 									</DataTrigger>
 								</DataTemplate.Triggers>
 							</DataTemplate>
@@ -193,10 +240,11 @@
 				<ListBoxItem>4. lkjsdf</ListBoxItem>
 			</ListBox.Items>-->
 		</ListBox>
-		<GridSplitter Width='5'
-									BorderThickness='2'
-									BorderBrush='Transparent'
-									Background='#777' />
+		<GridSplitter
+			Width='5'
+			BorderThickness='2'
+			BorderBrush='Transparent'
+			Background='#777' />
 		<!--<Custom:PropertyGrid x:Name='propertyGrid1'
 												 Grid.Column='1'
 												 PropertyDisplayMode="All"
@@ -211,7 +259,10 @@
 				</Custom:TabbedLayout>
 			</Custom:PropertyGrid.Layout>
 		</Custom:PropertyGrid>-->
-		<extToolkit:PropertyGrid x:Name='propertyGrid2' ShowAdvancedOptions='True' Grid.Column='2'>
+		<extToolkit:PropertyGrid
+			x:Name='propertyGrid2'
+			ShowAdvancedOptions='True'
+			Grid.Column='2'>
 			<extToolkit:PropertyGrid.EditorDefinitions>
 				<!--<extToolkit:EditorDefinition TargetType="{x:Type System:DateTime}">
 					<extToolkit:EditorDefinition.EditorTemplate>
@@ -221,11 +272,13 @@
 						</DataTemplate>
 					</extToolkit:EditorDefinition.EditorTemplate>
 				</extToolkit:EditorDefinition>-->
-				<extToolkit:EditorDefinition TargetType="{x:Type System:String}">
+				<extToolkit:EditorDefinition
+					TargetType="{x:Type System:String}">
 					<extToolkit:EditorDefinition.EditorTemplate>
 						<DataTemplate>
-							<TextBox AcceptsReturn='True'
-											 Text="{Binding Value, Converter={StaticResource pipesToNewlinesConverter}}" />
+							<TextBox
+								AcceptsReturn='True'
+								Text="{Binding Value, Converter={StaticResource pipesToNewlinesConverter}}" />
 						</DataTemplate>
 					</extToolkit:EditorDefinition.EditorTemplate>
 				</extToolkit:EditorDefinition>

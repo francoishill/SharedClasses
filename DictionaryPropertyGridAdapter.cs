@@ -152,10 +152,11 @@ public class ParameterNameAndType
 	public string Name;
 	public Type type;
 	public object Value;
-	public ParameterNameAndType(string NameIn, Type typeIn)
+	public ParameterNameAndType(string NameIn, Type typeIn, object Value = null)
 	{
-		Name = NameIn;
-		type = typeIn;
+		this.Name = NameIn;
+		this.type = typeIn;
+		this.Value = Value;
 	}
 
 	public void OverrideValue(object Value)

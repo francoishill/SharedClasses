@@ -15,6 +15,12 @@ public interface Iclientside_DynamicCodeInvokingServerClass : IXmlRpcProxy
 	DynamicCodeInvoking.RunCodeReturnStruct RunCodeDynamically(string AssemblyQualifiedNameOfType, string[] commandParameterTypesfullnames, string methodName, params object[] parameterValues);
 	[XmlRpcMethod("RunBlockOfCode")]
 	DynamicCodeInvoking.RunCodeReturnStruct RunBlockOfCode(string block);
+	[XmlRpcMethod("SaveJsonStringToFile")]
+	DynamicCodeInvoking.RunCodeReturnStruct SaveJsonStringToFile(string Category, string Name, string jsonString);
+	[XmlRpcMethod("GetJsonStringFromFile")]
+	DynamicCodeInvoking.RunCodeReturnStruct GetJsonStringFromFile(string Category, string Name);
+	[XmlRpcMethod("GetAutoSyncVersion")]
+	DynamicCodeInvoking.RunCodeReturnStruct GetAutoSyncVersion(string UserFolderName);
 }
 
 public class XmlRpcInterop
@@ -147,12 +153,30 @@ public class XmlRpcInterop
 		[XmlRpcMethod("RunCodeDynamically")]
 		public DynamicCodeInvoking.RunCodeReturnStruct RunCodeDynamically(string AssemblyQualifiedNameOfType, string[] commandParameterTypesfullnames, string methodName, params object[] parameterValues)
 		{
-			return DynamicCodeInvoking.RunCodeFromStaticClass(AssemblyQualifiedNameOfType, commandParameterTypesfullnames, methodName, parameterValues);
+			return DynamicCodeInvoking.ServerRunCodeFromStaticClass(AssemblyQualifiedNameOfType, commandParameterTypesfullnames, methodName, parameterValues);
 		}
 		[XmlRpcMethod("RunBlockOfCode")]
 		public DynamicCodeInvoking.RunCodeReturnStruct RunBlockOfCode(string block)
 		{
-			return DynamicCodeInvoking.RunBlockOfCode(block);
+			return DynamicCodeInvoking.ServerRunBlockOfCode(block);
+		}
+
+		[XmlRpcMethod("SaveJsonStringToFile")]
+		public DynamicCodeInvoking.RunCodeReturnStruct SaveJsonStringToFile(string Category, string Name, string jsonString)
+		{
+			return DynamicCodeInvoking.ServerSaveJsonStringToFile(Category, Name, jsonString);
+		}
+
+		[XmlRpcMethod("GetJsonStringFromFile")]
+		public DynamicCodeInvoking.RunCodeReturnStruct GetJsonStringFromFile(string Category, string Name)
+		{
+			return DynamicCodeInvoking.ServerGetJsonStringFromFile(Category, Name);
+		}
+
+		[XmlRpcMethod("GetAutoSyncVersion")]
+		public DynamicCodeInvoking.RunCodeReturnStruct GetAutoSyncVersion(string UserFolderName)
+		{
+			return DynamicCodeInvoking.ServerGetAutoSyncVersion(UserFolderName);
 		}
 	}
 

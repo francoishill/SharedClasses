@@ -118,6 +118,12 @@
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\QuickAccess\InlineCommandToolkit\InlineCommandToolkit.csproj">
+      <Project>{3f73ece5-851e-4c02-ac70-37c0f92783ad}</Project>
+      <Name>InlineCommandToolkit</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

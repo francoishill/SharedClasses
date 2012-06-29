@@ -1653,6 +1653,12 @@ namespace SharedClasses
 			e.Handled = true;
 		}
 
+		private void labelEditOnlineSettings_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+		{
+			e.Handled = true;
+			GenericSettings.ShowAndEditAllOnlineSettings();
+		}
+
 		//private void Button_Click(object sender, RoutedEventArgs e)
 		//{
 		//	CustomBalloonTipwpf.ShowCustomBalloonTip(

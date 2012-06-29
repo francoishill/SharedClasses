@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.WpfPropertyGrid;
 using System.Windows.Data;
 using System.Windows.Documents;
+//using System.Windows.Forms;
+using System.Data;
 using UriProtocol = SharedClasses.GlobalSettings.VisualStudioInteropSettings.UriProtocol;
 
 namespace SharedClasses
@@ -24,6 +27,10 @@ namespace SharedClasses
 		{
 			InitializeComponent();
 
+			propertyGrid2.EditorDefinitions.Add(new Xceed.Wpf.Toolkit.PropertyGrid.EditorDefinition() { EditorTemplate = (DataTemplate)this.Resources["StringListEditor"] });
+
+			//propertyGrid2.
+
 			//List<string> ResourceKeys = new List<string>();
 			//foreach (string s in this.Resources.Keys)
 			//	ResourceKeys.Add(s);
@@ -32,8 +39,8 @@ namespace SharedClasses
 			//	UserMessages.ShowWarningMessage("Could not find inline template key = " + String_InlineTemplateKey);
 			//if (!ResourceKeys.Contains(String_ExtendedTemplateKey))
 			//	UserMessages.ShowWarningMessage("Could not find inline template key = " + String_ExtendedTemplateKey);
-			
-			
+
+
 			//if (!ResourceKeys.Contains(StringList_InlineTemplateKey))
 			//	UserMessages.ShowWarningMessage("Could not find inline template key = " + StringList_InlineTemplateKey);
 			//if (!ResourceKeys.Contains(StringList_ExtendedTemplateKey))
@@ -45,14 +52,13 @@ namespace SharedClasses
 
 			//foreach (Type type in new Type[] { typeof(String), typeof(Int16?), typeof(Int32?), typeof(Int64?), typeof(Double?), typeof(Boolean?), typeof(UriProtocol?), typeof(Int16), typeof(Int32), typeof(Int64), typeof(Double), typeof(Boolean), typeof(UriProtocol) })
 			//	propertyGrid1.Editors.Add(new TypeEditor(type, Resources[String_InlineTemplateKey], Resources[String_ExtendedTemplateKey]));
-			
+
 			////tabControl1.ItemsSource = new ObservableCollection<object>() { selectedObject };
 			//propertyGrid1.SelectedObject = null;
 
 			listBox1.Items.Clear();
 			foreach (object obj in objectsToView)
 				listBox1.Items.Add(obj);
-
 			//propertyGrid1.SelectedObject = selectedObject;
 		}
 
@@ -63,8 +69,30 @@ namespace SharedClasses
 			//propertyGrid1.SelectedObject = e.AddedItems[0];
 			propertyGrid2.SelectedObject = e.AddedItems[0];
 		}
-
 	}
+
+	//public class MyCollectionEditor : CollectionEditor
+	//{
+	//	public delegate void MyFormClosedEventHandler(object sender, FormClosedEventArgs e);
+
+	//	public static event MyFormClosedEventHandler MyFormClosed;
+
+	//	public MyCollectionEditor(Type type) : base(type) { }
+	//	protected override CollectionForm CreateCollectionForm()
+	//	{
+	//		CollectionForm collectionForm = base.CreateCollectionForm();
+	//		collectionForm.FormClosed += new FormClosedEventHandler(collection_FormClosed);
+	//		return collectionForm;
+	//	}
+
+	//	void collection_FormClosed(object sender, FormClosedEventArgs e)
+	//	{
+	//		if (MyFormClosed != null)
+	//		{
+	//			MyFormClosed(this, e);
+	//		}
+	//	}
+	//}
 
 	public class PipesToNewlinesConverter : IValueConverter
 	{

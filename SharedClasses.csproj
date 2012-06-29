@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-	<ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
@@ -22,7 +22,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;WINFORMS</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
@@ -32,18 +32,14 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>TRACE;WINFORMS</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="ApplicationRecoveryAndRestart.cs" />
     <Compile Include="AutoCompleteInterop.cs" />
     <Compile Include="ChartInterop_MeterReadings.cs" />
-    <Compile Include="CommandUsercontrol.xaml.cs">
-      <DependentUpon>CommandUsercontrol.xaml</DependentUpon>
-    </Compile>
     <Compile Include="CompressAndDecompressInterop.cs" />
     <Compile Include="CustomBalloonTip.cs">
       <SubType>Form</SubType>
@@ -51,37 +47,16 @@
     <Compile Include="CustomBalloonTip.Designer.cs">
       <DependentUpon>CustomBalloonTip.cs</DependentUpon>
     </Compile>
-    <Compile Include="CustomBalloonTipwpf.xaml.cs">
-      <DependentUpon>CustomBalloonTipwpf.xaml</DependentUpon>
-    </Compile>
     <Compile Include="DateTimeInterop.cs" />
-    <Compile Include="DictionaryPropertyGridAdapter.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="DynamicCodeInvoking.cs" />
     <Compile Include="DynamicCodeInvokingUserControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="DynamicCodeInvokingUserControl.Designer.cs">
       <DependentUpon>DynamicCodeInvokingUserControl.cs</DependentUpon>
     </Compile>
-    <Compile Include="EncodeAndDecodeInterop.cs" />
-    <Compile Include="EnumsInterop.cs" />
-    <Compile Include="EventHandlers.cs" />
-    <Compile Include="FileSystemInterop.cs" />
     <Compile Include="FormAndControlsInterop.cs" />
     <Compile Include="IconsInterop.cs" />
     <Compile Include="ImagesInterop.cs" />
-    <Compile Include="InlineCommands.cs" />
-    <Compile Include="InlineCommandsUserControl.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="InlineCommandsUserControl.Designer.cs">
-      <DependentUpon>InlineCommandsUserControl.cs</DependentUpon>
-    </Compile>
-    <Compile Include="InlineCommandsUserControlWPF.xaml.cs">
-      <DependentUpon>InlineCommandsUserControlWPF.xaml</DependentUpon>
-    </Compile>
     <Compile Include="InputBox.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -92,47 +67,18 @@
     <Compile Include="MicrosoftOfficeInterop.cs" />
     <Compile Include="MotionBlurEffect.cs" />
     <Compile Include="MouseHooks.cs" />
-    <Compile Include="NetworkInterop.cs" />
     <Compile Include="NetworkInteropSerializedClasses\InfoTransferred.cs" />
-    <Compile Include="NsisInterop.cs" />
-    <Compile Include="OverlayForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="OverlayForm.Designer.cs">
-      <DependentUpon>OverlayForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="OverlayWindow.xaml.cs">
-      <DependentUpon>OverlayWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="PhpInterop.cs" />
-    <Compile Include="PickItemForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="PickItemForm.Designer.cs">
-      <DependentUpon>PickItemForm.cs</DependentUpon>
-    </Compile>
     <Compile Include="QueueingActionsInterop.cs" />
     <Compile Include="ScreenAndDrawingInterop.cs" />
-    <Compile Include="SerializationInterop.cs" />
-    <Compile Include="SettingsInterop.cs" />
-    <Compile Include="SharedClassesSettings.cs" />
     <Compile Include="SnarlNetworkProtocol.cs" />
     <Compile Include="StartupbatInterop.cs" />
-    <Compile Include="StylingInterop.cs" />
-    <Compile Include="SvnInterop.cs" />
     <Compile Include="TemplateWPFwindow.xaml.cs">
       <DependentUpon>TemplateWPFwindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="TextFilesInterop.cs" />
-    <Compile Include="ThreadingInterop.cs" />
     <Compile Include="UserActivityHook.cs" />
-    <Compile Include="UserMessages.cs" />
-    <Compile Include="VisualStudioInterop.cs" />
-    <Compile Include="Win32Api.cs" />
-    <Compile Include="WindowsInterop.cs" />
-    <Compile Include="WPFdraggableCanvas.cs" />
     <Compile Include="WPFinterop.cs" />
-    <Compile Include="XmlRpcInterop.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="CustomBalloonTip.resx">
@@ -140,15 +86,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="DynamicCodeInvokingUserControl.resx">
       <DependentUpon>DynamicCodeInvokingUserControl.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="InlineCommandsUserControl.resx">
-      <DependentUpon>InlineCommandsUserControl.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="OverlayForm.resx">
-      <DependentUpon>OverlayForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="PickItemForm.resx">
-      <DependentUpon>PickItemForm.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
@@ -215,27 +152,18 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
-    <Page Include="CommandUsercontrol.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="CustomBalloonTipwpf.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="InlineCommandsUserControlWPF.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="OverlayWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
     <Page Include="TemplateWPFwindow.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\QuickAccess\InlineCommandToolkit\InlineCommandToolkit.csproj">
+      <Project>{3f73ece5-851e-4c02-ac70-37c0f92783ad}</Project>
+      <Name>InlineCommandToolkit</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

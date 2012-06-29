@@ -1066,14 +1066,14 @@ public class NetworkInterop
 		//MessageBox.Show(this, "File assebled successfully");
 	}
 
-	public async static Task FtpUploadFiles(Object textfeedbackSenderObject, string ftpRootUri, string userName, string password, string[] localFilenames, string urlWhenSuccessullyUploaded = null, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
+	public static void FtpUploadFiles(Object textfeedbackSenderObject, string ftpRootUri, string userName, string password, string[] localFilenames, string urlWhenSuccessullyUploaded = null, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
 	{
 		try
 		{
 			bool DirexistCanContinue = false;
-			if (!await FtpDirectoryExists(ftpRootUri, userName, password))
+			if (!FtpDirectoryExists(ftpRootUri, userName, password))
 			{
-				if (await CreateFTPDirectory(ftpRootUri, userName, password))
+				if (CreateFTPDirectory(ftpRootUri, userName, password))
 					DirexistCanContinue = true;
 			}
 			else DirexistCanContinue = true;
@@ -1092,10 +1092,10 @@ public class NetworkInterop
 						bool isComplete = false;
 						client.UploadFileCompleted += (snder, evtargs) =>
 						{
-							isComplete = true;
 							RaiseProgressChangedEvent_Ifnotnull(ref progressChanged,
 								100,
 								100);
+							isComplete = true;
 						};
 						client.UploadProgressChanged += (snder, evtargs) =>
 						{
@@ -1106,7 +1106,9 @@ public class NetworkInterop
 									100);
 							}
 						};
-						await client.UploadFileTaskAsync(dirOnFtpServer, "STOR", localFilename);
+						client.UploadFileAsync(new Uri(dirOnFtpServer), "STOR", localFilename);
+						while (!isComplete)
+							Application.DoEvents();
 						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Successfully uploaded " + fileNameOnServer);
 					}
 					if (urlWhenSuccessullyUploaded != null) Process.Start(urlWhenSuccessullyUploaded);
@@ -1129,7 +1131,58 @@ public class NetworkInterop
 		}
 	}
 
-	public async static Task<bool> FtpDirectoryExists(string directoryPath, string ftpUser, string ftpPassword)
+	public static void FtpDownloadFile(Object textfeedbackSenderObject, string localRootFolder, string userName, string password, string onlineFileUrl, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
+	{
+		try
+		{
+			if (!Directory.Exists(localRootFolder))
+				Directory.CreateDirectory(localRootFolder);
+			using (System.Net.WebClient client = new System.Net.WebClient())
+			{
+				client.Credentials = new System.Net.NetworkCredential(userName, password);
+				//client.Headers.Add(HttpRequestHeader.UserAgent, "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)");
+				//foreach (string localFilename in localFilenames)
+				//{
+				bool isComplete = false;
+				client.DownloadFileCompleted += (snder, evtargs) =>
+				{
+					RaiseProgressChangedEvent_Ifnotnull(ref progressChanged,
+						100,
+						100);
+					isComplete = true;
+				};
+				client.DownloadProgressChanged += (snder, evtargs) =>
+				{
+					if (!isComplete)
+					{
+						RaiseProgressChangedEvent_Ifnotnull(ref progressChanged,
+							evtargs.ProgressPercentage,
+							100);
+					}
+				};
+				client.DownloadFileAsync(new Uri(onlineFileUrl), localRootFolder.TrimEnd('\\') + "\\" + Path.GetFileName(onlineFileUrl.Replace("ftp://", "").Replace("/", "\\")));
+				while (!isComplete)
+					Application.DoEvents();
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Successfully download " + onlineFileUrl);
+				//}
+				client.Dispose();
+				GC.Collect();
+				GC.WaitForPendingFinalizers();
+			}
+		}
+		catch (Exception exc)
+		{
+			if (exc.Message.ToLower().Contains("the operation has timed out"))
+			{
+				if (UserMessages.Confirm("Download from ftp timed out, the System.Net.ServicePointManager.DefaultConnectionLimit has been reached, restart the application now?"))
+					//Application.Restart();
+					ApplicationRecoveryAndRestart.TestCrash(false);
+			}
+			MessageBox.Show("Exception in transfer: " + exc.Message);
+		}
+	}
+
+	public static bool FtpDirectoryExists(string directoryPath, string ftpUser, string ftpPassword)
 	{
 		bool IsExists = true;
 		try
@@ -1138,18 +1191,23 @@ public class NetworkInterop
 			request.Credentials = new NetworkCredential(ftpUser, ftpPassword);
 			request.Method = WebRequestMethods.Ftp.ListDirectory;
 
-			FtpWebResponse response = (FtpWebResponse)(await request.GetResponseAsync());
+			FtpWebResponse response = (FtpWebResponse)(request.GetResponse());
 			IsExists = true;
 		}
 		catch (WebException ex)
 		{
-			Console.WriteLine("WebException on FtpDirectoryExists" + ex.Message);
+			//Console.WriteLine("WebException on FtpDirectoryExists" + ex.Message);
+			UserMessages.ShowErrorMessage("WebException on FtpDirectoryExists: " + ex.Message);
 			IsExists = false;
+		}
+		catch (Exception ex)
+		{
+			UserMessages.ShowErrorMessage("Exception on FtpDirectoryExists" + ex.Message);
 		}
 		return IsExists;
 	}
 
-	public async static Task<bool> CreateFTPDirectory(string directory, string ftpUser, string ftpPassword)
+	public static bool CreateFTPDirectory(string directory, string ftpUser, string ftpPassword)
 	{
 
 		try
@@ -1161,7 +1219,7 @@ public class NetworkInterop
 			requestDir.UsePassive = true;
 			requestDir.UseBinary = true;
 			requestDir.KeepAlive = false;
-			FtpWebResponse response = (FtpWebResponse)(await requestDir.GetResponseAsync());
+			FtpWebResponse response = (FtpWebResponse)(requestDir.GetResponse());
 			Stream ftpStream = response.GetResponseStream();
 
 			ftpStream.Close();
@@ -1182,6 +1240,51 @@ public class NetworkInterop
 				response.Close();
 				return false;
 			}
+		}
+	}
+
+	public static string[] GetFileList(string directory, string ftpUser, string ftpPassword)
+	{
+		string[] downloadFiles;
+		StringBuilder result = new StringBuilder();
+		WebResponse response = null;
+		StreamReader reader = null;
+		try
+		{
+			FtpWebRequest reqFTP;
+			reqFTP = (FtpWebRequest)WebRequest.Create(new Uri(directory));
+			//reqFTP.UseBinary = true;
+			reqFTP.Credentials = new NetworkCredential(ftpUser, ftpPassword);
+			reqFTP.Method = WebRequestMethods.Ftp.ListDirectory;
+			//reqFTP.Proxy = null;
+			//reqFTP.KeepAlive = false;
+			//reqFTP.UsePassive = false;
+			response = reqFTP.GetResponse();
+			reader = new StreamReader(response.GetResponseStream());
+			string line = reader.ReadLine();
+			while (line != null)
+			{
+				result.Append(line);
+				result.Append("\n");
+				line = reader.ReadLine();
+			}
+			// to remove the trailing '\n'
+			result.Remove(result.ToString().LastIndexOf('\n'), 1);
+			return result.ToString().Split('\n');
+		}
+		catch (Exception ex)
+		{
+			UserMessages.ShowErrorMessage("Error getting file list: " + ex.Message);
+			if (reader != null)
+			{
+				reader.Close();
+			}
+			if (response != null)
+			{
+				response.Close();
+			}
+			downloadFiles = null;
+			return downloadFiles;
 		}
 	}
 
@@ -1730,7 +1833,7 @@ GlobalSettings.ReadConsole(
 #elif CONSOLE
 GlobalSettings.ReadConsole(
 #endif
-				"Enter the message to send it to the Sever (type exit to exit)");//Console.ReadLine();
+"Enter the message to send it to the Sever (type exit to exit)");//Console.ReadLine();
 			if (input == "exit" || input == null)
 				break;
 			ns.Write(Encoding.ASCII.GetBytes(input), 0, input.Length);

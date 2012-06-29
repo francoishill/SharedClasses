@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Reflection;
 using System.Xml.Serialization;
-//using System.Linq;
+using System.Linq;
 using System.Runtime;
 #if WPF && HAVEPLUGINS
 using DynamicDLLsInterop;
@@ -11,6 +11,14 @@ using DynamicDLLsInterop;
 using System.Windows.Forms;
 using System.IO;
 using System.Globalization;
+using System.Runtime.Remoting.Proxies;
+using System.Runtime.Remoting.Messaging;
+using System.Runtime.Remoting;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.Drawing.Design;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
 
 
 namespace SharedClasses
@@ -26,6 +34,32 @@ namespace SharedClasses
 		}
 	}
 #endif
+
+	public static class GenericCloner
+	{
+		public static T Clone<T>(this T source)
+		{
+			if (!typeof(T).IsSerializable)
+			{
+				throw new ArgumentException("The type must be serializable.", "source");
+			}
+
+			// Don't serialize a null object, simply return the default for that object
+			if (Object.ReferenceEquals(source, null))
+			{
+				return default(T);
+			}
+
+			IFormatter formatter = new BinaryFormatter();
+			Stream stream = new MemoryStream();
+			using (stream)
+			{
+				formatter.Serialize(stream, source);
+				stream.Seek(0, SeekOrigin.Begin);
+				return (T)formatter.Deserialize(stream);
+			}
+		}
+	}
 
 	[AttributeUsage(AttributeTargets.Property)]
 	public class SettingAttribute : Attribute
@@ -344,15 +378,7 @@ namespace SharedClasses
 					PropertyInfo[] staticProperties = type.GetProperties(BindingFlags.Static | BindingFlags.Public);
 					foreach (PropertyInfo spi in staticProperties)
 						if (type == spi.PropertyType)//Check to find the static "Instance" of the class
-						{
-							//object obj = spi.GetValue(null);
 							objList.Add(spi.GetValue(null));
-							//return;
-
-							//PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Instance);//Find all properties of class
-							//foreach (PropertyInfo pi in properties)
-							//	MessageBox.Show(type.Name + "." + pi.Name);
-						}
 				}
 
 			objList.Add(TempClass.Instance);
@@ -360,7 +386,94 @@ namespace SharedClasses
 			pe.ShowDialog();
 			pe = null;
 		}
+		public static void ShowAndEditAllOnlineSettings()
+		{
+			List<object> objList = new List<object>();
+
+			Dictionary<IInterceptorNotifiable, Dictionary<PropertyInfo, object>> objectsAndPropertyValues = new Dictionary<IInterceptorNotifiable, Dictionary<PropertyInfo, object>>();
+
+			foreach (Type type in typeof(OnlineSettings).GetNestedTypes(BindingFlags.Public))
+				if (!type.IsAbstract && type.BaseType.Name == typeof(OnlineSettings.BaseOnlineClass<>).Name)//Get all settings classes
+				{
+					PropertyInfo[] staticProperties = type.BaseType.GetProperties(BindingFlags.Static | BindingFlags.Public);
+					foreach (PropertyInfo spi in staticProperties)
+						if (type == spi.PropertyType)//Check to find the static "Instance" of the class
+						{
+							var tmpobj = (IInterceptorNotifiable)spi.GetValue(null);
+							objList.Add(tmpobj);
+
+							var tmpPropertyValues = new Dictionary<PropertyInfo, object>();
+							foreach (var prop in tmpobj.GetType().GetProperties())
+							{
+								tmpPropertyValues.Add(prop, prop.GetValue(tmpobj).Clone());
+							}
+							objectsAndPropertyValues.Add(tmpobj, tmpPropertyValues);
+						}
+				}
+			PropertiesEditor pe = new PropertiesEditor(objList);
+			pe.ShowDialog();
+			pe = null;
+
+			//Check if any of the properties changed.
+			var keys = objectsAndPropertyValues.Keys.ToArray();
+			var values = objectsAndPropertyValues.Values.ToArray();
+			for (int i = 0; i < keys.Length; i++)
+			{
+				foreach (var prop in values[i].Keys)
+				{
+					object tmpobj = values[i][prop];
+					object tmpobj2 = prop.GetValue(keys[i]);
+
+					ComparisonResult compareResult = CompareObjectsByValue(tmpobj, tmpobj2);
+					switch (compareResult)
+					{
+						case ComparisonResult.NullValue:
+							UserMessages.ShowWarningMessage(string.Format("Cannot compare values, one/both null values. Obj1 = '{0}', Obj2 = '{1}'", (tmpobj == null ? "[NULL]" : tmpobj.ToString()), (tmpobj2 == null ? "[NULL]" : tmpobj2.ToString())));
+							break;
+						case ComparisonResult.DifferentTypes:
+							UserMessages.ShowWarningMessage(string.Format("Cannot compare different types of '{0}' and '{1}'", tmpobj.GetType().ToString(), tmpobj2.GetType().ToString()));
+							break;
+						case ComparisonResult.Equal:
+							//UserMessages.ShowInfoMessage("Equal");
+							break;
+						case ComparisonResult.NotEqual:
+							//UserMessages.ShowWarningMessage("Changed: " + prop.Name);
+							keys[i].OnPropertySet(prop.Name);
+							break;
+						case ComparisonResult.UnsupportedType:
+							UserMessages.ShowWarningMessage(string.Format("Type unsupported for comparison, either Obj1 = '{0}' or Obj2 = '{1}'", tmpobj.GetType().ToString(), tmpobj2.GetType().ToString()));
+							break;
+					}
+				}
+			}
+		}
 #endif
+
+		public enum ComparisonResult { Equal, NotEqual, UnsupportedType, DifferentTypes, NullValue };
+		public static ComparisonResult CompareObjectsByValue(object obj1, object obj2)
+		{
+			if (obj1 == null || obj2 == null)
+				return ComparisonResult.NullValue;
+			if (obj1.GetType() != obj2.GetType())
+				return ComparisonResult.DifferentTypes;
+
+			if (obj1 is string || obj1 is char
+						   || obj1 is bool
+						   || obj1 is int || obj1 is long || obj1 is double || obj1 is decimal || obj1 is float
+						   || obj1 is byte || obj1 is short || obj1 is sbyte || obj1 is ushort || obj1 is uint || obj1 is ulong
+						   || obj1 is DateTime
+						   || obj1 is Enum)
+			{
+				return obj1.Equals(obj2) ? ComparisonResult.Equal : ComparisonResult.NotEqual;
+			}
+			else if (obj1 is List<string>)
+			{
+				List<string> tmplist1 = obj1 as List<string>;
+				List<string> tmplist2 = obj2 as List<string>;
+				return tmplist1.SequenceEqual(tmplist2, StringComparer.InvariantCultureIgnoreCase) ? ComparisonResult.Equal : ComparisonResult.NotEqual;
+			}
+			return ComparisonResult.UnsupportedType;
+		}
 
 		//TODO: Have a look at Lazy<> in c#, being able to initialize an object the first time it is used.
 		public abstract void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH");
@@ -953,48 +1066,6 @@ GlobalSettings.ReadConsole(
 			}
 		}
 
-		public class PublishSettings : GenericSettings
-		{
-			private static volatile PublishSettings instance;
-			private static object lockingObject = new Object();
-
-			public static PublishSettings Instance
-			{
-				get
-				{
-					if (instance == null)
-					{
-						lock (lockingObject)
-						{
-							if (instance == null)
-							{
-								instance = Interceptor<PublishSettings>.Create();//new TracXmlRpcInteropSettings();
-								instance.LoadFromFile(RootApplicationNameForSharedClasses);
-							}
-						}
-					}
-					return instance;
-				}
-			}
-
-			[Description("A tasklist of application names to be added defaultly to the tasklist to pick, split with pipe character |.")]
-			public string ListedApplicationNames { get; set; }
-			public List<string> GetListedApplicationNames()
-			{
-				return new List<string>(ListedApplicationNames.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries));
-			}
-
-			public override void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
-			{
-				instance = Interceptor<PublishSettings>.Create(SettingsInterop.GetSettings<PublishSettings>(ApplicationName, SubfolderNameInApplication, CompanyName));
-			}
-
-			public override void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")
-			{
-				SettingsInterop.FlushSettings<PublishSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
-			}
-		}
-
 		[Serializable]
 		public class SubversionSettings : GenericSettings
 		{
@@ -1152,9 +1223,93 @@ GlobalSettings.ReadConsole(
 		}
 	}
 
+	//public class StringList : List<string> { }
+
 	public static class OnlineSettings
 	{
-		public abstract class BaseOnlineClass<T> where T : BaseOnlineClass<T>, new()
+		//public static class List2<T> : ObservableCollection<T>, INotifyPropertyChanged
+		//{
+		//	public List2()
+		//	{
+		//		this.CollectionChanged += (s, e) =>
+		//		{
+		//			int i = 1;
+		//		};
+		//	}
+		//}
+
+		public class PropertyInterceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable, new()
+		{
+
+			class InterceptorProxy : RealProxy
+			{
+				T proxy;
+				T target;
+
+				public InterceptorProxy(T target)
+					: base(typeof(T))
+				{
+					this.target = target;
+				}
+
+				public override object GetTransparentProxy()
+				{
+					proxy = (T)base.GetTransparentProxy();
+					return proxy;
+				}
+
+				public override IMessage Invoke(IMessage msg)
+				{
+					IMethodCallMessage call = msg as IMethodCallMessage;
+					if (call != null)
+					{
+						//gotoRetryAfterUserSet:
+
+						var result = InvokeMethod(call);
+						if (call.MethodName.StartsWith("set_"))
+						{
+							string propName = call.MethodName.Substring(4);
+							target.OnPropertySet(propName);
+						}
+						else if (call.MethodName.StartsWith("get_"))
+						{
+							string propName = call.MethodName.Substring(4);
+
+							////TODO: Only handles string
+							//if (result != null && result.ReturnValue != null && result.ReturnValue.GetType().Name == typeof(List<string>).Name)// result.GetType().Name == typeof(List2<>).Name)
+							//{
+							//	//UserMessages.ShowWarningMessage(string.Format("Property {0} is of type List<string> and will not be saved when items are added"));
+							//	PropertyInfo pi = target.GetType().GetProperty(propName);
+							//	List2<string> list = new List2<string>(result.ReturnValue as List<string>, propName);
+							//	list.PropertyChanged += (s, e) => { target.OnPropertySet(e.PropertyName); };
+							//	pi.SetValue(target, list);
+							//	goto gotoRetryAfterUserSet;
+							//}
+
+							target.OnPropertyGet(propName);
+						}
+						return result;
+					}
+					else
+					{
+						throw new NotSupportedException();
+					}
+				}
+
+				IMethodReturnMessage InvokeMethod(IMethodCallMessage callMsg)
+				{
+					return RemotingServices.ExecuteMessage(target, callMsg);
+				}
+			}
+
+			public static T Create(T instance = null)
+			{
+				var interceptor = new InterceptorProxy(instance ?? new T());
+				return (T)interceptor.GetTransparentProxy();
+			}
+		}
+
+		public abstract class BaseOnlineClass<T> : MarshalByRefObject, IInterceptorNotifiable where T : BaseOnlineClass<T>, new()
 		{
 			private const string LocalCacheDateFormat = "yyyy-MM-dd HH:mm:ss";
 			private const string SettingsCategory = "globalsettings";
@@ -1168,6 +1323,7 @@ GlobalSettings.ReadConsole(
 			[XmlIgnore]
 			public DateTime LocalCachedModifiedDate { get { return GetLocalCahcedModifiedDate(); } }
 			private bool IsBusyComparingOnSeparateThread = false;
+			private bool IsBusySavingOnSeparateThread = false;
 
 			private static T instance;
 			private static object lockingObject = new Object();
@@ -1181,7 +1337,7 @@ GlobalSettings.ReadConsole(
 						{
 							if (instance == null)
 							{
-								instance = new T();
+								instance = PropertyInterceptor<T>.Create();
 								instance.PopulateThis();
 							}
 						}
@@ -1264,6 +1420,19 @@ GlobalSettings.ReadConsole(
 					}
 					return false;
 				}
+			}
+			public void SaveOnlineOnSeparateThread()
+			{
+				while (IsBusySavingOnSeparateThread)
+				{ } //Application.DoEvents();
+
+				IsBusySavingOnSeparateThread = true;
+				ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+				{
+					SaveOnline();
+					IsBusySavingOnSeparateThread = false;
+				},
+				false);
 			}
 
 			public bool GetLocalCached()
@@ -1350,6 +1519,16 @@ GlobalSettings.ReadConsole(
 				JSON.Instance.UseUTCDateTime = true;
 				JSON.Instance.UsingGlobalTypes = false;
 			}
+
+			public void OnPropertySet(string propertyName)
+			{
+				SaveOnlineOnSeparateThread();
+			}
+
+			public void OnPropertyGet(string propertyName)
+			{
+				//Nothing needs to happen here
+			}
 		}
 
 		public class MovieOrganizerSettings : BaseOnlineClass<MovieOrganizerSettings>
@@ -1365,10 +1544,10 @@ GlobalSettings.ReadConsole(
 
 			public MovieOrganizerSettings()//Defaults
 			{
-				MovieFileExtensions = new List<string>() { "asf", "3gp", "avi", "divx", "flv", "ifo", "mkv", "mp4", "mpeg", "mpg", "vob", "wmv" };
-				NonWordChars = "&()`:[]_{} ,.-";
-				IrrelevantPhrases = new List<string>() { "1 of 2", "2 of 2", "imagine sample", "ts imagine", "rio heist ts v3 imagine", "861_", "862_", "863_", "-illustrated", "brrip noir", "r5 line goldfish", "line x264 ac3 vision", "hive cm8", "flawl3ss sample", "line ac3", "t0xic ink", "r5 line readnfo imagine", "cam readnfo imagine", "ts devise", "line ltt", "r5.line.", "line.xvid" };
-				IrrelevantWords = new List<string>() { "01", "02", "03", "1of2", "1989", "1996", "1997", "1998", "1999", "2000", "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010", "2011", "2012", "1080p", "1337x", "3xforum", "dvdscr", "noscr", "torentz", "www", "maxspeed", "ro", "axxo", "divx", "dvdrip", "xvid", "faf2009", "opt", "2hd", "hdtv", "vtv", "2of2", "cd1", "cd2", "imbt", "dmd", "ac3", "rc5", "eng", "fxg", "vaper", "brrip", "extratorrentrg", "ts", "20th", "h", "264", "newarriot", "jr", "r5", "x264", "bdrip", "hq", "cm8", "flawl3ss", "t0xic", "nydic", "dd", "avi", "sample", "ii", "rvj", "readnfo", "tfe", "vrxuniique", "ika", "ltrg", "tdc", "m00dy", "gfw", "noir", "nikonxp", "vmt", "ltt", "mxmg", "osht", "NewArtRiot", "qcf", "tnan", "ppvrip", "timpe", "rx" };
+				this.MovieFileExtensions = new List<string>() { "asf", "3gp", "avi", "divx", "flv", "ifo", "mkv", "mp4", "mpeg", "mpg", "vob", "wmv" };
+				this.NonWordChars = "&()`:[]_{} ,.-";
+				this.IrrelevantPhrases = new List<string>() { "1 of 2", "2 of 2", "imagine sample", "ts imagine", "rio heist ts v3 imagine", "861_", "862_", "863_", "-illustrated", "brrip noir", "r5 line goldfish", "line x264 ac3 vision", "hive cm8", "flawl3ss sample", "line ac3", "t0xic ink", "r5 line readnfo imagine", "cam readnfo imagine", "ts devise", "line ltt", "r5.line.", "line.xvid" };
+				this.IrrelevantWords = new List<string>() { "01", "02", "03", "1of2", "1989", "1996", "1997", "1998", "1999", "2000", "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010", "2011", "2012", "1080p", "1337x", "3xforum", "dvdscr", "noscr", "torentz", "www", "maxspeed", "ro", "axxo", "divx", "dvdrip", "xvid", "faf2009", "opt", "2hd", "hdtv", "vtv", "2of2", "cd1", "cd2", "imbt", "dmd", "ac3", "rc5", "eng", "fxg", "vaper", "brrip", "extratorrentrg", "ts", "20th", "h", "264", "newarriot", "jr", "r5", "x264", "bdrip", "hq", "cm8", "flawl3ss", "t0xic", "nydic", "dd", "avi", "sample", "ii", "rvj", "readnfo", "tfe", "vrxuniique", "ika", "ltrg", "tdc", "m00dy", "gfw", "noir", "nikonxp", "vmt", "ltt", "mxmg", "osht", "NewArtRiot", "qcf", "tnan", "ppvrip", "timpe", "rx" };
 			}
 		}
 
@@ -1393,10 +1572,59 @@ GlobalSettings.ReadConsole(
 			public string ApiKey { get; set; }
 			public GoogleApiInteropSettings()//Defaults
 			{
-				ClientID = "";
-				ClientSecret = "";
-				ClientSecretEncrypted = "";
-				ApiKey = "";
+				this.ClientID = "";
+				this.ClientSecret = "";
+				this.ClientSecretEncrypted = "";
+				this.ApiKey = "";
+			}
+		}
+
+		//public class List2<T> : List<T>, INotifyPropertyChanged
+		//{
+		//	private string thisPropName;
+		//	public List2(List<T> list, string thisPropertyName) : base(list) { this.thisPropName = thisPropertyName; }
+		//	public new void Add(T item)
+		//	{
+		//		OnPropertyChanged(thisPropName);
+		//	}
+
+		//	public event PropertyChangedEventHandler PropertyChanged = new PropertyChangedEventHandler(delegate { });
+		//	public void OnPropertyChanged(string propertyName) { PropertyChanged(this, new PropertyChangedEventArgs(propertyName)); }
+		//}
+
+		public class PublishSettings : BaseOnlineClass<PublishSettings>
+		{
+			//[Editor(typeof(MyCollectionEditor), typeof(UITypeEditor))]
+			[Description("A tasklist of application names to be added defaultly to the tasklist to pick.")]
+			public List<string> ListedApplicationNames { get; set; }
+
+			public PublishSettings()//Defaults
+			{
+				this.ListedApplicationNames = new List<string>()
+                {
+					"AutoConnectWifiAdhoc",
+					"AddDependenciesCSharp",
+					"MonitorSystem",
+					"QuickAccess",
+					"PublishOwnApps",
+					"GenericTextFunctions",
+					"AForgeMotionDetector",
+					"TestingMonitorSubversion",
+					"StartupTodoManager",
+					"ApplicationManager",
+					"MonitorClipboardDebugAssertions"
+                };
+			}
+		}
+
+		public class AutoSyncSettings : BaseOnlineClass<AutoSyncSettings>
+		{
+			[Description("")]
+			public string OnlineXDeltaExeFileUrl { get; set; }
+
+			public AutoSyncSettings()//Defaults
+			{
+				OnlineXDeltaExeFileUrl = "ftp://fjh.dyndns.org/francois/websites/firepuma/ownapplications/xDelta3.exe";
 			}
 		}
 	}

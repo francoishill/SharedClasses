@@ -240,25 +240,6 @@ namespace SharedClasses
 		}
 	}
 
-	public static class StringExtensions_AutoUpdating
-	{
-		/// <summary>
-		/// Function to get file impression in form of string from a file location.
-		/// </summary>
-		/// <param name="_fileName">File Path to get file impression.</param>
-		/// <returns>Byte Array</returns>
-		public static string FileToMD5Hash(this string _fileName)
-		{
-			if (!File.Exists(_fileName))
-				return "[InvalidFilePath:" + _fileName + "]";
-			using (var stream = new BufferedStream(File.OpenRead(_fileName), 1200000))
-			{
-				SHA256Managed sha = new SHA256Managed();
-				byte[] checksum = sha.ComputeHash(stream);
-				return BitConverter.ToString(checksum).Replace("-", string.Empty);
-			}
-		}
-	}
 	public class PublishDetails
 	{
 		public const string OnlineJsonCategory = "Own Applications";

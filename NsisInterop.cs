@@ -108,7 +108,7 @@ public class NsisInterop
 				SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite ifnewer");
 				SectionGroupLines.Add(NSISclass.Spacer + @"	SetOutPath ""$INSTDIR\Plugins""");
 				SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite ifnewer");
-				SectionGroupLines.Add(NSISclass.Spacer + @"  File /a /x *.pdb /x *.xml /x *Toolkit* /x *InterfaceFor* /x *CookComputing.XmlRpcV2.dll /x *MouseGestures.dll /x *System.Windows.Controls.WpfPropertyGrid.dll" + Plugins_FaceDetectionNsisExclusionList() + @" """ + pluginDllPath + @"\*.*""");
+                SectionGroupLines.Add(NSISclass.Spacer + @"  File /a /x *.pdb /x *.xml /x *Toolkit* /x *InterfaceFor* /x *CookComputing.XmlRpcV2.dll /x *MouseGestures.dll /x *System.Windows.Controls.WpfPropertyGrid.dll" + Plugins_FaceDetectionNsisExclusionList() + Plugins_Pdf2textExclusionList() + @" """ + pluginDllPath + @"\*.*""");
 				SectionGroupLines.Add(NSISclass.Spacer + @"SectionEnd");
 				SectionGroupLines.Add("");
 				//}
@@ -170,12 +170,17 @@ public class NsisInterop
 
 	private static string Plugins_FaceDetectionNsisExclusionList()
 	{
-		return " /x *cvextern*dll /x opencv_*.dll /x *Emgu.*.dll";
+		return " /x *cvextern*.dll /x opencv_*.dll /x *Emgu.*.dll";
 		//string tmpstr = "";
 		//foreach (string filename in FaceDetectionInterop.ListOfRequiredDllsInExeDir.Keys)
 		//	tmpstr += " /x " + filename;
 		//return tmpstr;
 	}
+
+    private static string Plugins_Pdf2textExclusionList()
+    {
+        return " /x *IKVM.*.dll /x commons-logging.dll /x fontbox-*.dll /x pdfbox-*.dll";
+    }
 
 	public static string DotNetChecker_NSH_file
 	{

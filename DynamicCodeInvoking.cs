@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -33,7 +34,7 @@ public class DynamicCodeInvoking
 	/// <param name="methodName">The method name to call</param>
 	/// <param name="parameterValues">The values of the method to use.</param>
 	/// <returns>The error string, Empty string if no error.</returns>
-	public static RunCodeReturnStruct RunCodeFromStaticClass(string AssemblyQualifiedName, string[] commandParameterTypesfullnames, string methodName, params object[] parameterValues)
+	public static RunCodeReturnStruct ServerRunCodeFromStaticClass(string AssemblyQualifiedName, string[] commandParameterTypesfullnames, string methodName, params object[] parameterValues)
 	{
 		try
 		{
@@ -70,8 +71,10 @@ public class DynamicCodeInvoking
 		}
 	}
 
-	public static DynamicCodeInvoking.RunCodeReturnStruct RunSelectedFunction(Dictionary<string, ParameterNameAndType> dict, string AssemblyQualifiedName, string MethodName, bool ShowResultMessage = true)
+	public static DynamicCodeInvoking.RunCodeReturnStruct ClientRunSelectedFunction(Dictionary<string, ParameterNameAndType> dict, string AssemblyQualifiedName, string MethodName, bool ShowResultMessage = true, bool ShowIfError = true)
 	{
+		string error = null;
+
 		try
 		{
 			//SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
@@ -151,15 +154,20 @@ public class DynamicCodeInvoking
 		}
 		catch (Exception exc)
 		{
-			UserMessages.ShowErrorMessage("Could not perform dynamic method remotely: " + Environment.NewLine + exc.Message + Environment.NewLine + Environment.NewLine + exc.StackTrace);
+			string tmperr = "Could not perform dynamic method remotely: " + Environment.NewLine + exc.Message + Environment.NewLine + Environment.NewLine + exc.StackTrace;
+			if (ShowIfError)
+				UserMessages.ShowErrorMessage(tmperr);
+			error = tmperr;
 		}
 
 		RunCodeReturnStruct rc = new RunCodeReturnStruct();
 		rc.Success = false;
+		if (error != null)
+			rc.ErrorMessage = error;
 		return rc;
 	}
 
-	public static void RunBlockOfCodeNow(string block)
+	public static void ClientRunBlockOfCodeNow(string block)
 	{
 		try
 		{
@@ -193,6 +201,106 @@ public class DynamicCodeInvoking
 		{
 			UserMessages.ShowErrorMessage("Could not perform dynamic method remotely: " + Environment.NewLine + exc.Message + Environment.NewLine + Environment.NewLine + exc.StackTrace);
 		}
+	}
+
+	public static DynamicCodeInvoking.RunCodeReturnStruct ClientSaveJsonStringToFile(string Category, string Name, string jsonString, bool ShowIfError = true)
+	{
+		string error = null;
+
+		try
+		{
+			Iclientside_DynamicCodeInvokingServerClass proxy = XmlRpcProxyGen.Create<Iclientside_DynamicCodeInvokingServerClass>();
+			proxy.Url = GlobalSettings.TracXmlRpcInteropSettings.Instance.GetCombinedUrlForConnectingToDynamicInvokationServer();//.GetCombinedUrlForDynamicInvokationServer();
+
+			RunCodeReturnStruct resultObj = proxy.SaveJsonStringToFile(Category, Name, jsonString);
+			if (resultObj.Success)
+			{
+				string successMsg = "Successfully saved json: ";
+				if (resultObj.MethodInvokeResultingObject is string)
+					successMsg += resultObj.MethodInvokeResultingObject as string;
+				return resultObj;
+			}
+		}
+		catch (Exception exc)
+		{
+			string tmperr = "Could not save json to file remotely: " + Environment.NewLine + exc.Message + Environment.NewLine + Environment.NewLine + exc.StackTrace;
+			if (ShowIfError)
+				UserMessages.ShowErrorMessage(tmperr);
+			error = tmperr;
+		}
+
+		RunCodeReturnStruct rc = new RunCodeReturnStruct();
+		rc.Success = false;
+		if (error != null)
+			rc.ErrorMessage = error;
+		return rc;
+	}
+
+	public static RunCodeReturnStruct ClientGetAutoSyncVersion(string UserFolderName, bool ShowIfError = true)
+	{
+		string error = null;
+
+		try
+		{
+			Iclientside_DynamicCodeInvokingServerClass proxy = XmlRpcProxyGen.Create<Iclientside_DynamicCodeInvokingServerClass>();
+			proxy.Url = GlobalSettings.TracXmlRpcInteropSettings.Instance.GetCombinedUrlForConnectingToDynamicInvokationServer();//.GetCombinedUrlForDynamicInvokationServer();
+
+			RunCodeReturnStruct resultObj = proxy.GetAutoSyncVersion(UserFolderName);
+			if (resultObj.Success)
+			{
+				string successMsg = "Successfully obtained AutoSyncVersion from server: ";
+				if (resultObj.MethodInvokeResultingObject is int)
+					successMsg += ((int)resultObj.MethodInvokeResultingObject).ToString();
+				return resultObj;
+			}
+		}
+		catch (Exception exc)
+		{
+			string tmperr = "Could not get server AutySyncVersion: "
+				+ Environment.NewLine + exc.Message + Environment.NewLine + Environment.NewLine + exc.StackTrace;
+			if (ShowIfError)
+				UserMessages.ShowErrorMessage(tmperr);
+			error = tmperr;
+		}
+
+		RunCodeReturnStruct rc = new RunCodeReturnStruct();
+		rc.Success = false;
+		if (error != null)
+			rc.ErrorMessage = error;
+		return rc;
+	}
+
+	public static DynamicCodeInvoking.RunCodeReturnStruct ClientGetJsonStringFromFile(string Category, string Name, bool ShowIfError = true)
+	{
+		string error = null;
+
+		try
+		{
+			Iclientside_DynamicCodeInvokingServerClass proxy = XmlRpcProxyGen.Create<Iclientside_DynamicCodeInvokingServerClass>();
+			proxy.Url = GlobalSettings.TracXmlRpcInteropSettings.Instance.GetCombinedUrlForConnectingToDynamicInvokationServer();//.GetCombinedUrlForDynamicInvokationServer();
+
+			RunCodeReturnStruct resultObj = proxy.GetJsonStringFromFile(Category, Name);
+			if (resultObj.Success)
+			{
+				string successMsg = "Successfully retreived json: ";
+				if (resultObj.MethodInvokeResultingObject is string)
+					successMsg += resultObj.MethodInvokeResultingObject as string;
+				return resultObj;
+			}
+		}
+		catch (Exception exc)
+		{
+			string tmperr = "Could not save json to file remotely: " + Environment.NewLine + exc.Message + Environment.NewLine + Environment.NewLine + exc.StackTrace;
+			if (ShowIfError)
+				UserMessages.ShowErrorMessage(tmperr);
+			error = tmperr;
+		}
+
+		RunCodeReturnStruct rc = new RunCodeReturnStruct();
+		rc.Success = false;
+		if (error != null)
+			rc.ErrorMessage = error;
+		return rc;
 	}
 
 	public static void GetParameterListAndTypesStringArray(out string[] TypeStringArray, out object[] ParametersModified, params object[] Parameters)
@@ -273,7 +381,7 @@ public class DynamicCodeInvoking
 			getIl.Emit(OpCodes.Ret);
 
 			MethodBuilder setPropMthdBldr =
-                tb.DefineMethod("set_" + propertyName,
+				tb.DefineMethod("set_" + propertyName,
 						MethodAttributes.Public |
 						MethodAttributes.SpecialName |
 						MethodAttributes.HideBySig,
@@ -418,7 +526,7 @@ public class DynamicCodeInvoking
 	}
 
 	public static Script StaticScript;
-	public static RunCodeReturnStruct RunBlockOfCode(string block)
+	public static RunCodeReturnStruct ServerRunBlockOfCode(string block)
 	{
 		try
 		{
@@ -439,6 +547,108 @@ public class DynamicCodeInvoking
 			{
 				Success = false,
 				ErrorMessage = "Could not run block of code: " + exc.Message + Environment.NewLine + exc.StackTrace,
+				ResultingTypeString = typeof(string).AssemblyQualifiedName,
+				MethodInvokeResultingObject = ""
+			};
+		}
+	}
+
+	private const string EncodedCharStart = "[{_";
+	private const string EncodedCharEnd = "_}]";
+	public static string FilenameEncodeToValid(string wantedFilename)
+	{
+		string result = wantedFilename;
+		var invalidChars = Path.GetInvalidFileNameChars();
+		foreach (char c in invalidChars)
+			result = result.Replace(c.ToString(), string.Format("{0}{1}{2}", EncodedCharStart, (int)c, EncodedCharEnd));
+		return result;
+	}
+
+	public static string FilenameDecodeToValid(string encodedFilename)
+	{
+		string result = encodedFilename;
+		if (encodedFilename.Split(new string[] { EncodedCharStart }, StringSplitOptions.None).Length != encodedFilename.Split(new string[] { EncodedCharEnd }, StringSplitOptions.None).Length)
+			UserMessages.ShowWarningMessage("Cannot decode filename: " + encodedFilename);
+		else
+		{
+			var invalidChars = Path.GetInvalidFileNameChars();
+			foreach (char c in invalidChars)
+				result = result.Replace(string.Format("{0}{1}{2}", EncodedCharStart, (int)c, EncodedCharEnd), c.ToString());
+		}
+		return result;
+	}
+
+	public static RunCodeReturnStruct ServerSaveJsonStringToFile(string Category, string Name, string jsonString)
+	{
+		try
+		{
+			var filepath = SettingsInterop.GetFullFilePathInLocalAppdata(FilenameEncodeToValid(Name) + ".json", "JsonData", FilenameEncodeToValid(Category));
+			File.WriteAllText(filepath, jsonString);
+			return new RunCodeReturnStruct()
+			{
+				Success = true,
+				ErrorMessage = "",
+				ResultingTypeString = typeof(string).AssemblyQualifiedName,
+				MethodInvokeResultingObject = ""
+			};
+		}
+		catch (Exception exc)
+		{
+			return new RunCodeReturnStruct()
+			{
+				Success = false,
+				ErrorMessage = "Exception saving json to file: " + exc.Message,
+				ResultingTypeString = typeof(string).AssemblyQualifiedName,
+				MethodInvokeResultingObject = ""
+			};
+		}
+	}
+
+	public static RunCodeReturnStruct ServerGetJsonStringFromFile(string Category, string Name)
+	{
+		try
+		{
+			var filepath = SettingsInterop.GetFullFilePathInLocalAppdata(FilenameEncodeToValid(Name) + ".json", "JsonData", FilenameEncodeToValid(Category));
+			var jsonStr = File.ReadAllText(filepath);
+			return new RunCodeReturnStruct()
+			{
+				Success = true,
+				ErrorMessage = "",
+				ResultingTypeString = typeof(string).AssemblyQualifiedName,
+				MethodInvokeResultingObject = jsonStr
+			};
+		}
+		catch (Exception exc)
+		{
+			return new RunCodeReturnStruct()
+			{
+				Success = false,
+				ErrorMessage = "Exception getting json from file: " + exc.Message,
+				ResultingTypeString = typeof(string).AssemblyQualifiedName,
+				MethodInvokeResultingObject = ""
+			};
+		}
+	}
+
+	public static RunCodeReturnStruct ServerGetAutoSyncVersion(string UserFolderName)
+	{
+		int? version =	BinaryDiff.GetServerCurrentVersion(BinaryDiff.ServerRootFolder, UserFolderName);
+		if (version.HasValue)
+		{
+			return new RunCodeReturnStruct()
+			{
+				Success = true,
+				ErrorMessage = "",
+				ResultingTypeString = typeof(int).AssemblyQualifiedName,
+				MethodInvokeResultingObject = version.Value
+			};
+		}
+		else
+		{
+			return new RunCodeReturnStruct()
+			{
+				Success = false,
+				ErrorMessage = "Cannot obtain newest version from server, perhaps no version yet?",
 				ResultingTypeString = typeof(string).AssemblyQualifiedName,
 				MethodInvokeResultingObject = ""
 			};
@@ -2794,7 +3004,7 @@ public class MethodClass : INotifyPropertyChanged
 	public DynamicCodeInvoking.RunCodeReturnStruct Run()
 	{
 		LastResult =
-			DynamicCodeInvoking.RunSelectedFunction(
+			DynamicCodeInvoking.ClientRunSelectedFunction(
 			this.PropertyGridAdapter._dictionary,
 			this.ParentClass.ClassType.AssemblyQualifiedName,
 			this.Methodinfo.Name,

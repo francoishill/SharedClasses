@@ -17,6 +17,7 @@ public class Logging
 		Control topParent = messagesTextbox;
 		while (topParent != null && topParent != messagesTextbox.Parent) topParent = messagesTextbox.Parent;
 		if (staticNotifyIcon != null) staticNotifyIcon.ShowBalloonTip(3000, "Message in textbox", str, ToolTipIcon.Info);
+		
 		ThreadingInterop.UpdateGuiFromThread(messagesTextbox, () =>
 		{
 			messagesTextbox.Text = str + (messagesTextbox.Text.Length > 0 ? Environment.NewLine : "") + messagesTextbox.Text;

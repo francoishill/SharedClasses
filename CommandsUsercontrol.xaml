@@ -1,51 +1,61 @@
-﻿<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-						 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-						 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-						 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-						 xmlns:inlinecommandtoolkit='clr-namespace:InlineCommandToolkit'
-						 xmlns:theme="clr-namespace:Microsoft.Windows.Themes;assembly=PresentationFramework.Aero"
-						 xmlns:input="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls.Input.Toolkit"
-						 xmlns:system="clr-namespace:System;assembly=mscorlib"
-						 xmlns:propertyinterceptor='clr-namespace:PropertyInterceptor'
-						 xmlns:sharedclasses='clr-namespace:SharedClasses'
-						 xmlns:Planerator="clr-namespace:Planerator;assembly=Planerator"
-						 xmlns:extToolkit="http://schemas.microsoft.com/winfx/2006/xaml/presentation/toolkit/extended"
-						 x:Class="SharedClasses.CommandsUsercontrol"
-						 mc:Ignorable="d"
-						 UseLayoutRounding='True'
-						 d:DesignHeight="500"
-						 d:DesignWidth="600">
+﻿<UserControl
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+	xmlns:inlinecommandtoolkit='clr-namespace:InlineCommandToolkit'
+	xmlns:theme="clr-namespace:Microsoft.Windows.Themes;assembly=PresentationFramework.Aero"
+	xmlns:input="clr-namespace:System.Windows.Controls;assembly=System.Windows.Controls.Input.Toolkit"
+	xmlns:system="clr-namespace:System;assembly=mscorlib"
+	xmlns:propertyinterceptor='clr-namespace:PropertyInterceptor'
+	xmlns:sharedclasses='clr-namespace:SharedClasses'
+	xmlns:Planerator="clr-namespace:Planerator;assembly=Planerator"
+	xmlns:extToolkit="http://schemas.xceed.com/wpf/xaml/toolkit"
+	x:Class="SharedClasses.CommandsUsercontrol"
+	mc:Ignorable="d"
+	UseLayoutRounding='True'
+	d:DesignHeight="500"
+	d:DesignWidth="600">
 	<UserControl.Resources>
-		<ResourceDictionary Source='pack://application:,,,/InlineCommandToolkit;component/Resources/General.xaml' />
+		<ResourceDictionary
+			Source='pack://application:,,,/InlineCommandToolkit;component/Resources/General.xaml' />
 	</UserControl.Resources>
-	<Grid Name='mainGrid'
-				Background='Transparent'>
+	<Grid
+		Name='mainGrid'
+		Background='Transparent'>
 		<Grid.Resources>
-			<Storyboard x:Key='rotateMessagesFirstHalve'>
-				<DoubleAnimation From="1"
-												 To="0"
-												 Duration="0:0:0.2"
-												 Storyboard.TargetName="textBox_Messages"
-												 Storyboard.TargetProperty="(RenderTransform).(ScaleTransform.ScaleX)" />
+			<Storyboard
+				x:Key='rotateMessagesFirstHalve'>
+				<DoubleAnimation
+					From="1"
+					To="0"
+					Duration="0:0:0.2"
+					Storyboard.TargetName="textBox_Messages"
+					Storyboard.TargetProperty="(RenderTransform).(ScaleTransform.ScaleX)" />
 			</Storyboard>
-			<Storyboard x:Key='rotateMessagesSecondHalve'>
-				<DoubleAnimation From="0"
-												 To="1"
-												 Duration="0:0:0.2"
-												 Storyboard.TargetName="textBox_Messages"
-												 Storyboard.TargetProperty="(RenderTransform).(ScaleTransform.ScaleX)" />
+			<Storyboard
+				x:Key='rotateMessagesSecondHalve'>
+				<DoubleAnimation
+					From="0"
+					To="1"
+					Duration="0:0:0.2"
+					Storyboard.TargetName="textBox_Messages"
+					Storyboard.TargetProperty="(RenderTransform).(ScaleTransform.ScaleX)" />
 			</Storyboard>
 		</Grid.Resources>
 		<Grid.RowDefinitions>
-			<RowDefinition Height="Auto" />
-			<RowDefinition Height="Auto" />
+			<RowDefinition
+				Height="Auto" />
+			<RowDefinition
+				Height="Auto" />
 			<RowDefinition />
 		</Grid.RowDefinitions>
-		<Grid Grid.Row='0'
-					HorizontalAlignment='Stretch'
-					VerticalAlignment='Stretch'
-					Background='Transparent'
-					MouseRightButtonUp='Grid_MouseRightButtonUp'>
+		<Grid
+			Grid.Row='0'
+			HorizontalAlignment='Stretch'
+			VerticalAlignment='Stretch'
+			Background='Transparent'
+			MouseRightButtonUp='Grid_MouseRightButtonUp'>
 			<!--<Label x:Name="label_ArgumentsExample"
 						 Content="Label"
 						 HorizontalAlignment="Left"
@@ -56,105 +66,124 @@
 							Margin='0,0,50,0'
 							VerticalAlignment="Bottom"
 							Click='Button_Click'/>-->
-			<StackPanel Orientation='Horizontal'
-									HorizontalAlignment='Right'
-									VerticalAlignment='Center'
-									Visibility='Collapsed'
-									Margin='3'
-									x:Name='stackPanelWithCloseAndMinimizeToTrayButton'>
-				<Button x:Name='MinimizeToTrayUsercontrolButton'
-								Style='{StaticResource ButtonStyleSemiTransparentUntilHover}'
-								PreviewMouseRightButtonUp='MinimizeToTrayUsercontrolButton_PreviewMouseRightButtonUp'
-								ToolTip='Minimize to tray'
-								Margin='0,0,3,0'
-								BorderBrush='#ddd'
-								BorderThickness='1'
-								Background='Transparent'
-								Foreground='#777'
-								Padding='3,0'
-								Content='_' />
-				<Button x:Name='CloseUsercontrolButton'
-								Style='{StaticResource ButtonStyleSemiTransparentUntilHover}'
-								PreviewMouseRightButtonUp='CloseUsercontrolButton_PreviewMouseRightButtonUp'
-								ToolTip='Quit Quick Access'
-								BorderBrush='#ddd'
-								BorderThickness='1'
-								Background='Transparent'
-								Foreground='#777'
-								Padding='3,0'
-								Content='X' />
+			<StackPanel
+				Orientation='Horizontal'
+				HorizontalAlignment='Right'
+				VerticalAlignment='Center'
+				Visibility='Collapsed'
+				Margin='3'
+				x:Name='stackPanelWithCloseAndMinimizeToTrayButton'>
+				<Button
+					x:Name='MinimizeToTrayUsercontrolButton'
+					Style='{StaticResource ButtonStyleSemiTransparentUntilHover}'
+					PreviewMouseRightButtonUp='MinimizeToTrayUsercontrolButton_PreviewMouseRightButtonUp'
+					ToolTip='Minimize to tray'
+					Margin='0,0,3,0'
+					BorderBrush='#ddd'
+					BorderThickness='1'
+					Background='Transparent'
+					Foreground='#777'
+					Padding='3,0'
+					Content='_' />
+				<Button
+					x:Name='CloseUsercontrolButton'
+					Style='{StaticResource ButtonStyleSemiTransparentUntilHover}'
+					PreviewMouseRightButtonUp='CloseUsercontrolButton_PreviewMouseRightButtonUp'
+					ToolTip='Quit Quick Access'
+					BorderBrush='#ddd'
+					BorderThickness='1'
+					Background='Transparent'
+					Foreground='#777'
+					Padding='3,0'
+					Content='X' />
 			</StackPanel>
 		</Grid>
-		<TextBox x:Name='MainAutoCompleteTextbox'
-						 Grid.Row="1"
-						 FontSize="36"
-						 Margin='5'
-						 Background='Transparent'
-						 HorizontalAlignment="Stretch"
-						 PreviewKeyDown='MainAutoCompleteTextbox_PreviewKeyDown'>
+		<TextBox
+			x:Name='MainAutoCompleteTextbox'
+			Grid.Row="1"
+			FontSize="36"
+			Margin='5'
+			Background='Transparent'
+			HorizontalAlignment="Stretch"
+			PreviewKeyDown='MainAutoCompleteTextbox_PreviewKeyDown'>
 			<TextBox.Template>
 				<ControlTemplate>
-					<Border BorderBrush='#bbb'
-									BorderThickness='1'
-									CornerRadius='10'
-									Background='Transparent'
-									Padding='5'>
-						<DockPanel LastChildFill='True'
-											 Background='Transparent'>
-							<TextBox x:Name='TextBoxWithButtons'
-											 DockPanel.Dock='Left'
-											 Background='Transparent'
-											 Template='{StaticResource TextBoxBaseControlTemplate}' />
-							<input:AutoCompleteBox x:Name="textBox_CommandLine"
-																		 MinimumPrefixLength='0'
-																		 Background='Transparent'
-																		 Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type TextBlock}, Mode=FindAncestor}}"
-																		 PreviewKeyDown="textBox_CommandLine_PreviewKeyDown"
-																		 TextChanged="textBox_CommandLine_TextChanged_1"
-																		 IsTextCompletionEnabled='True'
-																		 BorderBrush='Transparent' />
+					<Border
+						BorderBrush='#bbb'
+						BorderThickness='1'
+						CornerRadius='10'
+						Background='Transparent'
+						Padding='5'>
+						<DockPanel
+							LastChildFill='True'
+							Background='Transparent'>
+							<TextBox
+								x:Name='TextBoxWithButtons'
+								DockPanel.Dock='Left'
+								Background='Transparent'
+								Template='{StaticResource TextBoxBaseControlTemplate}' />
+							<input:AutoCompleteBox
+								x:Name="textBox_CommandLine"
+								MinimumPrefixLength='0'
+								Background='Transparent'
+								Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type TextBlock}, Mode=FindAncestor}}"
+								PreviewKeyDown="textBox_CommandLine_PreviewKeyDown"
+								TextChanged="textBox_CommandLine_TextChanged_1"
+								IsTextCompletionEnabled='True'
+								BorderBrush='Transparent' />
 						</DockPanel>
 					</Border>
 				</ControlTemplate>
 			</TextBox.Template>
 		</TextBox>
-		<Grid Grid.Row="2"
-					Margin="0,5"
-					Background='Transparent'>
+		<Grid
+			Grid.Row="2"
+			Margin="0,5"
+			Background='Transparent'>
 			<Grid.ColumnDefinitions>
-				<ColumnDefinition MinWidth="250"
-													Width="250" />
+				<ColumnDefinition
+					MinWidth="250"
+					Width="250" />
 				<ColumnDefinition />
 			</Grid.ColumnDefinitions>
 			<Grid.RowDefinitions>
-				<RowDefinition Height='Auto' />
+				<RowDefinition
+					Height='Auto' />
 				<RowDefinition />
-				<RowDefinition Height='Auto' />
-				<RowDefinition Height='Auto' />
-				<RowDefinition Height='Auto' />
+				<RowDefinition
+					Height='Auto' />
+				<RowDefinition
+					Height='Auto' />
+				<RowDefinition
+					Height='Auto' />
 			</Grid.RowDefinitions>
-			<TreeView x:Name="treeView_CommandList"
-								Grid.RowSpan='3'
-								HorizontalAlignment="Stretch"
-								VerticalAlignment="Stretch"
-								BorderBrush="Transparent"
-								FontSize="20"
-								Margin='0,0,5,0'
-								SelectedItemChanged="treeView_CommandList_SelectedItemChanged"
-								Focusable='False'
-								AllowDrop='True'
-								PreviewDragOver='treeView_CommandList_DragOver'
-								PreviewDrop='treeView_CommandList_PreviewDrop'
-								MouseRightButtonUp='treeView_CommandList_MouseRightButtonUp'>
+			<TreeView
+				x:Name="treeView_CommandList"
+				Grid.RowSpan='3'
+				HorizontalAlignment="Stretch"
+				VerticalAlignment="Stretch"
+				BorderBrush="Transparent"
+				FontSize="20"
+				Margin='0,0,5,0'
+				SelectedItemChanged="treeView_CommandList_SelectedItemChanged"
+				Focusable='False'
+				AllowDrop='True'
+				PreviewDragOver='treeView_CommandList_DragOver'
+				PreviewDrop='treeView_CommandList_PreviewDrop'
+				MouseRightButtonUp='treeView_CommandList_MouseRightButtonUp'>
 				<TreeView.Resources>
-					<SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
-													 Color="#E33232" />
-					<SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}"
-													 Color="Transparent" />
-					<SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"
-													 Color="#f9f9f9" />
-					<SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey}"
-													 Color="Black" />
+					<SolidColorBrush
+						x:Key="{x:Static SystemColors.HighlightBrushKey}"
+						Color="#E33232" />
+					<SolidColorBrush
+						x:Key="{x:Static SystemColors.ControlBrushKey}"
+						Color="Transparent" />
+					<SolidColorBrush
+						x:Key="{x:Static SystemColors.HighlightTextBrushKey}"
+						Color="#f9f9f9" />
+					<SolidColorBrush
+						x:Key="{x:Static SystemColors.ControlTextBrushKey}"
+						Color="Black" />
 					<!--<LinearGradientBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
                                      EndPoint="0,1"
                                      StartPoint="0,0">
@@ -177,50 +206,61 @@
                                  Color="Black" />-->
 				</TreeView.Resources>
 				<TreeView.Template>
-					<StaticResource ResourceKey="TreeviewControlTemplate" />
+					<StaticResource
+						ResourceKey="TreeviewControlTemplate" />
 				</TreeView.Template>
 				<TreeView.ItemTemplate>
 					<DataTemplate>
 						<!--<DockPanel LastChildFill='True' ContextMenu='{Binding CommandContextMenu}'>-->
-						<DockPanel LastChildFill='True'
-											 MouseRightButtonUp='DockPanel_MouseRightButtonUp'
-											 ContextMenu='{Binding CommandContextMenu}'
-											 ToolTip='{Binding NumberUnreadMessages, Converter={StaticResource numberUnreadItemsToTextConverter}, Mode=OneWay}'>
-							<TextBlock DockPanel.Dock='Right'
-												 VerticalAlignment='Top'
-												 Background='Transparent'
-												 FontSize='20'
-												 FontWeight='Bold'
-												 Foreground='Red'
-												 Text='*'
-												 Visibility='{Binding NumberUnreadMessages, Converter={StaticResource unreadItemsStartVisibilityConverter}, Mode=OneWay}' />
-							<TextBlock DockPanel.Dock='Left'
-												 Background='Transparent'
-												 Text='{Binding}' />
+						<DockPanel
+							LastChildFill='True'
+							MouseRightButtonUp='DockPanel_MouseRightButtonUp'
+							ContextMenu='{Binding CommandContextMenu}'
+							ToolTip='{Binding NumberUnreadMessages, Converter={StaticResource numberUnreadItemsToTextConverter}, Mode=OneWay}'>
+							<TextBlock
+								DockPanel.Dock='Right'
+								VerticalAlignment='Top'
+								Background='Transparent'
+								FontSize='20'
+								FontWeight='Bold'
+								Foreground='Red'
+								Text='*'
+								Visibility='{Binding NumberUnreadMessages, Converter={StaticResource unreadItemsStartVisibilityConverter}, Mode=OneWay}' />
+							<TextBlock
+								DockPanel.Dock='Left'
+								Background='Transparent'
+								Text='{Binding}' />
 						</DockPanel>
 					</DataTemplate>
 				</TreeView.ItemTemplate>
 				<TreeView.ItemContainerStyle>
-					<Style TargetType="{x:Type TreeViewItem}">
+					<Style
+						TargetType="{x:Type TreeViewItem}">
 						<Style.Resources>
-							<Style TargetType="{x:Type Border}">
-								<Setter Property="CornerRadius"
-												Value="2" />
+							<Style
+								TargetType="{x:Type Border}">
+								<Setter
+									Property="CornerRadius"
+									Value="2" />
 							</Style>
 						</Style.Resources>
 						<!-- Style for the selected item -->
-						<Setter Property="BorderThickness"
-										Value="0" />
+						<Setter
+							Property="BorderThickness"
+							Value="0" />
 						<!--<Setter Property="BorderBrush"
 										Value="#eee" />-->
-						<Setter Property="Padding"
-										Value="3" />
+						<Setter
+							Property="Padding"
+							Value="3" />
 						<Style.Triggers>
 							<!-- Selected and has focus -->
-							<Trigger Property="IsSelected"
-											 Value="True">
-								<Setter Property="BorderBrush"
-												Value="#d32222" />
+							<Trigger
+								Property="IsSelected"
+								Value="True">
+								<Setter
+									Property="BorderBrush"
+									Value="#d32222" />
 								<!--<Setter Property="BorderBrush"
                                     Value="#7DA2CE" />-->
 								<!--<Setter Property="Foreground"
@@ -229,29 +269,37 @@
 							<!-- Selected but does not have the focus -->
 							<MultiTrigger>
 								<MultiTrigger.Conditions>
-									<Condition Property="IsSelected"
-														 Value="True" />
-									<Condition Property="IsSelectionActive"
-														 Value="False" />
+									<Condition
+										Property="IsSelected"
+										Value="True" />
+									<Condition
+										Property="IsSelectionActive"
+										Value="False" />
 								</MultiTrigger.Conditions>
-								<Setter Property="BorderBrush"
-												Value="#eee" />
-								<Setter Property="Foreground"
-												Value="#d32222" />
+								<Setter
+									Property="BorderBrush"
+									Value="#eee" />
+								<Setter
+									Property="Foreground"
+									Value="#d32222" />
 							</MultiTrigger>
 							<MultiTrigger>
 								<MultiTrigger.Conditions>
-									<Condition Property="IsSelected"
-														 Value="False" />
-									<Condition Property="IsMouseOver"
-														 Value="True" />
+									<Condition
+										Property="IsSelected"
+										Value="False" />
+									<Condition
+										Property="IsMouseOver"
+										Value="True" />
 								</MultiTrigger.Conditions>
 								<!--<Setter Property="BorderBrush"
                                     Value="#997DA2CE" />-->
-								<Setter Property="BorderBrush"
-												Value="#55d32222" />
-								<Setter Property="Background"
-												Value="#33E33232">
+								<Setter
+									Property="BorderBrush"
+									Value="#55d32222" />
+								<Setter
+									Property="Background"
+									Value="#33E33232">
 									<!--<Setter.Value>
                                     <LinearGradientBrush EndPoint="0,1"
                                                          StartPoint="0,0">
@@ -275,11 +323,12 @@
                                ScrollViewer.HorizontalScrollBarVisibility="Disabled" />-->
 						<!--<VirtualizingStackPanel Orientation="Horizontal"
                                             IsItemsHost="True"/>-->
-						<StackPanel IsItemsHost="True"
-												VirtualizingPanel.IsContainerVirtualizable="True"
-												VirtualizingPanel.IsVirtualizing="True"
-												VirtualizingPanel.VirtualizationMode="Recycling"
-												Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type ScrollContentPresenter}, Mode=FindAncestor}}" />
+						<StackPanel
+							IsItemsHost="True"
+							VirtualizingPanel.IsContainerVirtualizable="True"
+							VirtualizingPanel.IsVirtualizing="True"
+							VirtualizingPanel.VirtualizationMode="Recycling"
+							Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type ScrollContentPresenter}, Mode=FindAncestor}}" />
 						<!--<WrapPanel IsItemsHost="True"
                                        VirtualizingPanel.IsContainerVirtualizable="True"
                                        VirtualizingPanel.IsVirtualizing="True"
@@ -288,59 +337,70 @@
 					</ItemsPanelTemplate>
 				</TreeView.ItemsPanel>
 			</TreeView>
-			<GridSplitter Width="5"
-										Grid.RowSpan='10'
-										BorderThickness="2"
-										BorderBrush='Transparent'
-										Focusable='False'
-										ShowsPreview="True">
+			<GridSplitter
+				Width="5"
+				Grid.RowSpan='10'
+				BorderThickness="2"
+				BorderBrush='Transparent'
+				Focusable='False'
+				ShowsPreview="True">
 				<GridSplitter.Background>
-					<LinearGradientBrush StartPoint='0,0'
-															 EndPoint='0,1'>
-						<GradientStop Color='Transparent'
-													Offset='0' />
-						<GradientStop Color='#770000ee'
-													Offset='0.2' />
-						<GradientStop Color='#ff0000ee'
-													Offset='0.5' />
-						<GradientStop Color='#770000ee'
-													Offset='0.8' />
-						<GradientStop Color='Transparent'
-													Offset='1' />
+					<LinearGradientBrush
+						StartPoint='0,0'
+						EndPoint='0,1'>
+						<GradientStop
+							Color='Transparent'
+							Offset='0' />
+						<GradientStop
+							Color='#770000ee'
+							Offset='0.2' />
+						<GradientStop
+							Color='#ff0000ee'
+							Offset='0.5' />
+						<GradientStop
+							Color='#770000ee'
+							Offset='0.8' />
+						<GradientStop
+							Color='Transparent'
+							Offset='1' />
 					</LinearGradientBrush>
 				</GridSplitter.Background>
 			</GridSplitter>
-			<TextBox x:Name='textBox1'
-							 Grid.Column='1'
-							 IsReadOnly='True'
-							 Background='#88dddddd'
-							 Height='90'
-							 Margin="0,0,5,0"
-							 FontSize='12'
-							 VerticalAlignment='Stretch'
-							 HorizontalScrollBarVisibility='Auto'
-							 VerticalScrollBarVisibility='Auto' />
-			<Slider Grid.Column='1'
-							Orientation='Vertical'
-							Margin="0,10,0,10"
-							VerticalAlignment='Stretch'
-							HorizontalAlignment='Right'
-							Minimum='10'
-							Maximum='24'
-							Value='{Binding FontSize, ElementName=textBox1, Mode=TwoWay}'>
+			<TextBox
+				x:Name='textBox1'
+				Grid.Column='1'
+				IsReadOnly='True'
+				Background='#88dddddd'
+				Height='90'
+				Margin="0,0,5,0"
+				FontSize='12'
+				VerticalAlignment='Stretch'
+				HorizontalScrollBarVisibility='Auto'
+				VerticalScrollBarVisibility='Auto' />
+			<Slider
+				Grid.Column='1'
+				Orientation='Vertical'
+				Margin="0,10,0,10"
+				VerticalAlignment='Stretch'
+				HorizontalAlignment='Right'
+				Minimum='10'
+				Maximum='24'
+				Value='{Binding FontSize, ElementName=textBox1, Mode=TwoWay}'>
 				<Slider.LayoutTransform>
-					<ScaleTransform  ScaleX='0.2' />
+					<ScaleTransform
+						ScaleX='0.2' />
 				</Slider.LayoutTransform>
 			</Slider>
-			<GridSplitter BorderThickness='2'
-										BorderBrush='#000'
-										ResizeDirection='Rows'
-										HorizontalAlignment='Stretch'
-										VerticalAlignment='Bottom'
-										Grid.Column='1'
-										Grid.Row='0'
-										Height='3'
-										ShowsPreview="True" />
+			<GridSplitter
+				BorderThickness='2'
+				BorderBrush='#000'
+				ResizeDirection='Rows'
+				HorizontalAlignment='Stretch'
+				VerticalAlignment='Bottom'
+				Grid.Column='1'
+				Grid.Row='0'
+				Height='3'
+				ShowsPreview="True" />
 			<!--<Planerator:Planerator x:Name='planerator1'
 														 Grid.Column="1"
 														 Grid.Row='1'
@@ -365,36 +425,41 @@
 						</Style>
 					</RichTextBox.Resources>
 				</RichTextBox>-->
-			<extToolkit:RichTextBox x:Name="textBox_Messages"
-															Grid.Column="1"
-															Grid.Row='1'
-															Grid.RowSpan='1'
-															Margin="0,5,5,0"
-															MinWidth="10"
-															PreviewMouseLeftButtonDown='textBox_Messages_PreviewMouseLeftButtonDown'
-															ScrollViewer.HorizontalScrollBarVisibility='Auto'
-															ScrollViewer.VerticalScrollBarVisibility='Auto'
-															Foreground="Green"
-															Background='#aaffffff'
-															Padding='10,0'
-															IsReadOnlyCaretVisible='True'
-															IsReadOnly='True'
-															IsDocumentEnabled='True'
-															HorizontalAlignment='Stretch'
-															FontSize="20"
-															SpellCheck.IsEnabled='True'
-															RenderTransformOrigin='0.5,0.5'>
+			<extToolkit:RichTextBox
+				x:Name="textBox_Messages"
+				Grid.Column="1"
+				Grid.Row='1'
+				Grid.RowSpan='1'
+				Margin="0,5,5,0"
+				MinWidth="10"
+				PreviewMouseLeftButtonDown='textBox_Messages_PreviewMouseLeftButtonDown'
+				ScrollViewer.HorizontalScrollBarVisibility='Auto'
+				ScrollViewer.VerticalScrollBarVisibility='Auto'
+				Foreground="Green"
+				Background='#aaffffff'
+				Padding='10,0'
+				IsReadOnlyCaretVisible='True'
+				IsReadOnly='True'
+				IsDocumentEnabled='True'
+				HorizontalAlignment='Stretch'
+				FontSize="20"
+				SpellCheck.IsEnabled='True'
+				RenderTransformOrigin='0.5,0.5'>
 				<extToolkit:RichTextBox.Resources>
-					<Style TargetType="{x:Type inlinecommandtoolkit:MessagesParagraph}">
-						<Setter Property="Margin"
-										Value="0" />
+					<Style
+						TargetType="{x:Type inlinecommandtoolkit:MessagesParagraph}">
+						<Setter
+							Property="Margin"
+							Value="0" />
 					</Style>
 				</extToolkit:RichTextBox.Resources>
 				<extToolkit:RichTextBox.RenderTransform>
-					<ScaleTransform ScaleX='1'
-													ScaleY='1' />
+					<ScaleTransform
+						ScaleX='1'
+						ScaleY='1' />
 				</extToolkit:RichTextBox.RenderTransform>
-				<FlowDocument PageWidth='{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType=extToolkit:RichTextBox}}' />
+				<FlowDocument
+					PageWidth='{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType=extToolkit:RichTextBox}}' />
 				<!--<FlowDocument PageWidth='{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType=Planerator:Planerator}}' />-->
 				<!--<FlowDocument>
 						<Paragraph>
@@ -403,68 +468,88 @@
 					</FlowDocument>-->
 			</extToolkit:RichTextBox>
 			<!--</Planerator:Planerator>-->
-			<Slider Grid.Column='1'
-							Grid.Row='1'
-							Orientation='Vertical'
-							Margin="0,10,0,30"
-							VerticalAlignment='Stretch'
-							HorizontalAlignment='Right'
-							Minimum='10'
-							Maximum='24'
-							Value='{Binding FontSize, ElementName=textBox_Messages, Mode=TwoWay}'
-							Grid.RowSpan="4">
+			<Slider
+				Grid.Column='1'
+				Grid.Row='1'
+				Orientation='Vertical'
+				Margin="0,10,0,30"
+				VerticalAlignment='Stretch'
+				HorizontalAlignment='Right'
+				Minimum='10'
+				Maximum='24'
+				Value='{Binding FontSize, ElementName=textBox_Messages, Mode=TwoWay}'
+				Grid.RowSpan="4">
 				<Slider.LayoutTransform>
-					<ScaleTransform  ScaleX='0.2' />
+					<ScaleTransform
+						ScaleX='0.2' />
 				</Slider.LayoutTransform>
 			</Slider>
-			<ProgressBar x:Name='progressBar1'
-									 Grid.Row='2'
-									 Grid.Column='1'
-									 Height='5' />
-			<DockPanel LastChildFill='True'
-								 Grid.Row='3'
-								 Grid.ColumnSpan='2'>
-				<Label x:Name='labelEditSettings'
-							 DockPanel.Dock='Right'
-							 Padding='0'
-							 HorizontalAlignment='Right'
-							 Foreground='#555'
-							 Content='Edit settings'
-							 MouseRightButtonUp='labelEditSettings_MouseRightButtonUp'
-							 VerticalAlignment='Center'
-							 Margin='5,0' />
-				<ListBox x:Name='listBoxUnsetProperties'
-								 ItemsSource='{x:Static propertyinterceptor:StaticPropertyInterceptor.UnsetProperties}'
-								 SelectionChanged='listBoxUnsetProperties_SelectionChanged'
-								 SelectionMode='Single'
-								 Background='Transparent'
-								 Visibility="{Binding Items.Count, Converter={StaticResource zeroCollapsedNonZeroVisibleConverter}, ElementName=listBoxUnsetProperties}">
+			<ProgressBar
+				x:Name='progressBar1'
+				Grid.Row='2'
+				Grid.Column='1'
+				Height='5' />
+			<DockPanel
+				LastChildFill='True'
+				Grid.Row='3'
+				Grid.ColumnSpan='2'>
+				<Label
+					x:Name='labelEditSettings'
+					DockPanel.Dock='Right'
+					Padding='0'
+					HorizontalAlignment='Right'
+					Foreground='#555'
+					Content='Edit settings'
+					MouseRightButtonUp='labelEditSettings_MouseRightButtonUp'
+					VerticalAlignment='Center'
+					Margin='5,0' />
+				<Label
+					DockPanel.Dock='Right'
+					Padding='0'
+					HorizontalAlignment='Right'
+					Foreground='#555'
+					MouseDoubleClick='labelEditOnlineSettings_MouseDoubleClick'
+					Content='Edit online settings'
+					VerticalAlignment='Center'
+					Margin='5,0' />
+				<ListBox
+					x:Name='listBoxUnsetProperties'
+					ItemsSource='{x:Static propertyinterceptor:StaticPropertyInterceptor.UnsetProperties}'
+					SelectionChanged='listBoxUnsetProperties_SelectionChanged'
+					SelectionMode='Single'
+					Background='Transparent'
+					Visibility="{Binding Items.Count, Converter={StaticResource zeroCollapsedNonZeroVisibleConverter}, ElementName=listBoxUnsetProperties}">
 					<ListBox.ItemsPanel>
 						<ItemsPanelTemplate>
-							<WrapPanel Orientation='Horizontal'
-												 IsItemsHost="True" />
+							<WrapPanel
+								Orientation='Horizontal'
+								IsItemsHost="True" />
 						</ItemsPanelTemplate>
 					</ListBox.ItemsPanel>
 					<ListBox.ItemTemplate>
 						<DataTemplate>
-							<Border Padding='3,0'
-											BorderBrush='#999'
-											BorderThickness='1'
-											CornerRadius='5'
-											ToolTip='{Binding UserPrompt}'>
-								<StackPanel Orientation='Horizontal'>
-									<TextBlock Text='{Binding DeclaringClassName}'
-														 FontSize='12'
-														 Margin='0'
-														 Padding='0'
-														 VerticalAlignment='Center'
-														 Foreground='#678' />
-									<TextBlock Text='{Binding PropertyName}'
-														 FontSize='16'
-														 Padding='0'
-														 VerticalAlignment='Center'
-														 Margin='4,0,0,0'
-														 Foreground='Red' />
+							<Border
+								Padding='3,0'
+								BorderBrush='#999'
+								BorderThickness='1'
+								CornerRadius='5'
+								ToolTip='{Binding UserPrompt}'>
+								<StackPanel
+									Orientation='Horizontal'>
+									<TextBlock
+										Text='{Binding DeclaringClassName}'
+										FontSize='12'
+										Margin='0'
+										Padding='0'
+										VerticalAlignment='Center'
+										Foreground='#678' />
+									<TextBlock
+										Text='{Binding PropertyName}'
+										FontSize='16'
+										Padding='0'
+										VerticalAlignment='Center'
+										Margin='4,0,0,0'
+										Foreground='Red' />
 								</StackPanel>
 							</Border>
 						</DataTemplate>

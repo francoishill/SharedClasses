@@ -1066,8 +1066,9 @@ public class NetworkInterop
 		//MessageBox.Show(this, "File assebled successfully");
 	}
 
-	public static void FtpUploadFiles(Object textfeedbackSenderObject, string ftpRootUri, string userName, string password, string[] localFilenames, string urlWhenSuccessullyUploaded = null, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
+	public static bool FtpUploadFiles(Object textfeedbackSenderObject, string ftpRootUri, string userName, string password, string[] localFilenames, string urlWhenSuccessullyUploaded = null, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
 	{
+		ftpRootUri = ftpRootUri.Replace('\\', '/');
 		try
 		{
 			bool DirexistCanContinue = false;
@@ -1115,6 +1116,7 @@ public class NetworkInterop
 					client.Dispose();
 					GC.Collect();
 					GC.WaitForPendingFinalizers();
+					return true;
 				}
 			}
 			else UserMessages.ShowErrorMessage("Could not upload files (could not find/create directory online: " + ftpRootUri);
@@ -1129,9 +1131,10 @@ public class NetworkInterop
 			}
 			MessageBox.Show("Exception in transfer: " + exc.Message);
 		}
+		return false;
 	}
 
-	public static void FtpDownloadFile(Object textfeedbackSenderObject, string localRootFolder, string userName, string password, string onlineFileUrl, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
+	public static string FtpDownloadFile(Object textfeedbackSenderObject, string localRootFolder, string userName, string password, string onlineFileUrl, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
 	{
 		try
 		{
@@ -1160,7 +1163,8 @@ public class NetworkInterop
 							100);
 					}
 				};
-				client.DownloadFileAsync(new Uri(onlineFileUrl), localRootFolder.TrimEnd('\\') + "\\" + Path.GetFileName(onlineFileUrl.Replace("ftp://", "").Replace("/", "\\")));
+				string localFilepath = localRootFolder.TrimEnd('\\') + "\\" + Path.GetFileName(onlineFileUrl.Replace("ftp://", "").Replace("/", "\\"));
+				client.DownloadFileAsync(new Uri(onlineFileUrl), localFilepath);
 				while (!isComplete)
 					Application.DoEvents();
 				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Successfully download " + onlineFileUrl);
@@ -1168,6 +1172,13 @@ public class NetworkInterop
 				client.Dispose();
 				GC.Collect();
 				GC.WaitForPendingFinalizers();
+				if (!File.Exists(localFilepath) || new FileInfo(localFilepath).Length == 0)
+				{
+					if (File.Exists(localFilepath))
+						File.Delete(localFilepath);
+					return null;
+				}
+				return localFilepath;
 			}
 		}
 		catch (Exception exc)
@@ -1180,6 +1191,33 @@ public class NetworkInterop
 			}
 			MessageBox.Show("Exception in transfer: " + exc.Message);
 		}
+		return null;
+	}
+
+	public static bool FtpFileExists(string filePath, string ftpUser, string ftpPassword)
+	{
+		var request = (FtpWebRequest)WebRequest.Create(filePath);
+		request.Credentials = new NetworkCredential(ftpUser, ftpPassword);
+		request.Method = WebRequestMethods.Ftp.GetDateTimestamp;
+		request.UseBinary = true;
+
+		try
+		{
+			FtpWebResponse response = (FtpWebResponse)request.GetResponse();
+			return true;
+		}
+		catch (WebException ex)
+		{
+			FtpWebResponse response = (FtpWebResponse)ex.Response;
+			if (response.StatusCode ==
+				FtpStatusCode.ActionNotTakenFileUnavailable)
+			{
+				return false;
+				//Does not exist
+			}
+			UserMessages.ShowErrorMessage("Cannot determine whether file '" + filePath + "' exists: " + ex.Message);
+			return false;
+		}
 	}
 
 	public static bool FtpDirectoryExists(string directoryPath, string ftpUser, string ftpPassword)
@@ -1190,14 +1228,16 @@ public class NetworkInterop
 			FtpWebRequest request = (FtpWebRequest)WebRequest.Create(directoryPath);
 			request.Credentials = new NetworkCredential(ftpUser, ftpPassword);
 			request.Method = WebRequestMethods.Ftp.ListDirectory;
+			request.KeepAlive = false;
 
-			FtpWebResponse response = (FtpWebResponse)(request.GetResponse());
+			using (FtpWebResponse response = (FtpWebResponse)(request.GetResponse())) { }
 			IsExists = true;
 		}
 		catch (WebException ex)
 		{
 			//Console.WriteLine("WebException on FtpDirectoryExists" + ex.Message);
-			UserMessages.ShowErrorMessage("WebException on FtpDirectoryExists: " + ex.Message);
+			if (ex.Message.IndexOf("File unavailable", StringComparison.InvariantCultureIgnoreCase) == -1)
+				UserMessages.ShowErrorMessage("WebException on FtpDirectoryExists: " + ex.Message);
 			IsExists = false;
 		}
 		catch (Exception ex)
@@ -1215,6 +1255,75 @@ public class NetworkInterop
 			//create the directory
 			FtpWebRequest requestDir = (FtpWebRequest)FtpWebRequest.Create(new Uri(directory));
 			requestDir.Method = WebRequestMethods.Ftp.MakeDirectory;
+			requestDir.Credentials = new NetworkCredential(ftpUser, ftpPassword);
+			requestDir.UsePassive = true;
+			requestDir.UseBinary = true;
+			requestDir.KeepAlive = false;
+			FtpWebResponse response = (FtpWebResponse)(requestDir.GetResponse());
+			Stream ftpStream = response.GetResponseStream();
+
+			ftpStream.Close();
+			response.Close();
+
+			return true;
+		}
+		catch (WebException ex)
+		{
+			FtpWebResponse response = (FtpWebResponse)ex.Response;
+			if (response.StatusCode == FtpStatusCode.ActionNotTakenFileUnavailable)
+			{
+				response.Close();
+				return true;
+			}
+			else
+			{
+				response.Close();
+				return false;
+			}
+		}
+	}
+
+	public static bool RemoveFTPDirectory(string directory, string ftpUser, string ftpPassword)
+	{
+		try
+		{
+			FtpWebRequest requestDir = (FtpWebRequest)FtpWebRequest.Create(new Uri(directory));
+			requestDir.Method = WebRequestMethods.Ftp.RemoveDirectory;
+			requestDir.Credentials = new NetworkCredential(ftpUser, ftpPassword);
+			requestDir.UsePassive = true;
+			requestDir.UseBinary = true;
+			requestDir.KeepAlive = false;
+			FtpWebResponse response = (FtpWebResponse)(requestDir.GetResponse());
+			Stream ftpStream = response.GetResponseStream();
+
+			ftpStream.Close();
+			response.Close();
+
+			return true;
+		}
+		catch (WebException ex)
+		{
+			FtpWebResponse response = (FtpWebResponse)ex.Response;
+			if (response.StatusCode == FtpStatusCode.ActionNotTakenFileUnavailable)
+			{
+				response.Close();
+				return true;
+			}
+			else
+			{
+				response.Close();
+				return false;
+			}
+		}
+	}
+
+	public static bool DeleteFTPfile(string ftpFilePath, string ftpUser, string ftpPassword)
+	{
+		try
+		{
+			//create the directory
+			FtpWebRequest requestDir = (FtpWebRequest)FtpWebRequest.Create(new Uri(ftpFilePath));
+			requestDir.Method = WebRequestMethods.Ftp.DeleteFile;
 			requestDir.Credentials = new NetworkCredential(ftpUser, ftpPassword);
 			requestDir.UsePassive = true;
 			requestDir.UseBinary = true;

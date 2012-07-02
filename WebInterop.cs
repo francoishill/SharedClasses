@@ -106,7 +106,7 @@ namespace SharedClasses
 		{
 			JSON.Instance.SerializeNullValues = true;
 			JSON.Instance.ShowReadOnlyProperties = true;
-			JSON.Instance.UseUTCDateTime = true;
+			JSON.Instance.UseUTCDateTime = false;//true;
 			JSON.Instance.UsingGlobalTypes = false;
 		}
 

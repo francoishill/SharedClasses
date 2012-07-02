@@ -236,7 +236,7 @@ public class DynamicCodeInvoking
 		return rc;
 	}
 
-	public static RunCodeReturnStruct ClientGetAutoSyncVersion(string UserFolderName, bool ShowIfError = true)
+	/*public static RunCodeReturnStruct ClientGetAutoSyncVersion(string UserFolderName, bool ShowIfError = true)
 	{
 		string error = null;
 
@@ -268,7 +268,42 @@ public class DynamicCodeInvoking
 		if (error != null)
 			rc.ErrorMessage = error;
 		return rc;
-	}
+	}*/
+
+	/*public static RunCodeReturnStruct ClientLockAutoSyncServer(string UserFolderName, bool ShowIfError = true)
+	{
+		string error = null;
+
+		try
+		{
+			Iclientside_DynamicCodeInvokingServerClass proxy = XmlRpcProxyGen.Create<Iclientside_DynamicCodeInvokingServerClass>();
+			proxy.Url = GlobalSettings.TracXmlRpcInteropSettings.Instance.GetCombinedUrlForConnectingToDynamicInvokationServer();//.GetCombinedUrlForDynamicInvokationServer();
+
+			RunCodeReturnStruct resultObj = proxy.GetAutoSyncVersion(UserFolderName);
+			if (resultObj.Success)
+			{
+				string successMsg = "Successfully obtained AutoSyncVersion from server: ";
+				if (resultObj.MethodInvokeResultingObject is int)
+					successMsg += ((int)resultObj.MethodInvokeResultingObject).ToString();
+				return resultObj;
+			}
+		}
+		catch (Exception exc)
+		{
+			string tmperr = "Could not get server AutySyncVersion: "
+				+ Environment.NewLine + exc.Message + Environment.NewLine + Environment.NewLine + exc.StackTrace;
+			if (ShowIfError)
+				UserMessages.ShowErrorMessage(tmperr);
+			error = tmperr;
+		}
+
+		RunCodeReturnStruct rc = new RunCodeReturnStruct();
+		rc.Success = false;
+		if (error != null)
+			rc.ErrorMessage = error;
+		return rc;
+	}*/
+
 
 	public static DynamicCodeInvoking.RunCodeReturnStruct ClientGetJsonStringFromFile(string Category, string Name, bool ShowIfError = true)
 	{
@@ -630,7 +665,7 @@ public class DynamicCodeInvoking
 		}
 	}
 
-	public static RunCodeReturnStruct ServerGetAutoSyncVersion(string UserFolderName)
+	/*public static RunCodeReturnStruct ServerGetAutoSyncVersion(string UserFolderName)
 	{
 		int? version =	BinaryDiff.GetServerCurrentVersion(BinaryDiff.ServerRootFolder, UserFolderName);
 		if (version.HasValue)
@@ -653,7 +688,33 @@ public class DynamicCodeInvoking
 				MethodInvokeResultingObject = ""
 			};
 		}
-	}
+	}*/
+
+	/*public static RunCodeReturnStruct ServerLockAutoSyncServer(string UserFolderName)
+	{
+		//BinaryDiff.ServerRootFolder.TrimEnd('\\') + "\\" + UserFolderName + "\\Lock.file";
+		int? version =	BinaryDiff.GetServerCurrentVersion(BinaryDiff.ServerRootFolder, UserFolderName);
+		if (version.HasValue)
+		{
+			return new RunCodeReturnStruct()
+			{
+				Success = true,
+				ErrorMessage = "",
+				ResultingTypeString = typeof(int).AssemblyQualifiedName,
+				MethodInvokeResultingObject = version.Value
+			};
+		}
+		else
+		{
+			return new RunCodeReturnStruct()
+			{
+				Success = false,
+				ErrorMessage = "Cannot obtain newest version from server, perhaps no version yet?",
+				ResultingTypeString = typeof(string).AssemblyQualifiedName,
+				MethodInvokeResultingObject = ""
+			};
+		}
+	}*/
 
 	public class Script
 	{

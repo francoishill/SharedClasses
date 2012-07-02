@@ -61,93 +61,217 @@ namespace SharedClasses
 			return DoXDelta3Command(XDelta3Command.MakePatch, originalfile, difffile, patchedfile);
 		}
 
-		public static int? GetServerCurrentVersion(string RootFolder, string UserFolderName)
-		{
-			int? max = null;
-
-			string patchesDir = RootFolder.TrimEnd('\\') + "\\" + UserFolderName + "\\Patches";
-			foreach (string dir in Directory.GetDirectories(patchesDir))
-			{
-				string versionFolderName = Path.GetFileName(dir);
-				string versionStart = "Version";
-				if (versionFolderName.StartsWith(versionStart, StringComparison.InvariantCultureIgnoreCase))
-				{
-					int tmpint;
-					if (int.TryParse(versionFolderName.Substring(versionStart.Length), out tmpint))
-						if (!max.HasValue || tmpint > max.Value)
-							max = tmpint;
-				}
-			}
-			return max;
-		}
-
 		public class FileMetaData
 		{
-			public string RelativePath { get; set; }
+			private string _relativePath;
+			public string RelativePath { get { return _relativePath; } set { _relativePath = value; /*RecalculateDetails(localFileinfo);*/ } }
+			private FileInfo localFileinfo { get; set; }
 			public long Bytes { get; set; }
 			public DateTime Modified { get; set; }
+			public string MD5Hash { get; set; }
 			public bool HasPatch;
 			public FileMetaData() { }
-			public FileMetaData(string RelativePath, long Bytes, DateTime Modified)
+			public FileMetaData(string RelativePath, FileInfo localFileinfo)//long Bytes, DateTime Modified)
 			{
+				this.localFileinfo = localFileinfo;
 				this.RelativePath = RelativePath;
-				this.Bytes = Bytes;
-				this.Modified = Modified;
+				RecalculateDetails(localFileinfo);
 				this.HasPatch = false;
+			}
+
+			private void RecalculateDetails(FileInfo localFileinfo)
+			{
+				this.localFileinfo = localFileinfo;
+				this.Bytes = localFileinfo.Length;
+				this.Modified = localFileinfo.LastWriteTime;
+				this.Modified = this.Modified.AddMilliseconds(-this.Modified.Millisecond);
+				this.MD5Hash = localFileinfo.FullName.FileToMD5Hash();
 			}
 		}
 		public class FolderData
 		{
 			private const string cMetaDataFilename = "autosync.meta";
+			private const string cServerVersionFilename = "serverversion.txt";
+			private const string cLocalVersionFilename = "localversion.txt";
+			private const string cServerLockFilename = "lock.file";
 			private const string cRemoteFilesMetadataFilename = "FilesMetadata.json";
 			private const string cCachedSubfolderName = "_cached";
 			private const string cPatchFileExtension = ".patch";
 
 			private string _folderpath;
 			public string FolderPath { get { return _folderpath; } set { _folderpath = value.TrimEnd('\\'); } }
-			public bool IsLocal;
+			private string _serverrooturi;
+			public string ServerRootUri { get { return _serverrooturi; } set { _serverrooturi = value.TrimEnd('/'); } }
+			public string UserFolderName;
+			private string FtpUsername;
+			private string FtpPassword;
+			private FileMetaData[] cachedMetadata;
+			//public bool IsLocal;
 			public FileMetaData[] FilesData;
-			public FolderData(string FolderPath, bool IsLocal, FileMetaData[] FilesData)
+			public FolderData(string FolderPath, string ServerRootUri, string UserFolderName, /*bool IsLocal,*/ FileMetaData[] FilesData, string FtpUsername, string FtpPassword)
 			{
 				this.FolderPath = FolderPath.TrimEnd('\\');
-				this.IsLocal = IsLocal;
+				this.ServerRootUri = ServerRootUri;
+				this.UserFolderName = UserFolderName;
+				//this.IsLocal = IsLocal;
 				this.FilesData = FilesData;
+				this.FtpUsername = FtpUsername;
+				this.FtpPassword = FtpPassword;
+
+				if (FilesData == null)
+					PopulateFilesData();
 			}
 
-			private string GetRelativeVersionDir(int version)
+			private void PopulateFilesData()
+			{
+				List<string> localfiles = Directory.GetFiles(FolderPath, "*", SearchOption.AllDirectories)
+					//.Select(s => s.ToLower())
+					.Where(f => !f.StartsWith(FolderPath + "\\" + cCachedSubfolderName, StringComparison.InvariantCultureIgnoreCase))
+					.ToList();
+				localfiles.Sort();
+
+				this.FilesData = new FileMetaData[localfiles.Count];
+				int substringStartPos = (FolderPath.TrimEnd('\\') + "\\").Length;
+				for (int i = 0; i < localfiles.Count; i++)
+				{
+					var fileinfo = new FileInfo(localfiles[i]);
+					this.FilesData[i] = new FileMetaData(
+						localfiles[i].Substring(substringStartPos),
+						fileinfo);
+				}
+			}
+
+			public FileMetaData[] GetLastCachedFolderData()
+			{
+				if (cachedMetadata != null)
+					return cachedMetadata;
+
+				FileMetaData[] filesMetadata = new FileMetaData[0];
+				FolderData folderData = new FolderData(
+					this.FolderPath, this.ServerRootUri, this.UserFolderName, filesMetadata, this.FtpUsername, this.FtpPassword);
+
+				var datafullpath = this.GetMetadataFullpathLocal();
+				var zippedfilepath = GetZippedFilename(datafullpath);
+				bool datazippedexist = File.Exists(zippedfilepath);
+
+				if (datazippedexist)
+				{
+					WebInterop.SetDefaultJsonInstanceSettings();
+					string unzippedpath = DecompressFile(zippedfilepath);
+					if (unzippedpath == null)
+						UserMessages.ShowWarningMessage("Cannot unzip file (cannot fill folderData): " + datafullpath);
+					else
+					{
+						JSON.Instance.FillObject(folderData, File.ReadAllText(unzippedpath));
+						File.Delete(unzippedpath);
+					}
+					return folderData.FilesData;
+				}
+				return null;
+			}
+
+			/*private string GetRelativeVersionDir(int version)
 			{
 				return Path.GetDirectoryName(FolderPath).TrimEnd('\\')
 					+ "\\Patches\\Version" + version.ToString() + "\\"
 					+ cRemoteFilesMetadataFilename;
-			}
+			}*/
 
 			public string GetMetadataFullpathLocal()
 			{
 				return "{0}\\{1}\\{2}".Fmt(FolderPath.TrimEnd('\\'), cCachedSubfolderName, cMetaDataFilename);
 			}
 
-			public string GetMetadataFullpathServer(int version)
+			private string GetTempServerVersionFileFullpathLocal()
+			{
+				return "{0}\\{1}\\{2}".Fmt(FolderPath.TrimEnd('\\'), cCachedSubfolderName, cServerVersionFilename);
+			}
+
+			private string GetLocalVersionFileFullpath()
+			{
+				return "{0}\\{1}\\{2}".Fmt(FolderPath.TrimEnd('\\'), cCachedSubfolderName, cLocalVersionFilename);
+			}
+
+			private string GetRootUserfolderUri()
+			{
+				return this.ServerRootUri + "/" + this.UserFolderName;
+			}
+
+			private string GetOnlineNewestVersionFileUri()
+			{
+				return GetRootUserfolderUri() + "/" + cServerVersionFilename;
+			}
+
+			private string GetServerLockFileUri()
+			{
+				return GetRootUserfolderUri() + "/" + cServerLockFilename;
+			}
+
+			private string GetServerVersionFolderUri(int newVersion)
+			{
+				return GetRootUserfolderUri() + "/Patches/Version" + newVersion;
+			}
+
+			/*public string GetMetadataFullpathServer(int version)
 			{
 				return GetRelativeVersionDir(version);
-			}
+			}*/
 
 			private string GetAbsolutePath(FileMetaData file)
 			{
 				return FolderPath + "\\" + file.RelativePath;
 			}
 
-			private string GetCahceFolder()
+			private string GetCacheFolder()
 			{
 				return "{0}\\{1}".Fmt(this.FolderPath, cCachedSubfolderName);
 			}
 
 			private string GetCachedFilePath(FileMetaData file)
 			{
-				string filepath = GetCahceFolder() + "\\Original\\{0}".Fmt(file.RelativePath);
+				string filepath = GetCacheFolder() + "\\Original\\{0}".Fmt(file.RelativePath);
 				string dir = Path.GetDirectoryName(filepath);
 				if (!Directory.Exists(dir))
 					Directory.CreateDirectory(dir);
 				return filepath;
+			}
+
+			public int? GetServerCurrentVersion(/*string RootFolder, */string UserFolderName)
+			{
+				//int? max = null;
+
+				File.Delete(GetTempServerVersionFileFullpathLocal());
+				var localVersionFile = NetworkInterop.FtpDownloadFile(
+					null,
+					Path.GetDirectoryName(GetTempServerVersionFileFullpathLocal()).TrimEnd('\\'),
+					FtpUsername,
+					FtpPassword,
+					GetOnlineNewestVersionFileUri());
+
+				if (localVersionFile == null)
+					return null;
+
+				string filetext = File.ReadAllText(localVersionFile).Trim();
+				int tmpint;
+				if (int.TryParse(filetext, out tmpint))
+					return tmpint;
+				else
+					return null;
+
+				/*string patchesDir = RootFolder.TrimEnd('\\') + "\\" + UserFolderName + "\\Patches";
+				foreach (string dir in Directory.GetDirectories(patchesDir))
+				{
+					string versionFolderName = Path.GetFileName(dir);
+					string versionStart = "Version";
+					if (versionFolderName.StartsWith(versionStart, StringComparison.InvariantCultureIgnoreCase))
+					{
+						int tmpint;
+						if (int.TryParse(versionFolderName.Substring(versionStart.Length), out tmpint))
+							if (!max.HasValue || tmpint > max.Value)
+								max = tmpint;
+					}
+				}
+				return max;*/
 			}
 
 			public void CopyLocalFilesToCache()
@@ -156,89 +280,362 @@ namespace SharedClasses
 					File.Copy(GetAbsolutePath(f), GetCachedFilePath(f));
 			}
 
-			private bool HasFileChanged(FileMetaData file)
+			private bool HasFileChanged(FileMetaData file, FileMetaData cachedFileMetadata)
 			{
-				FileInfo fiOrig = new FileInfo(GetCachedFilePath(file));
-				FileInfo fiCurr = new FileInfo(GetAbsolutePath(file));
-				return
-					fiOrig.Length != fiCurr.Length
-					|| fiOrig.LastWriteTime != fiCurr.LastWriteTime
-					|| fiOrig.FullName.FileToMD5Hash() != fiCurr.FullName.FileToMD5Hash();
+				return file.MD5Hash != cachedFileMetadata.MD5Hash ||
+					//file.Modified != cachedFileMetadata.Modified ||
+					file.Modified.Year != cachedFileMetadata.Modified.Year ||
+					file.Modified.Month != cachedFileMetadata.Modified.Month ||
+					file.Modified.Day != cachedFileMetadata.Modified.Day ||
+					file.Modified.Hour != cachedFileMetadata.Modified.Hour ||
+					file.Modified.Minute != cachedFileMetadata.Modified.Minute ||
+					file.Modified.Second != cachedFileMetadata.Modified.Second ||
+					file.Bytes != cachedFileMetadata.Bytes;
 
+				//FileInfo fiOrig = new FileInfo(GetCachedFilePath(file));
+				//FileInfo fiCurr = new FileInfo(GetAbsolutePath(file));
+				//return
+				//    fiOrig.Length != fiCurr.Length
+				//    || fiOrig.LastWriteTime != fiCurr.LastWriteTime
+				//    || fiOrig.FullName.FileToMD5Hash() != fiCurr.FullName.FileToMD5Hash();
 			}
 
-			public List<string> GeneratePatches()
-			{				
-				List<string> patchesMade = new List<string>();
-
-				if (IsLocal)
+			private Dictionary<string, FileMetaData> GetTempCachedFileAndMetadataDictionary()
+			{
+				FileMetaData[] cachedMetadata = GetLastCachedFolderData();
+				var tmpdict = new Dictionary<string, FileMetaData>();
+				if (cachedMetadata != null)
 				{
-					var patchesdir = "{0}\\Patches".Fmt(GetCahceFolder());
-					foreach (var f in this.FilesData)
-					{
-						f.HasPatch = false;
-						var patchfile = patchesdir + "\\" + f.RelativePath;
-						var patchfileDir = Path.GetDirectoryName(patchfile);
-						patchfile += cPatchFileExtension;
+					foreach (var cf in cachedMetadata)
+						tmpdict.Add(cf.RelativePath, cf);
+					return tmpdict;
+				}
+				else return null;
+			}
 
-						if (HasFileChanged(f))
-						{
-							if (!Directory.Exists(patchfileDir))
-								Directory.CreateDirectory(patchfileDir);
-							MakePatch(GetAbsolutePath(f), GetCachedFilePath(f), patchfile);
-							patchesMade.Add(patchfile);
-						}
+			private Dictionary<string, FileMetaData> GetTempDictForLocalFilesMetadata()
+			{
+				var tmpdict = new Dictionary<string, FileMetaData>();
+				if (FilesData != null)
+				{
+					foreach (var lf in FilesData)
+						tmpdict.Add(lf.RelativePath, lf);
+					return tmpdict;
+				}
+				else return null;
+			}
+
+			private bool HasLocalChanges()
+			{
+				var tmpcacheddict = GetTempCachedFileAndMetadataDictionary();
+				if (tmpcacheddict != null && this.FilesData.Length != tmpcacheddict.Count)
+					return true;
+				foreach (var f in this.FilesData)
+					if (
+						tmpcacheddict == null
+						|| !tmpcacheddict.ContainsKey(f.RelativePath)
+						|| HasFileChanged(f, tmpcacheddict[f.RelativePath]))
+						return true;
+				return false;
+			}
+
+			private string GetPatchesRootDir()
+			{
+				return "{0}\\Patches".Fmt(GetCacheFolder());
+			}
+			private string GetPatchFilepath(FileMetaData file)
+			{
+				return GetPatchesRootDir() + "\\" + file.RelativePath;
+			}
+
+			private bool UploadPatch(FileMetaData file, string patchfiledir, int newVersion)
+			{
+				return NetworkInterop.FtpUploadFiles(
+					null,
+					GetServerVersionFolderUri(newVersion) + "/" + Path.GetDirectoryName(file.RelativePath).Replace("\\", "/"),
+					FtpUsername,
+					FtpPassword,
+					new string[] { patchfiledir });
+			}
+
+			public bool UploadFilesWithPatches(int newVersion)
+			{
+				//List<string> patchesMade = new List<string>();
+
+				//if (IsLocal)
+				//{
+
+				if (!Directory.Exists(GetPatchesRootDir()))
+					Directory.CreateDirectory(GetPatchesRootDir());
+
+				var localPatchesDir = GetCacheFolder() + "\\Patches";
+				Directory.Delete(localPatchesDir, true);
+				Directory.CreateDirectory(localPatchesDir);
+
+				var tmpcacheddict = GetTempCachedFileAndMetadataDictionary();
+				foreach (var f in this.FilesData)
+				{
+					f.HasPatch = false;
+					var patchfile = GetPatchFilepath(f);//patchesdir + "\\" + f.RelativePath;
+					var patchfileDir = Path.GetDirectoryName(patchfile);
+					patchfile += cPatchFileExtension;
+
+					if (
+						tmpcacheddict == null
+						|| !tmpcacheddict.ContainsKey(f.RelativePath)
+						|| HasFileChanged(f, tmpcacheddict[f.RelativePath]))
+					{
+						if (!Directory.Exists(patchfileDir))
+							Directory.CreateDirectory(patchfileDir);
+						MakePatch(GetAbsolutePath(f), GetCachedFilePath(f), patchfile);
+						if (!UploadPatch(f, patchfile, newVersion))
+							return false;
+						//patchesMade.Add(patchfile);
 					}
-					if (!Directory.Exists(patchesdir))
-						Directory.CreateDirectory(patchesdir);
+				}
+
+				WebInterop.SetDefaultJsonInstanceSettings();
+				var json = WebInterop.GetJsonStringFromObject(this, false);
+				File.WriteAllText(GetMetadataFullpathLocal(), json);
+				string zippedPath = CompressFile(GetMetadataFullpathLocal());
+				File.Delete(GetMetadataFullpathLocal());
+				if (zippedPath == null)
+					return false;
+				cachedMetadata = null;
+				//}
+				//else
+				//{
+				//}
+				return true;
+				//return patchesMade;
+			}
+
+			private int? GetLocalVersion()
+			{
+				string localversionfile = GetLocalVersionFileFullpath();
+
+				if (!File.Exists(localversionfile))
+					return null;
+
+				string filetext = File.ReadAllText(localversionfile).Trim();
+				int tmpint;
+				if (int.TryParse(filetext, out tmpint))
+					return tmpint;
+				else
+					return null;
+
+				//UserMessages.ShowInfoMessage("Must still incorporate this function");
+				//Obtain from metadata
+				//return 0;
+			}
+
+			private string CreateEmptyLockFileLocally()
+			{
+				string tmpFilePath = Path.GetTempPath().TrimEnd('\\') + "\\" + cServerLockFilename;
+				if (File.Exists(tmpFilePath) && new FileInfo(tmpFilePath).Length > 0)
+					File.Delete(tmpFilePath);
+				if (!File.Exists(tmpFilePath))
+					File.Create(tmpFilePath);
+				return tmpFilePath;
+			}
+
+			private bool IsServerLocked()
+			{
+				return NetworkInterop.FtpFileExists(this.GetServerLockFileUri(), FtpUsername, FtpPassword);
+			}
+
+			private bool LockServer()
+			{
+				string tmpLocalLockFile = CreateEmptyLockFileLocally();
+				//TODO: FtpUploadFiles returns boolean, is this returned value trustworthy? See steps in upload method itsself
+				return NetworkInterop.FtpUploadFiles(
+					null,
+					GetRootUserfolderUri(),
+					FtpUsername,
+					FtpPassword,
+					new string[] { tmpLocalLockFile });
+			}
+
+			private bool UnlockServer()
+			{
+				return NetworkInterop.DeleteFTPfile(GetServerLockFileUri(), FtpUsername, FtpPassword);
+			}
+
+			private int? GetNewVersionFromserver(int currentVersion)
+			{
+				int newVersionNum = currentVersion + 1;
+				string newversionUri = GetServerVersionFolderUri(newVersionNum);
+				if (NetworkInterop.FtpDirectoryExists(newversionUri, FtpUsername, FtpPassword))
+					NetworkInterop.RemoveFTPDirectory(newversionUri, FtpUsername, FtpPassword);
+
+				if (!NetworkInterop.CreateFTPDirectory(newversionUri, FtpUsername, FtpPassword))
+				{
+					UserMessages.ShowErrorMessage("Could not create new version dir: " + newversionUri);
+					return null;
 				}
 				else
+					return newVersionNum;
+				//return null;
+			}
+
+			private bool UpateServerVersionFile(int newVersion)
+			{
+				string onlineVersionFileLocalTempPath = GetTempServerVersionFileFullpathLocal();
+				string onlineVersionUri = GetRootUserfolderUri();//Path.GetDirectoryName(GetOnlineNewestVersionFileUri().Replace("/", "\\")).Replace("\\", "/");
+				string localVersionFile = GetLocalVersionFileFullpath();
+				File.Delete(onlineVersionFileLocalTempPath);
+				File.WriteAllText(onlineVersionFileLocalTempPath, newVersion.ToString());
+				if (!File.Exists(onlineVersionFileLocalTempPath))
+					return false;
+				if (!NetworkInterop.FtpUploadFiles(null, onlineVersionUri, FtpUsername, FtpPassword,
+					new string[] { onlineVersionFileLocalTempPath }))
+					return false;
+				File.WriteAllText(localVersionFile, newVersion.ToString());
+				return true;
+			}
+
+			private List<FileMetaData> GetAddedFilesLocally()
+			{
+				var tmplist = new List<FileMetaData>();
+				var tmpcacheddict = GetTempCachedFileAndMetadataDictionary();
+				var tmplocaldict = GetTempDictForLocalFilesMetadata();
+				foreach (string f in tmplocaldict.Keys)
+					if (!tmpcacheddict.ContainsKey(f))
+						tmplist.Add(tmplocaldict[f]);
+				return tmplist;
+			}
+
+			private List<FileMetaData> GetRemovedFilesLocally()
+			{
+				var tmplist = new List<FileMetaData>();
+				var tmpcacheddict = GetTempCachedFileAndMetadataDictionary();
+				var tmplocaldict = GetTempDictForLocalFilesMetadata();
+				foreach (string f in tmpcacheddict.Keys)
+					if (!tmplocaldict.ContainsKey(f))
+						tmplist.Add(tmpcacheddict[f]);
+				return tmplist;
+			}
+
+			private bool CheckForAddedOrRemovedFiles(List<FileMetaData> addedFiles, List<FileMetaData> removedFiles)
+			{
+				//var addedFiles = GetAddedFilesLocally();
+				//var removedFiles = GetRemovedFilesLocally();
+
+				if (addedFiles.Count == 0 && removedFiles.Count == 0)
+					return true;
+
+				foreach (var af in addedFiles)
 				{
+					File.Copy(GetAbsolutePath(af), GetCachedFilePath(af));
+					if (!NetworkInterop.FtpUploadFiles(
+						null,
+						GetRootUserfolderUri() + "/Original/" + Path.GetDirectoryName(af.RelativePath).Replace("\\", "/"),
+						FtpUsername,
+						FtpPassword,
+						new string[] { GetAbsolutePath(af) }))
+						return false;
 				}
 
-				return patchesMade;
+				foreach (var rf in removedFiles)
+				{
+					File.Delete(GetCachedFilePath(rf));
+					int CheckNextTodoItem;
+					//TODO: This might be dangerous? Rather moved it to "deleted" folder on the server???
+					if (!NetworkInterop.DeleteFTPfile(GetRootUserfolderUri() + "/Original/" + rf.RelativePath.Replace("\\", "/"), FtpUsername, FtpPassword))
+						return false;
+				}
+
+				return true;
 			}
 
-			private int GetLocalVersion()
+			public enum UploadPatchesResult
 			{
-				UserMessages.ShowInfoMessage("Must still incorporate this function");
-				//Obtain from metadata
-				return 0;
+				Success,
+				NoLocalChanges,
+				ServerAlreadyLocked,
+				UnableToLock,
+				ServerVersionNewer,
+				FailedObtainingServerVersion,
+				FailedObtainingLocalVersion,
+				FailedAddingNewVersionFolder,
+				FailedUploadingPatches,
+				FailedIncreasingServerVersion,
+				FailedToAddOrRemoveFiles,
+				//FailedApplyingPatches
 			}
-
-			public enum UploadPatchesResult { Success, UnableToLock, ServerVersionNewer, FailedUploadingPatches, FailedApplyingPatches }
-			public UploadPatchesResult UploadPatches(string serverRootFolder, string UserFolderName)
+			public UploadPatchesResult UploadChangesToServer()
 			{
+				if (!this.HasLocalChanges())
+					return UploadPatchesResult.NoLocalChanges;
+
+				if (IsServerLocked())
+					return UploadPatchesResult.ServerAlreadyLocked;
+
+				int? serverVersion = GetServerCurrentVersion(this.UserFolderName);
+				int? localVersion = GetLocalVersion();
+				if (serverVersion == null)
+					return UploadPatchesResult.FailedObtainingServerVersion;
+				else if (localVersion == null)
+					return UploadPatchesResult.FailedObtainingLocalVersion;
+				else if (localVersion.Value < serverVersion.Value)
+					//Must download newer version first
+					return UploadPatchesResult.ServerVersionNewer;
+
+				if (!LockServer())
+					return UploadPatchesResult.UnableToLock;
+
+				int? newVersion = GetNewVersionFromserver(localVersion.Value);
+				if (newVersion == null)
+					return UploadPatchesResult.FailedAddingNewVersionFolder;
+
+				//string serverNewVersionFolder = GetServerVersionFolderUri(newVersion.Value);
+
+				var addedFiles = GetAddedFilesLocally();
+				var removedFiles = GetRemovedFilesLocally();
+				if (!UploadFilesWithPatches(newVersion.Value))
+					return UploadPatchesResult.FailedUploadingPatches;
+
+				//First implement next line this before testing again
+				if (!CheckForAddedOrRemovedFiles(addedFiles, removedFiles))
+					return UploadPatchesResult.FailedToAddOrRemoveFiles;
+
+				if (!UpateServerVersionFile(newVersion.Value))
+					return UploadPatchesResult.FailedIncreasingServerVersion;
+
+				while (!UnlockServer()) { }
+
+				return UploadPatchesResult.Success;
+
 				//Check server for matching version, if not match download changes first
-				DynamicCodeInvoking.RunCodeReturnStruct versionResult =
+				/*DynamicCodeInvoking.RunCodeReturnStruct versionResult =
 					DynamicCodeInvoking.ClientGetAutoSyncVersion(UserFolderName);
 				if (!versionResult.Success)
 					UserMessages.ShowErrorMessage("Error obtaining version: " + versionResult.ErrorMessage);
 				else
 				{
 					int serverVersion = (int)versionResult.MethodInvokeResultingObject;
-					//UserMessages.ShowInfoMessage("Successful version = " + version);
 					if (GetLocalVersion() < serverVersion)
+						//Must download rewer version first
 						return UploadPatchesResult.ServerVersionNewer;
-				}
+				}*/
 
-				return UploadPatchesResult.Success;
-				//Lock server (only requested folder)
-				//Get new version
-				//Create new version folder, write file this folder to say "Not applied yet"
 				//Upload patches into new version folder (use http uploading, or maybe allow for FTP??)
 				//Apply patches on server
 				//Unlock server
 			}
 		}
 
-		public const string ServerRootFolder = @"C:\Francois\AutoSyncServer";
-		public static FolderData GetFolderMetaData(string fullPathOrUserFolder, bool isLocal, int? versionIfServer = null)
+		//public const string ServerRootFolder = @"C:\Francois\AutoSyncServer";
+		//public const string ServerRootUri = "ftp://fjh.dyndns.org/francois/AutoSyncServer";
+		[Obsolete("Not used anymore", true)]
+		public static FolderData GetFolderMetaData(string fullPathOrUserFolder, string serverRootUri, string UserFolderName)
 		{
+			return null;
 			//Stopwatch sw = Stopwatch.StartNew();
-			if (!isLocal)
-				fullPathOrUserFolder = ServerRootFolder.TrimEnd('\\') + "\\" + fullPathOrUserFolder + "\\RootFolder";
-			FolderData folderData = new FolderData(fullPathOrUserFolder, isLocal, null);
+			//if (!isLocal)
+			//    fullPathOrUserFolder = ServerRootFolder.TrimEnd('\\') + "\\" + fullPathOrUserFolder + "\\RootFolder";
+
+			/*FolderData folderData = new FolderData(fullPathOrUserFolder, serverRootUri, UserFolderName, null);
 
 			if (!Directory.Exists(fullPathOrUserFolder))
 			{
@@ -248,31 +645,28 @@ namespace SharedClasses
 			}
 			//var datafilename = localRootFolder.Replace('\\', '_').Replace(':', '_') + ".data";
 			//var datafullpath = SettingsInterop.GetFullFilePathInLocalAppdata(datafilename, "AutoSync", "MetaData");
-			var datafullpath =
-				isLocal
-				? folderData.GetMetadataFullpathLocal()
-				: folderData.GetMetadataFullpathServer(versionIfServer.Value);
-			var zippedfilepath = isLocal ? GetZippedFilename(datafullpath) : datafullpath;
+			var datafullpath = folderData.GetMetadataFullpathLocal();
+			var zippedfilepath = GetZippedFilename(datafullpath);
 			bool datazippedexist = File.Exists(zippedfilepath);
 
 			if (datazippedexist)
 			{
 				WebInterop.SetDefaultJsonInstanceSettings();
-				if (isLocal)
-				{
-					string unzippedpath = DecompressFile(zippedfilepath);
-					if (unzippedpath == null)
-						UserMessages.ShowWarningMessage("Cannot unzip file (cannot fill folderData): " + datafullpath);
-					else
-					{
-						JSON.Instance.FillObject(folderData, File.ReadAllText(unzippedpath));
-						File.Delete(unzippedpath);
-					}
-				}
+				//if (isLocal)
+				//{
+				string unzippedpath = DecompressFile(zippedfilepath);
+				if (unzippedpath == null)
+					UserMessages.ShowWarningMessage("Cannot unzip file (cannot fill folderData): " + datafullpath);
 				else
 				{
-					JSON.Instance.FillObject(folderData, File.ReadAllText(zippedfilepath));
+					JSON.Instance.FillObject(folderData, File.ReadAllText(unzippedpath));
+					File.Delete(unzippedpath);
 				}
+				//}
+				//else
+				//{
+				//    JSON.Instance.FillObject(folderData, File.ReadAllText(zippedfilepath));
+				//}
 				return folderData;
 			}
 
@@ -298,21 +692,21 @@ namespace SharedClasses
 					fileinfo.Length,
 					fileinfo.LastWriteTimeUtc);
 			}
-			if (isLocal)
-				folderData.CopyLocalFilesToCache();
+			//if (isLocal)
+			folderData.CopyLocalFilesToCache();
 
 			var json = WebInterop.GetJsonStringFromObject(folderData, false);
 			File.WriteAllText(datafullpath, json);
 
-			if (isLocal)//Only compress if locally, not server json data
-			{
-				CompressFile(datafullpath);
-				File.Delete(datafullpath);
-			}
+			//if (isLocal)//Only compress if locally, not server json data
+			//{
+			CompressFile(datafullpath);
+			File.Delete(datafullpath);
+			//}
 
 			//sw.Stop();
 			//UserMessages.ShowInfoMessage("Total time: " + sw.Elapsed.TotalSeconds);
-			return folderData;
+			return folderData;*/
 		}
 
 		public static string GetZippedFilename(string originalFilepath) { return originalFilepath + ".gz"; }

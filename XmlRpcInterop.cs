@@ -19,8 +19,14 @@ public interface Iclientside_DynamicCodeInvokingServerClass : IXmlRpcProxy
 	DynamicCodeInvoking.RunCodeReturnStruct SaveJsonStringToFile(string Category, string Name, string jsonString);
 	[XmlRpcMethod("GetJsonStringFromFile")]
 	DynamicCodeInvoking.RunCodeReturnStruct GetJsonStringFromFile(string Category, string Name);
+	/*
+	Rather use a "newest version" file than using XmlRpc
 	[XmlRpcMethod("GetAutoSyncVersion")]
-	DynamicCodeInvoking.RunCodeReturnStruct GetAutoSyncVersion(string UserFolderName);
+	DynamicCodeInvoking.RunCodeReturnStruct GetAutoSyncVersion(string UserFolderName);*/
+	/*
+	Rather upload a lock file than using XmlRpc
+	[XmlRpcMethod("LockAutoSyncServer")]
+	DynamicCodeInvoking.RunCodeReturnStruct LockAutoSyncServer(string UserFolderName);*/
 }
 
 public class XmlRpcInterop
@@ -173,11 +179,21 @@ public class XmlRpcInterop
 			return DynamicCodeInvoking.ServerGetJsonStringFromFile(Category, Name);
 		}
 
+		/*
+		Rather use a "newest version" file than using XmlRpc
 		[XmlRpcMethod("GetAutoSyncVersion")]
 		public DynamicCodeInvoking.RunCodeReturnStruct GetAutoSyncVersion(string UserFolderName)
 		{
 			return DynamicCodeInvoking.ServerGetAutoSyncVersion(UserFolderName);
-		}
+		}*/
+
+		/*
+		Rather upload a lock file than using XmlRpc
+		[XmlRpcMethod("LockAutoSyncServer")]
+		public DynamicCodeInvoking.RunCodeReturnStruct LockAutoSyncServer(string UserFolderName)
+		{
+			return DynamicCodeInvoking.ServerLockAutoSyncServer(UserFolderName);
+		}*/
 	}
 
 	public class Tracer : XmlRpcLogger

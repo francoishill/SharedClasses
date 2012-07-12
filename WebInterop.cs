@@ -102,17 +102,9 @@ namespace SharedClasses
 			}
 		}
 
-		public static void SetDefaultJsonInstanceSettings()
-		{
-			JSON.Instance.SerializeNullValues = true;
-			JSON.Instance.ShowReadOnlyProperties = true;
-			JSON.Instance.UseUTCDateTime = false;//true;
-			JSON.Instance.UsingGlobalTypes = false;
-		}
-
 		public static bool GetModifiedTimeFromOnline(string category, string name, out DateTime ModifiedTimeOut, out string errorStringIfFail)
 		{
-			SetDefaultJsonInstanceSettings();
+			JSON.SetDefaultJsonInstanceSettings();
 
 			string response;
 			if (WebInterop.PostPHP(
@@ -153,7 +145,7 @@ namespace SharedClasses
 
 		public static bool PopulateObjectFromOnline(string category, string name, object objectToPopulate, out string errorStringIfFail)
 		{
-			SetDefaultJsonInstanceSettings();
+			JSON.SetDefaultJsonInstanceSettings();
 
 			string response;
 			if (WebInterop.PostPHP(
@@ -191,7 +183,7 @@ namespace SharedClasses
 
 		public static bool SaveObjectOnline(string category, string name, object obj, out string errorStringIfFailElseJsonString)
 		{
-			SetDefaultJsonInstanceSettings();
+			JSON.SetDefaultJsonInstanceSettings();
 
 			string response;
 			//string newvalue = JSON.Instance.Beautify(JSON.Instance.ToJSON(obj, false));

@@ -35,6 +35,14 @@ namespace SharedClasses//fastJSON
 		public bool UsingGlobalTypes = true;
 		public bool IgnoreCaseOnDeserialize = false;
 
+		//Added by Francois
+		public static void SetDefaultJsonInstanceSettings()
+		{
+			JSON.Instance.SerializeNullValues = true;
+			JSON.Instance.ShowReadOnlyProperties = true;
+			JSON.Instance.UseUTCDateTime = false;//true;
+			JSON.Instance.UsingGlobalTypes = false;
+		}
 
 		public string ToJSON(object obj)
 		{

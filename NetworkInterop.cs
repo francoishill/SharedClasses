@@ -1084,29 +1084,32 @@ public class NetworkInterop
 				{
 					client.Credentials = new System.Net.NetworkCredential(userName, password);
 					//client.Headers.Add(HttpRequestHeader.UserAgent, "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)");
+
+					bool isComplete = false;
+					client.UploadFileCompleted += (snder, evtargs) =>
+					{
+						RaiseProgressChangedEvent_Ifnotnull(ref progressChanged,
+							100,
+							100);
+						isComplete = true;
+					};
+					client.UploadProgressChanged += (snder, evtargs) =>
+					{
+						if (!isComplete)
+						{
+							RaiseProgressChangedEvent_Ifnotnull(ref progressChanged,
+								evtargs.ProgressPercentage,
+								100);
+						}
+					};
+
 					foreach (string localFilename in localFilenames)
 					{
 						string fileNameOnServer = new FileInfo(localFilename).Name;
 						Console.WriteLine("fileNameOnServer" + fileNameOnServer);
 						string dirOnFtpServer = ftpRootUri + "/" + fileNameOnServer;
 
-						bool isComplete = false;
-						client.UploadFileCompleted += (snder, evtargs) =>
-						{
-							RaiseProgressChangedEvent_Ifnotnull(ref progressChanged,
-								100,
-								100);
-							isComplete = true;
-						};
-						client.UploadProgressChanged += (snder, evtargs) =>
-						{
-							if (!isComplete)
-							{
-								RaiseProgressChangedEvent_Ifnotnull(ref progressChanged,
-									evtargs.ProgressPercentage,
-									100);
-							}
-						};
+						isComplete = false;
 						client.UploadFileAsync(new Uri(dirOnFtpServer), "STOR", localFilename);
 						while (!isComplete)
 							Application.DoEvents();
@@ -1119,7 +1122,8 @@ public class NetworkInterop
 					return true;
 				}
 			}
-			else UserMessages.ShowErrorMessage("Could not upload files (could not find/create directory online: " + ftpRootUri);
+			else
+				UserMessages.ShowErrorMessage("Could not upload files (could not find/create directory online: " + ftpRootUri);
 		}
 		catch (Exception exc)
 		{
@@ -1134,8 +1138,27 @@ public class NetworkInterop
 		return false;
 	}
 
+	public static long FtpGetFileSize(string fullFileUri, string userName, string password)
+	{
+		FtpWebRequest reqSize = (FtpWebRequest)FtpWebRequest.Create(new Uri(fullFileUri));
+		reqSize.Credentials = new NetworkCredential(userName, password);
+		reqSize.Method = WebRequestMethods.Ftp.GetFileSize;
+		reqSize.UseBinary = true;
+
+		FtpWebResponse loginresponse = (FtpWebResponse)reqSize.GetResponse();
+		FtpWebResponse respSize = (FtpWebResponse)reqSize.GetResponse();
+		respSize = (FtpWebResponse)reqSize.GetResponse();
+		long size = respSize.ContentLength;
+
+		respSize.Close();
+
+		return size;
+	}
+
 	public static string FtpDownloadFile(Object textfeedbackSenderObject, string localRootFolder, string userName, string password, string onlineFileUrl, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
 	{
+		int maxRetries = 5;
+		int retryCount = 0;
 		try
 		{
 			if (!Directory.Exists(localRootFolder))
@@ -1147,6 +1170,8 @@ public class NetworkInterop
 				//foreach (string localFilename in localFilenames)
 				//{
 				bool isComplete = false;
+				long filesize = FtpGetFileSize(onlineFileUrl, userName, password);
+				MiniDownloadBarForm.ShowMiniDownloadBar();
 				client.DownloadFileCompleted += (snder, evtargs) =>
 				{
 					RaiseProgressChangedEvent_Ifnotnull(ref progressChanged,
@@ -1158,20 +1183,39 @@ public class NetworkInterop
 				{
 					if (!isComplete)
 					{
+						//int percentage = evtargs.ProgressPercentage;
+						int percentage = (int)Math.Truncate((double)100 * (double)evtargs.BytesReceived / (double)filesize);
 						RaiseProgressChangedEvent_Ifnotnull(ref progressChanged,
-							evtargs.ProgressPercentage,
+							percentage,
 							100);
+						MiniDownloadBarForm.UpdateProgress(percentage);
 					}
 				};
 				string localFilepath = localRootFolder.TrimEnd('\\') + "\\" + Path.GetFileName(onlineFileUrl.Replace("ftp://", "").Replace("/", "\\"));
+
+			retryhere:
 				client.DownloadFileAsync(new Uri(onlineFileUrl), localFilepath);
 				while (!isComplete)
 					Application.DoEvents();
+				MiniDownloadBarForm.CloseDownloadBar();
 				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Successfully download " + onlineFileUrl);
+
+				int tmptodo;
+				//TODO: Checking file length = 0? What if its a blank/empty file??
+				if (retryCount <= maxRetries && (!File.Exists(localFilepath) || new FileInfo(localFilepath).Length == 0))
+				{
+					retryCount++;
+					isComplete = false;
+					Thread.Sleep(300);
+					if (retryCount <= maxRetries && (!File.Exists(localFilepath) || new FileInfo(localFilepath).Length == 0))
+						goto retryhere;
+				}
+
 				//}
-				client.Dispose();
-				GC.Collect();
-				GC.WaitForPendingFinalizers();
+				//client.Dispose();
+				//client = null;
+				//GC.Collect();
+				//GC.WaitForPendingFinalizers();
 				if (!File.Exists(localFilepath) || new FileInfo(localFilepath).Length == 0)
 				{
 					if (File.Exists(localFilepath))
@@ -1200,10 +1244,10 @@ public class NetworkInterop
 		request.Credentials = new NetworkCredential(ftpUser, ftpPassword);
 		request.Method = WebRequestMethods.Ftp.GetDateTimestamp;
 		request.UseBinary = true;
-
 		try
 		{
 			FtpWebResponse response = (FtpWebResponse)request.GetResponse();
+			response.Close();
 			return true;
 		}
 		catch (WebException ex)
@@ -1212,9 +1256,11 @@ public class NetworkInterop
 			if (response.StatusCode ==
 				FtpStatusCode.ActionNotTakenFileUnavailable)
 			{
+				response.Close();
 				return false;
 				//Does not exist
 			}
+			response.Close();
 			UserMessages.ShowErrorMessage("Cannot determine whether file '" + filePath + "' exists: " + ex.Message);
 			return false;
 		}
@@ -1230,7 +1276,7 @@ public class NetworkInterop
 			request.Method = WebRequestMethods.Ftp.ListDirectory;
 			request.KeepAlive = false;
 
-			using (FtpWebResponse response = (FtpWebResponse)(request.GetResponse())) { }
+			using (FtpWebResponse response = (FtpWebResponse)(request.GetResponse())) { response.Close(); }
 			IsExists = true;
 		}
 		catch (WebException ex)
@@ -1379,6 +1425,9 @@ public class NetworkInterop
 			}
 			// to remove the trailing '\n'
 			result.Remove(result.ToString().LastIndexOf('\n'), 1);
+
+			reader.Close();
+			response.Close();
 			return result.ToString().Split('\n');
 		}
 		catch (Exception ex)
@@ -1435,10 +1484,19 @@ public class NetworkInterop
 			StreamReader _Answer = new StreamReader(Answer);
 			vystup = _Answer.ReadToEnd();
 
+			_Answer.Close();
+			Answer.Close();
+
 			//Congratulations, you just requested your first POST page, you
 			//can now start logging into most login forms, with your application
 			//Or other examples.
 			string tmpresult = vystup.Trim() + "\n";
+		}
+		catch (WebException webex)
+		{
+			if (webex.Response != null)
+				webex.Response.Close();
+			UserMessages.ShowWarningMessage("Unable to do post php query: " + webex.Message);
 		}
 		catch (Exception exc)
 		{

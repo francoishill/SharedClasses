@@ -588,36 +588,11 @@ public class DynamicCodeInvoking
 		}
 	}
 
-	private const string EncodedCharStart = "[{_";
-	private const string EncodedCharEnd = "_}]";
-	public static string FilenameEncodeToValid(string wantedFilename)
-	{
-		string result = wantedFilename;
-		var invalidChars = Path.GetInvalidFileNameChars();
-		foreach (char c in invalidChars)
-			result = result.Replace(c.ToString(), string.Format("{0}{1}{2}", EncodedCharStart, (int)c, EncodedCharEnd));
-		return result;
-	}
-
-	public static string FilenameDecodeToValid(string encodedFilename)
-	{
-		string result = encodedFilename;
-		if (encodedFilename.Split(new string[] { EncodedCharStart }, StringSplitOptions.None).Length != encodedFilename.Split(new string[] { EncodedCharEnd }, StringSplitOptions.None).Length)
-			UserMessages.ShowWarningMessage("Cannot decode filename: " + encodedFilename);
-		else
-		{
-			var invalidChars = Path.GetInvalidFileNameChars();
-			foreach (char c in invalidChars)
-				result = result.Replace(string.Format("{0}{1}{2}", EncodedCharStart, (int)c, EncodedCharEnd), c.ToString());
-		}
-		return result;
-	}
-
 	public static RunCodeReturnStruct ServerSaveJsonStringToFile(string Category, string Name, string jsonString)
 	{
 		try
 		{
-			var filepath = SettingsInterop.GetFullFilePathInLocalAppdata(FilenameEncodeToValid(Name) + ".json", "JsonData", FilenameEncodeToValid(Category));
+			var filepath = SettingsInterop.GetFullFilePathInLocalAppdata(FileSystemInterop.FilenameEncodeToValid(Name) + ".json", "JsonData", FileSystemInterop.FilenameEncodeToValid(Category));
 			File.WriteAllText(filepath, jsonString);
 			return new RunCodeReturnStruct()
 			{
@@ -643,7 +618,7 @@ public class DynamicCodeInvoking
 	{
 		try
 		{
-			var filepath = SettingsInterop.GetFullFilePathInLocalAppdata(FilenameEncodeToValid(Name) + ".json", "JsonData", FilenameEncodeToValid(Category));
+			var filepath = SettingsInterop.GetFullFilePathInLocalAppdata(FileSystemInterop.FilenameEncodeToValid(Name) + ".json", "JsonData", FileSystemInterop.FilenameEncodeToValid(Category));
 			var jsonStr = File.ReadAllText(filepath);
 			return new RunCodeReturnStruct()
 			{

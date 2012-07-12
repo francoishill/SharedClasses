@@ -308,14 +308,14 @@ namespace SharedClasses
 
 		public static string Decrypt(string OriginalString, string PropertyName, bool RequireFacialAutorisationEverytime)
 		{
-			if (
-				(!RequireFacialAutorisationEverytime && AuthorizationWasDoneOnce)
-				|| (!(bool)GlobalSettings.FaceDetectionInteropSettings.Instance.RequireFaceAuthorizationForPasswordDecryption))
-			{
-				AuthorizationWasDoneOnce = true;
-				return EncodeAndDecodeInterop.DecodeString(OriginalString, GenericSettings.EncodingType);
-			}
-			else
+			//if (
+			//    (!RequireFacialAutorisationEverytime && AuthorizationWasDoneOnce)
+			//    || (!(bool)GlobalSettings.FaceDetectionInteropSettings.Instance.RequireFaceAuthorizationForPasswordDecryption))
+			//{
+			//    AuthorizationWasDoneOnce = true;
+			//    return EncodeAndDecodeInterop.DecodeString(OriginalString, GenericSettings.EncodingType);
+			//}
+			//else
 			{
 				//TODO: Removed face detection for now, has too many dependencies
 

@@ -1110,6 +1110,7 @@ public class NetworkInterop
 						string dirOnFtpServer = ftpRootUri + "/" + fileNameOnServer;
 
 						isComplete = false;
+						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Starting upload for " + fileNameOnServer);
 						client.UploadFileAsync(new Uri(dirOnFtpServer), "STOR", localFilename);
 						while (!isComplete)
 							Application.DoEvents();
@@ -1123,7 +1124,8 @@ public class NetworkInterop
 				}
 			}
 			else
-				UserMessages.ShowErrorMessage("Could not upload files (could not find/create directory online: " + ftpRootUri);
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not upload files (could not find/create directory online: " + ftpRootUri, TextFeedbackType.Error);
+				//UserMessages.ShowErrorMessage("Could not upload files (could not find/create directory online: " + ftpRootUri);
 		}
 		catch (Exception exc)
 		{
@@ -1133,7 +1135,8 @@ public class NetworkInterop
 					//Application.Restart();
 					ApplicationRecoveryAndRestart.TestCrash(false);
 			}
-			MessageBox.Show("Exception in transfer: " + exc.Message);
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Exception in transfer: " + exc.Message, TextFeedbackType.Error);
+			//MessageBox.Show("Exception in transfer: " + exc.Message);
 		}
 		return false;
 	}
@@ -1363,7 +1366,7 @@ public class NetworkInterop
 		}
 	}
 
-	public static bool DeleteFTPfile(string ftpFilePath, string ftpUser, string ftpPassword)
+	public static bool DeleteFTPfile(Object textfeedbackSenderObject, string ftpFilePath, string ftpUser, string ftpPassword, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
 	{
 		try
 		{
@@ -1374,12 +1377,14 @@ public class NetworkInterop
 			requestDir.UsePassive = true;
 			requestDir.UseBinary = true;
 			requestDir.KeepAlive = false;
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Attempting to delete file from server: " + ftpFilePath);
 			FtpWebResponse response = (FtpWebResponse)(requestDir.GetResponse());
 			Stream ftpStream = response.GetResponseStream();
 
 			ftpStream.Close();
 			response.Close();
 
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Successfully deleted file from server: " + ftpFilePath);
 			return true;
 		}
 		catch (WebException ex)
@@ -1388,11 +1393,13 @@ public class NetworkInterop
 			if (response.StatusCode == FtpStatusCode.ActionNotTakenFileUnavailable)
 			{
 				response.Close();
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "File was not deleted, did not exist on server: " + ftpFilePath);
 				return true;
 			}
 			else
 			{
 				response.Close();
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "An error occurred trying to delete file (" + ftpFilePath + ") from server:" + Environment.NewLine + ex.Message);
 				return false;
 			}
 		}

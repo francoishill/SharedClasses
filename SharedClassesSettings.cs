@@ -295,7 +295,7 @@ namespace SharedClasses
 	{
 		//private TempClass tc = new TempClass();//Leave this here as it ensures all settings are initialized
 
-		private static bool AuthorizationWasDoneOnce = false;
+		//private static bool AuthorizationWasDoneOnce = false;
 
 		public static string RootApplicationNameForSharedClasses = "SharedClasses";
 		public static EncodeAndDecodeInterop.EncodingType EncodingType = EncodeAndDecodeInterop.EncodingType.ASCII;
@@ -323,7 +323,7 @@ namespace SharedClasses
 				//bool? confirmedFaceDetection = ConfirmUsingFaceDetection.ConfirmUsingFacedetection(GlobalSettings.FaceDetectionInteropSettings.Instance.FaceName, "Face detection for '" + PropertyName + "'", TimeOutSeconds_nullIfNever: GlobalSettings.FaceDetectionInteropSettings.Instance.TimeOutSecondsBeforeAutoFailing, PasswordFromTextbox: out manualPasswordEnterd);
 				//if (confirmedFaceDetection == true)//Face was confirmed
 				//{
-				AuthorizationWasDoneOnce = true;
+				//AuthorizationWasDoneOnce = true;
 				return EncodeAndDecodeInterop.DecodeString(OriginalString, GenericSettings.EncodingType);
 				//}
 				//else if (confirmedFaceDetection == null)//Face was not recognized but manual password was entered
@@ -1627,5 +1627,16 @@ GlobalSettings.ReadConsole(
 				OnlineXDeltaExeFileUrl = "ftp://fjh.dyndns.org/francois/websites/firepuma/ownapplications/xDelta3.exe";
 			}
 		}
+
+		public class SearchInFilesSettings : BaseOnlineClass<SearchInFilesSettings>
+		{
+			[Description("")]
+			public List<string> ExcludeFileTypes { get; set; }
+
+			public SearchInFilesSettings()//Defaults
+			{
+				ExcludeFileTypes = new List<string>() { ".exe", ".dll", ".pdb", ".png" };
+			}
+		} 
 	}
 }

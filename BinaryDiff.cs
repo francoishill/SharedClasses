@@ -588,8 +588,9 @@ namespace SharedClasses
 			{
 				int newVersionNum = currentVersion + 1;
 				string newversionUri = GetServerVersionFolderUri(newVersionNum);
-				if (NetworkInterop.FtpDirectoryExists(newversionUri, FtpUsername, FtpPassword))
-					NetworkInterop.RemoveFTPDirectory(newversionUri, FtpUsername, FtpPassword);
+				//if (NetworkInterop.FtpDirectoryExists(newversionUri, FtpUsername, FtpPassword))
+				if (!NetworkInterop.RemoveFTPDirectory(newversionUri, FtpUsername, FtpPassword))
+					UserMessages.ShowErrorMessage("Could not remove FTP directory: " + newversionUri);
 
 				if (!NetworkInterop.CreateFTPDirectory(newversionUri, FtpUsername, FtpPassword))
 				{
@@ -996,11 +997,11 @@ namespace SharedClasses
 				{
 					// Create the compressed file.
 					string outpath = GetZippedFilename(originalFilepath);
-					using (FileStream outFile = 
-                    			File.Create(outpath))
+					using (FileStream outFile =
+								File.Create(outpath))
 					{
-						using (GZipStream Compress = 
-                        	new GZipStream(outFile,
+						using (GZipStream Compress =
+							new GZipStream(outFile,
 							CompressionMode.Compress))
 						{
 							// Copy the source file into 

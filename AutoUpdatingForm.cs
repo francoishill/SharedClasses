@@ -122,7 +122,8 @@ namespace SharedClasses
 			}
 		}
 
-		public static void CheckForUpdates(Action exitApplicationAction, bool ShowModally = true)//string ApplicationName, string InstalledVersion)
+		public static void CheckForUpdates(Action exitApplicationAction, bool ShowModally = true, Action<string> ActionIfUptoDate_Versionstring = null)//string ApplicationName, string InstalledVersion)
+		//public static void CheckForUpdates(Action exitApplicationAction, bool ShowModally = true, Action<bool?, PublishDetails, PublishDetails> ActionAfterCheck_Uptodate_Currentdetails_OnlineDetails = null)//string ApplicationName, string InstalledVersion)
 		{
 			ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 			{
@@ -136,14 +137,19 @@ namespace SharedClasses
 				string errIfFail;
 				bool? uptodate = IsApplicationUpToDate(ApplicationName, InstalledVersion, out errIfFail, out detailsIfNewer);
 				if (uptodate == null)
-					UserMessages.ShowWarningMessage("Unable to check for updates: " + errIfFail);
+					UserMessages.ShowWarningMessage("Unable to check for updates for \"" + ApplicationName + "\": " + Environment.NewLine + errIfFail);
 				else if (uptodate == false)
 				{
-                    var tmpform = new AutoUpdatingForm(InstalledVersion, detailsIfNewer, exitApplicationAction);
+					var tmpform = new AutoUpdatingForm(InstalledVersion, detailsIfNewer, exitApplicationAction);
 					if (ShowModally)
 						tmpform.ShowDialog();
 					else
 						tmpform.Show();
+				}
+				else//Up to date
+				{
+					if (ActionIfUptoDate_Versionstring != null)
+						ActionIfUptoDate_Versionstring(InstalledVersion);
 				}
 			},
 			false);

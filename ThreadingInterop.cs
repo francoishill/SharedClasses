@@ -173,13 +173,30 @@ public class ThreadingInterop
 		}
 
 		public ProgressForm progressForm;
+		public Form ParentForm;
 		Thread thread;
 		bool disposed = false; //to avoid redundant call
-		public WaitIndicator()
+		public WaitIndicator(Form parentForm_usedForPositioning)
 		{
 			progressForm = new ProgressForm();
+			progressForm.Shown += delegate { UpdateOwnLocation(); };
+			ParentForm = parentForm_usedForPositioning;
 			thread = new Thread(_ => progressForm.ShowDialog());
 			thread.Start();
+		}
+
+		private void UpdateOwnLocation()
+		{
+			if (ParentForm == null)
+				return;
+			try
+			{
+				this.progressForm.Location = new Point(
+					ParentForm.Left + (ParentForm.Width / 2) - (this.progressForm.Width / 2),
+					ParentForm.Top + (ParentForm.Height / 2) - (this.progressForm.Height / 2));
+				Application.DoEvents();
+			}
+			catch { }
 		}
 
 		public void Dispose()

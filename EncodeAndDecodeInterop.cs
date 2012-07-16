@@ -161,5 +161,46 @@ namespace SharedClasses
 			//else return EncodingType.None;
 			else return EncodingType.ASCII;
 		}
+
+		private const string cDefaultHexChars = "0123456789ABCDEF";
+		public static string EncodeStringHex(string StringToEncode, string Hex16CharactersToUse = null)
+		{
+			string _16charsToUse = Hex16CharactersToUse;
+			if (_16charsToUse == null)
+				_16charsToUse = cDefaultHexChars;
+
+			string tmpstr = "";
+			foreach (char c in StringToEncode.ToCharArray())
+			{
+				int remainder;
+				int div;
+				try
+				{
+					if ((int)c == 8211) div = Math.DivRem((int)'-', 16, out remainder);
+					else div = Math.DivRem((int)c, 16, out remainder);
+					tmpstr += _16charsToUse[div].ToString() + _16charsToUse[remainder].ToString();
+				}
+				catch (Exception exc)
+				{
+					UserMessages.ShowErrorMessage("Error, could not encode hex, char " + c.ToString() + ", (int)char = " + (int)c + ": " + Environment.NewLine + exc.Message, "Exception error");
+				}
+			}
+			return tmpstr;
+		}
+
+		//enum StringTypeEnum { Regex, Username, Password };
+		public static string DecodeStringHex(string StringToDecode, string Hex16CharactersToUse = null)//, StringTypeEnum StringType)
+		{
+			string _16charsToUse = Hex16CharactersToUse;
+			if (_16charsToUse == null)
+				_16charsToUse = cDefaultHexChars;
+
+			string tmpstr = "";
+			for (int i = 0; i <= StringToDecode.Length - 2; i = i + 2)
+			{
+				tmpstr += (char)(_16charsToUse.IndexOf(StringToDecode[i]) * 16 + _16charsToUse.IndexOf(StringToDecode[i + 1]));
+			}
+			return tmpstr;
+		}
 	}
 }

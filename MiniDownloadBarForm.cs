@@ -107,6 +107,7 @@ namespace SharedClasses
 			public int y;
 		}
 
+#pragma warning disable
 		struct MinMaxInfo
 		{
 			public POINT ptReserved;
@@ -115,5 +116,6 @@ namespace SharedClasses
 			public POINT ptMinTrackSize;
 			public POINT ptMaxTrackSize;
 		}
+#pragma warning enable
 	}
 }

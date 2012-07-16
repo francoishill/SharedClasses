@@ -1,5 +1,7 @@
 ﻿using System.IO;
 using System;
+using System.Windows.Forms;
+using SharedClasses;
 public class FileSystemInterop
 {
 	/// <summary>
@@ -15,28 +17,67 @@ public class FileSystemInterop
 		return FolderOrFileName;
 	}
 
-	private const string EncodedCharStart = "[{_";
-	private const string EncodedCharEnd = "_}]";
+	//private const string EncodedCharStart = "[{_";
+	//private const string EncodedCharEnd = "_}]";
 	public static string FilenameEncodeToValid(string wantedFilename)
 	{
 		string result = wantedFilename;
-		var invalidChars = Path.GetInvalidFileNameChars();
-		foreach (char c in invalidChars)
-			result = result.Replace(c.ToString(), string.Format("{0}{1}{2}", EncodedCharStart, (int)c, EncodedCharEnd));
+
+		result = EncodeAndDecodeInterop.EncodeStringHex(result);
+
+		//var invalidChars = Path.GetInvalidFileNameChars();
+		//foreach (char c in invalidChars)
+		//    result = result.Replace(c.ToString(), string.Format("{0}{1}{2}", EncodedCharStart, (int)c, EncodedCharEnd));
+		
 		return result;
 	}
 
 	public static string FilenameDecodeToValid(string encodedFilename)
 	{
 		string result = encodedFilename;
-		if (encodedFilename.Split(new string[] { EncodedCharStart }, StringSplitOptions.None).Length != encodedFilename.Split(new string[] { EncodedCharEnd }, StringSplitOptions.None).Length)
-			UserMessages.ShowWarningMessage("Cannot decode filename: " + encodedFilename);
-		else
-		{
-			var invalidChars = Path.GetInvalidFileNameChars();
-			foreach (char c in invalidChars)
-				result = result.Replace(string.Format("{0}{1}{2}", EncodedCharStart, (int)c, EncodedCharEnd), c.ToString());
-		}
+
+		result = EncodeAndDecodeInterop.DecodeStringHex(result);
+
+		//if (encodedFilename.Split(new string[] { EncodedCharStart }, StringSplitOptions.None).Length != encodedFilename.Split(new string[] { EncodedCharEnd }, StringSplitOptions.None).Length)
+		//	UserMessages.ShowWarningMessage("Cannot decode filename: " + encodedFilename);
+		//else
+		//{
+		//	var invalidChars = Path.GetInvalidFileNameChars();
+		//	foreach (char c in invalidChars)
+		//		result = result.Replace(string.Format("{0}{1}{2}", EncodedCharStart, (int)c, EncodedCharEnd), c.ToString());
+		//}
+		
 		return result;
+	}
+
+	public static string SelectFile(string title, string initialDir = null, IWin32Window owner = null)
+	{
+		OpenFileDialog ofd = new OpenFileDialog();
+		ofd.Multiselect = false;
+		ofd.CheckFileExists = true;
+
+		ofd.Title = title;
+		if (initialDir != null)
+			ofd.InitialDirectory = initialDir;
+		if (ofd.ShowDialog(owner) == DialogResult.OK)
+			return ofd.FileName;
+		else
+			return null;
+	}
+
+	public static string SelectFolder(string title, string selectedDir = null, Environment.SpecialFolder? rootFolder = null, IWin32Window owner = null)
+	{
+		FolderBrowserDialog fbd = new FolderBrowserDialog();
+		fbd.ShowNewFolderButton = true;
+
+		fbd.Description = title;
+		if (rootFolder.HasValue)
+			fbd.RootFolder = rootFolder.Value;
+		if (selectedDir != null)
+			fbd.SelectedPath = selectedDir;
+		if (fbd.ShowDialog(owner) == DialogResult.OK)
+			return fbd.SelectedPath;
+		else
+			return null;
 	}
 }

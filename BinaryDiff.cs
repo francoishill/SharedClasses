@@ -577,7 +577,11 @@ namespace SharedClasses
 
 			private bool UnlockServer()
 			{
-				return NetworkInterop.DeleteFTPfile(GetServerLockFileUri(), FtpUsername, FtpPassword);
+				return NetworkInterop.DeleteFTPfile(
+					null,
+					GetServerLockFileUri(),
+					FtpUsername,
+					FtpPassword);
 			}
 
 			private int? GetNewVersionFromserver(int currentVersion)
@@ -661,8 +665,12 @@ namespace SharedClasses
 				{
 					File.Delete(GetLocalOriginalFilePath(rf));
 					int CheckNextTodoItem;
-					//TODO: This might be dangerous? Rather moved it to "deleted" folder on the server???
-					if (!NetworkInterop.DeleteFTPfile(GetRootUserfolderUri() + "/Original/" + rf.RelativePath.Replace("\\", "/"), FtpUsername, FtpPassword))
+					//TODO: This might be dangerous? Rather move it to "deleted" folder on the server???
+					if (!NetworkInterop.DeleteFTPfile(
+						null,
+						GetRootUserfolderUri() + "/Original/" + rf.RelativePath.Replace("\\", "/"),
+						FtpUsername,
+						FtpPassword))
 						return false;
 				}
 

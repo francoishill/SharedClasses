@@ -1359,7 +1359,10 @@ public class NetworkInterop
 		catch (WebException ex)
 		{
 			FtpWebResponse response = (FtpWebResponse)ex.Response;
-			if (response.StatusCode == FtpStatusCode.ActionNotTakenFileUnavailable)
+			if (response.StatusCode == FtpStatusCode.ActionNotTakenFileUnavailable
+				//TODO: Will it always work to check the StatusDescription?
+				&& response.StatusDescription.IndexOf("Directory already exists", StringComparison.InvariantCultureIgnoreCase) != -1
+				)
 			{
 				response.Close();
 				return true;

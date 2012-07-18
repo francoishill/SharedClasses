@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
@@ -9,7 +10,8 @@ using System.Windows.Forms;
 
 public partial class UserMessageBox : Form
 {
-	public static Dictionary<string, UserMessageBox> ListOfShowingMessages = new Dictionary<string, UserMessageBox>(StringComparer.InvariantCultureIgnoreCase);
+	//public static Dictionary<string, UserMessageBox> ListOfShowingMessages = new Dictionary<string, UserMessageBox>(StringComparer.InvariantCultureIgnoreCase);
+	public static ConcurrentDictionary<string, UserMessageBox> ListOfShowingMessages = new ConcurrentDictionary<string, UserMessageBox>(StringComparer.InvariantCultureIgnoreCase);
 
 	public MessageBoxButtons CurrentButtons;
 
@@ -49,7 +51,18 @@ public partial class UserMessageBox : Form
 				{
 					var keys = ListOfShowingMessages.Keys.ToArray();
 					for (int i = keys.Length - 1; i >= 0; i--)
-						ListOfShowingMessages[keys[i]].Close();
+					{
+						//ListOfShowingMessages[keys[i]].Close();
+						UserMessageBox tmpMbox;
+						while (!ListOfShowingMessages.TryGetValue(keys[i], out tmpMbox))
+							System.Threading.Thread.Sleep(200);
+
+						Action action = (Action)delegate { tmpMbox.Close(); };
+						if (tmpMbox.InvokeRequired)
+							tmpMbox.Invoke(action);
+						else
+							action();
+					}
 				};
 			alreadyAttached = true;
 		}
@@ -75,7 +88,7 @@ public partial class UserMessageBox : Form
 
 		UserMessageBox umb = new UserMessageBox();
 		umb.TopMost = AlwaysOnTop;
-		ListOfShowingMessages.Add(Message, umb);
+		ListOfShowingMessages.AddOrUpdate(Message, umb, (s, u) => { return null; });
 
 		if (icon == MessageBoxIcon.None)
 			umb.pictureBox1.Visible = false;
@@ -122,6 +135,8 @@ public partial class UserMessageBox : Form
 
 	private void UserMessageBox_FormClosing(object sender, FormClosingEventArgs e)
 	{
-		ListOfShowingMessages.Remove(this.labelMessage.Text);
+		UserMessageBox tmpMbox;
+		while (!ListOfShowingMessages.TryRemove(this.labelMessage.Text, out tmpMbox))
+			System.Threading.Thread.Sleep(200);
 	}
 }

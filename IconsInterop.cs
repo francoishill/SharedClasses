@@ -6,9 +6,11 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+#if WPF
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+#endif
 using System.ComponentModel;
 using System.Drawing.Imaging;
 
@@ -24,17 +26,26 @@ namespace SharedClasses
 		/// <param name="fontColorBrush">Font color of text on originalIcon.</param>
 		/// <param name="font">Font of text on originalIcon (example new Font("Arial", 17, FontStyle.Regular)).</param>
 		/// <returns>The originalIcon.</returns>
-		public static System.Drawing.Icon GetIcon(String TextOnIcon, System.Drawing.Color backColor, System.Drawing.Brush fontColorBrush, System.Drawing.Font font)
+		public static System.Drawing.Icon GetIcon(String TextOnIcon, System.Drawing.Color backColor, System.Drawing.Brush fontColorBrush, System.Drawing.Font font, System.Drawing.Icon existinIcon = null, PointF? overrideDrawingPosition = null)
 		{
 			//Create a bitmap, the size of an originalIcon
-			System.Drawing.Bitmap bmp = new System.Drawing.Bitmap(32, 32);
+			System.Drawing.Bitmap bmp =
+				existinIcon == null
+				? new System.Drawing.Bitmap(32, 32)
+				: new System.Drawing.Bitmap(existinIcon.ToBitmap(), new Size(32, 32));
 			//Create Graphics object for the bitmap (all drawing to the graphics object will be drawn on the bitmap)
 			System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(bmp);
 			//Create a smokewhite background,draw the circle and the number
-			g.Clear(backColor);
+			if (existinIcon == null)
+				g.Clear(backColor);
 			//g.DrawEllipse(Pens.Black, 0, 0, 32, 32);
 			System.Drawing.SizeF s = g.MeasureString(TextOnIcon, font);//to center the string
-			g.DrawString(TextOnIcon, font, fontColorBrush, (32 - s.Width) / 2, (32 - s.Height) / 2);
+			g.DrawString(
+				TextOnIcon,
+				font,
+				fontColorBrush,
+				overrideDrawingPosition ??
+				new PointF((32 - s.Width) / 2, (32 - s.Height) / 2));
 			//And finally, get the originalIcon out the originalIcon handle of the bitmap
 			return System.Drawing.Icon.FromHandle(bmp.GetHicon());
 		}
@@ -58,7 +69,7 @@ namespace SharedClasses
 		public static System.Drawing.Icon OverlayIconWithFourCircles(Icon originalIcon, System.Drawing.Brush fillcolorTopLeft, System.Drawing.Brush fillcolorTopRight, System.Drawing.Brush fillcolorBottomLeft, System.Drawing.Brush fillcolorBottomRight)
 		{
 			Bitmap bmp = originalIcon.ToBitmap();
-			
+
 			System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(bmp);
 
 			int circleWidthHeight = 16;
@@ -69,6 +80,7 @@ namespace SharedClasses
 			return System.Drawing.Icon.FromHandle(bmp.GetHicon());
 		}
 
+#if WPF
 		public static ImageSource IconToImageSource(this Icon icon)
 		{
 			ImageSource imageSource = Imaging.CreateBitmapSourceFromHIcon(
@@ -102,6 +114,7 @@ namespace SharedClasses
 		{
 			return Icon.FromHandle(ToBitmap(source).GetHbitmap());
 		}
+#endif
 
 		/// <summary>
 		/// Shows a notification originalIcon in the system tray, for the given duration then removes it.

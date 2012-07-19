@@ -15,7 +15,7 @@ namespace SharedClasses
 		/// <param name="url">The url of the php, do not include the ?</param>
 		/// <param name="data">The data, i.e. "name=koos&surname=koekemoer". Note to not include the ?</param>
 		/// <returns>Returns the data received from the php (usually the "echo" statements in the php.</returns>
-		public static bool PostPHP(string url, string escapedData, out string ResponseOrError)
+		public static bool PostPHP(string url, string escapedData, out string ResponseOrError, TimeSpan? timeout = null)
 		{
 			string vystup = "";
 			try
@@ -39,6 +39,8 @@ namespace SharedClasses
 				PostData.Write(buffer, 0, buffer.Length);
 				PostData.Close();
 				//Get the response handle, we have no true response yet!
+				if (timeout.HasValue)
+					WebReq.Timeout = (int)timeout.Value.TotalMilliseconds;
 				HttpWebResponse WebResp = (HttpWebResponse)WebReq.GetResponse();
 				//Let's show some information about the response
 				//System.Windows.Forms.MessageBox.Show(WebResp.StatusCode.ToString());
@@ -71,19 +73,21 @@ namespace SharedClasses
 			return true;
 		}
 
-		public static bool PostPHP(string url, Dictionary<string, string> data, out string ResponseOrError)
+		public static bool PostPHP(string url, Dictionary<string, string> data, out string ResponseOrError, TimeSpan? timeout = null)
 		{
 			string tmpdata = "";
 			foreach (var key in data.Keys)
 				tmpdata +=
 					(tmpdata.Length > 0 ? "&" : "")
 					+ Uri.EscapeDataString(key) + "=" + Uri.EscapeDataString(data[key]);
-			return PostPHP(url, tmpdata, out ResponseOrError);
+			return PostPHP(url, tmpdata, out ResponseOrError, timeout);
 		}
 
 		public const string cErrorIfNotFoundOnline = "Value does not exist online";
 		public const string NORESULT_STRING = "[NO RESULT]";
-		public const string rootUrl = "http://fjh.dyndns.org";
+
+		public const string rootUrl = "http://apps.getmyip.com";
+		//public const string rootUrl = "http://fjh.dyndns.org";
 
 		public enum OnlineOperations { GetModifiedTime, GetValue, SetValue };
 
@@ -143,7 +147,7 @@ namespace SharedClasses
 			}
 		}
 
-		public static bool PopulateObjectFromOnline(string category, string name, object objectToPopulate, out string errorStringIfFail)
+		public static bool PopulateObjectFromOnline(string category, string name, object objectToPopulate, out string errorStringIfFail, TimeSpan? timeout = null)
 		{
 			JSON.SetDefaultJsonInstanceSettings();
 
@@ -151,7 +155,8 @@ namespace SharedClasses
 			if (WebInterop.PostPHP(
 				GetOperationUri(OnlineOperations.GetValue),//rootUrl + "/json/getvaluepretty",
 				new Dictionary<string, string>() { { "category", category }, { "name", name } },
-				out response))
+				out response,
+				timeout))
 			{
 				if (response.Equals(NORESULT_STRING, StringComparison.InvariantCultureIgnoreCase))
 				{

@@ -32,7 +32,7 @@ namespace SharedClasses
 			System.Drawing.Bitmap bmp =
 				existinIcon == null
 				? new System.Drawing.Bitmap(32, 32)
-				: new System.Drawing.Bitmap(existinIcon.ToBitmap(), new Size(32, 32));
+				: new System.Drawing.Bitmap(existinIcon.ToBitmap(), new System.Drawing.Size(32, 32));
 			//Create Graphics object for the bitmap (all drawing to the graphics object will be drawn on the bitmap)
 			System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(bmp);
 			//Create a smokewhite background,draw the circle and the number

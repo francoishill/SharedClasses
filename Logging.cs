@@ -2,10 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
+#if WINFORMS
 using System.Windows.Forms;
+#endif
 
 public class Logging
 {
+#if WINFORMS
 	public static NotifyIcon staticNotifyIcon = null;
 
 	public static void appendLogTextbox_OfPassedTextbox(TextBox messagesTextbox, string str, NotifyIcon notifyicon = null)
@@ -23,5 +27,13 @@ public class Logging
 			messagesTextbox.Text = str + (messagesTextbox.Text.Length > 0 ? Environment.NewLine : "") + messagesTextbox.Text;
 		});
 		Application.DoEvents();
+	}
+#endif
+
+	public static void LogErrorShowInNotepad(string errorMessage)
+	{
+		string tmpFile = Path.GetTempFileName();
+		File.WriteAllText(tmpFile, errorMessage);
+		System.Diagnostics.Process.Start("notepad", "\"" + tmpFile + "\"");
 	}
 }

@@ -15,21 +15,39 @@ public class ProgressChangedEventArgs : EventArgs
 	}
 }
 
+public struct Range
+{
+	public enum LinkTypes { ExplorerSelect, OpenUrl };
+	public int Start;
+	public int Length;
+	public LinkTypes LinkType;
+	public Range(int Start, int Length, LinkTypes LinkType)
+	{
+		this.Start = Start;
+		this.Length = Length;
+		this.LinkType = LinkType;
+	}
+
+	public int End { get { return Start + Length; } }
+}
+
 public enum TextFeedbackType { Error, Success, Noteworthy, Subtle };
 public delegate void TextFeedbackEventHandler(object sender, TextFeedbackEventArgs e);
 public class TextFeedbackEventArgs : EventArgs
 {
 	public string FeedbackText;
 	public TextFeedbackType FeedbackType;
+	public Range? HyperlinkRange;
 	private TextFeedbackEventArgs() { }
-	public TextFeedbackEventArgs(string FeedbackTextIn, TextFeedbackType FeedbackTypeIn = TextFeedbackType.Subtle)
+	public TextFeedbackEventArgs(string FeedbackTextIn, TextFeedbackType FeedbackTypeIn = TextFeedbackType.Subtle, Range? HyperlinkRange = null)
 	{
 		FeedbackText = FeedbackTextIn;
 		FeedbackType = FeedbackTypeIn;
+		this.HyperlinkRange = HyperlinkRange;
 	}
-	public static void RaiseTextFeedbackEvent_Ifnotnull(object SenderObject, TextFeedbackEventHandler textFeedbackEvent, string textMessage, TextFeedbackType FeedbackTypeIn = TextFeedbackType.Subtle)
+	public static void RaiseTextFeedbackEvent_Ifnotnull(object SenderObject, TextFeedbackEventHandler textFeedbackEvent, string textMessage, TextFeedbackType FeedbackTypeIn = TextFeedbackType.Subtle, Range? HyperlinkRangeIn = null)
 	{
-		if (textFeedbackEvent != null) textFeedbackEvent(SenderObject, new TextFeedbackEventArgs(textMessage, FeedbackTypeIn));
+		if (textFeedbackEvent != null) textFeedbackEvent(SenderObject, new TextFeedbackEventArgs(textMessage, FeedbackTypeIn, HyperlinkRangeIn));
 	}
 }
 

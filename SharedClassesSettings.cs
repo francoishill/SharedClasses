@@ -1594,12 +1594,16 @@ GlobalSettings.ReadConsole(
 
 		public class PublishSettings : BaseOnlineClass<PublishSettings>
 		{
+			[Description("The full URL to the online DotNetChecker.dll file.")]
+			public string OnlineDotnetCheckerDllFileUrl { get; set; }
+
 			//[Editor(typeof(MyCollectionEditor), typeof(UITypeEditor))]
 			[Description("A tasklist of application names to be added defaultly to the tasklist to pick.")]
 			public List<string> ListedApplicationNames { get; set; }
 
 			public PublishSettings()//Defaults
 			{
+				this.OnlineDotnetCheckerDllFileUrl = OnlineAppsSettings.Instance.RootFtpUrl.TrimEnd('/') + "/DotNetChecker.dll";	
 				this.ListedApplicationNames = new List<string>()
                 {
 					"AutoConnectWifiAdhoc",
@@ -1619,24 +1623,39 @@ GlobalSettings.ReadConsole(
 
 		public class AutoSyncSettings : BaseOnlineClass<AutoSyncSettings>
 		{
-			[Description("")]
+			[Description("The full URL to the online xdelta3.exe file.")]
 			public string OnlineXDeltaExeFileUrl { get; set; }
 
 			public AutoSyncSettings()//Defaults
 			{
-				OnlineXDeltaExeFileUrl = "ftp://fjh.dyndns.org/francois/websites/firepuma/ownapplications/xDelta3.exe";
+				this.OnlineXDeltaExeFileUrl = OnlineAppsSettings.Instance.RootFtpUrl.TrimEnd('/') + "/xDelta3.exe";
 			}
 		}
 
 		public class SearchInFilesSettings : BaseOnlineClass<SearchInFilesSettings>
 		{
-			[Description("")]
+			[Description("Files types to exclude when searching through text in a file.")]
 			public List<string> ExcludeFileTypes { get; set; }
 
 			public SearchInFilesSettings()//Defaults
 			{
 				ExcludeFileTypes = new List<string>() { ".exe", ".dll", ".pdb", ".png" };
 			}
-		} 
+		}
+
+		public class OnlineAppsSettings : BaseOnlineClass<OnlineAppsSettings>
+		{
+			[Description("The root directory to the Root FTP Url.")]
+			public string RootFtpUrl { get; set; }
+			public string AppsDownloadFtpUsername { get; set; }
+			public string AppsDownloadFtpPassword { get; set; }
+
+			public OnlineAppsSettings()
+			{
+				this.RootFtpUrl = "ftp://fjh.dyndns.org";//"ftp://fjh.dyndns.org/francois/websites/firepuma/ownapplications";
+				this.AppsDownloadFtpUsername = "appsdownload";
+				this.AppsDownloadFtpPassword = "appsdownload.pass123";
+			}
+		}
 	}
 }

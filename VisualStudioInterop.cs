@@ -99,7 +99,7 @@ public class VisualStudioInterop
 					{
 						versionlinenum = i;
 						int newBuildVersion = int.Parse(dotsplitted[3]) +
-							(AutomaticallyUpdateRevision ? 1 : 0);//Only increase if must update
+								(AutomaticallyUpdateRevision ? 1 : 0);//Only increase if must update
 						dotsplitted[3] = newBuildVersion.ToString();
 						newversionstring = string.Join(".", dotsplitted);
 						newversionLine = requiredStart + newversionstring + requiredEnd;
@@ -188,11 +188,11 @@ public class VisualStudioInterop
 		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 		{
 			ProcessStartInfo startinfo = new ProcessStartInfo(msbuildpath,
-				"/t:" + buildType.ToString().ToLower() +
-				" /p:configuration=" + configuration.ToString().ToLower() +
-				" /p:AllowUnsafeBlocks=true" +
-				" /p:PlatformTarget=" + platformTarget.ToString().ToLower() +
-				" \"" + (SolutionTrueProjectFalse ? slnFilename : csprojFilename) + "\"");
+					"/t:" + buildType.ToString().ToLower() +
+					" /p:configuration=" + configuration.ToString().ToLower() +
+					" /p:AllowUnsafeBlocks=true" +
+					" /p:PlatformTarget=" + platformTarget.ToString().ToLower() +
+					" \"" + (SolutionTrueProjectFalse ? slnFilename : csprojFilename) + "\"");
 
 			//startinfo.UseShellExecute = false;
 			//startinfo.CreateNoWindow = false;
@@ -302,8 +302,8 @@ public class VisualStudioInterop
 	{
 		versionString = "";
 		string projDir =
-					Directory.Exists(projName) ? projName :
-				Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects\" + projName;
+                    Directory.Exists(projName) ? projName :
+						Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects\" + projName;
 		while (projDir.EndsWith("\\")) projDir = projDir.Substring(0, projDir.Length - 1);
 		string projFolderName = projDir.Split('\\')[projDir.Split('\\').Length - 1];
 		string csprojFileName = projDir + "\\" + projFolderName + ".csproj";
@@ -326,27 +326,27 @@ public class VisualStudioInterop
 		{
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Attempting to MsBuild project " + projName);
 			string newversionstring = BuildVsProjectReturnNewversionString(
-				projName,
-				csprojFileName,
-				slnFileName,
-				true,
-				BuildType.Rebuild,
-				ProjectConfiguration.Release,
-				PlatformTarget.AnyCPU,//.x86,//.x64,
-				AutomaticallyUpdateRevision,
-				textfeedbackSenderObject,
-				textFeedbackEvent);
+					projName,
+					csprojFileName,
+					slnFileName,
+					true,
+					BuildType.Rebuild,
+					ProjectConfiguration.Release,
+					PlatformTarget.AnyCPU,//.x86,//.x64,
+					AutomaticallyUpdateRevision,
+					textfeedbackSenderObject,
+					textFeedbackEvent);
 			if (newversionstring == null)
 			{
 				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not obtain version string for project " + projName);
 				return null;
 			}
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(
-				textfeedbackSenderObject,
-				textFeedbackEvent,
-				AutomaticallyUpdateRevision
-				? "Updated revision of " + projName + " to " + newversionstring + ", attempting to publish..."
-				: "Using current revision of " + projName + " (" + newversionstring + "), attempting to publish...");
+					textfeedbackSenderObject,
+					textFeedbackEvent,
+					AutomaticallyUpdateRevision
+					? "Updated revision of " + projName + " to " + newversionstring + ", attempting to publish..."
+					: "Using current revision of " + projName + " (" + newversionstring + "), attempting to publish...");
 
 			versionString = newversionstring;
 
@@ -376,16 +376,34 @@ public class VisualStudioInterop
 					HasPlugins);
 					foreach (string line in list)
 						sw1.WriteLine(line);
-					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Successfully created NSIS file: " + nsisFileName);
+
+					string startMsg = "Successfully created NSIS file: ";
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent,
+							startMsg + nsisFileName,
+							HyperlinkRangeIn: new Range(startMsg.Length, nsisFileName.Length, Range.LinkTypes.ExplorerSelect));
 				}
 
 				//DONE TODO: Must make provision if pc (to do building and compiling of NSIS scripts), does not have the DotNetChecker.dll plugin for NSIS
 				//bool DotNetCheckerDllFileFound = false;
 				string DotNetCheckerFilenameEndswith = "DotNetChecker.dll";
-				string dotnetCheckerDllPath = @"C:\Program Files (x86)\NSIS\Plugins\DotNetChecker.dll";
+				string dotnetCheckerDllPath = @"C:\Program Files (x86)\NSIS\Plugins\" + DotNetCheckerFilenameEndswith;
 
-				if (!GetEmbeddedResource_FirstOneEndingWith(DotNetCheckerFilenameEndswith, dotnetCheckerDllPath))
-					UserMessages.ShowWarningMessage("Could not find " + DotNetCheckerFilenameEndswith + " in resources");
+				if (!File.Exists(dotnetCheckerDllPath))
+				{
+					string downloadededPath = NetworkInterop.FtpDownloadFile(
+							null,
+							Path.GetDirectoryName(dotnetCheckerDllPath),
+							OnlineSettings.OnlineAppsSettings.Instance.AppsDownloadFtpUsername,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,
+							OnlineSettings.OnlineAppsSettings.Instance.AppsDownloadFtpPassword,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,
+							OnlineSettings.PublishSettings.Instance.OnlineDotnetCheckerDllFileUrl,
+							textFeedbackEvent);
+					if (downloadededPath == null)
+						UserMessages.ShowWarningMessage("Could not find (or download) DotNetChecker.dll from URL: " + OnlineSettings.PublishSettings.Instance.OnlineDotnetCheckerDllFileUrl);
+					else
+						dotnetCheckerDllPath = downloadededPath;
+				}
+				//if (!GetEmbeddedResource_FirstOneEndingWith(DotNetCheckerFilenameEndswith, dotnetCheckerDllPath))
+				//    UserMessages.ShowWarningMessage("Could not find " + DotNetCheckerFilenameEndswith + " in resources");
 
 				string MakeNsisFilePath = @"C:\Program Files (x86)\NSIS\makensis.exe";
 				if (!File.Exists(MakeNsisFilePath)) TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Could not find MakeNsis.exe: " + MakeNsisFilePath);
@@ -538,12 +556,12 @@ public class VisualStudioInterop
 
 				string rootFtpUri = GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForVsPublishing() + "/" + validatedUrlsectionForProjname;
 				PublishDetails publishDetails = new PublishDetails(
-					projName,
-					versionString,
-					new FileInfo(publishedSetupPath).Length,
-					publishedSetupPath.FileToMD5Hash(),
-					DateTime.Now,
-					rootFtpUri + "/" + (new FileInfo(publishedSetupPath).Name));
+						projName,
+						versionString,
+						new FileInfo(publishedSetupPath).Length,
+						publishedSetupPath.FileToMD5Hash(),
+						DateTime.Now,
+						rootFtpUri + "/" + (new FileInfo(publishedSetupPath).Name));
 				string errorStringIfFailElseJsonString;
 				bool savedOnline = false;
 				if (WebInterop.SaveObjectOnline(PublishDetails.OnlineJsonCategory, projName + " - " + versionString, publishDetails, out errorStringIfFailElseJsonString))
@@ -551,26 +569,33 @@ public class VisualStudioInterop
 						savedOnline = true;
 
 				string htmlFilePath = CreateHtmlPageReturnFilename(
-					projName,
-					versionString,
-					publishedSetupPath,
-					BugsFixed,
-					Improvements,
-					NewFeatures,
-					savedOnline ? publishDetails : null);
+						projName,
+						versionString,
+						publishedSetupPath,
+						BugsFixed,
+						Improvements,
+						NewFeatures,
+						savedOnline ? publishDetails : null);
 
 				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent,
-					"Attempting Ftp Uploading of Setup file and index file for " + projName);
+						"Attempting Ftp Uploading of Setup file and index file for " + projName);
+				string uriAfterUploading = GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForAFTERvspublishing() + "/" + validatedUrlsectionForProjname;
 				NetworkInterop.FtpUploadFiles(
 					//Task uploadTask = NetworkInterop.FtpUploadFiles(
-					textfeedbackSenderObject,
-					rootFtpUri,
-					GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,//NetworkInterop.ftpUsername,
-					GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,//NetworkInterop.ftpPassword,
-					new string[] { publishedSetupPath, htmlFilePath },
-					OpenWebsite ? GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForAFTERvspublishing() + "/" + validatedUrlsectionForProjname : null,
-					textFeedbackEvent: textFeedbackEvent,
-					progressChanged: progressChanged);
+						textfeedbackSenderObject,
+						rootFtpUri,
+						GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,//NetworkInterop.ftpUsername,
+						GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,//NetworkInterop.ftpPassword,
+						new string[] { publishedSetupPath, htmlFilePath },
+						OpenWebsite ? uriAfterUploading : null,
+						textFeedbackEvent: textFeedbackEvent,
+						progressChanged: progressChanged);
+
+				string startMsg = "All files uploaded, website is: ";
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent,
+						startMsg + uriAfterUploading,
+						HyperlinkRangeIn: new Range(startMsg.Length, uriAfterUploading.Length, Range.LinkTypes.OpenUrl));
+
 				//uploadTask.Start();
 				//uploadTask.Wait();
 			},
@@ -602,7 +627,7 @@ public class VisualStudioInterop
 
 		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Obtaining all ticket descriptions and types from Trac server...", TextFeedbackType.Subtle);
 		Dictionary<int, TracXmlRpcInterop.DescriptionAndTicketType> tmpIdsAndDescriptionsAndTicketTypes
-			= TracXmlRpcInterop.GetAllTicketDescriptionsAndTypes(ProjectXmlRpcTracUri, Username, Password);
+            = TracXmlRpcInterop.GetAllTicketDescriptionsAndTypes(ProjectXmlRpcTracUri, Username, Password);
 		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Finished obtaining all ticket descriptions and types from Trac server.", TextFeedbackType.Subtle);
 
 		//List<string> tmpList = new List<string>();
@@ -641,19 +666,19 @@ public class VisualStudioInterop
 
 		/*foreach (int i in tmpIdsAndDescriptionsAndTicketTypes.Keys)
 		{
-			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Obtaining changelogs for ticket " + i.ToString() + "...", TextFeedbackType.Subtle);
-			List<TracXmlRpcInterop.ChangeLogStruct> changelogs = TracXmlRpcInterop.ChangeLogs(i, ProjectXmlRpcTracUri);
-			foreach (TracXmlRpcInterop.ChangeLogStruct cl in changelogs)
-				if (cl.Field == "comment" && !string.IsNullOrWhiteSpace(cl.NewValue))
-					//TODO: This can be greatly improved
-					if (tmpIdsAndDescriptionsAndTicketTypes[i].TicketType == TracXmlRpcInterop.TicketTypeEnum.Bug)
-						BugsFixed.Add("Ticket #" + i + ": " + cl.NewValue + "  (" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + ")");
-					else if (tmpIdsAndDescriptionsAndTicketTypes[i].TicketType == TracXmlRpcInterop.TicketTypeEnum.Improvement)
-						Improvements.Add("Ticket #" + i + ": " + cl.NewValue + "  (" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + ")");
-					else if (tmpIdsAndDescriptionsAndTicketTypes[i].TicketType == TracXmlRpcInterop.TicketTypeEnum.NewFeature)
-						NewFeatures.Add("Ticket #" + i + ": " + cl.NewValue + "  (" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + ")");
-			//tmpList.Add("Ticket #" + i + ": '" + cl.Field + "' new value = " + cl.NewValue + ", old value = " + cl.OldValue);
-			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Finished obtaining changelogs for ticket " + i.ToString() + ".", TextFeedbackType.Subtle);
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Obtaining changelogs for ticket " + i.ToString() + "...", TextFeedbackType.Subtle);
+				List<TracXmlRpcInterop.ChangeLogStruct> changelogs = TracXmlRpcInterop.ChangeLogs(i, ProjectXmlRpcTracUri);
+				foreach (TracXmlRpcInterop.ChangeLogStruct cl in changelogs)
+						if (cl.Field == "comment" && !string.IsNullOrWhiteSpace(cl.NewValue))
+								//TODO: This can be greatly improved
+								if (tmpIdsAndDescriptionsAndTicketTypes[i].TicketType == TracXmlRpcInterop.TicketTypeEnum.Bug)
+										BugsFixed.Add("Ticket #" + i + ": " + cl.NewValue + "  (" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + ")");
+								else if (tmpIdsAndDescriptionsAndTicketTypes[i].TicketType == TracXmlRpcInterop.TicketTypeEnum.Improvement)
+										Improvements.Add("Ticket #" + i + ": " + cl.NewValue + "  (" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + ")");
+								else if (tmpIdsAndDescriptionsAndTicketTypes[i].TicketType == TracXmlRpcInterop.TicketTypeEnum.NewFeature)
+										NewFeatures.Add("Ticket #" + i + ": " + cl.NewValue + "  (" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + ")");
+				//tmpList.Add("Ticket #" + i + ": '" + cl.Field + "' new value = " + cl.NewValue + ", old value = " + cl.OldValue);
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Finished obtaining changelogs for ticket " + i.ToString() + ".", TextFeedbackType.Subtle);
 		}*/
 	}
 

@@ -1111,7 +1111,11 @@ public class NetworkInterop
 						string dirOnFtpServer = ftpRootUri + "/" + fileNameOnServer;
 
 						isComplete = false;
-						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Starting upload for " + fileNameOnServer);
+
+						string startMsg = "Starting upload for ";
+						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent,
+								startMsg + localFilename,
+								HyperlinkRangeIn: new Range(startMsg.Length, localFilename.Length, Range.LinkTypes.ExplorerSelect));
 						client.UploadFileAsync(new Uri(dirOnFtpServer), "STOR", localFilename);
 						while (!isComplete)
 							Application.DoEvents();

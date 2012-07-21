@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 //using System.Windows.Forms;
 
 namespace SharedClasses
@@ -163,6 +164,67 @@ namespace SharedClasses
 		}
 
 		private const string cDefaultHexChars = "0123456789ABCDEF";
+
+		public static bool EncodeFileToHex(string originalFilePath, string outputFilePath)
+		{
+			using (IndeterminateProgress min = new IndeterminateProgress("File2Hex: " + Path.GetFileName(originalFilePath), true))
+			{
+				bool cancelled = false;
+				min.onCancel += delegate { cancelled = true; };
+
+				int bufferlength = 1024 * 1024 * 10;//10MB
+				byte[] buffer = new byte[bufferlength];
+				using (FileStream fin = new FileStream(originalFilePath, FileMode.Open))
+				using (StreamWriter sw = new StreamWriter(outputFilePath, false))
+				{
+					int actualread = fin.Read(buffer, 0, bufferlength);
+					while (actualread > 0)
+					{
+						sw.Write(EncodeBytesToHex(buffer, 0, actualread));
+						actualread = fin.Read(buffer, 0, bufferlength);
+
+						if (cancelled)
+						{
+							return false;
+						}
+					}
+					return true;
+				}
+			}
+		}
+
+		public static string EncodeBytesToHex(byte[] bytesToEncode, int offset, int count, string Hex16CharactersToUse = null)
+		{
+			string _16charsToUse = Hex16CharactersToUse;
+			if (_16charsToUse == null)
+				_16charsToUse = cDefaultHexChars;
+
+			StringBuilder tmpstr = new StringBuilder();
+			//foreach (byte b in bytesToEncode)
+			for (int i = offset; i < offset + count; i++)
+			{
+				if (i >= bytesToEncode.Length)
+					continue;
+
+				byte b = bytesToEncode[i];
+
+				int remainder;
+				int div;
+				try
+				{
+					/*if (b == 8211) div = Math.DivRem((int)'-', 16, out remainder);
+					else */
+					div = Math.DivRem(b, 16, out remainder);
+					tmpstr.Append(_16charsToUse[div].ToString() + _16charsToUse[remainder].ToString());
+				}
+				catch (Exception exc)
+				{
+					UserMessages.ShowErrorMessage("Error, could not encode hex, byte " + b.ToString() + ": " + Environment.NewLine + exc.Message, "Exception error");
+				}
+			}
+			return tmpstr.ToString();
+		}
+
 		public static string EncodeStringHex(string StringToEncode, string Hex16CharactersToUse = null)
 		{
 			string _16charsToUse = Hex16CharactersToUse;
@@ -187,6 +249,59 @@ namespace SharedClasses
 			}
 			return tmpstr;
 		}
+
+		public static bool DecodeFileFromHex(string hexfilepath, string outputfilepath)
+		{
+			using (IndeterminateProgress min = new IndeterminateProgress("FileFromHex: " + Path.GetFileName(hexfilepath), true))
+			{
+				bool cancelled = false;
+				min.onCancel += delegate { cancelled = true; };
+
+				int bufferlength = 1024 * 1024 * 10;//10MB
+				char[] buffer = new char[bufferlength];
+				using (StreamReader sread = new StreamReader(hexfilepath))
+				using (FileStream fwrite = new FileStream(outputfilepath, FileMode.Create))
+				{
+					int actualread = sread.ReadBlock(buffer, 0, bufferlength);
+					while (actualread > 0)
+					{
+						byte[] bytes = DecodeBytesFromHex(new string(buffer), 0, actualread);
+						fwrite.Write(bytes, 0, bytes.Length);
+						//sw.Write(EncodeBytesToHex(buffer, 0, actualread));
+						actualread = sread.ReadBlock(buffer, 0, bufferlength);
+
+						if (cancelled)
+						{
+							return false;
+						}
+					}
+					return true;
+				}
+			}
+		}
+
+		public static byte[] DecodeBytesFromHex(string StringToDecode, int offset, int count, string Hex16CharactersToUse = null)//, StringTypeEnum StringType)
+		{
+			if (StringToDecode == null)
+				return new byte[0];
+
+			byte[] result = new byte[(int)(count / 2)];//(int)(StringToDecode.Length / 2)];
+
+			string _16charsToUse = Hex16CharactersToUse;
+			if (_16charsToUse == null)
+				_16charsToUse = cDefaultHexChars;
+
+			//for (int i = 0; i <= StringToDecode.Length - 2; i = i + 2)
+			for (int i = offset; i <= offset + count - 2; i = i + 2)
+			{
+				if (i >= StringToDecode.Length)
+					continue;
+
+				result[(i - offset) / 2] = (byte)(_16charsToUse.IndexOf(StringToDecode[i]) * 16 + _16charsToUse.IndexOf(StringToDecode[i + 1]));
+			}
+			return result;
+		}
+		
 
 		//enum StringTypeEnum { Regex, Username, Password };
 		public static string DecodeStringHex(string StringToDecode, string Hex16CharactersToUse = null)//, StringTypeEnum StringType)

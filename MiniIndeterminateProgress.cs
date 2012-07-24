@@ -83,6 +83,9 @@ namespace SharedClasses
 		}
 	}
 
+	/// <summary>
+	/// Usage is using(var progbar = new IndeterminateProgress(message, canCancel)) { }
+	/// </summary>
 	public class IndeterminateProgress : IDisposable
 	{
 		private MiniProgressIndeterminateForm tmpForm;
@@ -90,6 +93,11 @@ namespace SharedClasses
 		private bool disposed = false; //to avoid redundant call
 		public EventHandler onCancel = new EventHandler(delegate { });
 
+		/// <summary>
+		/// Usage is using(var progbar = new IndeterminateProgress(message, canCancel)) { }
+		/// </summary>
+		/// <param name="message">The string message to show with progress</param>
+		/// <param name="canCancel">Should the user be able to cancel (via right-click menu)?</param>
 		public IndeterminateProgress(string message, bool canCancel)
 		{
 			tmpForm = new MiniProgressIndeterminateForm(message, canCancel);

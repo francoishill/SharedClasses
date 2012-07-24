@@ -49,6 +49,10 @@ public class TextFeedbackEventArgs : EventArgs
 	{
 		if (textFeedbackEvent != null) textFeedbackEvent(SenderObject, new TextFeedbackEventArgs(textMessage, FeedbackTypeIn, HyperlinkRangeIn));
 	}
+	public static void RaiseSimple(TextFeedbackEventHandler textFeedbackEvent, string textMessage, TextFeedbackType FeedbackTypeIn = TextFeedbackType.Subtle)
+	{
+		if (textFeedbackEvent != null) textFeedbackEvent(null, new TextFeedbackEventArgs(textMessage, FeedbackTypeIn, null));
+	}
 }
 
 public class TextFeedbackSection

@@ -43,10 +43,32 @@ namespace SharedClasses
 						break;
 				}
 
-				Process.Start(
-					xdelta3Path,
-					string.Format("{0} \"{1}\" \"{2}\" \"{3}\"", commandStr, file1, file2, file3)).WaitForExit();
-				return true;
+				List<string> outputs;
+				List<string> errors;
+				bool? result = SharedClasses.ProcessesInterop.StartProcessCatchOutput(
+					new System.Diagnostics.ProcessStartInfo(
+						xdelta3Path,
+						string.Format("{0} \"{1}\" \"{2}\" \"{3}\"", commandStr, file1, file2, file3)),
+					out outputs,
+					out errors);
+
+				if (result == true)//Successfully ran with no errors/output
+					return true;
+				else if (result == null)//Successfully ran, but had some errors/output
+				{
+					string errMsgesConcated = "";
+					if (outputs.Count > 0)
+						errMsgesConcated += string.Join("|", outputs);
+					if (errors.Count > 0)
+						errMsgesConcated += (errMsgesConcated.Length > 0 ? "|" : "") + string.Join("|", errors);
+					TextFeedbackEventArgs.RaiseSimple(textFeedbackHandler, "There were errors when trying to " + command + " using xDelta3: " + errMsgesConcated, TextFeedbackType.Error);
+					return false;
+				}
+				else// if (result == false)//Unable to run process
+				{
+					TextFeedbackEventArgs.RaiseSimple(textFeedbackHandler, "Unable to patch using xDelta3 (" + xdelta3Path + "), could not start process", TextFeedbackType.Error);
+					return false;
+				}
 			}
 			catch (Exception exc)
 			{
@@ -122,7 +144,25 @@ namespace SharedClasses
 				this.Modified = localFileinfo.LastWriteTime;
 				this.Modified = this.Modified.AddMilliseconds(-this.Modified.Millisecond);
 				//if (this.Bytes < 1024 * 100)//Only MD5Hash for files < 100kB
-				this.MD5Hash = localFileinfo.FullName.FileToMD5Hash();
+
+				int retrycount = 0;
+				int retrymax = 5;
+				retryhere:
+				try
+				{
+					this.MD5Hash = localFileinfo.FullName.FileToMD5Hash();
+				}
+				catch (Exception exc)
+				{
+					Thread.Sleep(2000);
+					if (retrycount++ < retrymax)
+						goto retryhere;
+					//TODO: Obviously this is super Unuserfriendly
+					UserMessages.ShowErrorMessage("Cannot obtain file MD5Hash, please solve the problem and then click OK: " + exc.Message);
+					retrycount = 0;
+					goto retryhere;
+				}
+				
 				//else
 				//    this.MD5Hash = "MD5HashNotCalculatedFileLargerThan100kB";
 			}
@@ -200,6 +240,9 @@ namespace SharedClasses
 				//TODO: Be very careful here, this event gets fired 3 times on when a file is modified/changed
 				if (MustPathBeIgnored(e.FullPath))
 					return;
+				if (Path.GetFileName(e.FullPath).StartsWith("~$w", StringComparison.InvariantCultureIgnoreCase))
+					//TODO: Word temp files excluded starting with ~$w
+					return;
 				if (ActionOnFile_Changed_Created_Deleted != null)
 					ActionOnFile_Changed_Created_Deleted(e);
 			}
@@ -263,6 +306,10 @@ namespace SharedClasses
 				int substringStartPos = (LocalFolderPath.TrimEnd('\\') + "\\").Length;
 				for (int i = 0; i < localfiles.Count; i++)
 				{
+					if (Path.GetFileName(localfiles[i]).StartsWith("~$w", StringComparison.InvariantCultureIgnoreCase))
+						//TODO: Word temp files excluded starting with ~$w
+						continue;
+
 					var fileinfo = new FileInfo(localfiles[i]);
 					//this.FilesData[i] =
 					this.FilesData.Add(new FileMetaData(
@@ -271,22 +318,36 @@ namespace SharedClasses
 				}
 			}
 
-			public static bool PopulateFolderDataFromZippedJson(FolderData folderData, string zippedJsonPath)
+			public static bool PopulateFolderDataFromZippedJson(FolderData folderData, string zippedJsonPath, TextFeedbackEventHandler textFeedbackHandler)
 			{
 				JSON.SetDefaultJsonInstanceSettings();
-				string unzippedpath = DecompressFile(zippedJsonPath);
+				string unzippedpath = DecompressFile(zippedJsonPath, textFeedbackHandler);
 				if (unzippedpath == null)
 					UserMessages.ShowWarningMessage("Cannot unzip file (cannot fill folderData): " + zippedJsonPath);
 				else
 				{
-					JSON.Instance.FillObject(folderData, File.ReadAllText(unzippedpath));
-					File.Delete(unzippedpath);
-					return true;
+					int retrycount = 0;
+					int retrymax = 5;
+				retryhere:
+					try
+					{
+						JSON.Instance.FillObject(folderData, File.ReadAllText(unzippedpath));
+						if (!File.Exists(unzippedpath))
+							File.Delete(unzippedpath);
+						return true;
+					}
+					catch (Exception exc)
+					{
+						Thread.Sleep(2000);
+						if (retrycount++ < retrymax)
+							goto retryhere;
+						TextFeedbackEventArgs.RaiseSimple(textFeedbackHandler, "Error occurred (retried " + retrymax + " times), cannot populate metadata from JSON: " + exc.Message, TextFeedbackType.Error);
+					}
 				}
 				return false;
 			}
 
-			public List<FileMetaData>/*FileMetaData[]*/ GetLastCachedFolderData()
+			public List<FileMetaData>/*FileMetaData[]*/ GetLastCachedFolderData(TextFeedbackEventHandler textFeedbackHandler)
 			{
 				if (cachedMetadata != null)
 					return cachedMetadata;
@@ -311,7 +372,7 @@ namespace SharedClasses
 					//    JSON.Instance.FillObject(folderData, File.ReadAllText(unzippedpath));
 					//    File.Delete(unzippedpath);
 					//}
-					if (PopulateFolderDataFromZippedJson(folderData, zippedfilepath))
+					if (PopulateFolderDataFromZippedJson(folderData, zippedfilepath, textFeedbackHandler))
 						return folderData.FilesData;
 				}
 				return null;
@@ -394,48 +455,63 @@ namespace SharedClasses
 
 			public int? GetServerCurrentVersion(TextFeedbackEventHandler textFeedbackHandler/*string RootFolder, */)
 			{
-				//int? max = null;
-
-				string tmpFile = GetTempServerVersionFileFullpathLocal();
-				File.Delete(tmpFile);
-				while (File.Exists(tmpFile))
+				int retrycount = 0;
+				int retrymax = 5;
+			retryhere:
+				try
 				{
-					Thread.Sleep(300);
-					File.Delete(tmpFile);
-				}
-				if (!DownloadFile(Path.GetDirectoryName(tmpFile).TrimEnd('\\'), GetOnlineNewestVersionFileUri(), textFeedbackHandler))
-					return null;
-				//var localVersionFile = NetworkInterop.FtpDownloadFile(
-				//    null,
-				//    ,
-				//    FtpUsername,
-				//    FtpPassword,
-				//    GetOnlineNewestVersionFileUri());
+					//int? max = null;
 
-				//if (localVersionFile == null)
-				//    return null;
+					string tmpFile = GetTempServerVersionFileFullpathLocal();
+					if (File.Exists(tmpFile))
+						File.Delete(tmpFile);
+					//while (File.Exists(tmpFile))
+					//{
+					//    Thread.Sleep(300);
+					//    File.Delete(tmpFile);
+					//}
+					if (!DownloadFile(Path.GetDirectoryName(tmpFile).TrimEnd('\\'), GetOnlineNewestVersionFileUri(), textFeedbackHandler))
+						return null;
+					//var localVersionFile = NetworkInterop.FtpDownloadFile(
+					//    null,
+					//    ,
+					//    FtpUsername,
+					//    FtpPassword,
+					//    GetOnlineNewestVersionFileUri());
 
-				string filetext = File.ReadAllText(tmpFile).Trim();
-				int tmpint;
-				if (int.TryParse(filetext, out tmpint))
-					return tmpint;
-				else
-					return null;
+					//if (localVersionFile == null)
+					//    return null;
 
-				/*string patchesDir = RootFolder.TrimEnd('\\') + "\\" + UserFolderName + "\\Patches";
-				foreach (string dir in Directory.GetDirectories(patchesDir))
-				{
-					string versionFolderName = Path.GetFileName(dir);
-					string versionStart = "Version";
-					if (versionFolderName.StartsWith(versionStart, StringComparison.InvariantCultureIgnoreCase))
+					string filetext = File.ReadAllText(tmpFile).Trim();
+					int tmpint;
+					if (int.TryParse(filetext, out tmpint))
+						return tmpint;
+					else
+						return null;
+
+					/*string patchesDir = RootFolder.TrimEnd('\\') + "\\" + UserFolderName + "\\Patches";
+					foreach (string dir in Directory.GetDirectories(patchesDir))
 					{
-						int tmpint;
-						if (int.TryParse(versionFolderName.Substring(versionStart.Length), out tmpint))
-							if (!max.HasValue || tmpint > max.Value)
-								max = tmpint;
+						string versionFolderName = Path.GetFileName(dir);
+						string versionStart = "Version";
+						if (versionFolderName.StartsWith(versionStart, StringComparison.InvariantCultureIgnoreCase))
+						{
+							int tmpint;
+							if (int.TryParse(versionFolderName.Substring(versionStart.Length), out tmpint))
+								if (!max.HasValue || tmpint > max.Value)
+									max = tmpint;
+						}
 					}
+					return max;*/
 				}
-				return max;*/
+				catch (Exception exc)
+				{
+					Thread.Sleep(2000);
+					if (retrycount++ < retrymax)
+						goto retryhere;
+					TextFeedbackEventArgs.RaiseSimple(textFeedbackHandler, "Error occurred (retried " + retrymax + " times), cannot get server version: " + exc.Message, TextFeedbackType.Error);
+					return null;
+				}
 			}
 
 			public void CopyLocalFilesToCache()
@@ -464,10 +540,10 @@ namespace SharedClasses
 				//    || fiOrig.FullName.FileToMD5Hash() != fiCurr.FullName.FileToMD5Hash();
 			}
 
-			private Dictionary<string, FileMetaData> GetTempCachedFileAndMetadataDictionary()
+			private Dictionary<string, FileMetaData> GetTempCachedFileAndMetadataDictionary(TextFeedbackEventHandler textFeedbackHandler)
 			{
 				//FileMetaData[] cachedMetadata = GetLastCachedFolderData();
-				List<FileMetaData> cachedMetadata = GetLastCachedFolderData();
+				List<FileMetaData> cachedMetadata = GetLastCachedFolderData(textFeedbackHandler);
 				var tmpdict = new Dictionary<string, FileMetaData>();
 				if (cachedMetadata != null)
 				{
@@ -490,12 +566,12 @@ namespace SharedClasses
 				else return null;
 			}
 
-			private bool HasLocalChanges(out List<string> changedRelativePaths, out List<string> addedRelativePaths, out List<string> removedRelativePaths)
+			private bool HasLocalChanges(out List<string> changedRelativePaths, out List<string> addedRelativePaths, out List<string> removedRelativePaths, TextFeedbackEventHandler textFeedbackHandler)
 			{
 				changedRelativePaths = new List<string>();
 				addedRelativePaths = new List<string>();
 				removedRelativePaths = new List<string>();
-				var tmpcacheddict = GetTempCachedFileAndMetadataDictionary();
+				var tmpcacheddict = GetTempCachedFileAndMetadataDictionary(textFeedbackHandler);
 
 				if (this.FilesData == null)
 					return false;//TODO: No local changes if no local metadata file yet?
@@ -504,7 +580,7 @@ namespace SharedClasses
 				{
 					var locver = GetLocalVersion();
 					if (!locver.HasValue || locver.Value == 1)
-						this.SaveJsonLocallyReturnZippedPath();
+						this.SaveJsonLocallyReturnZippedPath(textFeedbackHandler);
 					else
 						UserMessages.ShowWarningMessage("Warning: local metadata file was missing and got regenerated, but version is " + locver.Value);
 				}
@@ -586,7 +662,7 @@ namespace SharedClasses
 				Directory.Delete(localPatchesDir, true);
 				Directory.CreateDirectory(localPatchesDir);
 
-				var tmpcacheddict = GetTempCachedFileAndMetadataDictionary();
+				var tmpcacheddict = GetTempCachedFileAndMetadataDictionary(textFeedbackHandler);
 				foreach (var f in this.FilesData)
 				{
 					f.HasPatch = false;
@@ -612,7 +688,7 @@ namespace SharedClasses
 					}
 				}
 
-				string zippedJsonpathLocal = SaveJsonLocallyReturnZippedPath();
+				string zippedJsonpathLocal = SaveJsonLocallyReturnZippedPath(textFeedbackHandler);
 
 				cachedMetadata = null;
 
@@ -628,19 +704,19 @@ namespace SharedClasses
 					new string[] { zippedJsonpathLocal });
 			}
 
-			private string _SaveJsonReturnZippedPath(string path)
+			private string _SaveJsonReturnZippedPath(string path, TextFeedbackEventHandler textFeedbackHandler)
 			{
 				JSON.SetDefaultJsonInstanceSettings();
 				var json = WebInterop.GetJsonStringFromObject(this, false);
 				File.WriteAllText(path, json);
-				string zippedPath = CompressFile(path);
+				string zippedPath = CompressFile(path, textFeedbackHandler);
 				File.Delete(path);
 				return zippedPath;
 			}
 
-			public string SaveJsonLocallyReturnZippedPath()
+			public string SaveJsonLocallyReturnZippedPath(TextFeedbackEventHandler textFeedbackHandler)
 			{
-				return _SaveJsonReturnZippedPath(GetMetadataFullpathLocal());
+				return _SaveJsonReturnZippedPath(GetMetadataFullpathLocal(), textFeedbackHandler);
 			}
 
 			private int? GetLocalVersion()
@@ -693,15 +769,29 @@ namespace SharedClasses
 
 			private bool LockServer(TextFeedbackEventHandler textFeedbackHandler)
 			{
-				string tmpFilePath = Path.GetTempPath().TrimEnd('\\') + "\\" + cServerLockFilename;
-				byte[] guidBytes = Guid.NewGuid().ToByteArray();
-				File.WriteAllBytes(tmpFilePath, guidBytes);
-				//TODO: FtpUploadFiles returns boolean, is this returned value trustworthy? See steps in upload method itsself
-				if (!NetworkInterop.FtpUploadFiles(null, NetworkInterop.InsertPortNumberIntoUrl(ServerRootUri/*GetRootUserfolderUri()*/, AutoSyncFtpPortToUse), FtpUsername, FtpPassword, new string[] { tmpFilePath }))
+				int retrycount = 0;
+				int retrymax = 5;
+			retryhere:
+				try
+				{
+					string tmpFilePath = Path.GetTempPath().TrimEnd('\\') + "\\" + cServerLockFilename;
+					byte[] guidBytes = Guid.NewGuid().ToByteArray();
+					File.WriteAllBytes(tmpFilePath, guidBytes);
+					//TODO: FtpUploadFiles returns boolean, is this returned value trustworthy? See steps in upload method itsself
+					if (!NetworkInterop.FtpUploadFiles(null, NetworkInterop.InsertPortNumberIntoUrl(ServerRootUri/*GetRootUserfolderUri()*/, AutoSyncFtpPortToUse), FtpUsername, FtpPassword, new string[] { tmpFilePath }))
+						return false;
+					if (!DownloadFile(Path.GetDirectoryName(tmpFilePath), /*GetRootUserfolderUri()*/ServerRootUri + "//" + cServerLockFilename, textFeedbackHandler))
+						return false;
+					return BytesArraysEqual(File.ReadAllBytes(tmpFilePath), guidBytes);
+				}
+				catch (Exception exc)
+				{
+					Thread.Sleep(2000);
+					if (retrycount++ < retrymax)
+						goto retryhere;
+					TextFeedbackEventArgs.RaiseSimple(textFeedbackHandler, "Error occurred (retried " + retrymax + " times), cannot lock server: " + exc.Message, TextFeedbackType.Error);
 					return false;
-				if (!DownloadFile(Path.GetDirectoryName(tmpFilePath), /*GetRootUserfolderUri()*/ServerRootUri + "//" + cServerLockFilename, textFeedbackHandler))
-					return false;
-				return BytesArraysEqual(File.ReadAllBytes(tmpFilePath), guidBytes);
+				}
 			}
 
 			private bool UnlockServer()
@@ -728,7 +818,7 @@ namespace SharedClasses
 				if (!NetworkInterop.CreateFTPDirectory(newversionUri, FtpUsername, FtpPassword))
 				{
 					//UserMessages.ShowErrorMessage("Could not create new version dir: " + newversionUri);
-					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackHandler, "{"+ this.LocalFolderPath + "} Could not create new version dir: " + newversionUri, TextFeedbackType.Error);
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackHandler, "{" + this.LocalFolderPath + "} Could not create new version dir: " + newversionUri, TextFeedbackType.Error);
 					return null;
 				}
 				else
@@ -752,16 +842,18 @@ namespace SharedClasses
 				return true;
 			}
 
-			private void PopulateAddedFilesLocally()
+			private void PopulateAddedFilesLocally(TextFeedbackEventHandler textFeedbackHandler)
 			{
 				AddedFiles = new List<FileMetaData>();
-				var tmpcacheddict = GetTempCachedFileAndMetadataDictionary();
+				var tmpcacheddict = GetTempCachedFileAndMetadataDictionary(textFeedbackHandler);
 				if (tmpcacheddict == null)
 					return;
 				var tmplocaldict = GetTempDictForLocalFilesMetadata();
 				foreach (string f in tmplocaldict.Keys)
-					if (!tmpcacheddict.ContainsKey(f))
+					if (!tmpcacheddict.ContainsKey(f)
+						&& !Path.GetFileName(f).StartsWith("~$w", StringComparison.InvariantCultureIgnoreCase))
 					{
+						//TODO: Word temp files excluded starting with ~$w
 						AddedFiles.Add(tmplocaldict[f]);
 
 						bool alreadyInFilesData = false;
@@ -773,16 +865,18 @@ namespace SharedClasses
 					}
 			}
 
-			private void PopulateRemovedFilesLocally()
+			private void PopulateRemovedFilesLocally(TextFeedbackEventHandler textFeedbackHandler)
 			{
 				RemovedFiles = new List<FileMetaData>();
-				var tmpcacheddict = GetTempCachedFileAndMetadataDictionary();
+				var tmpcacheddict = GetTempCachedFileAndMetadataDictionary(textFeedbackHandler);
 				if (tmpcacheddict == null)
 					return;
 				var tmplocaldict = GetTempDictForLocalFilesMetadata();
 				foreach (string f in tmpcacheddict.Keys)
-					if (!tmplocaldict.ContainsKey(f))
+					if (!tmplocaldict.ContainsKey(f)
+						&& !Path.GetFileName(f).StartsWith("~$w", StringComparison.InvariantCultureIgnoreCase))
 					{
+						//TODO: Word temp files excluded starting with ~$w
 						RemovedFiles.Add(tmpcacheddict[f]);
 						if (FilesData != null)
 							for (int i = 0; i < FilesData.Count; i++)
@@ -847,7 +941,7 @@ namespace SharedClasses
 				}
 			}
 
-			public bool InitiateSyncing()
+			public bool InitiateSyncing(TextFeedbackEventHandler textFeedbackHandler)
 			{
 				bool? createDir_NullIfExisted = NetworkInterop.CreateFTPDirectory_NullIfExisted(NetworkInterop.InsertPortNumberIntoUrl(this.ServerRootUri, AutoSyncFtpPortToUse), this.FtpUsername, this.FtpPassword);
 				if (!createDir_NullIfExisted.HasValue)
@@ -864,7 +958,7 @@ namespace SharedClasses
 					{
 						//This is a valid syncing folder
 						this.InitialSetupLocally();
-						UploadPatchesResult result = this.UploadChangesToServer();
+						UploadPatchesResult result = this.UploadChangesToServer(textFeedbackHandler);
 						if (result == UploadPatchesResult.Success || result == UploadPatchesResult.NoLocalChanges)
 							return true;
 						else
@@ -918,7 +1012,7 @@ namespace SharedClasses
 					if (this.AddedFiles == null)
 						this.AddedFiles = new List<FileMetaData>();
 					this.AddedFiles.Add(tmpHowToUseFileData);
-					string tempZippedJsonPath = this._SaveJsonReturnZippedPath(tempFolder + "\\" + cMetaDataFilename);
+					string tempZippedJsonPath = this._SaveJsonReturnZippedPath(tempFolder + "\\" + cMetaDataFilename, textFeedbackHandler);
 					if (!NetworkInterop.FtpUploadFiles(null, NetworkInterop.InsertPortNumberIntoUrl(this.ServerRootUri + "/Patches/Version1", AutoSyncFtpPortToUse), this.FtpUsername, this.FtpPassword, new string[] { tempZippedJsonPath }))
 					{
 						UserMessages.ShowWarningMessage("Unable to initiate syncing, could not upload server metadata file: " + cMetaDataFilename);
@@ -933,7 +1027,7 @@ namespace SharedClasses
 					this.AddedFiles.Clear();
 
 					this.InitialSetupLocally();
-					UploadPatchesResult result = this.UploadChangesToServer();
+					UploadPatchesResult result = this.UploadChangesToServer(textFeedbackHandler);
 					if (result == UploadPatchesResult.Success || result == UploadPatchesResult.NoLocalChanges)
 						return true;
 					else
@@ -971,13 +1065,13 @@ namespace SharedClasses
 				//UserCancelledDoNotWantToLoseLocalChanges,
 				//FailedApplyingPatches
 			}
-			public UploadPatchesResult UploadChangesToServer(TextFeedbackEventHandler textFeedbackHandler = null)
+			public UploadPatchesResult UploadChangesToServer(TextFeedbackEventHandler textFeedbackHandler)
 			{
 				List<string> localChangesRelativePaths;
 				List<string> localAddedRelativePaths;
 				List<string> localRemovedRelativePaths;
 
-				bool hasLocalChanges = this.HasLocalChanges(out localChangesRelativePaths, out localAddedRelativePaths, out localRemovedRelativePaths);
+				bool hasLocalChanges = this.HasLocalChanges(out localChangesRelativePaths, out localAddedRelativePaths, out localRemovedRelativePaths, textFeedbackHandler);
 
 				int? localVersion = null;
 				int? serverVersion = null;
@@ -1028,7 +1122,7 @@ namespace SharedClasses
 							return UploadPatchesResult.FailedToUpdateLocalVersion;
 						string tmpVersionMetadataJsonPath = GetTempServerRootDir() + "\\" + GetZippedFilename(cMetaDataFilename);
 						FolderData tempVersionMetadata = new FolderData();
-						if (!PopulateFolderDataFromZippedJson(tempVersionMetadata, tmpVersionMetadataJsonPath))
+						if (!PopulateFolderDataFromZippedJson(tempVersionMetadata, tmpVersionMetadataJsonPath, textFeedbackHandler))
 							return UploadPatchesResult.FailedToUpdateLocalVersion;
 
 						tempVersionMetadata.LocalFolderPath = this.LocalFolderPath;
@@ -1119,7 +1213,7 @@ namespace SharedClasses
 								}
 								//this.FilesData = tempVersionMetadata.FilesData;
 								//this.SaveJsonLocallyReturnZippedPath();
-								tempVersionMetadata.SaveJsonLocallyReturnZippedPath();
+								tempVersionMetadata.SaveJsonLocallyReturnZippedPath(textFeedbackHandler);
 								hasLocalChanges = false;
 							}
 							else
@@ -1153,9 +1247,9 @@ namespace SharedClasses
 								this.FilesData = tempVersionMetadata.FilesData;
 								this.AddedFiles = tempVersionMetadata.AddedFiles;
 								this.RemovedFiles = tempVersionMetadata.RemovedFiles;
-								this.SaveJsonLocallyReturnZippedPath();
+								this.SaveJsonLocallyReturnZippedPath(textFeedbackHandler);
 
-								hasLocalChanges = this.HasLocalChanges(out localChangesRelativePaths, out localAddedRelativePaths, out localRemovedRelativePaths);
+								hasLocalChanges = this.HasLocalChanges(out localChangesRelativePaths, out localAddedRelativePaths, out localRemovedRelativePaths, textFeedbackHandler);
 							}
 						}
 						//foreach (var pf in affectedUpdatedFiles)
@@ -1186,8 +1280,8 @@ namespace SharedClasses
 
 				//string serverNewVersionFolder = GetServerVersionFolderUri(newVersion.Value);
 
-				PopulateAddedFilesLocally();
-				PopulateRemovedFilesLocally();
+				PopulateAddedFilesLocally(textFeedbackHandler);
+				PopulateRemovedFilesLocally(textFeedbackHandler);
 				if (hasLocalChanges)
 					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackHandler, "{" + this.LocalFolderPath + "} Uploading local changes to server");
 				if (!UploadFilesWithPatches(newVersion.Value, textFeedbackHandler))
@@ -1310,43 +1404,56 @@ namespace SharedClasses
 		public static string GetZippedFilename(string originalFilepath) { return originalFilepath + ".gz"; }
 		public static string GetUnzippedFilename(string zipFilepath) { return zipFilepath.Substring(0, zipFilepath.Length - 3); }
 
-		public static string CompressFile(string originalFilepath)
+		public static string CompressFile(string originalFilepath, TextFeedbackEventHandler textFeedbackHandler)
 		{
 			string returnString = null;
 
-			// Get the stream of the source file.
-			using (FileStream inFile = new FileInfo(originalFilepath).OpenRead())
+			int retrycount = 0;
+			int retrymax = 5;
+		retryhere:
+			try
 			{
-				// Prevent compressing hidden and 
-				// already compressed files.
-				if ((File.GetAttributes(originalFilepath)
-					& FileAttributes.Hidden)
-					!= FileAttributes.Hidden & Path.GetExtension(originalFilepath) != ".gz")
+				// Get the stream of the source file.
+				using (FileStream inFile = new FileInfo(originalFilepath).OpenRead())
 				{
-					// Create the compressed file.
-					string outpath = GetZippedFilename(originalFilepath);
-					using (FileStream outFile =
-								File.Create(outpath))
+					// Prevent compressing hidden and 
+					// already compressed files.
+					if ((File.GetAttributes(originalFilepath)
+						& FileAttributes.Hidden)
+						!= FileAttributes.Hidden & Path.GetExtension(originalFilepath) != ".gz")
 					{
-						using (GZipStream Compress =
-							new GZipStream(outFile,
-							CompressionMode.Compress))
+						// Create the compressed file.
+						string outpath = GetZippedFilename(originalFilepath);
+						using (FileStream outFile =
+								File.Create(outpath))
 						{
-							// Copy the source file into 
-							// the compression stream.
-							inFile.CopyTo(Compress);
-							returnString = outpath;
-							//Console.WriteLine("Compressed {0} from {1} to {2} bytes.",
-							//    Path.GetFileName(originalFile),
-							//    fi.Length.ToString(), outFile.Length.ToString());
+							using (GZipStream Compress =
+							new GZipStream(outFile,
+								CompressionMode.Compress))
+							{
+								// Copy the source file into 
+								// the compression stream.
+								inFile.CopyTo(Compress);
+								returnString = outpath;
+								//Console.WriteLine("Compressed {0} from {1} to {2} bytes.",
+								//    Path.GetFileName(originalFile),
+								//    fi.Length.ToString(), outFile.Length.ToString());
+							}
 						}
 					}
 				}
 			}
+			catch (Exception exc)
+			{
+				Thread.Sleep(2000);
+				if (retrycount++ < retrymax)
+					goto retryhere;
+				TextFeedbackEventArgs.RaiseSimple(textFeedbackHandler, "Error occurred (retried " + retrymax + " times), cannot compress file: " + exc.Message, TextFeedbackType.Error);
+			}
 			return returnString;
 		}
 
-		public static string DecompressFile(string zipFilepath)
+		public static string DecompressFile(string zipFilepath, TextFeedbackEventHandler textFeedbackHandler)
 		{
 			string returnString = null;
 
@@ -1359,18 +1466,32 @@ namespace SharedClasses
 
 				//Create the decompressed file.
 				string outfile = GetUnzippedFilename(zipFilepath);
-				using (FileStream outFile = File.Create(outfile))
+				int retrycount = 0;
+				int retryMax = 5;
+			retryhere:
+				try
 				{
-					using (GZipStream Decompress = new GZipStream(inFile,
-							CompressionMode.Decompress))
+					using (FileStream outFile = File.Create(outfile))
 					{
-						// Copy the decompression stream 
-						// into the output file.
-						Decompress.CopyTo(outFile);
-						returnString = outfile;
-						//Console.WriteLine("Decompressed: {0}", fi.Name);
+						using (GZipStream Decompress = new GZipStream(inFile,
+								CompressionMode.Decompress))
+						{
+							// Copy the decompression stream 
+							// into the output file.
+							Decompress.CopyTo(outFile);
+							returnString = outfile;
+							//Console.WriteLine("Decompressed: {0}", fi.Name);
 
+						}
 					}
+				}
+				catch (Exception exc)
+				{
+					Thread.Sleep(2000);
+					if (retrycount++ < retryMax)
+						goto retryhere;
+					else
+						TextFeedbackEventArgs.RaiseSimple(textFeedbackHandler, "Error occurred (retried " + retryMax + " times), cannot decompress file: " + exc.Message, TextFeedbackType.Error);
 				}
 			}
 			return returnString;

@@ -45,6 +45,7 @@ namespace SharedClasses
 		{
 			if (!File.Exists(_fileName))
 				return "[InvalidFilePath:" + _fileName + "]";
+
 			using (var stream = new BufferedStream(File.OpenRead(_fileName), 1200000))
 			{
 				SHA256Managed sha = new SHA256Managed();

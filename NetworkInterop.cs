@@ -1066,6 +1066,16 @@ public class NetworkInterop
 		//MessageBox.Show(this, "File assebled successfully");
 	}
 
+	public static string InsertPortNumberIntoUrl(string originalUrl, int portNumber)
+	{
+		int posDoubleSlash = originalUrl.IndexOf("//");
+		int posFirstSingleSlash = originalUrl.IndexOf("/", (posDoubleSlash >= 0 ? posDoubleSlash : 0) + 2);
+		if (posFirstSingleSlash != -1)
+			return originalUrl.Insert(posFirstSingleSlash, ":" + portNumber.ToString());
+		else
+			return originalUrl + ":" + portNumber.ToString();
+	}
+
 	public static bool FtpUploadFiles(Object textfeedbackSenderObject, string ftpRootUri, string userName, string password, string[] localFilenames, string urlWhenSuccessullyUploaded = null, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
 	{
 		ftpRootUri = ftpRootUri.Replace('\\', '/');
@@ -1146,7 +1156,7 @@ public class NetworkInterop
 		return false;
 	}
 
-	public static long FtpGetFileSize(string fullFileUri, string userName, string password)
+	public static long FtpGetFileSize(string fullFileUri, string userName, string password, TextFeedbackEventHandler textFeedbackHandler)
 	{
 		try
 		{
@@ -1174,12 +1184,12 @@ public class NetworkInterop
 				return -1;//Does not exist
 			}
 			response.Close();
-			UserMessages.ShowErrorMessage("Cannot determine ftp file size for '" + fullFileUri + ex.Message);
+			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackHandler, "Cannot determine ftp file size for '" + fullFileUri + ex.Message, TextFeedbackType.Error);
 			return -2;//Cannot obtain size (could be internet connectivity, timeout, etc)
 		}
 	}
 
-	public static string FtpDownloadFile(Object textfeedbackSenderObject, string localRootFolder, string userName, string password, string onlineFileUrl, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
+	public static string FtpDownloadFile(Object textfeedbackSenderObject, string localRootFolder, string userName, string password, string onlineFileUrl, TextFeedbackEventHandler textFeedbackHandler = null, ProgressChangedEventHandler progressChanged = null)
 	{
 		int maxRetries = 5;
 		int retryCount = 0;
@@ -1194,13 +1204,13 @@ public class NetworkInterop
 				//foreach (string localFilename in localFilenames)
 				//{
 				bool isComplete = false;
-				long filesize = FtpGetFileSize(onlineFileUrl, userName, password);
+				long filesize = FtpGetFileSize(onlineFileUrl, userName, password, textFeedbackHandler);
 
 				if (filesize == -1)//File does not exist
 				{
 					string errMsg = "Ftp file does not exist: " + onlineFileUrl;
 					UserMessages.ShowErrorMessage(errMsg);
-					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, errMsg);
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackHandler, errMsg);
 					return null;
 				}
 
@@ -1230,8 +1240,8 @@ public class NetworkInterop
 				client.DownloadFileAsync(new Uri(onlineFileUrl), localFilepath);
 				while (!isComplete)
 					Application.DoEvents();
-				MiniDownloadBarForm.CloseDownloadBar();
-				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Successfully download " + onlineFileUrl);
+
+				//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackHandler, "Successfully downloaded " + onlineFileUrl);
 
 				//int tmptodo;
 				//TODO: Checking file length = 0? What if its a blank/empty file??
@@ -1242,11 +1252,13 @@ public class NetworkInterop
 						{
 							retryCount++;
 							isComplete = false;
-							Thread.Sleep(300);
+							Thread.Sleep(1000);
 							if (retryCount <= maxRetries && (!File.Exists(localFilepath) || new FileInfo(localFilepath).Length == 0))
 								goto retryhere;
 						}
 				}
+
+				MiniDownloadBarForm.CloseDownloadBar();
 
 				//}
 				//client.Dispose();
@@ -1275,7 +1287,8 @@ public class NetworkInterop
 		return null;
 	}
 
-	public static bool FtpFileExists(string filePath, string ftpUser, string ftpPassword)
+	//Changed to bool? so that null tells there was an error
+	public static bool? FtpFileExists(string filePath, string ftpUser, string ftpPassword)
 	{
 		var request = (FtpWebRequest)WebRequest.Create(filePath);
 		request.Credentials = new NetworkCredential(ftpUser, ftpPassword);
@@ -1299,7 +1312,7 @@ public class NetworkInterop
 			}
 			response.Close();
 			UserMessages.ShowErrorMessage("Cannot determine whether file '" + filePath + "' exists: " + ex.Message);
-			return false;
+			return null;
 		}
 	}
 
@@ -1340,10 +1353,55 @@ public class NetworkInterop
 	//    return IsExists;
 	//}
 
+	//Null means it already existed
+	public static bool? CreateFTPDirectory_NullIfExisted(string directory, string ftpUser, string ftpPassword, int? timeout = null)
+	{
+		try
+		{
+			//create the directory
+			FtpWebRequest requestDir = (FtpWebRequest)FtpWebRequest.Create(new Uri(directory));
+			requestDir.Method = WebRequestMethods.Ftp.MakeDirectory;
+			requestDir.Credentials = new NetworkCredential(ftpUser, ftpPassword);
+			requestDir.UsePassive = true;
+			requestDir.UseBinary = true;
+			requestDir.KeepAlive = false;
+			if (timeout.HasValue)
+				requestDir.Timeout = timeout.Value;
+			FtpWebResponse response = (FtpWebResponse)(requestDir.GetResponse());
+			Stream ftpStream = response.GetResponseStream();
+
+			ftpStream.Close();
+			response.Close();
+
+			//Directory did not exist, successfully created
+			return true;
+		}
+		catch (WebException ex)
+		{
+			FtpWebResponse response = (FtpWebResponse)ex.Response;
+			if (response != null && response.StatusCode == FtpStatusCode.ActionNotTakenFileUnavailable
+				//DONE: Will it always work to check the StatusDescription?
+				//&& response.StatusDescription.IndexOf("Directory already exists", StringComparison.InvariantCultureIgnoreCase) != -1
+				)
+			{
+				//Directory already existed
+				response.Close();
+				return null;
+			}
+			else
+			{
+				//Error occurred, directory not created/existed (could have timed out?)
+				if (response != null)
+					response.Close();
+				return false;
+			}
+		}
+	}
+
 	public static bool CreateFTPDirectory(string directory, string ftpUser, string ftpPassword)
 	{
-
-		try
+		return CreateFTPDirectory_NullIfExisted(directory, ftpUser, ftpPassword) != false;
+		/*try
 		{
 			//create the directory
 			FtpWebRequest requestDir = (FtpWebRequest)FtpWebRequest.Create(new Uri(directory));
@@ -1358,6 +1416,7 @@ public class NetworkInterop
 			ftpStream.Close();
 			response.Close();
 
+			//Directory did not exist, successfully created
 			return true;
 		}
 		catch (WebException ex)
@@ -1368,15 +1427,17 @@ public class NetworkInterop
 				//&& response.StatusDescription.IndexOf("Directory already exists", StringComparison.InvariantCultureIgnoreCase) != -1
 				)
 			{
+				//Directory already existed
 				response.Close();
 				return true;
 			}
 			else
 			{
+				//Error occurred, directory not created/existed (could have timed out?)
 				response.Close();
 				return false;
 			}
-		}
+		}*/
 	}
 
 	public static bool RemoveFTPDirectory(string directory, string ftpUser, string ftpPassword)

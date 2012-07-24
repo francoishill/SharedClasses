@@ -28,7 +28,7 @@ public struct Range
 		this.LinkType = LinkType;
 	}
 
-	public int End { get { return Start + Length; } }
+	public int End { get { return Start + Length - 1; } }
 }
 
 public enum TextFeedbackType { Error, Success, Noteworthy, Subtle };
@@ -88,7 +88,6 @@ public class TextFeedbackEventArgs_MultiObjects : TextFeedbackEventArgs
 		this.AutoSeparateWithSpaces = AutoSeparateWithSpaces;
 	}
 	[Obsolete("This member is hidden in the inherited class, rather use the other overload which takes a List<string> instead of one string. To use the single string method it use the base class TextFeedbackEventArgs.", true)]
-	new public static void RaiseTextFeedbackEvent_Ifnotnull(object SenderObject, TextFeedbackEventHandler textFeedbackEvent, string textMessage, TextFeedbackType FeedbackTypeIn = TextFeedbackType.Subtle) { }
 	public static void RaiseTextFeedbackEvent_Ifnotnull(object SenderObject, TextFeedbackEventHandler textFeedbackEvent, List<TextFeedbackSection> MessagesList, TextFeedbackType FeedbackTypeIn = TextFeedbackType.Subtle, bool AutoSeparateWithSpaces = true)
 	{
 		if (textFeedbackEvent != null) textFeedbackEvent(SenderObject, new TextFeedbackEventArgs_MultiObjects(MessagesList, FeedbackTypeIn, AutoSeparateWithSpaces));

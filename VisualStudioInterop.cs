@@ -223,7 +223,14 @@ public class VisualStudioInterop
 			msbuildproc.StartInfo = startinfo;
 
 			if (msbuildproc.Start())
-				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Started building for " + projName + ", please wait...");
+			{
+				//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Started building for " + projName + ", please wait...");
+				string path = SolutionTrueProjectFalse ? slnFilename : csprojFilename;
+				string startMsg = "Started building for ";
+				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent,
+						startMsg + path + ", please wait...",
+						HyperlinkRangeIn: new Range(startMsg.Length, path.Length, Range.LinkTypes.ExplorerSelect));
+			}
 			else TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Error: Could not start SVN process.");
 
 			msbuildproc.PriorityBoostEnabled = true;

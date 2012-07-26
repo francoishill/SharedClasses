@@ -863,7 +863,6 @@ namespace SharedClasses
 							Directory.CreateDirectory(patchfileDir);
 						if (tmpcacheddict != null && tmpcacheddict.ContainsKey(f.RelativePath))
 						{
-							Why?
 							//TODO: Why is patches generated/uploaded for NEW FILES?
 							MakePatch(GetLocalOriginalFilePath(f), tempPath/*GetAbsolutePath(f)*/, patchfile, textFeedbackHandler);
 							if (!UploadPatch(f, patchfile, newVersion))

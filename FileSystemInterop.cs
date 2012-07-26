@@ -17,6 +17,29 @@ public class FileSystemInterop
 		return FolderOrFileName;
 	}
 
+	public static bool CanOpenFileForReading(string fullpath, out string errorIfCannotOpen)
+	{
+		if (!File.Exists(fullpath))
+		{
+			errorIfCannotOpen = "File deleted before processed: " + fullpath;
+			return false;
+		}
+		else
+		{
+			try
+			{
+				File.OpenRead(fullpath).Close();
+				errorIfCannotOpen = null;
+				return true;
+			}
+			catch (Exception exc)
+			{
+				errorIfCannotOpen = "Cannot read from file: " + fullpath + ". " + exc.Message;
+				return false;
+			}
+		}
+	}
+
 	//private const string EncodedCharStart = "[{_";
 	//private const string EncodedCharEnd = "_}]";
 	public static string FilenameEncodeToValid(string wantedFilename)

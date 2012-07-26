@@ -32,6 +32,7 @@
 			this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
 			this.buttonAddMore = new System.Windows.Forms.Button();
 			this.buttonAccept = new System.Windows.Forms.Button();
+			this.checkBoxTopmost = new System.Windows.Forms.CheckBox();
 			this.SuspendLayout();
 			// 
 			// label1
@@ -84,6 +85,18 @@
 			this.buttonAccept.UseVisualStyleBackColor = true;
 			this.buttonAccept.Click += new System.EventHandler(this.buttonAccept_Click);
 			// 
+			// checkBoxTopmost
+			// 
+			this.checkBoxTopmost.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+			this.checkBoxTopmost.AutoSize = true;
+			this.checkBoxTopmost.Font = new System.Drawing.Font("Microsoft Sans Serif", 6.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.checkBoxTopmost.Location = new System.Drawing.Point(545, 6);
+			this.checkBoxTopmost.Name = "checkBoxTopmost";
+			this.checkBoxTopmost.Size = new System.Drawing.Size(60, 16);
+			this.checkBoxTopmost.TabIndex = 21;
+			this.checkBoxTopmost.Text = "Topmost";
+			this.checkBoxTopmost.UseVisualStyleBackColor = true;
+			// 
 			// NewLinkedFolder
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -91,6 +104,7 @@
 			this.AutoSize = true;
 			this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
 			this.ClientSize = new System.Drawing.Size(617, 102);
+			this.Controls.Add(this.checkBoxTopmost);
 			this.Controls.Add(this.buttonAccept);
 			this.Controls.Add(this.buttonAddMore);
 			this.Controls.Add(this.tableLayoutPanel1);
@@ -99,9 +113,9 @@
 			this.MaximizeBox = false;
 			this.MinimizeBox = false;
 			this.Name = "NewLinkedFolder";
-			this.ShowInTaskbar = false;
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Add a linked folder";
+			this.TopMost = true;
 			this.SizeChanged += new System.EventHandler(this.NewLinkedFolder_SizeChanged);
 			this.ResumeLayout(false);
 			this.PerformLayout();
@@ -114,5 +128,6 @@
 		private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
 		private System.Windows.Forms.Button buttonAddMore;
 		private System.Windows.Forms.Button buttonAccept;
+		private System.Windows.Forms.CheckBox checkBoxTopmost;
 	}
 }

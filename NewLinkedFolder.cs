@@ -16,6 +16,9 @@ namespace SharedClasses
 		{
 			InitializeComponent();
 
+			checkBoxTopmost.Checked = this.TopMost;
+			checkBoxTopmost.CheckedChanged += delegate { this.TopMost = checkBoxTopmost.Checked; };
+
 			foreach (Control con in this.Controls)
 				con.KeyPress += new KeyPressEventHandler(global_KeyPress);
 

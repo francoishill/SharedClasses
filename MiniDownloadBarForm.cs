@@ -21,11 +21,11 @@ namespace SharedClasses
 			InitializeComponent();
 		}
 
-		public static void ShowMiniDownloadBar()
+		public static Thread ShowMiniDownloadBar()
 		{
 			Thread currentThread1 = Thread.CurrentThread;
 			if (activeThreadsAndForms.ContainsKey(currentThread1) && activeThreadsAndForms[currentThread1] != null && activeThreadsAndForms[currentThread1].Visible)
-				return;
+				return currentThread1;
 			//if (miniForm != null && miniForm.Visible)
 			//    return;
 
@@ -36,11 +36,14 @@ namespace SharedClasses
 				activeThreadsAndForms[currentThread1] = new MiniDownloadBarForm();
 			//if (miniForm == null || miniForm.IsDisposed)
 			//    miniForm = new MiniDownloadBarForm();
+			Thread result = null;
 			ThreadingInterop.UpdateGuiFromThread(activeThreadsAndForms[currentThread1], delegate
 			{
 				Thread currentThread = Thread.CurrentThread;
 				activeThreadsAndForms[currentThread].Show();
+				result = currentThread;
 			});
+			return result;
 		}
 		public static void CloseDownloadBar()
 		{
@@ -48,20 +51,46 @@ namespace SharedClasses
 			ThreadingInterop.UpdateGuiFromThread(activeThreadsAndForms[currentThread1], delegate
 			{
 				Thread currentThread = Thread.CurrentThread;
-				MiniDownloadBarForm tmpfrm = activeThreadsAndForms[currentThread];
 				if (activeThreadsAndForms.ContainsKey(currentThread))
+				{
+					MiniDownloadBarForm tmpfrm = activeThreadsAndForms[currentThread];
 					activeThreadsAndForms.Remove(currentThread);
-				tmpfrm.ForceClose = true;
-				tmpfrm.Close();
-				tmpfrm.Dispose();
-				tmpfrm = null;
+					tmpfrm.ForceClose = true;
+					tmpfrm.Close();
+					tmpfrm.Dispose();
+					tmpfrm = null;
+				}
 			});
 		}
-		public static void UpdateProgress(int percentage)
+		public static void CloseDownloadBarUsingThread(Thread thread)
+		{
+			if (!activeThreadsAndForms.ContainsKey(thread))
+				return;
+
+			Thread currentThread1 = thread;
+			ThreadingInterop.UpdateGuiFromThread(activeThreadsAndForms[currentThread1], delegate
+			{
+				if (activeThreadsAndForms.ContainsKey(thread))
+				{
+					MiniDownloadBarForm tmpfrm = activeThreadsAndForms[thread];
+					activeThreadsAndForms.Remove(thread);
+					tmpfrm.ForceClose = true;
+					tmpfrm.Close();
+					tmpfrm.Dispose();
+					tmpfrm = null;
+				}
+			});
+		}
+		public static void ForceCloseDownloadBarUsingThread(Thread thread)
+		{
+		}
+
+		public static Thread UpdateProgress(int percentage)
 		{
 			//if (miniForm == null || miniForm.IsDisposed)
-			ShowMiniDownloadBar();
+			Thread result = ShowMiniDownloadBar();
 			Thread currentThread1 = Thread.CurrentThread;
+ 
 			ThreadingInterop.UpdateGuiFromThread(activeThreadsAndForms[currentThread1], delegate
 			{
 				Thread currentThread = Thread.CurrentThread;
@@ -69,19 +98,23 @@ namespace SharedClasses
 				{
 					activeThreadsAndForms[currentThread].progressBar1.Value = percentage;
 					Application.DoEvents();
+					result = currentThread;
 				}
 			});
+			return result;
 		}
-		public static void UpdateMessage(string messageHover)
+		public static Thread UpdateMessage(string messageHover)
 		{
 			//if (miniForm == null)
-			ShowMiniDownloadBar();
+			Thread result = ShowMiniDownloadBar();
 			Thread currentThread1 = Thread.CurrentThread;
 			ThreadingInterop.UpdateGuiFromThread(activeThreadsAndForms[currentThread1], delegate
 			{
 				Thread currentThread = Thread.CurrentThread;
 				activeThreadsAndForms[currentThread].toolTip1.SetToolTip(activeThreadsAndForms[currentThread].progressBar1, messageHover);
+				result = currentThread;
 			});
+			return result;
 		}
 
 		protected override bool ShowWithoutActivation { get { return true; } }

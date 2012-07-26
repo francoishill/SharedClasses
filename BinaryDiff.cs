@@ -177,6 +177,7 @@ namespace SharedClasses
 			public DateTime Modified { get; set; }
 			public string MD5Hash { get; set; }
 			public bool HasPatch;
+			public int LastPatchedInVersion;
 			private bool TempIgnoreCannotRead;
 			public bool GetTempIgnoreCannotRead() { return TempIgnoreCannotRead; }
 			public void SetTempIgnoreCannotRead(bool newvalue) { TempIgnoreCannotRead = newvalue; }
@@ -188,6 +189,7 @@ namespace SharedClasses
 				this.RelativePath = RelativePath;
 				RecalculateDetails(localFileinfo);
 				this.HasPatch = false;
+				this.LastPatchedInVersion = 0;
 			}
 
 			private void RecalculateDetails(FileInfo localFileinfo)
@@ -259,6 +261,10 @@ namespace SharedClasses
 			public /*FileMetaData[]*/List<FileMetaData> FilesData;
 			public List<FileMetaData> AddedFiles;
 			public List<FileMetaData> RemovedFiles;
+
+			private List<string> listRelativeUncopyableFiles = new List<string>();
+			public bool HasUncopyableFilesInList() { return listRelativeUncopyableFiles.Count > 0; }
+
 			public FolderData() { }
 			public FolderData(string LocalFolderPath, string ServerRootUri, /*string UserFolderName, *//*bool IsLocal,*/ /*FileMetaData[]*/List<FileMetaData> FilesData, string FtpUsername, string FtpPassword)
 				: base(LocalFolderPath, ServerRootUri, FtpUsername, FtpPassword)
@@ -424,6 +430,7 @@ namespace SharedClasses
 					.Where(f => !f.StartsWith(LocalFolderPath + "\\" + cCachedSubfolderName, StringComparison.InvariantCultureIgnoreCase))
 					.ToList();
 				localfiles.Sort();
+				localfiles = localfiles.Distinct(StringComparer.InvariantCultureIgnoreCase).ToList();
 
 				this.FilesData = new List<FileMetaData>();//new FileMetaData[localfiles.Count];
 				int substringStartPos = (LocalFolderPath.TrimEnd('\\') + "\\").Length;
@@ -438,11 +445,21 @@ namespace SharedClasses
 					var tmpFileMeta = new FileMetaData(
 						localfiles[i].Substring(substringStartPos),
 						fileinfo);
-					if (filteredListToCheck != null && !filteredListToCheck.Contains(tmpFileMeta.RelativePath, StringComparer.InvariantCultureIgnoreCase))
+					if (filteredListToCheck != null
+						&& !filteredListToCheck.Contains(tmpFileMeta.RelativePath, StringComparer.InvariantCultureIgnoreCase)
+						//Do not ignore it if it was in this list which could not be copied a previous time
+						&& !listRelativeUncopyableFiles.Contains(tmpFileMeta.RelativePath, StringComparer.InvariantCultureIgnoreCase))
 						tmpFileMeta.SetTempIgnoreCannotRead(true);
 					else if (!CopyToTemp(tmpFileMeta, textFeedbackHandler))
+					{
+						if (!listRelativeUncopyableFiles.Contains(tmpFileMeta.RelativePath, StringComparer.InvariantCultureIgnoreCase))
+							listRelativeUncopyableFiles.Add(tmpFileMeta.RelativePath);
 						//TODO: If cannot copy successfully (file could have openened in between), it marks it as 'ignore', is this correct?
 						tmpFileMeta.SetTempIgnoreCannotRead(true);
+					}
+					//Remove it from the uncopyable files list if successfully copied
+					else if (listRelativeUncopyableFiles.Contains(tmpFileMeta.RelativePath, StringComparer.InvariantCultureIgnoreCase))
+						listRelativeUncopyableFiles.Remove(tmpFileMeta.RelativePath);
 					this.FilesData.Add(tmpFileMeta);
 				}
 			}
@@ -672,7 +689,9 @@ namespace SharedClasses
 				if (cachedMetadata != null)
 				{
 					foreach (var cf in cachedMetadata)
-						tmpdict.Add(cf.RelativePath, cf);
+						//TODO: Why are there sometimes duplicates and we have to check for them here?
+						if (!tmpdict.ContainsKey(cf.RelativePath))
+							tmpdict.Add(cf.RelativePath, cf);
 					return tmpdict;
 				}
 				else return null;
@@ -684,7 +703,9 @@ namespace SharedClasses
 				if (FilesData != null)
 				{
 					foreach (var lf in FilesData)
-						tmpdict.Add(lf.RelativePath, lf);
+						//TODO: Why are there sometimes duplicates and we have to check for them here?
+						if (!tmpdict.ContainsKey(lf.RelativePath))
+							tmpdict.Add(lf.RelativePath, lf);
 					return tmpdict;
 				}
 				else return null;
@@ -719,8 +740,10 @@ namespace SharedClasses
 				}
 				//if (tmpcacheddict.Count > this.FilesData.Length)
 				//{
-				foreach (var f in this.FilesData)
+				//foreach (var f in this.FilesData)
+				for (int i = 0; i < this.FilesData.Count; i++)
 				{
+					var f = this.FilesData[i];
 					//TODO: Is this the best?
 					if (f.GetTempIgnoreCannotRead())
 					{
@@ -733,6 +756,7 @@ namespace SharedClasses
 						addedRelativePaths.Add(f.RelativePath);
 					else
 					{
+						f.LastPatchedInVersion = tmpcacheddict[f.RelativePath].LastPatchedInVersion;
 						if (HasFileChanged(f, tmpcacheddict[f.RelativePath]))//If changed add to list
 							changedRelativePaths.Add(f.RelativePath);
 						tmpcacheddict.Remove(f.RelativePath);//If contained in cache remove from cache list, so all remaining items are removed items
@@ -800,9 +824,17 @@ namespace SharedClasses
 				Directory.CreateDirectory(localPatchesDir);
 
 				var tmpcacheddict = GetTempCachedFileAndMetadataDictionary(textFeedbackHandler);
-				foreach (var f in this.FilesData)
+				//foreach (var f in this.FilesData)
+				for (int i = 0; i < this.FilesData.Count; i++)
 				{
+					var f = this.FilesData[i];
+
 					f.HasPatch = false;
+					if (tmpcacheddict.ContainsKey(f.RelativePath))
+						f.LastPatchedInVersion = tmpcacheddict[f.RelativePath].LastPatchedInVersion;
+					else
+						f.LastPatchedInVersion = 0;//Added file
+					
 					var patchfile = GetPatchFilepath(f);//patchesdir + "\\" + f.RelativePath;
 					var patchfileDir = Path.GetDirectoryName(patchfile);
 					patchfile += cPatchFileExtension;
@@ -819,11 +851,20 @@ namespace SharedClasses
 							return false;
 						}
 
+						//TODO: Works better with making the HasPatch true even for added files
 						f.HasPatch = true;
+						if (tmpcacheddict.ContainsKey(f.RelativePath))
+						{
+							//f.HasPatch = true;
+							f.LastPatchedInVersion = newVersion;
+						}
+
 						if (!Directory.Exists(patchfileDir))
 							Directory.CreateDirectory(patchfileDir);
 						if (tmpcacheddict != null && tmpcacheddict.ContainsKey(f.RelativePath))
 						{
+							Why?
+							//TODO: Why is patches generated/uploaded for NEW FILES?
 							MakePatch(GetLocalOriginalFilePath(f), tempPath/*GetAbsolutePath(f)*/, patchfile, textFeedbackHandler);
 							if (!UploadPatch(f, patchfile, newVersion))
 								return false;
@@ -1009,6 +1050,7 @@ namespace SharedClasses
 						//}
 						//else
 						//{
+						tmplocaldict[f].LastPatchedInVersion = 0;
 						AddedFiles.Add(tmplocaldict[f]);
 
 						bool alreadyInFilesData = false;
@@ -1053,6 +1095,7 @@ namespace SharedClasses
 
 				foreach (var af in AddedFiles)
 				{
+					af.LastPatchedInVersion = 0;
 					string tempPath = GetTempCopyToFilePath(af);
 					if (!File.Exists(tempPath))
 					{
@@ -1278,7 +1321,9 @@ namespace SharedClasses
 				{
 					//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackHandler, "{" + this.LocalFolderPath + "} Server version newer = " + serverVersion.Value + ", local version = " + localVersion.Value, TextFeedbackType.Subtle);
 
-					//DONE: Can now only download newest version, what about patched files previous versions?
+					//DONE: Cannot only download newest version, what about patched files previous versions (like if file10 was only patched in version 4, newest version is 7)?
+
+					//TODO: Way to keep track of when files change, keep a "lastPatchedInVersion" for each file
 					for (int i = localVersion.Value + 1; i <= serverVersion.Value; i++)
 					{
 						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackHandler, "{" + this.LocalFolderPath + "} Updating local version to " + i, TextFeedbackType.Subtle);

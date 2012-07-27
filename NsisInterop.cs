@@ -57,8 +57,12 @@ public class NsisInterop
 			//InstallForAllUsersIn: InstallForAllUsers
 			);
 
-		string PublishedDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) +
-			@"\Visual Studio 2010\Projects\" + VsProjectName + @"\" + VsProjectName + @"\bin\Release";
+		string rootProjDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects";
+		string subDirInProj = @"\bin\Release";
+		string PublishedDir = 
+			Directory.Exists(rootProjDir + @"\" + VsProjectName + subDirInProj)
+			? rootProjDir + @"\" + VsProjectName + subDirInProj
+			: rootProjDir + @"\" + VsProjectName + @"\" + VsProjectName + subDirInProj;
 		List<string> SectionGroupLines = new List<string>();
 		SectionGroupLines.Add(@"Section ""Full program"" SEC001");
 		SectionGroupLines.Add(@"  SetShellVarContext all");

@@ -414,6 +414,25 @@ namespace SharedClasses
 				}
 			}
 
+			public List<string> GetAllLocalFiles(bool relativePathsOnly = false)
+			{
+				List<string> tmplist = null;
+				if (relativePathsOnly)
+					tmplist = 
+						Directory.GetFiles(LocalFolderPath, "*", SearchOption.AllDirectories)
+						.Where(f => !f.StartsWith(LocalFolderPath + "\\" + cCachedSubfolderName, StringComparison.InvariantCultureIgnoreCase))
+						.Select(fullpath => GetRelativePath(fullpath))
+						.ToList();
+				else
+					tmplist =
+						Directory.GetFiles(LocalFolderPath, "*", SearchOption.AllDirectories)
+						.Where(f => !f.StartsWith(LocalFolderPath + "\\" + cCachedSubfolderName, StringComparison.InvariantCultureIgnoreCase))
+						.ToList();
+
+				tmplist.Sort();
+				return tmplist.Distinct(StringComparer.InvariantCultureIgnoreCase).ToList();
+			}
+
 			public void PopulateFilesData(List<string> filteredListToCheck, TextFeedbackEventHandler textFeedbackHandler)
 			{
 				if (this.FilesData != null)
@@ -425,12 +444,7 @@ namespace SharedClasses
 				if (!Directory.Exists(LocalFolderPath))
 					return;
 
-				List<string> localfiles = Directory.GetFiles(LocalFolderPath, "*", SearchOption.AllDirectories)
-					//.Select(s => s.ToLower())
-					.Where(f => !f.StartsWith(LocalFolderPath + "\\" + cCachedSubfolderName, StringComparison.InvariantCultureIgnoreCase))
-					.ToList();
-				localfiles.Sort();
-				localfiles = localfiles.Distinct(StringComparer.InvariantCultureIgnoreCase).ToList();
+				List<string> localfiles = GetAllLocalFiles();
 
 				this.FilesData = new List<FileMetaData>();//new FileMetaData[localfiles.Count];
 				int substringStartPos = (LocalFolderPath.TrimEnd('\\') + "\\").Length;
@@ -569,15 +583,24 @@ namespace SharedClasses
 				return GetRelativeVersionDir(version);
 			}*/
 
+			private string GetAbsolutePath(string relativePath)
+			{
+				return LocalFolderPath + "\\" + relativePath;
+			}
 			private string GetAbsolutePath(FileMetaData file)
 			{
-				return LocalFolderPath + "\\" + file.RelativePath;
+				return GetAbsolutePath(file.RelativePath);
+			}
+
+			private string GetAboluteServerUri(string relativePath)
+			{
+				//return GetRootUserfolderUri() + "/Original/" + file.RelativePath.Replace("\\", "/");
+				return ServerRootUri + "/Original/" + relativePath.Replace("\\", "/");
 			}
 
 			private string GetAboluteServerUri(FileMetaData file)
 			{
-				//return GetRootUserfolderUri() + "/Original/" + file.RelativePath.Replace("\\", "/");
-				return ServerRootUri + "/Original/" + file.RelativePath.Replace("\\", "/");
+				return GetAboluteServerUri(file.RelativePath);
 			}
 
 			private string GetCacheFolder()
@@ -585,13 +608,18 @@ namespace SharedClasses
 				return "{0}\\{1}".Fmt(this.LocalFolderPath, cCachedSubfolderName);
 			}
 
-			private string GetLocalOriginalFilePath(FileMetaData file)
+			private string GetLocalOriginalFilePath(string relativePath)
 			{
-				string filepath = GetCacheFolder() + "\\Original\\{0}".Fmt(file.RelativePath);
+				string filepath = GetCacheFolder() + "\\Original\\{0}".Fmt(relativePath);
 				string dir = Path.GetDirectoryName(filepath);
 				if (!Directory.Exists(dir))
 					Directory.CreateDirectory(dir);
 				return filepath;
+			}
+
+			private string GetLocalOriginalFilePath(FileMetaData file)
+			{
+				return GetLocalOriginalFilePath(file.RelativePath);
 			}
 
 			public int? GetServerCurrentVersion(TextFeedbackEventHandler textFeedbackHandler/*string RootFolder, */)
@@ -834,7 +862,7 @@ namespace SharedClasses
 						f.LastPatchedInVersion = tmpcacheddict[f.RelativePath].LastPatchedInVersion;
 					else
 						f.LastPatchedInVersion = 0;//Added file
-					
+
 					var patchfile = GetPatchFilepath(f);//patchesdir + "\\" + f.RelativePath;
 					var patchfileDir = Path.GetDirectoryName(patchfile);
 					patchfile += cPatchFileExtension;
@@ -863,7 +891,7 @@ namespace SharedClasses
 							Directory.CreateDirectory(patchfileDir);
 						if (tmpcacheddict != null && tmpcacheddict.ContainsKey(f.RelativePath))
 						{
-							//TODO: Why is patches generated/uploaded for NEW FILES?
+							//DONE: Why is patches generated/uploaded for NEW FILES?
 							MakePatch(GetLocalOriginalFilePath(f), tempPath/*GetAbsolutePath(f)*/, patchfile, textFeedbackHandler);
 							if (!UploadPatch(f, patchfile, newVersion))
 								return false;
@@ -1273,6 +1301,8 @@ namespace SharedClasses
 			}
 			public UploadPatchesResult UploadChangesToServer(TextFeedbackEventHandler textFeedbackHandler)
 			{
+				//TODO: Build in statistics of operations, like how many files processed, average size, average time, etc
+
 				List<string> localChangesRelativePaths;
 				List<string> localAddedRelativePaths;
 				List<string> localRemovedRelativePaths;
@@ -1322,8 +1352,9 @@ namespace SharedClasses
 
 					//DONE: Cannot only download newest version, what about patched files previous versions (like if file10 was only patched in version 4, newest version is 7)?
 
-					//TODO: Way to keep track of when files change, keep a "lastPatchedInVersion" for each file
-					for (int i = localVersion.Value + 1; i <= serverVersion.Value; i++)
+					//DONE: Way to keep track of when files change, keep a "lastPatchedInVersion" for each file
+					//for (int i = localVersion.Value + 1; i <= serverVersion.Value; i++)
+					int i = serverVersion.Value;
 					{
 						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackHandler, "{" + this.LocalFolderPath + "} Updating local version to " + i, TextFeedbackType.Subtle);
 						if (!DownloadFile(GetTempServerRootDir(), GetServerVersionFolderUri(i) + "/" + GetZippedFilename(cMetaDataFilename), textFeedbackHandler))
@@ -1337,7 +1368,126 @@ namespace SharedClasses
 
 						List<string> affectedUpdatedFiles = new List<string>();
 
+						//List all files "expected" to be in folder
+						Dictionary<string, FileMetaData> relpathsAllExpectedFiles = new Dictionary<string, FileMetaData>(StringComparer.InvariantCultureIgnoreCase);
+						foreach (var f in tempVersionMetadata.FilesData)
+							if (!relpathsAllExpectedFiles.ContainsKey(f.RelativePath))
+								relpathsAllExpectedFiles.Add(f.RelativePath, f);
 						foreach (var af in tempVersionMetadata.AddedFiles)
+							if (!relpathsAllExpectedFiles.ContainsKey(af.RelativePath))
+								relpathsAllExpectedFiles.Add(af.RelativePath, af);
+
+						//bool? userAgreedToDiscardLocalChanges = null;
+						foreach (var relpath in relpathsAllExpectedFiles.Keys)
+						{
+							if (!File.Exists(GetAbsolutePath(relpath))
+								|| localAddedRelativePaths.Contains(relpath))
+							{
+								//Cannot put this if in the previous surrounded if, otherwise will mess it up
+								if (!localAddedRelativePaths.Contains(relpath)
+									|| UserMessages.Confirm("Local file added and online file added with same name, replace local with online?" + Environment.NewLine + GetAbsolutePath(relpath)))
+								{
+									//File not found locally (or user agreed to discard recently added local file), download from server
+									//check if has patch, ie. lastPatchedInVersion > 0
+
+									if (!DownloadFile(Path.GetDirectoryName(GetAbsolutePath(relpath)), GetAboluteServerUri(relpath), textFeedbackHandler))
+									{
+										//UserMessages.ShowErrorMessage("Unable to download added file from server: " + GetAboluteServerUri(af));
+										TextFeedbackEventArgs.RaiseSimple(
+											textFeedbackHandler,
+											"{" + this.LocalFolderPath + "} Unable to download added file from server: " + GetAboluteServerUri(relpath),
+											TextFeedbackType.Error);
+										return UploadPatchesResult.FailedDownloadFromServer;
+									}
+
+									File.Copy(GetAbsolutePath(relpath), GetLocalOriginalFilePath(relpath), true);
+									File.SetLastWriteTime(GetAbsolutePath(relpath), relpathsAllExpectedFiles[relpath].Modified);
+									File.SetLastWriteTime(GetLocalOriginalFilePath(relpath), relpathsAllExpectedFiles[relpath].Modified);
+								}
+								else if (localAddedRelativePaths.Contains(relpath))
+								{
+									//TODO: There is an add conflict, what now, user chose to not discard local?
+								}
+							}
+							/*else
+							{
+								if (!localAddedRelativePaths.Contains(relpath))
+								{
+									//File is found locally (was not added locally after the previous sync)
+									//Check if file has a patch (lastPatchedInVersion > 0)
+									//The above steps are below: if (versionForPatch > 0)
+								}
+								//else
+								//{
+								//    //File is locally added but server also sais it should be added, ask user to discard local
+								//    if (UserMessages.Confirm("Local file added and online file added with same name, replace local with online?" + Environment.NewLine + GetAbsolutePath(relpath)))
+								//    {
+								//    }
+								//    else
+								//    {
+
+								//    }
+								//}
+							}*/
+
+							int lastPatchedVersion = relpathsAllExpectedFiles[relpath].LastPatchedInVersion;
+							//if (versionForPatch > 0)
+							if (lastPatchedVersion > localVersion.Value)
+							{
+								//File was patched after adding, download latest patch
+
+								//if (userAgreedToDiscardLocalChanges == null && localChangesRelativePaths.Contains(GetAbsolutePath(relpath)))
+								bool? userAgreedToDiscardLocalChanges = false;
+								if (localChangesRelativePaths.Contains(GetAbsolutePath(relpath)))
+									userAgreedToDiscardLocalChanges = UserMessages.Confirm("There are local changes and also outstanding changes from server, discard local changes for file: "
+										+ Environment.NewLine + GetAbsolutePath(relpath) + "?");
+
+								string destinationPath = GetAbsolutePath(relpath);
+								bool isconflict = false;
+								if (userAgreedToDiscardLocalChanges != false && localChangesRelativePaths.Contains(GetAbsolutePath(relpath)))
+									isconflict = true;
+								if (isconflict)
+									destinationPath =
+										Path.GetDirectoryName(destinationPath).TrimEnd('\\') + "\\"
+										+ Path.GetFileNameWithoutExtension(destinationPath)
+										+ "Conflict (version {0})".Fmt(lastPatchedVersion)
+										+ Path.GetExtension(destinationPath);
+
+								string patchfilepath = GetTempServerRootPathcesDir() + "\\" + relpath + cPatchFileExtension;
+								if (!DownloadFile(Path.GetDirectoryName(patchfilepath), GetServerVersionFolderUri(lastPatchedVersion) + "/" + relpath.Replace("\\", "/") + cPatchFileExtension, textFeedbackHandler))
+									return UploadPatchesResult.FailedDownloadFromServer;//UploadPatchesResult.FailedToUpdateLocalVersion;
+								if (!ApplyPatch(GetLocalOriginalFilePath(relpath), patchfilepath, destinationPath, textFeedbackHandler))
+									//TODO: Must check feedback of xDelta3, it might have an error...
+									return UploadPatchesResult.FailedToApplyPatchLocally;//FailedToUpdateLocalVersion;
+								else// if (!isconflict)//Conflicts are not updated??
+								{
+									//patchedIndexes.Add(j);
+									if (!isconflict)
+										affectedUpdatedFiles.Add(relpath);
+									File.SetLastWriteTime(destinationPath, relpathsAllExpectedFiles[relpath].Modified);
+								}
+							}
+							else
+								affectedUpdatedFiles.Add(relpath);
+						}
+
+						var localFiles = GetAllLocalFiles();
+						foreach (var locfile in localFiles)
+							if (!relpathsAllExpectedFiles.ContainsKey(GetRelativePath(locfile)))
+							{
+								try
+								{
+									File.Delete(locfile);
+								}
+								catch (Exception exc)
+								{
+									TextFeedbackEventArgs.RaiseSimple(textFeedbackHandler, "File deleted on server, cannot delete locally: " + locfile + ". " + exc.Message);
+								}
+							}
+
+						/*
+						 * Old code
+						 * foreach (var af in tempVersionMetadata.AddedFiles)
 							if (!localAddedRelativePaths.Contains(af.RelativePath)
 								|| UserMessages.Confirm("Local file added and online file added with same name, replace local with online?" + Environment.NewLine + GetAbsolutePath(af)))
 							{
@@ -1367,6 +1517,7 @@ namespace SharedClasses
 						//Must look in each version for patches, as file1 might have patch in Version1 but file2&3 have patches in version2
 						//if (i == serverVersion.Value)
 						//{
+
 						bool? userAgreedToDiscardLocalChanges = null;
 						List<string> addedFilesInOnlineVersionRelativeList = new List<string>();
 						foreach (var af in tempVersionMetadata.AddedFiles)
@@ -1406,7 +1557,7 @@ namespace SharedClasses
 									File.SetLastWriteTime(destinationPath, f.Modified);
 								}
 							}
-						}
+						}*/
 
 						if (affectedUpdatedFiles.Count > 0)
 						{
@@ -1482,28 +1633,33 @@ namespace SharedClasses
 				if (!LockServer(textFeedbackHandler))
 					return UploadPatchesResult.UnableToLock;
 
-				int? newVersion = GetNewVersionFromserver(localVersion.Value, textFeedbackHandler);
-				if (newVersion == null)
-					return UploadPatchesResult.FailedAddingNewVersionFolder;
+				try
+				{
+					int? newVersion = GetNewVersionFromserver(localVersion.Value, textFeedbackHandler);
+					if (newVersion == null)
+						return UploadPatchesResult.FailedAddingNewVersionFolder;
 
-				//string serverNewVersionFolder = GetServerVersionFolderUri(newVersion.Value);
+					//string serverNewVersionFolder = GetServerVersionFolderUri(newVersion.Value);
 
-				PopulateAddedFilesLocally(textFeedbackHandler);
-				PopulateRemovedFilesLocally(textFeedbackHandler);
-				if (hasLocalChanges)
-					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackHandler, "{" + this.LocalFolderPath + "} Uploading local changes to server");
-				if (!UploadFilesWithPatches(newVersion.Value, textFeedbackHandler))
-					return UploadPatchesResult.FailedUploadingPatches;
+					PopulateAddedFilesLocally(textFeedbackHandler);
+					PopulateRemovedFilesLocally(textFeedbackHandler);
+					if (hasLocalChanges)
+						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackHandler, "{" + this.LocalFolderPath + "} Uploading local changes to server");
+					if (!UploadFilesWithPatches(newVersion.Value, textFeedbackHandler))
+						return UploadPatchesResult.FailedUploadingPatches;
 
-				//First implement next line this before testing again
-				if (!CheckForAddedOrRemovedFiles(textFeedbackHandler))
-					return UploadPatchesResult.FailedToAddOrRemoveFiles;
+					//First implement next line this before testing again
+					if (!CheckForAddedOrRemovedFiles(textFeedbackHandler))
+						return UploadPatchesResult.FailedToAddOrRemoveFiles;
 
-				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackHandler, "{" + this.LocalFolderPath + "} Updating server version file (new version = " + newVersion + ") and finishing off before unlocking");
-				if (!UpateServerVersionFile(newVersion.Value))
-					return UploadPatchesResult.FailedIncreasingServerVersion;
-
-				while (!UnlockServer()) { }
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackHandler, "{" + this.LocalFolderPath + "} Updating server version file (new version = " + newVersion + ") and finishing off before unlocking");
+					if (!UpateServerVersionFile(newVersion.Value))
+						return UploadPatchesResult.FailedIncreasingServerVersion;
+				}
+				finally
+				{
+					while (!UnlockServer()) { }
+				}
 
 				return UploadPatchesResult.Success;
 

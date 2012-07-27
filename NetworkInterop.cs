@@ -1214,7 +1214,8 @@ public class NetworkInterop
 					return null;
 				}
 
-				MiniDownloadBarForm.ShowMiniDownloadBar();
+				//MiniDownloadBarForm.ShowMiniDownloadBar();
+				List<Thread> progressbarThreads = new List<Thread>();
 				client.DownloadFileCompleted += (snder, evtargs) =>
 				{
 					RaiseProgressChangedEvent_Ifnotnull(ref progressChanged,
@@ -1231,7 +1232,9 @@ public class NetworkInterop
 						RaiseProgressChangedEvent_Ifnotnull(ref progressChanged,
 							percentage,
 							100);
-						MiniDownloadBarForm.UpdateProgress(percentage);
+						Thread tmpthread = MiniDownloadBarForm.UpdateProgress(percentage);
+						//if (!progressbarThreads.Contains(tmpthread))
+						//    progressbarThreads.Add(tmpthread);
 					}
 				};
 				string localFilepath = localRootFolder.TrimEnd('\\') + "\\" + Path.GetFileName(onlineFileUrl.Replace("ftp://", "").Replace("/", "\\"));
@@ -1258,7 +1261,15 @@ public class NetworkInterop
 						}
 				}
 
-				MiniDownloadBarForm.CloseDownloadBar();
+				//for (int i = 0; i < progressbarThreads.Count; i++)
+				//{
+				//    try
+				//    {
+				//        MiniDownloadBarForm.CloseDownloadBarUsingThread(progressbarThreads[i]);
+				//    }
+				//    catch { }
+				//}
+				//progressbarThreads.Clear();
 
 				//}
 				//client.Dispose();

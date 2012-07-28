@@ -305,7 +305,7 @@ public class VisualStudioInterop
 	}
 
 	//TODO: Start building own publishing platform (FTP, the html page, etc)
-	public static string PerformPublish(Object textfeedbackSenderObject, string projName, out string versionString, bool HasPlugins, bool AutomaticallyUpdateRevision = false, bool InstallLocallyAfterSuccessfullNSIS = true, bool WriteIntoRegistryForWindowsAutostartup = true, TextFeedbackEventHandler textFeedbackEvent = null, bool SelectInFolderAfterSuccessfullNSIS = false)
+	public static string PerformPublish(Object textfeedbackSenderObject, string projName, out string versionString, bool HasPlugins, bool AutomaticallyUpdateRevision = false, bool InstallLocallyAfterSuccessfullNSIS = true, bool WriteIntoRegistryForWindowsAutostartup = true, TextFeedbackEventHandler textFeedbackEvent = null, bool SelectSetupIfSuccessful = false)
 	{
 		versionString = "";
 		string projDir =
@@ -423,10 +423,10 @@ public class VisualStudioInterop
 
 					if (File.Exists(resultSetupFileName))
 					{
-						if (InstallLocallyAfterSuccessfullNSIS || SelectInFolderAfterSuccessfullNSIS)
+						if (InstallLocallyAfterSuccessfullNSIS || SelectSetupIfSuccessful)
 						{
 							TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Publish success, opening folder and/or running setup file...");
-							if (SelectInFolderAfterSuccessfullNSIS)
+							if (SelectSetupIfSuccessful)
 								Process.Start("explorer", "/select, \"" + resultSetupFileName + "\"");
 							if (InstallLocallyAfterSuccessfullNSIS)
 							{

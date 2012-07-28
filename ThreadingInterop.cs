@@ -66,8 +66,21 @@ public class ThreadingInterop
 	public static void UpdateGuiFromThread(Control controlToUpdate, Action action)
 	{
 		if (controlToUpdate.InvokeRequired)
-			controlToUpdate.Invoke(action);//, new object[] { });
-		else action();
+		{
+			try
+			{
+				controlToUpdate.Invoke(action);//, new object[] { });
+			}
+			catch { }
+		}
+		else
+		{
+			try
+			{
+				action();
+			}
+			catch { }
+		}
 	}
 
 	delegate void AutocompleteCallback(ComboBox txtBox, String text);

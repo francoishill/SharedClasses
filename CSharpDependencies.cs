@@ -38,8 +38,8 @@ namespace SharedClasses
 
 		public static string GetAbsolutePath(string basePath, string destinationRelativePath)
 		{
-			Uri baseUri = new Uri(basePath);
-			Uri relativeUri = new Uri(baseUri, destinationRelativePath, true);
+			Uri baseUri = new Uri(Uri.EscapeUriString(basePath));
+			Uri relativeUri = new Uri(baseUri, Uri.EscapeUriString(destinationRelativePath));
 			return relativeUri.AbsoluteUri.ToString().Replace('/', '\\').Replace(@"file:\\\", "");
 		}
 

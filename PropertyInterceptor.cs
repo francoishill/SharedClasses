@@ -127,7 +127,9 @@ public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable
 					string propOwnLongName = pi.DeclaringType.Name + "." + propName;
 					//if (pi.PropertyType.IsEnum || (Nullable.GetUnderlyingType(pi.PropertyType) != null && Nullable.GetUnderlyingType(pi.PropertyType).IsEnum))
 					//	System.Windows.Forms.MessageBox.Show("Enum = " + propName);
-					SettingAttribute att = pi.GetCustomAttribute(typeof(SettingAttribute)) as SettingAttribute;
+					//SettingAttribute att = pi.GetCustomAttributes(typeof(SettingAttribute));//.GetCustomAttribute(typeof(SettingAttribute)) as SettingAttribute;
+					var attribs = pi.GetCustomAttributes(typeof(SettingAttribute), true);//.GetCustomAttribute(typeof(SettingAttribute)) as SettingAttribute;
+					SettingAttribute att = attribs.Length > 0 ? attribs[0] as SettingAttribute : null;
 
 					//if (att != null && att.IgnoredByPropertyInterceptor_EncryptingAnother &&
 					//	!ConfirmUsingFaceDetection.ConfirmUsingFacedetection(
@@ -144,13 +146,13 @@ public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable
 						if (att != null && att.IsEncrypted)
 						{
 							PropertyInfo encryptedPi = target.GetType().GetProperty(att.EncryptedPropertyName);
-							object encryptedVal = encryptedPi.GetValue(target);
+							object encryptedVal = encryptedPi.GetValue(target, new object[0]);
 							if (encryptedVal != null)
 							{
 								string decryptedVal = GenericSettings.Decrypt(encryptedVal.ToString(), att.EncryptedPropertyName, att.RequireFacialAutorisationEverytime);
 								if (decryptedVal != null)
 								{
-									pi.SetValue(target, decryptedVal);
+									pi.SetValue(target, decryptedVal, new object[0]);
 									//target.OnPropertySet(pi.Name);
 									goto gotoRetryAfterUserSet;
 								}
@@ -163,8 +165,8 @@ public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable
 								object tmpUnEncryptedAnswer = InputBoxWPF.Prompt(UserPrompt, propOwnLongName, IsPassword: true);
 								if (tmpUnEncryptedAnswer != null)
 								{
-									encryptedPi.SetValue(target, GenericSettings.Encrypt(tmpUnEncryptedAnswer.ToString(), att.EncryptedPropertyName));
-									pi.SetValue(target, tmpUnEncryptedAnswer.ToString());
+									encryptedPi.SetValue(target, GenericSettings.Encrypt(tmpUnEncryptedAnswer.ToString(), att.EncryptedPropertyName), new object[0]);
+									pi.SetValue(target, tmpUnEncryptedAnswer.ToString(), new object[0]);
 									target.OnPropertySet(propName);
 									goto gotoRetryAfterUserSet;
 								}
@@ -292,7 +294,7 @@ public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable
 								//	tmpUserAnswer = GenericSettings.Encrypt(tmpUserAnswer.ToString(), propName);
 								//}
 
-								pi.SetValue(target, tmpUserAnswer);
+								pi.SetValue(target, tmpUserAnswer, new object[0]);
 								target.OnPropertySet(propName);
 								goto gotoRetryAfterUserSet;
 								//Removed this as the passwords should be XmlIgnore and have another public property called (for instance) PasswordEncrypted and should have attribute XmlElement and also in its get/set use encoding/encryption

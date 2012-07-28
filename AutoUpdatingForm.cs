@@ -123,14 +123,15 @@ namespace SharedClasses
 			}
 		}
 
-		public static void CheckForUpdates(Action exitApplicationAction, bool ShowModally = true, Action<string> ActionIfUptoDate_Versionstring = null)//string ApplicationName, string InstalledVersion)
+		public static string GetAppFullPath() { return Environment.GetCommandLineArgs()[0]; }
+		public static string GetApplicationName() { return Path.GetFileNameWithoutExtension(GetAppFullPath()); }
+		public static void CheckForUpdates(Action exitApplicationAction, Action<string> ActionIfUptoDate_Versionstring, Action<string> ActionIfUnableToCheckForUpdates, bool ShowModally = true)//string ApplicationName, string InstalledVersion)
 		//public static void CheckForUpdates(Action exitApplicationAction, bool ShowModally = true, Action<bool?, PublishDetails, PublishDetails> ActionAfterCheck_Uptodate_Currentdetails_OnlineDetails = null)//string ApplicationName, string InstalledVersion)
 		{
 			ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 			{
-				var appfullpath = Environment.GetCommandLineArgs()[0];
-				//var appdir = Path.GetDirectoryName(appfullpath);
-				var ApplicationName = Path.GetFileNameWithoutExtension(appfullpath);
+				string appfullpath = GetAppFullPath();
+				string ApplicationName = GetApplicationName();
                 //var versionfileFullpath = appfullpath + ".version";
                 var InstalledVersion = System.Diagnostics.FileVersionInfo.GetVersionInfo(appfullpath).FileVersion;//File.Exists(versionfileFullpath) ? File.ReadAllText(versionfileFullpath).Trim() : "";
 
@@ -138,8 +139,9 @@ namespace SharedClasses
 				string errIfFail;
 				bool? uptodate = IsApplicationUpToDate(ApplicationName, InstalledVersion, out errIfFail, out detailsIfNewer);
 				if (uptodate == null)
-					UserMessages.ShowWarningMessage("Unable to check for updates for \"" + ApplicationName + "\": " + Environment.NewLine + errIfFail);
-				else if (uptodate == false)
+					ActionIfUnableToCheckForUpdates(errIfFail);
+					//UserMessages.ShowWarningMessage("Unable to check for updates for \"" + ApplicationName + "\": " + Environment.NewLine + errIfFail);
+				else if (uptodate == false)//Newer version available
 				{
 					var tmpform = new AutoUpdatingForm(InstalledVersion, detailsIfNewer, exitApplicationAction);
 					if (ShowModally)

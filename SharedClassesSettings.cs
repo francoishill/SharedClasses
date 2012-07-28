@@ -378,7 +378,7 @@ namespace SharedClasses
 					PropertyInfo[] staticProperties = type.GetProperties(BindingFlags.Static | BindingFlags.Public);
 					foreach (PropertyInfo spi in staticProperties)
 						if (type == spi.PropertyType)//Check to find the static "Instance" of the class
-							objList.Add(spi.GetValue(null));
+							objList.Add(spi.GetValue(null, new object[0]));
 				}
 
 			objList.Add(TempClass.Instance);
@@ -399,13 +399,13 @@ namespace SharedClasses
 					foreach (PropertyInfo spi in staticProperties)
 						if (type == spi.PropertyType)//Check to find the static "Instance" of the class
 						{
-							var tmpobj = (IInterceptorNotifiable)spi.GetValue(null);
+							var tmpobj = (IInterceptorNotifiable)spi.GetValue(null, new object[0]);
 							objList.Add(tmpobj);
 
 							var tmpPropertyValues = new Dictionary<PropertyInfo, object>();
 							foreach (var prop in tmpobj.GetType().GetProperties())
 							{
-								tmpPropertyValues.Add(prop, prop.GetValue(tmpobj).Clone());
+								tmpPropertyValues.Add(prop, prop.GetValue(tmpobj, new object[0]).Clone());
 							}
 							objectsAndPropertyValues.Add(tmpobj, tmpPropertyValues);
 						}
@@ -422,7 +422,7 @@ namespace SharedClasses
 				foreach (var prop in values[i].Keys)
 				{
 					object tmpobj = values[i][prop];
-					object tmpobj2 = prop.GetValue(keys[i]);
+					object tmpobj2 = prop.GetValue(keys[i], new object[0]);
 
 					ComparisonResult compareResult = CompareObjectsByValue(tmpobj, tmpobj2);
 					switch (compareResult)

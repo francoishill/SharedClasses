@@ -68,18 +68,25 @@ namespace SharedClasses
 				return;
 
 			Thread currentThread1 = thread;
-			ThreadingInterop.UpdateGuiFromThread(activeThreadsAndForms[currentThread1], delegate
-			{
-				if (activeThreadsAndForms.ContainsKey(thread))
+			if (currentThread1.IsAlive)
+				currentThread1.Abort();
+			return;
+
+			//ThreadingInterop.UpdateGuiFromThread(activeThreadsAndForms[currentThread1], delegate
+			//{
+				/*if (activeThreadsAndForms.ContainsKey(thread))
 				{
 					MiniDownloadBarForm tmpfrm = activeThreadsAndForms[thread];
 					activeThreadsAndForms.Remove(thread);
 					tmpfrm.ForceClose = true;
-					tmpfrm.Close();
+					ThreadingInterop.UpdateGuiFromThread(tmpfrm, delegate
+					{
+						tmpfrm.Close();
+					});
 					tmpfrm.Dispose();
 					tmpfrm = null;
-				}
-			});
+				}*/
+			//});
 		}
 		public static void ForceCloseDownloadBarUsingThread(Thread thread)
 		{

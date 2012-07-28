@@ -166,9 +166,17 @@ namespace SharedClasses
 				else
 				{
 					errorStringIfFail = null;
-					JSON.Instance.FillObject(objectToPopulate, response);
-					//objectToPopulate = JSON.Instance.ToObject<Settings>(response);
-					return true;
+					try
+					{
+						JSON.Instance.FillObject(objectToPopulate, response);
+						//objectToPopulate = JSON.Instance.ToObject<Settings>(response);
+						return true;
+					}
+					catch (Exception exc)
+					{
+						UserMessages.ShowErrorMessage("Error trying to populate JSON object: " + exc.Message);
+						return false;
+					}
 				}
 			}
 			else

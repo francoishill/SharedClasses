@@ -91,7 +91,9 @@ public class TextFeedbackEventArgs_MultiObjects : TextFeedbackEventArgs
 		this.FeedbackType = FeedbackType;
 		this.AutoSeparateWithSpaces = AutoSeparateWithSpaces;
 	}
-	[Obsolete("This member is hidden in the inherited class, rather use the other overload which takes a List<string> instead of one string. To use the single string method it use the base class TextFeedbackEventArgs.", true)]
+
+	//TODO: What did I try to do here (by making it obsolute error)
+	[Obsolete("This member is hidden in the inherited class, rather use the other overload which takes a List<string> instead of one string. To use the single string method it use the base class TextFeedbackEventArgs.", false)]//true)]
 	public static void RaiseTextFeedbackEvent_Ifnotnull(object SenderObject, TextFeedbackEventHandler textFeedbackEvent, List<TextFeedbackSection> MessagesList, TextFeedbackType FeedbackTypeIn = TextFeedbackType.Subtle, bool AutoSeparateWithSpaces = true)
 	{
 		if (textFeedbackEvent != null) textFeedbackEvent(SenderObject, new TextFeedbackEventArgs_MultiObjects(MessagesList, FeedbackTypeIn, AutoSeparateWithSpaces));

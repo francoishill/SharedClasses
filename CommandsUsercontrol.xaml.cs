@@ -1596,7 +1596,7 @@ namespace SharedClasses
 					foreach (PropertyInfo dcp in declaredClassProperties)
 					{
 						if (uspd.PropertyInfo.DeclaringType == dcp.PropertyType)
-							uspd.PropertyInfo.GetValue(dcp.GetValue(null));
+							uspd.PropertyInfo.GetValue(dcp.GetValue(null, new object[0]), new object[0]);
 					}
 
 					ListBoxItem lbi = listBoxUnsetProperties.ItemContainerGenerator.ContainerFromItem(e.AddedItems[0]) as ListBoxItem;

@@ -325,9 +325,8 @@
                                             IsItemsHost="True"/>-->
 						<StackPanel
 							IsItemsHost="True"
-							VirtualizingPanel.IsContainerVirtualizable="True"
-							VirtualizingPanel.IsVirtualizing="True"
-							VirtualizingPanel.VirtualizationMode="Recycling"
+							VirtualizingStackPanel.IsVirtualizing='True'
+							VirtualizingStackPanel.VirtualizationMode='Recycling'
 							Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type ScrollContentPresenter}, Mode=FindAncestor}}" />
 						<!--<WrapPanel IsItemsHost="True"
                                        VirtualizingPanel.IsContainerVirtualizable="True"

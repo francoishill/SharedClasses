@@ -1027,7 +1027,7 @@ namespace SharedClasses
 					//UserMessages.ShowErrorMessage("Could not remove FTP directory: " + newversionUri);
 					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackHandler, "{" + this.LocalFolderPath + "} Could not remove FTP directory: " + newversionUri, TextFeedbackType.Error);
 
-				if (!NetworkInterop.CreateFTPDirectory(newversionUri, FtpUsername, FtpPassword))
+				if (!NetworkInterop.CreateFTPDirectory(textFeedbackHandler, newversionUri, FtpUsername, FtpPassword))
 				{
 					//UserMessages.ShowErrorMessage("Could not create new version dir: " + newversionUri);
 					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(null, textFeedbackHandler, "{" + this.LocalFolderPath + "} Could not create new version dir: " + newversionUri, TextFeedbackType.Error);
@@ -1142,9 +1142,10 @@ namespace SharedClasses
 
 				foreach (var rf in RemovedFiles)
 				{
+					File.Delete(GetLocalOriginalFilePath(rf));
+
 					//TODO: It might be dangerous to delete a file from the server?
 					//Rather move it to "deleted" folder on the server???
-					File.Delete(GetLocalOriginalFilePath(rf));
 					/*if (!NetworkInterop.DeleteFTPfile(
 						null,
 						NetworkInterop.InsertPortNumberIntoUrl(GetRootUserfolderUri() + "/Original/" + rf.RelativePath.Replace("\\", "/"), AutoSyncFtpPortToUse),
@@ -1177,7 +1178,7 @@ namespace SharedClasses
 
 			public bool InitiateSyncing(TextFeedbackEventHandler textFeedbackHandler)
 			{
-				bool? createDir_NullIfExisted = NetworkInterop.CreateFTPDirectory_NullIfExisted(NetworkInterop.InsertPortNumberIntoUrl(this.ServerRootUri, AutoSyncFtpPortToUse), this.FtpUsername, this.FtpPassword);
+				bool? createDir_NullIfExisted = NetworkInterop.CreateFTPDirectory_NullIfExisted(textFeedbackHandler, NetworkInterop.InsertPortNumberIntoUrl(this.ServerRootUri, AutoSyncFtpPortToUse), this.FtpUsername, this.FtpPassword);
 				if (!createDir_NullIfExisted.HasValue)
 				{
 					//Server directory already existed
@@ -1216,7 +1217,7 @@ namespace SharedClasses
 					folderToCreate.Add(ServerRootUri + "/Patches");
 					folderToCreate.Add(ServerRootUri + "/Patches/Version1");
 					foreach (string path in folderToCreate.Select(s => NetworkInterop.InsertPortNumberIntoUrl(s, AutoSyncFtpPortToUse)))
-						if (!NetworkInterop.CreateFTPDirectory(path, this.FtpUsername, this.FtpPassword))
+						if (!NetworkInterop.CreateFTPDirectory(textFeedbackHandler, path, this.FtpUsername, this.FtpPassword))
 						{
 							UserMessages.ShowWarningMessage("Unable to initiate syncing, could not create server folder: " + path);
 							return false;
@@ -1406,7 +1407,7 @@ namespace SharedClasses
 								}
 								else if (localAddedRelativePaths.Contains(relpath))
 								{
-									//TODO: There is an add conflict, what now, user chose to not discard local?
+									//TODO: There is an add conflict and the user chose to not discard the local file, what now?
 								}
 							}
 							/*else
@@ -1457,7 +1458,7 @@ namespace SharedClasses
 								if (!DownloadFile(Path.GetDirectoryName(patchfilepath), GetServerVersionFolderUri(lastPatchedVersion) + "/" + relpath.Replace("\\", "/") + cPatchFileExtension, textFeedbackHandler))
 									return UploadPatchesResult.FailedDownloadFromServer;//UploadPatchesResult.FailedToUpdateLocalVersion;
 								if (!ApplyPatch(GetLocalOriginalFilePath(relpath), patchfilepath, destinationPath, textFeedbackHandler))
-									//TODO: Must check feedback of xDelta3, it might have an error...
+									//DONE: Must check feedback of xDelta3, it might have an error...
 									return UploadPatchesResult.FailedToApplyPatchLocally;//FailedToUpdateLocalVersion;
 								else// if (!isconflict)//Conflicts are not updated??
 								{

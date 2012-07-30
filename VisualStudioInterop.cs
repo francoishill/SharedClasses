@@ -587,7 +587,9 @@ public class VisualStudioInterop
 				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent,
 						"Attempting Ftp Uploading of Setup file and index file for " + projName);
 				string uriAfterUploading = GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForAFTERvspublishing() + "/" + validatedUrlsectionForProjname;
-				NetworkInterop.FtpUploadFiles(
+
+				bool uploaded = true;
+				if (!NetworkInterop.FtpUploadFiles(
 					//Task uploadTask = NetworkInterop.FtpUploadFiles(
 						textfeedbackSenderObject,
 						rootFtpUri,
@@ -596,12 +598,18 @@ public class VisualStudioInterop
 						new string[] { publishedSetupPath, htmlFilePath },
 						OpenWebsite ? uriAfterUploading : null,
 						textFeedbackEvent: textFeedbackEvent,
-						progressChanged: progressChanged);
+						progressChanged: progressChanged))
+					uploaded = false;
 
-				string startMsg = "All files uploaded, website is: ";
-				TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent,
-						startMsg + uriAfterUploading,
-						HyperlinkRangeIn: new Range(startMsg.Length, uriAfterUploading.Length, Range.LinkTypes.OpenUrl));
+				if (uploaded)
+				{
+					string startMsg = "All files uploaded, website is: ";
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent,
+							startMsg + uriAfterUploading,
+							HyperlinkRangeIn: new Range(startMsg.Length, uriAfterUploading.Length, Range.LinkTypes.OpenUrl));
+				}
+				else
+					TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, textfeedbackSenderObject, "An error occurred, could not complete uploading of published files.", TextFeedbackType.Error);
 
 				//uploadTask.Start();
 				//uploadTask.Wait();

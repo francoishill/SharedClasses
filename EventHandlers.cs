@@ -53,6 +53,10 @@ public class TextFeedbackEventArgs : EventArgs
 	{
 		if (textFeedbackEvent != null) textFeedbackEvent(null, new TextFeedbackEventArgs(textMessage, FeedbackTypeIn, null));
 	}
+	public static void RaiseSimple(TextFeedbackEventHandler textFeedbackEvent, object SenderObject, string textMessage, TextFeedbackType FeedbackTypeIn = TextFeedbackType.Subtle)
+	{
+		if (textFeedbackEvent != null) textFeedbackEvent(SenderObject, new TextFeedbackEventArgs(textMessage, FeedbackTypeIn, null));
+	}
 }
 
 public class TextFeedbackSection

@@ -1089,7 +1089,7 @@ public class NetworkInterop
 			//}
 			//else DirexistCanContinue = true;
 			//if (DirexistCanContinue)
-			if (CreateFTPDirectory(ftpRootUri, userName, password))
+			if (CreateFTPDirectory(textFeedbackEvent, ftpRootUri, userName, password))
 			{
 				using (System.Net.WebClient client = new System.Net.WebClient())
 				{
@@ -1117,7 +1117,7 @@ public class NetworkInterop
 					foreach (string localFilename in localFilenames)
 					{
 						string fileNameOnServer = new FileInfo(localFilename).Name;
-						Console.WriteLine("fileNameOnServer" + fileNameOnServer);
+						//Console.WriteLine("fileNameOnServer" + fileNameOnServer);
 						string dirOnFtpServer = ftpRootUri + "/" + fileNameOnServer;
 
 						isComplete = false;
@@ -1232,7 +1232,8 @@ public class NetworkInterop
 						RaiseProgressChangedEvent_Ifnotnull(ref progressChanged,
 							percentage,
 							100);
-						Thread tmpthread = MiniDownloadBarForm.UpdateProgress(percentage);
+						//Thread tmpthread =
+						MiniDownloadBarForm.UpdateProgress(percentage);
 						//if (!progressbarThreads.Contains(tmpthread))
 						//    progressbarThreads.Add(tmpthread);
 					}
@@ -1261,6 +1262,7 @@ public class NetworkInterop
 						}
 				}
 
+				MiniDownloadBarForm.CloseDownloadBar();
 				//for (int i = 0; i < progressbarThreads.Count; i++)
 				//{
 				//    try
@@ -1365,7 +1367,7 @@ public class NetworkInterop
 	//}
 
 	//Null means it already existed
-	public static bool? CreateFTPDirectory_NullIfExisted(string directory, string ftpUser, string ftpPassword, int? timeout = null)
+	public static bool? CreateFTPDirectory_NullIfExisted(TextFeedbackEventHandler textFeedbackEvent, string directory, string ftpUser, string ftpPassword, int? timeout = null)
 	{
 		try
 		{
@@ -1395,6 +1397,7 @@ public class NetworkInterop
 				//&& response.StatusDescription.IndexOf("Directory already exists", StringComparison.InvariantCultureIgnoreCase) != -1
 				)
 			{
+				TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, "FTP directory already existed: " + directory, TextFeedbackType.Subtle);
 				//Directory already existed
 				response.Close();
 				return null;
@@ -1404,14 +1407,15 @@ public class NetworkInterop
 				//Error occurred, directory not created/existed (could have timed out?)
 				if (response != null)
 					response.Close();
+				TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, "Could not create directory (" + directory + "): " + ex.Message, TextFeedbackType.Error);
 				return false;
 			}
 		}
 	}
 
-	public static bool CreateFTPDirectory(string directory, string ftpUser, string ftpPassword)
+	public static bool CreateFTPDirectory(TextFeedbackEventHandler textFeedbackEvent, string directory, string ftpUser, string ftpPassword)
 	{
-		return CreateFTPDirectory_NullIfExisted(directory, ftpUser, ftpPassword) != false;
+		return CreateFTPDirectory_NullIfExisted(textFeedbackEvent, directory, ftpUser, ftpPassword) != false;
 		/*try
 		{
 			//create the directory

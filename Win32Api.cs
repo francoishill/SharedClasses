@@ -97,18 +97,48 @@ public static class Win32Api
 	[DllImport("msvcr70.dll", CallingConvention = CallingConvention.Cdecl)]
 	public static extern int _fpreset();
 
-	internal struct LASTINPUTINFO
-	{
-		public uint cbSize;
-
-		public uint dwTime;
-	}
-
 	[DllImport("User32.dll")]
 	public static extern bool LockWorkStation();
 
 	[DllImport("User32.dll")]
 	private static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
+	internal struct LASTINPUTINFO
+	{
+		public uint cbSize;
+		public uint dwTime;
+	}
+
+	public static bool GetLastInputInfo(out DateTime systemStartupTime, out TimeSpan idleTime)
+	{
+		systemStartupTime = DateTime.MinValue;
+		idleTime = TimeSpan.Zero;
+
+		// Get the system uptime
+		int ticksSinceSystemStarted = Environment.TickCount;
+		// The tick at which the last input was recorded
+		int LastInputTicks = 0;
+		// The number of ticks that passed since last input
+		int IdleTicks = 0;
+
+		// Set the struct
+		Win32Api.LASTINPUTINFO LastInputInfo = new Win32Api.LASTINPUTINFO();
+		LastInputInfo.cbSize = (uint)Marshal.SizeOf(LastInputInfo);
+		LastInputInfo.dwTime = 0;
+
+		// If we have a value from the function
+		if (Win32Api.GetLastInputInfo(ref LastInputInfo))
+		{
+			// Get the number of ticks at the point when the last activity was seen
+			LastInputTicks = (int)LastInputInfo.dwTime;
+			// Number of idle ticks = system uptime ticks - number of ticks at last input
+			IdleTicks = ticksSinceSystemStarted - LastInputTicks;
+
+			systemStartupTime = DateTime.Now.Subtract(TimeSpan.FromMilliseconds(ticksSinceSystemStarted));
+			idleTime = TimeSpan.FromMilliseconds(IdleTicks);
+			return true;
+		}
+		return false;
+	}
 
 	[DllImport("Kernel32.dll")]
 	private static extern uint GetLastError();

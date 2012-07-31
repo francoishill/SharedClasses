@@ -21,12 +21,12 @@ namespace SharedClasses
 		Class: WebInterop
 		*/
 
-        private Action exitApplicationAction;
+		private Action exitApplicationAction;
 		private const string ftpUsername = "ownapps";
 		private const string ftpPassword = "ownappsverylongpassword";
 
 		private PublishDetails newerversionDetails;
-        private AutoUpdatingForm(string currentVersion, PublishDetails newerversionDetails, Action exitApplicationAction)
+		private AutoUpdatingForm(string currentVersion, PublishDetails newerversionDetails, Action exitApplicationAction)
 		{
 			InitializeComponent();
 			this.newerversionDetails = newerversionDetails;
@@ -38,7 +38,7 @@ namespace SharedClasses
 				"Newest version online is {0} ({1} kBs to be downloaded)",
 				newerversionDetails.ApplicationVersion,
 				GetKilobytesFromBytes(newerversionDetails.SetupSize));
-            this.exitApplicationAction = exitApplicationAction;
+			this.exitApplicationAction = exitApplicationAction;
 		}
 
 		private static double GetKilobytesFromBytes(long bytes, int decimals = 3)
@@ -132,27 +132,63 @@ namespace SharedClasses
 			{
 				string appfullpath = GetAppFullPath();
 				string ApplicationName = GetApplicationName();
-                //var versionfileFullpath = appfullpath + ".version";
-                var InstalledVersion = System.Diagnostics.FileVersionInfo.GetVersionInfo(appfullpath).FileVersion;//File.Exists(versionfileFullpath) ? File.ReadAllText(versionfileFullpath).Trim() : "";
+				//var versionfileFullpath = appfullpath + ".version";
+				var InstalledVersion = System.Diagnostics.FileVersionInfo.GetVersionInfo(appfullpath).FileVersion;//File.Exists(versionfileFullpath) ? File.ReadAllText(versionfileFullpath).Trim() : "";
 
 				PublishDetails detailsIfNewer;
 				string errIfFail;
 				bool? uptodate = IsApplicationUpToDate(ApplicationName, InstalledVersion, out errIfFail, out detailsIfNewer);
 				if (uptodate == null)
-					ActionIfUnableToCheckForUpdates(errIfFail);
-					//UserMessages.ShowWarningMessage("Unable to check for updates for \"" + ApplicationName + "\": " + Environment.NewLine + errIfFail);
+				{
+					if (ActionIfUnableToCheckForUpdates != null)
+						ActionIfUnableToCheckForUpdates(errIfFail);
+					else
+						WpfNotificationWindow.ShowNotification("Cannot check for updates of application " + ApplicationName + ": " + errIfFail,
+						notificationType: NotificationClass.NotificationTypes.Warning,
+						onCloseCallback: (closeobj) =>
+						{
+							WpfNotificationWindow.CloseNotificationWindow();
+						},
+						timeout: null);
+				}
+				//UserMessages.ShowWarningMessage("Unable to check for updates for \"" + ApplicationName + "\": " + Environment.NewLine + errIfFail);
 				else if (uptodate == false)//Newer version available
 				{
-					var tmpform = new AutoUpdatingForm(InstalledVersion, detailsIfNewer, exitApplicationAction);
-					if (ShowModally)
-						tmpform.ShowDialog();
-					else
-						tmpform.Show();
+					var tmpform = new AutoUpdatingForm(InstalledVersion, detailsIfNewer, delegate
+					{
+						WpfNotificationWindow.CloseNotificationWindow();
+						exitApplicationAction();
+					});
+					WpfNotificationWindow.ShowNotification(
+						string.Format("New update (from {0} to {1}) available for {2} (click to update)", InstalledVersion, detailsIfNewer.ApplicationVersion, ApplicationName),
+						NotificationClass.NotificationTypes.Success,
+						null,						
+						leftClickCallback: (frm) =>
+						{
+							AutoUpdatingForm thisform = frm as AutoUpdatingForm;
+							if (ShowModally)
+								thisform.ShowDialog();
+							else
+								thisform.Show();
+						},
+						leftClickCallbackArgument: tmpform,
+						onCloseCallback: (closeobj) =>
+						{
+							WpfNotificationWindow.CloseNotificationWindow();
+						});
 				}
 				else//Up to date
 				{
 					if (ActionIfUptoDate_Versionstring != null)
 						ActionIfUptoDate_Versionstring(InstalledVersion);
+					else
+						WpfNotificationWindow.ShowNotification(ApplicationName + " is up to date, version " + InstalledVersion,
+						notificationType: NotificationClass.NotificationTypes.Subtle,
+						onCloseCallback: (closeobj) =>
+						{
+							WpfNotificationWindow.CloseNotificationWindow();
+						},
+						timeout: TimeSpan.FromSeconds(2));
 				}
 			},
 			false);
@@ -227,11 +263,11 @@ namespace SharedClasses
 					labelStatus.Visible = false;
 					Application.DoEvents();
 					Process.Start(downloadFilename);
-                    if (exitApplicationAction == null)
-                        Application.Exit();
-                    else
-                        exitApplicationAction();
-                    this.Close();
+					if (exitApplicationAction == null)
+						Application.Exit();
+					else
+						exitApplicationAction();
+					this.Close();
 				}
 				else
 					Process.Start("explorer", "/select,\"" + downloadFilename + "\"");

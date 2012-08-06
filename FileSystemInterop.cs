@@ -51,7 +51,7 @@ public class FileSystemInterop
 		//var invalidChars = Path.GetInvalidFileNameChars();
 		//foreach (char c in invalidChars)
 		//    result = result.Replace(c.ToString(), string.Format("{0}{1}{2}", EncodedCharStart, (int)c, EncodedCharEnd));
-		
+
 		return result;
 	}
 
@@ -69,17 +69,19 @@ public class FileSystemInterop
 		//	foreach (char c in invalidChars)
 		//		result = result.Replace(string.Format("{0}{1}{2}", EncodedCharStart, (int)c, EncodedCharEnd), c.ToString());
 		//}
-		
+
 		return result;
 	}
 
-	public static string SelectFile(string title, string initialDir = null, IWin32Window owner = null)
+	public static string SelectFile(string title, string initialDir = null, string filterstring = null, IWin32Window owner = null)
 	{
 		OpenFileDialog ofd = new OpenFileDialog();
 		ofd.Multiselect = false;
 		ofd.CheckFileExists = true;
 
 		ofd.Title = title;
+		if (filterstring != null)
+			ofd.Filter = filterstring;
 		if (initialDir != null)
 			ofd.InitialDirectory = initialDir;
 		if (ofd.ShowDialog(owner) == DialogResult.OK)

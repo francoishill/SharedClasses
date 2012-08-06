@@ -150,7 +150,7 @@ namespace SharedClasses
 		}
 
 		[Obsolete("Please use AddSubMenuCommands with '*' as part of its FileExtensionsInClassesRoot")]
-		public static void AddCommandToFolder(String CommandName, String CommandLine, String CommandDisplayName, String CommandIcon, String DefaultCommandName = null, string ThisAppKeyName = null)//"%1" is the file full path when right clicking on it
+		public static void AddCommandToFolder(String CommandName, String CommandLine, String CommandDisplayName, String CommandIcon, String DefaultCommandName = null, string ThisAppKeyName = null)//"%V" is the file full path when right clicking on it
 		{
 			//Check if it is windows 7
 			Boolean Windows7 = GetMachineOS() == WindowsVersion.Win7;
@@ -260,6 +260,7 @@ namespace SharedClasses
 			//public string MainmenuItemDisplayName;
 			public string MainmenuItemIconpath;
 			public List<SubContextMenuItem> SubCommands;
+			public MainContextMenuItem() { }
 			public MainContextMenuItem(List<string> FileExtensionsInClassesRoot, string MainmenuItemRegistryName, /*string MainmenuItemDisplayName, */string MainmenuItemIconpath, List<SubContextMenuItem> SubCommands)
 			{
 				this.FileExtensionsInClassesRoot = FileExtensionsInClassesRoot;
@@ -277,6 +278,7 @@ namespace SharedClasses
 				return str;
 			}
 
+			[Obsolete("Please use GetNsisLines()", true)]
 			public bool WriteRegistryEntries()
 			{
 				Boolean Is64Bit = Is64BitOperatingSystem;
@@ -306,7 +308,7 @@ namespace SharedClasses
 
 									using (RegistryKey subcommandRegistryKey = subfolderInCommandStoreShell.OpenOrCreateWriteableSubkey("Command"))
 									{
-										subcommandRegistryKey.SetValue(null, subcommand.FullCommandline);
+										subcommandRegistryKey.SetValue(null, subcommand.CommandlineExcludingArgumentString);
 
 										succeeded = true;
 									}
@@ -322,6 +324,52 @@ namespace SharedClasses
 
 				return succeeded;
 			}
+
+			private enum RegistryRootKeys { HKCR, HKLM, HKCU, HKU, HKCC, HKDD, HKPD, SHCTX };
+
+			private string GetNsisWriteRegStrLine(RegistryRootKeys rootKey, string subKey, string valueName, string valueStringVal)
+			{
+				return string.Format(
+					"WriteRegStr {0} \"{1}\" \"{2}\" \"{3}\"", rootKey.ToString(), subKey, valueName, valueStringVal);
+			}
+
+			const string commandStore_Shell_Subpath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell";
+			public List<string> GetRegistryAssociationNsisLines()
+			{
+				List<string> nsisLines = new List<string>();
+				foreach (string pathInClassesRoot in this.FileExtensionsInClassesRoot)
+				{
+					string pathInShell = pathInClassesRoot + @"\shell\" + this.MainmenuItemRegistryName;
+
+					nsisLines.Add(GetNsisWriteRegStrLine(RegistryRootKeys.HKCR, pathInShell, "Icon", "$\\\"" + this.MainmenuItemIconpath.Trim('\\') + "$\\\""));
+					nsisLines.Add(GetNsisWriteRegStrLine(RegistryRootKeys.HKCR, pathInShell, "SubCommands", GetSubcommandNamesConcatenated()));
+				}
+				foreach (SubContextMenuItem subcommand in this.SubCommands)
+				{
+					string commandStoreShell_CommandSubpath = commandStore_Shell_Subpath + "\\" + subcommand.CommandName;
+					nsisLines.Add(GetNsisWriteRegStrLine(RegistryRootKeys.HKLM, commandStoreShell_CommandSubpath, "", subcommand.DisplayName));
+					nsisLines.Add(GetNsisWriteRegStrLine(RegistryRootKeys.HKLM, commandStoreShell_CommandSubpath, "Icon", "$\\\"" + subcommand.CommandIconpath.Trim('\\') + "$\\\""));
+					nsisLines.Add(GetNsisWriteRegStrLine(RegistryRootKeys.HKLM, commandStoreShell_CommandSubpath + "\\Command", "", "$\\\"" + subcommand.CommandlineExcludingArgumentString.Trim('\\') + "$\\\"" + subcommand.GetNsisArgumentsPostfixToCommandline()));
+				}
+				return nsisLines;
+			}
+
+			private string GetNsisDeleteRegKeyLine(RegistryRootKeys rootKey, string subkey)
+			{
+				return string.Format("DeleteRegKey {0} \"{1}\"", rootKey.ToString(), subkey);
+			}
+			public List<string> GetRegistryUnassociationNsisLines()
+			{
+				List<string> nsisLines = new List<string>();
+				foreach (string pathInClassesRoot in this.FileExtensionsInClassesRoot)
+					nsisLines.Add(GetNsisDeleteRegKeyLine(RegistryRootKeys.HKCR, pathInClassesRoot + @"\shell\" + this.MainmenuItemRegistryName));
+				foreach (SubContextMenuItem subcommand in this.SubCommands)
+				{
+					nsisLines.Add(GetNsisDeleteRegKeyLine(RegistryRootKeys.HKLM, commandStore_Shell_Subpath + "\\" + subcommand.CommandName));
+					nsisLines.Add(GetNsisDeleteRegKeyLine(RegistryRootKeys.HKLM, commandStore_Shell_Subpath + "\\" + subcommand.CommandName + "\\Command"));
+				}
+				return nsisLines;
+			}
 		}
 
 		public class SubContextMenuItem
@@ -329,19 +377,38 @@ namespace SharedClasses
 			public string CommandName;
 			public string DisplayName;
 			public string CommandIconpath;
-			public string FullCommandline;
-			public SubContextMenuItem(string CommandName, string DisplayName, string CommandIconpath, string FullCommandline)
+			public string CommandlineExcludingArgumentString;
+			public int ArgumentCount;
+			public SubContextMenuItem() { }
+			public SubContextMenuItem(string CommandName, string DisplayName, string CommandIconpath, string CommandlineExcludingArgumentString, int ArgumentCount)
 			{
 				this.CommandName = CommandName;
 				this.DisplayName = DisplayName;
 				this.CommandIconpath = CommandIconpath;
-				this.FullCommandline = FullCommandline;
+				this.CommandlineExcludingArgumentString = CommandlineExcludingArgumentString;
+				this.ArgumentCount = ArgumentCount;
+			}
+			public string GetNsisArgumentsPostfixToCommandline()
+			{
+				if (this.ArgumentCount > 1)
+				{
+					UserMessages.ShowWarningMessage("Currently more than 1 argument for registry association is unsupported");
+					return "";
+				}
+				return " $\\\"%V$\\\"";
 			}
 		}
 
+		[Obsolete("Not used anymore, use static call to GetNsisLines(MainContextMenuItem mainItem)", true)]
 		public static bool AddSubMenuCommands(MainContextMenuItem mainItem)
 		{
-			return mainItem.WriteRegistryEntries();
+			return false;
+			//return mainItem.WriteRegistryEntries();
+		}
+
+		public static List<string> GetNsisLines(MainContextMenuItem mainItem)
+		{
+			return mainItem.GetRegistryAssociationNsisLines();
 		}
 
 		[Obsolete("Please use AddSubMenuCommands with '*' as part of its FileExtensionsInClassesRoot")]

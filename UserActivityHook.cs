@@ -6,14 +6,45 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.ComponentModel;
 using System.Reflection;
+using System.Drawing;
 
-    /// <summary>
-    /// This class allows you to tap keyboard and mouse and / or to detect their activity even when an 
-    /// application runes in background or does not have any user interface at all. This class raises 
-    /// common .NET events with KeyEventArgs and MouseEventArgs so you can easily retrive any information you need.
-    /// </summary>
+/// <summary>
+/// This class allows you to tap keyboard and mouse and / or to detect their activity even when an 
+/// application runes in background or does not have any user interface at all. This class raises 
+/// common .NET events with KeyEventArgs and MouseEventArgs so you can easily retrive any information you need.
+/// </summary>
 public class UserActivityHook
 {
+	public class MoreMouseButton
+	{
+		public enum MoreButtonStates { Up, Down, DoubleClicked, None };
+		public MouseButtons Button;
+		public MoreButtonStates ButtonState;
+		public MoreMouseButton(MouseButtons Button, MoreButtonStates ButtonState)
+		{
+			this.Button = Button;
+			this.ButtonState = ButtonState;
+		}
+	}
+	public class MoreMouseEventArgs : EventArgs
+	{
+		public MoreMouseButton Button { get; private set; }
+		public int Clicks { get; private set; }
+		public int Delta { get; private set; }
+		public Point Location { get { return new Point(X, Y); } }
+		public int X { get; private set; }
+		public int Y { get; private set; }
+		public MoreMouseEventArgs(MoreMouseButton button, int clicks, int x, int y, int delta)
+		{
+			this.Button = button;
+			this.Clicks = clicks;
+			this.Delta = delta;
+			this.X = x;
+			this.Y = y;
+		}
+	}
+	public delegate void MoreMouseEventHandler(object sender, MoreMouseEventArgs e);
+
 	#region Windows structure definitions
 
 	/// <summary>
@@ -463,7 +494,7 @@ public class UserActivityHook
 	/// <summary>
 	/// Occurs when the user moves the mouse, presses any mouse button or scrolls the wheel
 	/// </summary>
-	public event MouseEventHandler OnMouseActivity;
+	public event MoreMouseEventHandler OnMouseActivity;
 	/// <summary>
 	/// Occurs when the user presses a key
 	/// </summary>
@@ -651,24 +682,36 @@ public class UserActivityHook
 			MouseLLHookStruct mouseHookStruct = (MouseLLHookStruct)Marshal.PtrToStructure(lParam, typeof(MouseLLHookStruct));
 
 			//detect button clicked
-			MouseButtons button = MouseButtons.None;
+			MoreMouseButton button = null;
 			short mouseDelta = 0;
 			switch (wParam)
 			{
 				case WM_LBUTTONDOWN:
-					//case WM_LBUTTONUP: 
-					//case WM_LBUTTONDBLCLK: 
-					button = MouseButtons.Left;
+					button = new MoreMouseButton(MouseButtons.Left, MoreMouseButton.MoreButtonStates.Down);
+					break;
+				case WM_LBUTTONUP:
+					button = new MoreMouseButton(MouseButtons.Left, MoreMouseButton.MoreButtonStates.DoubleClicked);
+					break;
+				case WM_LBUTTONDBLCLK: 
+					button = new MoreMouseButton(MouseButtons.Left, MoreMouseButton.MoreButtonStates.Up);
 					break;
 				case WM_MBUTTONDOWN:
-					//case WM_MBUTTONUP:
-					//case WM_MBUTTONDBLCLK:
-					button = MouseButtons.Middle;
+					button = new MoreMouseButton(MouseButtons.Middle, MoreMouseButton.MoreButtonStates.Down);
+					break;
+				case WM_MBUTTONUP:
+					button = new MoreMouseButton(MouseButtons.Middle, MoreMouseButton.MoreButtonStates.Up);
+					break;
+				case WM_MBUTTONDBLCLK:
+					button = new MoreMouseButton(MouseButtons.Middle, MoreMouseButton.MoreButtonStates.DoubleClicked);
 					break;
 				case WM_RBUTTONDOWN:
-					//case WM_RBUTTONUP: 
-					//case WM_RBUTTONDBLCLK: 
-					button = MouseButtons.Right;
+					button = new MoreMouseButton(MouseButtons.Right, MoreMouseButton.MoreButtonStates.Down);
+					break;
+				case WM_RBUTTONUP:
+					button = new MoreMouseButton(MouseButtons.Right, MoreMouseButton.MoreButtonStates.Up);
+					break;
+				case WM_RBUTTONDBLCLK:
+					button = new MoreMouseButton(MouseButtons.Right, MoreMouseButton.MoreButtonStates.DoubleClicked);
 					break;
 				case WM_MOUSEWHEEL:
 					//If the message is WM_MOUSEWHEEL, the high-order word of mouseData member is the wheel delta. 
@@ -685,17 +728,18 @@ public class UserActivityHook
 
 			//double clicks
 			int clickCount = 0;
-			if (button != MouseButtons.None)
+			if (button != null)//MouseButtons.None)
 				if (wParam == WM_LBUTTONDBLCLK || wParam == WM_RBUTTONDBLCLK) clickCount = 2;
 				else clickCount = 1;
 
 			//generate event 
-			MouseEventArgs e = new MouseEventArgs(
+			MoreMouseEventArgs e = new MoreMouseEventArgs(
 																				 button,
 																				 clickCount,
 																				 mouseHookStruct.pt.x,
 																				 mouseHookStruct.pt.y,
 																				 mouseDelta);
+
 			//raise it
 			OnMouseActivity(this, e);
 		}

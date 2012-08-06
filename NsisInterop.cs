@@ -28,10 +28,12 @@ public class NsisInterop
 		//string ProductPublisherIn,
 		string ProductWebsiteIn,
 		string ProductExeNameIn,
+		RegistryInterop.MainContextMenuItem contextMenuItems,
 		NSISclass.LicensePageDetails LicenseDetails,
 		//List<NSISclass.SectionGroupClass.SectionClass> sections,
 		bool InstallForAllUsers,
 		NSISclass.DotnetFrameworkTargetedEnum DotnetFrameworkTargetedIn,
+		bool _64Only,
 		bool WriteIntoRegistryForWindowsAutostartup,
 		bool HasPlugins)
 	{
@@ -53,7 +55,8 @@ public class NsisInterop
 			ProductExeNameIn,
 			null,//No InstTypes at this stage
 			"Francois Hill",
-			DotnetFrameworkTargetedIn
+			DotnetFrameworkTargetedIn,
+			_64Only
 			//InstallForAllUsersIn: InstallForAllUsers
 			);
 
@@ -64,6 +67,31 @@ public class NsisInterop
 			? rootProjDir + @"\" + VsProjectName + subDirInProj
 			: rootProjDir + @"\" + VsProjectName + @"\" + VsProjectName + subDirInProj;
 		List<string> SectionGroupLines = new List<string>();
+
+		SectionGroupLines.Add("Function .onInit");
+		SectionGroupLines.Add("	!include \"x64.nsh\"");
+		SectionGroupLines.Add("	; This checks if nsis is running under wow64 (since nsis is only 32bit)");
+		SectionGroupLines.Add("	; hopefully this will be dependable in the future too...");
+		SectionGroupLines.Add("	${If} ${RunningX64}");
+		//SectionGroupLines.Add("		!insertmacro MUI_LANGDLL_DISPLAY");
+		SectionGroupLines.Add("		SetRegView 64");
+		SectionGroupLines.Add("	${Else}");
+		if (_64Only)
+		{
+			SectionGroupLines.Add("		MessageBox MB_OK|MB_ICONSTOP \"You cannot run this version of $PRODUCT_NAME on your OS.$\\r$\\n\\");
+			SectionGroupLines.Add("		  Please use a 64-bit OS or download a 32-bit version of PRODUCT_NAME.\"");
+			SectionGroupLines.Add("		Quit");
+		}
+		else
+		{
+			SectionGroupLines.Add("		; Currently allows 32bit mode");
+			SectionGroupLines.Add("		;MessageBox MB_OK|MB_ICONSTOP \"You cannot run this version of $PRODUCT_NAME on your OS.$\\r$\\n\\");
+			SectionGroupLines.Add("		;  Please use a 64-bit OS or download a 32-bit version of PRODUCT_NAME.\"");
+			SectionGroupLines.Add("		;Quit");
+		}
+		SectionGroupLines.Add("	${EndIf}");
+		SectionGroupLines.Add("FunctionEnd");
+
 		SectionGroupLines.Add(@"Section ""Full program"" SEC001");
 		SectionGroupLines.Add(@"  SetShellVarContext all");
 		SectionGroupLines.Add(@"  SetOverwrite ifnewer");
@@ -83,7 +111,7 @@ public class NsisInterop
 		if (HasPlugins)
 		{
 			int startSectionNumber = 2;//SEC002
-			string SolutionBaseDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) +	@"\Visual Studio 2010\Projects\" + VsProjectName;
+			string SolutionBaseDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects\" + VsProjectName;
 
 			SectionGroupLines.Add("");
 			SectionGroupLines.Add(@"SectionGroup ""Plugins""");
@@ -96,7 +124,7 @@ public class NsisInterop
 						baseFolderNameForPlugin.ToLower().EndsWith("plugin")
 						? baseFolderNameForPlugin.Substring(0, baseFolderNameForPlugin.Length - 6)
 						: baseFolderNameForPlugin);
-				
+
 				//SectionGroupLines.Add("");
 				//foreach (string dllfile in Directory.GetFiles(PluginsDir, "*.dll"))
 				//{
@@ -106,13 +134,13 @@ public class NsisInterop
 				//		filenameWithoutExtension.ToLower().EndsWith("plugin")
 				//		? filenameWithoutExtension.Substring(0, filenameWithoutExtension.Length - 6)
 				//		: filenameWithoutExtension);
-					//SectionGroupLines.Add("");
+				//SectionGroupLines.Add("");
 				SectionGroupLines.Add(NSISclass.Spacer + @"Section """ + pluginName + @""" SEC" + startSectionNumber++.ToString("000"));
 				SectionGroupLines.Add(NSISclass.Spacer + @"  SetShellVarContext all");
 				SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite ifnewer");
 				SectionGroupLines.Add(NSISclass.Spacer + @"	SetOutPath ""$INSTDIR\Plugins""");
 				SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite ifnewer");
-                SectionGroupLines.Add(NSISclass.Spacer + @"  File /a /x *.pdb /x *.xml /x *Toolkit* /x *InterfaceFor* /x *CookComputing.XmlRpcV2.dll /x *MouseGestures.dll /x *System.Windows.Controls.WpfPropertyGrid.dll" + Plugins_FaceDetectionNsisExclusionList() + Plugins_Pdf2textExclusionList() + @" """ + pluginDllPath + @"\*.*""");
+				SectionGroupLines.Add(NSISclass.Spacer + @"  File /a /x *.pdb /x *.xml /x *Toolkit* /x *InterfaceFor* /x *CookComputing.XmlRpcV2.dll /x *MouseGestures.dll /x *System.Windows.Controls.WpfPropertyGrid.dll" + Plugins_FaceDetectionNsisExclusionList() + Plugins_Pdf2textExclusionList() + @" """ + pluginDllPath + @"\*.*""");
 				SectionGroupLines.Add(NSISclass.Spacer + @"SectionEnd");
 				SectionGroupLines.Add("");
 				//}
@@ -160,7 +188,8 @@ public class NsisInterop
 			SectionGroupLines,
 			null,
 			WriteIntoRegistryForWindowsAutostartup,
-			HasPlugins);//SectionDescriptions);
+			HasPlugins,
+			contextMenuItems);//SectionDescriptions);
 	}
 
 	private static string MainProgram_FaceDetectionNsisExclusionList()
@@ -181,10 +210,10 @@ public class NsisInterop
 		//return tmpstr;
 	}
 
-    private static string Plugins_Pdf2textExclusionList()
-    {
-        return " /x *IKVM.*.dll /x commons-logging.dll /x fontbox-*.dll /x pdfbox-*.dll";
-    }
+	private static string Plugins_Pdf2textExclusionList()
+	{
+		return " /x *IKVM.*.dll /x commons-logging.dll /x fontbox-*.dll /x pdfbox-*.dll";
+	}
 
 	public static string DotNetChecker_NSH_file
 	{
@@ -351,6 +380,7 @@ public class NsisInterop
 		public string StartmenuFolderName;
 
 		public DotnetFrameworkTargetedEnum DotnetFrameworkTargeted;
+		public bool _64Only;
 
 		public NSISclass() { }
 
@@ -374,6 +404,7 @@ public class NsisInterop
 				List<string> InstTypesIn,
 				string StartmenuFolderNameIn,
 				DotnetFrameworkTargetedEnum DotnetFrameworkTargetedIn,
+				bool _64OnlyIn,
 				string InstallerIconPathIn = @"${NSISDIR}\Contrib\Graphics\Icons\modern-install-blue-full.ico",
 				string UninstallerIconPathIn = @"${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall-blue-full.ico",
 				Boolean InstallForAllUsersIn = true)
@@ -407,6 +438,7 @@ public class NsisInterop
 			StartmenuFolderName = StartmenuFolderNameIn;
 
 			DotnetFrameworkTargeted = DotnetFrameworkTargetedIn;
+			_64Only = _64OnlyIn;
 
 			InstallForAllUsers = InstallForAllUsersIn;
 		}
@@ -517,7 +549,7 @@ public class NsisInterop
 			}
 		}
 
-		public List<string> GetAllLinesForNSISfile(List<string> AllSectionGroupLines, List<string> AllSectionAndGroupDescriptions, bool UninstallWillDeleteProgramAutoRunInRegistry_CurrentUser, bool HasPlugins)
+		public List<string> GetAllLinesForNSISfile(List<string> AllSectionGroupLines, List<string> AllSectionAndGroupDescriptions, bool UninstallWillDeleteProgramAutoRunInRegistry_CurrentUser, bool HasPlugins, RegistryInterop.MainContextMenuItem contextMenuItems)
 		{
 			List<string> tmpList = new List<string>();
 
@@ -687,6 +719,11 @@ public class NsisInterop
 			tmpList.Add(Spacer + @"WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} ""${PRODUCT_UNINST_KEY}"" ""DisplayVersion"" ""${PRODUCT_VERSION}""");
 			tmpList.Add(Spacer + @"WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} ""${PRODUCT_UNINST_KEY}"" ""URLInfoAbout"" ""${PRODUCT_WEB_SITE}""");
 			tmpList.Add(Spacer + @"WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} ""${PRODUCT_UNINST_KEY}"" ""Publisher"" ""${PRODUCT_PUBLISHER}""");
+
+			if (contextMenuItems != null)
+				foreach (var regAssociatedRegistryline in contextMenuItems.GetRegistryAssociationNsisLines())
+					tmpList.Add(Spacer + regAssociatedRegistryline.Replace("((EXEPATH))", "$INSTDIR\\${PRODUCT_EXE_NAME}"));
+
 			tmpList.Add(@"SectionEnd"); tmpList.Add("");
 
 			if (DotnetFrameworkTargeted != DotnetFrameworkTargetedEnum.None)
@@ -713,7 +750,7 @@ public class NsisInterop
 			tmpList.Add(";Section -CheckMutexOpen");
 			tmpList.Add(Spacer + ";System::Call 'kernel32::OpenMutex(i 0x100000, b 0, buildTask \"QuickAccess-{6EBAC5AC-BCF2-4263-A82C-F189930AEA30}\") i .R0'");
 			tmpList.Add(Spacer + ";IntCmp $R0 0 notRunning");
-		  tmpList.Add(Spacer + ";System::Call 'kernel32::CloseHandle(i $R0)'");
+			tmpList.Add(Spacer + ";System::Call 'kernel32::CloseHandle(i $R0)'");
 			tmpList.Add(Spacer + ";MessageBox MB_YESNO|MB_ICONQUESTION \"QuickAccess is running. Please close it first then click YES.\" IDYES tryAgain");
 			tmpList.Add(Spacer + ";Abort");
 			tmpList.Add(Spacer + ";tryAgain:");
@@ -734,6 +771,9 @@ public class NsisInterop
 			tmpList.Add(@"FunctionEnd"); tmpList.Add("");
 
 			tmpList.Add(@"Function un.onInit");
+			tmpList.Add(Spacer + "${If} ${RunningX64}");
+			tmpList.Add(Spacer + Spacer + "SetRegView 64");
+			tmpList.Add(Spacer + "${EndIf}");
 			tmpList.Add(Spacer + @"MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 ""Are you sure you want to completely remove $(^Name) and all of its components?"" IDYES +2");
 			tmpList.Add(Spacer + @"Abort");
 			tmpList.Add(@"FunctionEnd"); tmpList.Add("");
@@ -742,7 +782,7 @@ public class NsisInterop
 			//tmpList.Add(Spacer + @"Delete ""$INSTDIR\${PRODUCT_NAME}.url""");
 			//tmpList.Add(Spacer + @"Delete ""$INSTDIR\uninst.exe""");
 			//tmpList.Add(Spacer + @"Delete ""$INSTDIR\${PRODUCT_EXE_NAME}"""); tmpList.Add("");
-			
+
 			tmpList.Add(Spacer + @"Delete ""$INSTDIR\*.*""");
 			if (HasPlugins) tmpList.Add(Spacer + @"Delete ""$INSTDIR\Plugins\*.*""");
 			tmpList.Add("");
@@ -765,6 +805,11 @@ public class NsisInterop
 			tmpList.Add(Spacer + @"DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} ""${PRODUCT_UNINST_KEY}""");
 			tmpList.Add(Spacer + @"DeleteRegKey HKLM ""${PRODUCT_DIR_REGKEY}""");
 			if (UninstallWillDeleteProgramAutoRunInRegistry_CurrentUser) tmpList.Add(Spacer + @"DeleteRegValue HKCU ""SOFTWARE\Microsoft\Windows\CurrentVersion\Run"" '${PRODUCT_NAME}'");
+
+			if (contextMenuItems != null)
+				foreach (var regUnassociatedRegistryline in contextMenuItems.GetRegistryUnassociationNsisLines())
+					tmpList.Add(Spacer + regUnassociatedRegistryline);
+
 			tmpList.Add(Spacer + @"SetAutoClose true");
 			tmpList.Add(@"SectionEnd");
 
@@ -1124,7 +1169,7 @@ public class NsisInterop
 					foreach (string line in GetDescriptionOfNode(subnode))
 						tmpSectionDescriptionLines.Add(line);
 
-				return ((NSISclass)NodeIn.Tag).GetAllLinesForNSISfile(tmpSectionGroupLines, tmpSectionDescriptionLines, false, false);
+				return ((NSISclass)NodeIn.Tag).GetAllLinesForNSISfile(tmpSectionGroupLines, tmpSectionDescriptionLines, false, false, null);
 
 				//foreach (string line in ((NSISclass)NodeIn.Tag).GetAllLinesForNSISfile(tmpSectionGroupLines, tmpSectionDescriptionLines))
 				//    textBox_CURRENTNODETEXTBLOCK.Text += (textBox_CURRENTNODETEXTBLOCK.Text.Length > 0 ? Environment.NewLine : "") + line;
@@ -1360,7 +1405,8 @@ public class NsisInterop
 									AppNameIncludingEXEextension,
 									new List<string>() { },
 									null,
-									DotnetFrameworkTargetedEnum.DotNet4client);
+									DotnetFrameworkTargetedEnum.DotNet4client,
+									false);
 							tmpMainNode.Nodes.Add(subSectionNode);
 
 							return tmpMainNode;

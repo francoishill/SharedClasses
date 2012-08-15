@@ -255,7 +255,6 @@ namespace SharedClasses
 
 		public class MainContextMenuItem
 		{
-			public List<string> FileExtensionsInClassesRoot;
 			public string MainmenuItemRegistryName;
 			//public string MainmenuItemDisplayName;
 			public string MainmenuItemIconpath;
@@ -263,18 +262,23 @@ namespace SharedClasses
 			public MainContextMenuItem() { }
 			public MainContextMenuItem(List<string> FileExtensionsInClassesRoot, string MainmenuItemRegistryName, /*string MainmenuItemDisplayName, */string MainmenuItemIconpath, List<SubContextMenuItem> SubCommands)
 			{
-				this.FileExtensionsInClassesRoot = FileExtensionsInClassesRoot;
 				this.MainmenuItemRegistryName = MainmenuItemRegistryName;
 				//this.MainmenuItemDisplayName = MainmenuItemDisplayName;
 				this.MainmenuItemIconpath = MainmenuItemIconpath;
 				this.SubCommands = SubCommands;
 			}
 
-			private string GetSubcommandNamesConcatenated()
+			private string GetSubcommandNamesConcatenated(string currentPathInClassesRoot)
 			{
+				List<string> tmpSubcommandList = new List<string>();
+				foreach (SubContextMenuItem sc in this.SubCommands)
+					if (sc.FileExtensionsInClassesRoot.Contains(currentPathInClassesRoot, StringComparer.InvariantCultureIgnoreCase))
+						if (sc.IsSeparator() || !tmpSubcommandList.Contains(sc.CommandName))
+							tmpSubcommandList.Add(sc.CommandName);
+
 				string str = "";
-				foreach (SubContextMenuItem subcommand in SubCommands)
-					str += (str.Length > 0 ? ";" : "") + subcommand.CommandName;
+				foreach (string scn in tmpSubcommandList)
+					str += (str.Length > 0 ? ";" : "") + scn;
 				return str;
 			}
 
@@ -288,7 +292,7 @@ namespace SharedClasses
 
 				try
 				{
-					foreach (string pathInClassesRoot in this.FileExtensionsInClassesRoot)
+					/*foreach (string pathInClassesRoot in this.FileExtensionsInClassesRoot)
 						using (RegistryKey subfolderInClassesRootShell =
 								RegistryKey.OpenBaseKey(RegistryHive.ClassesRoot, registryViewToUse)
 										.OpenOrCreateWriteableSubkey(pathInClassesRoot + "\\" + "shell" + "\\" + this.MainmenuItemRegistryName))
@@ -314,7 +318,7 @@ namespace SharedClasses
 									}
 								}
 							}
-						}
+						}*/
 				}
 				catch (Exception exc)
 				{
@@ -337,15 +341,23 @@ namespace SharedClasses
 			public List<string> GetRegistryAssociationNsisLines()
 			{
 				List<string> nsisLines = new List<string>();
-				foreach (string pathInClassesRoot in this.FileExtensionsInClassesRoot)
-				{
-					string pathInShell = pathInClassesRoot + @"\shell\" + this.MainmenuItemRegistryName;
+				foreach (SubContextMenuItem subcommand in this.SubCommands)
+					foreach (string pathInClassesRoot in subcommand.FileExtensionsInClassesRoot)
+					{
+						string pathInShell = pathInClassesRoot + @"\shell\" + this.MainmenuItemRegistryName;
 
-					nsisLines.Add(GetNsisWriteRegStrLine(RegistryRootKeys.HKCR, pathInShell, "Icon", "$\\\"" + this.MainmenuItemIconpath.Trim('\\') + "$\\\""));
-					nsisLines.Add(GetNsisWriteRegStrLine(RegistryRootKeys.HKCR, pathInShell, "SubCommands", GetSubcommandNamesConcatenated()));
-				}
+						string tmpline = GetNsisWriteRegStrLine(RegistryRootKeys.HKCR, pathInShell, "Icon", "$\\\"" + this.MainmenuItemIconpath.Trim('\\') + "$\\\"");
+						if (!nsisLines.Contains(tmpline))
+							nsisLines.Add(tmpline);
+						tmpline = GetNsisWriteRegStrLine(RegistryRootKeys.HKCR, pathInShell, "SubCommands", GetSubcommandNamesConcatenated(pathInClassesRoot));
+						if (!nsisLines.Contains(tmpline))
+							nsisLines.Add(tmpline);
+					}
+
 				foreach (SubContextMenuItem subcommand in this.SubCommands)
 				{
+					if (subcommand.IsSeparator())
+						continue;
 					string commandStoreShell_CommandSubpath = commandStore_Shell_Subpath + "\\" + subcommand.CommandName;
 					nsisLines.Add(GetNsisWriteRegStrLine(RegistryRootKeys.HKLM, commandStoreShell_CommandSubpath, "", subcommand.DisplayName));
 					nsisLines.Add(GetNsisWriteRegStrLine(RegistryRootKeys.HKLM, commandStoreShell_CommandSubpath, "Icon", "$\\\"" + subcommand.CommandIconpath.Trim('\\') + "$\\\""));
@@ -361,12 +373,20 @@ namespace SharedClasses
 			public List<string> GetRegistryUnassociationNsisLines()
 			{
 				List<string> nsisLines = new List<string>();
-				foreach (string pathInClassesRoot in this.FileExtensionsInClassesRoot)
-					nsisLines.Add(GetNsisDeleteRegKeyLine(RegistryRootKeys.HKCR, pathInClassesRoot + @"\shell\" + this.MainmenuItemRegistryName));
+				foreach (SubContextMenuItem subcommand in this.SubCommands)
+					foreach (string pathInClassesRoot in subcommand.FileExtensionsInClassesRoot)
+					{
+						string tmpline = GetNsisDeleteRegKeyLine(RegistryRootKeys.HKCR, pathInClassesRoot + @"\shell\" + this.MainmenuItemRegistryName);
+						if (!nsisLines.Contains(tmpline))
+							nsisLines.Add(tmpline);
+					}
+
 				foreach (SubContextMenuItem subcommand in this.SubCommands)
 				{
-					nsisLines.Add(GetNsisDeleteRegKeyLine(RegistryRootKeys.HKLM, commandStore_Shell_Subpath + "\\" + subcommand.CommandName));
+					if (subcommand.IsSeparator())
+						continue;
 					nsisLines.Add(GetNsisDeleteRegKeyLine(RegistryRootKeys.HKLM, commandStore_Shell_Subpath + "\\" + subcommand.CommandName + "\\Command"));
+					nsisLines.Add(GetNsisDeleteRegKeyLine(RegistryRootKeys.HKLM, commandStore_Shell_Subpath + "\\" + subcommand.CommandName));
 				}
 				return nsisLines;
 			}
@@ -374,18 +394,22 @@ namespace SharedClasses
 
 		public class SubContextMenuItem
 		{
+			public List<string> FileExtensionsInClassesRoot;
 			public string CommandName;
 			public string DisplayName;
 			public string CommandIconpath;
 			public string CommandlineExcludingArgumentString;
+			public string CommandlinePassedConstantArgument;//For instance "zipfile" or "unzipfile"
 			public int ArgumentCount;
 			public SubContextMenuItem() { }
-			public SubContextMenuItem(string CommandName, string DisplayName, string CommandIconpath, string CommandlineExcludingArgumentString, int ArgumentCount)
+			public SubContextMenuItem(List<string> FileExtensionsInClassesRoot, string CommandName, string DisplayName, string CommandIconpath, string CommandlineExcludingArgumentString, string CommandlinePassedConstantArgument, int ArgumentCount)
 			{
+				this.FileExtensionsInClassesRoot = FileExtensionsInClassesRoot;
 				this.CommandName = CommandName;
 				this.DisplayName = DisplayName;
 				this.CommandIconpath = CommandIconpath;
 				this.CommandlineExcludingArgumentString = CommandlineExcludingArgumentString;
+				this.CommandlinePassedConstantArgument = CommandlinePassedConstantArgument;
 				this.ArgumentCount = ArgumentCount;
 			}
 			public string GetNsisArgumentsPostfixToCommandline()
@@ -395,8 +419,11 @@ namespace SharedClasses
 					UserMessages.ShowWarningMessage("Currently more than 1 argument for registry association is unsupported");
 					return "";
 				}
-				return " $\\\"%V$\\\"";
+				return
+					(!string.IsNullOrWhiteSpace(CommandlinePassedConstantArgument) ? " $\\\"" + CommandlinePassedConstantArgument + "$\\\"" : "")
+					+ " $\\\"%V$\\\"";
 			}
+			public bool IsSeparator() { return this.CommandName == "|"; }
 		}
 
 		[Obsolete("Not used anymore, use static call to GetNsisLines(MainContextMenuItem mainItem)", true)]

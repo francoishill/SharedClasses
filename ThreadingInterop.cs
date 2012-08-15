@@ -10,7 +10,7 @@ public class ThreadingInterop
 	private static bool AlreadyAttachedToApplicationExitEvent = false;
 	//TODO: Have a look at this function (automatically queues to a thread) - System.Threading.ThreadPool.QueueUserWorkItem()
 	//PerformVoidFunctionSeperateThread(() => { MessageBox.Show("Test"); MessageBox.Show("Test1"); });
-	public static Thread PerformOneArgFunctionSeperateThread(Action<object> action, object arg, bool WaitUntilFinish = true, string ThreadName = "UnknownName", bool CheckInvokeRequired = false, Control controlToCheckInvokeRequired = null, bool AttachForceExitToFormClose = true)
+	public static Thread PerformOneArgFunctionSeperateThread(Action<object> action, object arg, bool WaitUntilFinish = true, string ThreadName = "UnknownName", bool CheckInvokeRequired = false, Control controlToCheckInvokeRequired = null, bool AttachForceExitToFormClose = true, ApartmentState? apartmentState = null)
 	{
 		if (AttachForceExitToFormClose)
 			if (!AlreadyAttachedToApplicationExitEvent)
@@ -35,6 +35,8 @@ public class ThreadingInterop
 				action(arg);
 		});
 		th.Name = ThreadName;
+		if (apartmentState.HasValue)
+			th.SetApartmentState(apartmentState.Value);
 		th.Start();
 		//th.Join();
 		if (WaitUntilFinish)
@@ -51,7 +53,11 @@ public class ThreadingInterop
 			return th;
 		}
 	}
-	public static Thread PerformVoidFunctionSeperateThread(MethodInvoker method, bool WaitUntilFinish = true, string ThreadName = "UnknownName", bool CheckInvokeRequired = false, Control controlToCheckInvokeRequired = null, bool AttachForceExitToFormClose = true)
+	//public static Thread PerformOneArgFunctionSeperateThread<T>(T arg, Action<T> action, bool WaitUntilFinish = true, string ThreadName = "UnknownName", bool CheckInvokeRequired = false, Control controlToCheckInvokeRequired = null, bool AttachForceExitToFormClose = true, ApartmentState? apartmentState = null)
+	//{
+	//    return PerformOneArgFunctionSeperateThread(action, arg, WaitUntilFinish, ThreadName, CheckInvokeRequired, controlToCheckInvokeRequired, AttachForceExitToFormClose, apartmentState);
+	//}
+	public static Thread PerformVoidFunctionSeperateThread(MethodInvoker method, bool WaitUntilFinish = true, string ThreadName = "UnknownName", bool CheckInvokeRequired = false, Control controlToCheckInvokeRequired = null, bool AttachForceExitToFormClose = true, ApartmentState? apartmentState = null)
 	{
 		return PerformOneArgFunctionSeperateThread(
 			(Action<object>)delegate(object arg) { method(); },
@@ -60,7 +66,8 @@ public class ThreadingInterop
 			ThreadName,
 			CheckInvokeRequired,
 			controlToCheckInvokeRequired,
-			AttachForceExitToFormClose);
+			AttachForceExitToFormClose,
+			apartmentState);
 	}
 
 	public static void UpdateGuiFromThread(Control controlToUpdate, Action action)

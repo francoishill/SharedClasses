@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows;
+using System.Collections.Generic;
 
 namespace SharedClasses
 {
@@ -33,6 +34,11 @@ namespace SharedClasses
 		public static object PickItem(Type ObjectType, Array itemArray, string Message, object defaultItem)
 		{
 			return SharedClasses.PickItemWPF.PickItem(ObjectType, itemArray, Message, defaultItem, null);
+		}
+
+		public static T PickItem<T>(List<T> items, string Message, T defaultItem)
+		{
+			return (T)PickItem(typeof(T), items.ToArray(), Message, defaultItem);
 		}
 	}
 }

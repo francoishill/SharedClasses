@@ -1146,9 +1146,10 @@ public class NetworkInterop
 		{
 			if (exc.Message.ToLower().Contains("the operation has timed out"))
 			{
-				if (UserMessages.Confirm("Upload to ftp timed out, the System.Net.ServicePointManager.DefaultConnectionLimit has been reached, restart the application now?"))
+				UserMessages.ShowErrorMessage("Upload to ftp timed out, the System.Net.ServicePointManager.DefaultConnectionLimit has been reached");
+				/*if (UserMessages.Confirm("Upload to ftp timed out, the System.Net.ServicePointManager.DefaultConnectionLimit has been reached, restart the application now?"))
 					//Application.Restart();
-					ApplicationRecoveryAndRestart.TestCrash(false);
+					ApplicationRecoveryAndRestart.TestCrash(false);*/
 			}
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Exception in transfer: " + exc.Message, TextFeedbackType.Error);
 			//MessageBox.Show("Exception in transfer: " + exc.Message);
@@ -1291,9 +1292,10 @@ public class NetworkInterop
 		{
 			if (exc.Message.ToLower().Contains("the operation has timed out"))
 			{
-				if (UserMessages.Confirm("Download from ftp timed out, the System.Net.ServicePointManager.DefaultConnectionLimit has been reached, restart the application now?"))
+				UserMessages.ShowErrorMessage("Download from ftp timed out, the System.Net.ServicePointManager.DefaultConnectionLimit has been reached");
+				/*if (UserMessages.Confirm("Download from ftp timed out, the System.Net.ServicePointManager.DefaultConnectionLimit has been reached, restart the application now?"))
 					//Application.Restart();
-					ApplicationRecoveryAndRestart.TestCrash(false);
+					ApplicationRecoveryAndRestart.TestCrash(false);*/
 			}
 			MessageBox.Show("Exception in transfer: " + exc.Message);
 		}

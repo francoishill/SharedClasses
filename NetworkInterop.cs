@@ -196,7 +196,7 @@ public class NetworkInterop
 {
 	private delegate IPHostEntry GetHostEntryHandler(string ip);
 
-	public static IPAddress GetIPAddressFromString(string ipAddressString, int timeout = 10000)
+	public static IPAddress GetIPAddressFromString(string ipAddressString, Action<string> actionOnError, int timeout = 10000)
 	{
 		bool resolveDnsMode = false;
 		foreach (char chr in ipAddressString)
@@ -206,7 +206,7 @@ public class NetworkInterop
 
 		if (!resolveDnsMode && !IPAddress.TryParse(ipAddressString, out returnIPAddress))
 		{
-			UserMessages.ShowErrorMessage("Invalid IP address: " + (ipAddressString ?? ""));
+			actionOnError("Invalid IP address: " + (ipAddressString ?? ""));
 			return null;
 		}
 		if (resolveDnsMode)
@@ -220,20 +220,20 @@ public class NetworkInterop
 					IPHostEntry iphostEntry = callback.EndInvoke(result);
 					if (iphostEntry == null || iphostEntry.AddressList.Length == 0)
 					{
-						UserMessages.ShowErrorMessage("Could not resolve DNS from " + ipAddressString);
+						actionOnError("Could not resolve DNS from " + ipAddressString);
 						return null;
 					}
 					else returnIPAddress = iphostEntry.AddressList[0];
 				}
 				else
 				{
-					UserMessages.ShowErrorMessage("Timeout to resolve DNS from " + ipAddressString);
+					actionOnError("Timeout to resolve DNS from " + ipAddressString);
 					return null;
 				}
 			}
 			catch (Exception exc)
 			{
-				UserMessages.ShowErrorMessage("Error occurred resolving DNS from " + ipAddressString + ": " + exc.Message);
+				actionOnError("Error occurred resolving DNS from " + ipAddressString + ": " + exc.Message);
 				return null;
 			}
 		}
@@ -358,7 +358,7 @@ public class NetworkInterop
 		};
 	}
 
-	public static bool SetupServerSocketSettings(ref Socket serverListeningSocketToUse, int listeningPort, int maxBufferPerTransfer, int maxNumberPendingConnections)
+	public static bool SetupServerSocketSettings(ref Socket serverListeningSocketToUse, int listeningPort, int maxBufferPerTransfer, int maxNumberPendingConnections, Action<string> actionOnError)
 	{
 		try
 		{
@@ -372,7 +372,7 @@ public class NetworkInterop
 		}
 		catch (Exception exc)
 		{
-			UserMessages.ShowWarningMessage(string.Format("Unable to start socket server on port {0}, an exceptions occurred: {1}", listeningPort, exc.Message));
+			actionOnError(string.Format("Unable to start socket server on port {0}, an exceptions occurred: {1}", listeningPort, exc.Message));
 			return false;
 		}
 	}
@@ -444,7 +444,7 @@ public class NetworkInterop
 		}
 	}
 
-	private static void EnsureValuesForGuidAndTotalSizes(ProgressChangedEventHandler ProgressChangedEvent, long totalBytesProcessed, byte[] firstConstantBytesForGuidInfoandFilesize, ref Guid receivedGuid, ref long totalFileSizeToRead, ref long totalInfoSizeToRead, int actualReceivedLength, bool UpdateProgress = true)
+	private static void EnsureValuesForGuidAndTotalSizes(ProgressChangedEventHandler ProgressChangedEvent, long totalBytesProcessed, byte[] firstConstantBytesForGuidInfoandFilesize, ref Guid receivedGuid, ref long totalFileSizeToRead, ref long totalInfoSizeToRead, int actualReceivedLength, Action<string> actionOnError, bool UpdateProgress = true)
 	{
 		if (totalBytesProcessed + actualReceivedLength >= lengthOfFirstConstantBuffer && (totalFileSizeToRead == -1 || totalInfoSizeToRead == -1 || receivedGuid == Guid.Empty))
 		{
@@ -456,7 +456,7 @@ public class NetworkInterop
 			if (!long.TryParse(totalInfoSizeToReadString, out totalInfoSizeToRead))
 			{
 				totalInfoSizeToRead = -1;
-				UserMessages.ShowWarningMessage("Could not get info size from string = " + totalInfoSizeToReadString);
+				actionOnError("Could not get info size from string = " + totalInfoSizeToReadString);
 			}
 			else
 			{
@@ -468,7 +468,7 @@ public class NetworkInterop
 			if (!long.TryParse(totalFileSizeToReadString, out totalFileSizeToRead))
 			{
 				totalFileSizeToRead = -1;
-				UserMessages.ShowWarningMessage("Could not get file size from string = " + totalFileSizeToReadString);
+				actionOnError("Could not get file size from string = " + totalFileSizeToReadString);
 			}
 			else
 			{
@@ -578,10 +578,13 @@ public class NetworkInterop
 		return totalFileSizeToRead != -1 && totalInfoSizeToRead != -1 && totalBytesProcessed >= (lengthOfFirstConstantBuffer + totalFileSizeToRead + totalInfoSizeToRead);
 	}
 
-	private static string ObtainOriginalFilenameFromInfoOfTransferToServer(InfoOfTransferToServer info, ref TextFeedbackEventHandler TextFeedbackEvent)
+	private static string ObtainOriginalFilenameFromInfoOfTransferToServer(InfoOfTransferToServer info, ref TextFeedbackEventHandler TextFeedbackEvent, Action<string> actionOnError)
 	{
-		if (info == null && UserMessages.ShowWarningMessage("Cannot obtain filename from NULL InfoOfTransferToServer object"))
+		if (info == null)// &&
+		{
+			actionOnError("Cannot obtain filename from NULL InfoOfTransferToServer object");
 			return null;
+		}
 		string fileNameToReturn = defaultFolderToSaveIn + "\\" + Path.GetFileName(info.OriginalFilePath);
 		//if (File.Exists(fileNameToReturn)) File.Delete(fileNameToReturn);
 		return fileNameToReturn;
@@ -634,6 +637,7 @@ public class NetworkInterop
 	public static void StartServer_FileStream(
 		Object textfeedbackSenderObject,
 		out Socket serverListeningSocketToUse,
+		Action<string> actionOnError,
 		Form formToHookSocketClosingIntoFormDisposedEvent = null,
 		int listeningPort = defaultListeningPort,
 		string FolderToSaveIn = defaultFolderToSaveIn,
@@ -661,7 +665,7 @@ public class NetworkInterop
 				catch (SocketException sexc)
 				{
 					if (IsSocketTryingToCloseUponApplicationExit(sexc)) break;
-					else UserMessages.ShowErrorMessage("SocketException occurred: " + sexc.Message);
+					else actionOnError("SocketException occurred: " + sexc.Message);
 				}
 
 				if (handler == null) continue;
@@ -810,6 +814,7 @@ public class NetworkInterop
 		Object textfeedbackSenderObject,
 		string filePath,
 		out Socket senderSocketToUse,
+		Action<string> actionOnError,
 		IPAddress ipAddress = null,
 		int listeningPort = defaultListeningPort,
 		int maxBufferPerTransfer = defaultMaxBufferPerTransfer,
@@ -818,7 +823,7 @@ public class NetworkInterop
 	{
 		senderSocketToUse = null;
 		if (!File.Exists(filePath))
-			UserMessages.ShowWarningMessage("File does not exist and cannot be transferred: " + filePath);
+			actionOnError("File does not exist and cannot be transferred: " + filePath);
 		else
 		{
 			if (ConnectToServer(out senderSocketToUse, ipAddress, listeningPort))
@@ -885,7 +890,7 @@ public class NetworkInterop
 					if (totalInfoSizeToRead != -1 && totalBytesProcessed + actualReceivedLength >= lengthOfFirstConstantBuffer + totalInfoSizeToRead)
 					{
 						if (totalFileSizeToRead > 0)
-							UserMessages.ShowWarningMessage("Function not incorporated yet to transfer file back to client.");
+							actionOnError("Function not incorporated yet to transfer file back to client.");
 						//string localFileName = ObtainOriginalFilenameFromInfoOfTransferToServer((InfoOfTransferToServer)SerializationInterop.DeserializeCustomObjectFromStream(memoryStreamForInfo, new InfoOfTransferToServer(), false), ref TextFeedbackEvent);
 						//if (localFileName != null)
 						//	WriteBytesToFilestream(totalBytesProcessed, totalInfoSizeToRead, ref fileStreamIn, ref receivedBytes, actualReceivedLength, localFileName);
@@ -997,7 +1002,7 @@ public class NetworkInterop
 		}
 	}
 
-	public static void MergeFiles(string firstFileName, bool DeleteOriginalFilesUponSuccess = true)
+	public static void MergeFiles(string firstFileName, Func<string, bool> actionToConfirm, Action<string> actionOnInfo, bool DeleteOriginalFilesUponSuccess = true)
 	{
 		if (firstFileName.Length < 1)
 			return;
@@ -1016,11 +1021,11 @@ public class NetworkInterop
 
 		if (File.Exists(orgFile))
 		{
-			if (UserMessages.Confirm(orgFile + " already exists, do you want to delete it"))
+			if (actionToConfirm(orgFile + " already exists, do you want to delete it"))
 				File.Delete(orgFile);
 			else
 			{
-				UserMessages.ShowInfoMessage("File not assembled. Operation cancelled by user.");
+				actionOnInfo("File not assembled. Operation cancelled by user.");
 				return;
 			}
 		}
@@ -1076,7 +1081,7 @@ public class NetworkInterop
 			return originalUrl + ":" + portNumber.ToString();
 	}
 
-	public static bool FtpUploadFiles(Object textfeedbackSenderObject, string ftpRootUri, string userName, string password, string[] localFilenames, string urlWhenSuccessullyUploaded = null, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
+	public static bool FtpUploadFiles(Object textfeedbackSenderObject, string ftpRootUri, string userName, string password, string[] localFilenames, Action<string> actionOnError, string urlWhenSuccessullyUploaded = null, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null)
 	{
 		ftpRootUri = ftpRootUri.Replace('\\', '/');
 		try
@@ -1146,7 +1151,7 @@ public class NetworkInterop
 		{
 			if (exc.Message.ToLower().Contains("the operation has timed out"))
 			{
-				UserMessages.ShowErrorMessage("Upload to ftp timed out, the System.Net.ServicePointManager.DefaultConnectionLimit has been reached");
+				actionOnError("Upload to ftp timed out, the System.Net.ServicePointManager.DefaultConnectionLimit has been reached");
 				/*if (UserMessages.Confirm("Upload to ftp timed out, the System.Net.ServicePointManager.DefaultConnectionLimit has been reached, restart the application now?"))
 					//Application.Restart();
 					ApplicationRecoveryAndRestart.TestCrash(false);*/
@@ -1190,7 +1195,7 @@ public class NetworkInterop
 		}
 	}
 
-	public static string FtpDownloadFile(Object textfeedbackSenderObject, string localRootFolder, string userName, string password, string onlineFileUrl, TextFeedbackEventHandler textFeedbackHandler = null, ProgressChangedEventHandler progressChanged = null)
+	public static string FtpDownloadFile(Object textfeedbackSenderObject, string localRootFolder, string userName, string password, string onlineFileUrl, Action<string> actionOnError, TextFeedbackEventHandler textFeedbackHandler = null, ProgressChangedEventHandler progressChanged = null)
 	{
 		int maxRetries = 5;
 		int retryCount = 0;
@@ -1210,7 +1215,7 @@ public class NetworkInterop
 				if (filesize == -1)//File does not exist
 				{
 					string errMsg = "Ftp file does not exist: " + onlineFileUrl;
-					UserMessages.ShowErrorMessage(errMsg);
+					actionOnError(errMsg);
 					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackHandler, errMsg);
 					return null;
 				}
@@ -1292,7 +1297,7 @@ public class NetworkInterop
 		{
 			if (exc.Message.ToLower().Contains("the operation has timed out"))
 			{
-				UserMessages.ShowErrorMessage("Download from ftp timed out, the System.Net.ServicePointManager.DefaultConnectionLimit has been reached");
+				actionOnError("Download from ftp timed out, the System.Net.ServicePointManager.DefaultConnectionLimit has been reached");
 				/*if (UserMessages.Confirm("Download from ftp timed out, the System.Net.ServicePointManager.DefaultConnectionLimit has been reached, restart the application now?"))
 					//Application.Restart();
 					ApplicationRecoveryAndRestart.TestCrash(false);*/
@@ -1303,7 +1308,7 @@ public class NetworkInterop
 	}
 
 	//Changed to bool? so that null tells there was an error
-	public static bool? FtpFileExists(string filePath, string ftpUser, string ftpPassword)
+	public static bool? FtpFileExists(string filePath, string ftpUser, string ftpPassword, Action<string> actionOnError)
 	{
 		var request = (FtpWebRequest)WebRequest.Create(filePath);
 		request.Credentials = new NetworkCredential(ftpUser, ftpPassword);
@@ -1326,7 +1331,7 @@ public class NetworkInterop
 				//Does not exist
 			}
 			response.Close();
-			UserMessages.ShowErrorMessage("Cannot determine whether file '" + filePath + "' exists: " + ex.Message);
+			actionOnError("Cannot determine whether file '" + filePath + "' exists: " + ex.Message);
 			return null;
 		}
 	}
@@ -1530,7 +1535,7 @@ public class NetworkInterop
 		}
 	}
 
-	public static string[] GetFileList(string directory, string ftpUser, string ftpPassword)
+	public static string[] GetFileList(string directory, string ftpUser, string ftpPassword, Action<string> actionOnError)
 	{
 		string[] downloadFiles;
 		StringBuilder result = new StringBuilder();
@@ -1564,7 +1569,7 @@ public class NetworkInterop
 		}
 		catch (Exception ex)
 		{
-			UserMessages.ShowErrorMessage("Error getting file list: " + ex.Message);
+			actionOnError("Error getting file list: " + ex.Message);
 			if (reader != null)
 			{
 				reader.Close();
@@ -1584,7 +1589,7 @@ public class NetworkInterop
 	/// <param name="url">The url of the php, do not include the ?</param>
 	/// <param name="data">The data, i.e. "name=koos&surname=koekemoer". Note to not include the ?</param>
 	/// <returns>Returns the data received from the php (usually the "echo" statements in the php.</returns>
-	public static string PostPHP(string url, string data)
+	public static string PostPHP(string url, string data, Action<string> actionOnError)
 	{
 		string vystup = "";
 		try
@@ -1628,11 +1633,11 @@ public class NetworkInterop
 		{
 			if (webex.Response != null)
 				webex.Response.Close();
-			UserMessages.ShowWarningMessage("Unable to do post php query: " + webex.Message);
+			actionOnError("Unable to do post php query: " + webex.Message);
 		}
 		catch (Exception exc)
 		{
-			UserMessages.ShowWarningMessage("Unable to do post php query: " + exc.Message);
+			actionOnError("Unable to do post php query: " + exc.Message);
 			//if (!exc.Message.ToUpper().StartsWith("The remote name could not be resolved:".ToUpper()))
 			//	//LoggingClass.AddToLogList(UserMessages.MessageTypes.PostPHP, exc.Message);
 			//	appendLogTextbox("Post php: " + exc.Message);

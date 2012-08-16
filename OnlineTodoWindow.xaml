@@ -16,7 +16,8 @@
 	</Window.Resources>
 	<Grid>
 		<ListBox Name='listBoxTodoList'
-				 SelectionChanged='listBoxTodoList_SelectionChanged'>
+				 SelectionChanged='listBoxTodoList_SelectionChanged'
+				 ScrollViewer.CanContentScroll='False'>
 			<ListBox.ItemTemplate>
 				<DataTemplate>
 					<Border Padding='10,5'

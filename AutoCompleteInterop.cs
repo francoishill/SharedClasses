@@ -58,11 +58,13 @@ public class AutoCompleteInterop
 		}
 	}
 
-	public static void SetFullAutocompleteListOfRichTextbox(RichTextBox richTextbox, string[] newFullListOfAutocompleteItems)
+	public static void SetFullAutocompleteListOfRichTextbox(RichTextBox richTextbox, string[] newFullListOfAutocompleteItems, Action<string> actionOnError)
 	{
-		if (!richTextboxListWithAutocompleteEnabled.ContainsKey(richTextbox) &&
-			UserMessages.ShowWarningMessage("Cannot find linked autocomplete popup form for richTextbox: " + richTextbox.Name))
+		if (!richTextboxListWithAutocompleteEnabled.ContainsKey(richTextbox))// &&
+		{
+			actionOnError("Cannot find linked autocomplete popup form for richTextbox: " + richTextbox.Name);
 			return;
+		}
 		richTextboxListWithAutocompleteEnabled[richTextbox].completeAutocompleteList = newFullListOfAutocompleteItems;
 	}
 
@@ -86,10 +88,10 @@ public class AutoCompleteInterop
 
 	private static Dictionary<RichTextBox, AutocompletePopupTreeviewForm> richTextboxListWithAutocompleteEnabled = new Dictionary<RichTextBox, AutocompletePopupTreeviewForm>();
 	private static Dictionary<RichTextBox, Form> parentFormListOfRichTextboxes = new Dictionary<RichTextBox, Form>();
-	public static void EnableRichTextboxAutocomplete(RichTextBox richTextbox, string[] fullListOfAutocompleteItems = null)
+	public static void EnableRichTextboxAutocomplete(RichTextBox richTextbox, Action<string> actionOnError, string[] fullListOfAutocompleteItems = null)
 	{
 		if (richTextboxListWithAutocompleteEnabled.ContainsKey(richTextbox))
-			UserMessages.ShowWarningMessage("Autocomplete was already enabled on richtextbox: " + richTextbox.Name);
+			actionOnError("Autocomplete was already enabled on richtextbox: " + richTextbox.Name);
 		else
 		{
 			Form parentFormOfRichTextbox = richTextbox.FindForm();
@@ -139,7 +141,7 @@ public class AutoCompleteInterop
 			richTextbox.KeyDown += (snder, evtargs) =>
 			{
 				if (!richTextboxListWithAutocompleteEnabled.ContainsKey(snder as RichTextBox))
-					UserMessages.ShowWarningMessage("Could not find attached autocomplete popup for richTextbox");
+					actionOnError("Could not find attached autocomplete popup for richTextbox");
 				else
 				{
 					AutocompletePopupTreeviewForm thisAutocompletePopupForm = richTextboxListWithAutocompleteEnabled[snder as RichTextBox];
@@ -207,7 +209,7 @@ public class AutoCompleteInterop
 			richTextbox.TextChanged += (snder, evtargs) =>
 			{
 				if (!richTextboxListWithAutocompleteEnabled.ContainsKey(snder as RichTextBox))
-					UserMessages.ShowWarningMessage("Could not find attached autocomplete popup for richTextbox");
+					actionOnError("Could not find attached autocomplete popup for richTextbox");
 				else
 				{
 					AutocompletePopupTreeviewForm thisAutocompletePopupForm = richTextboxListWithAutocompleteEnabled[snder as RichTextBox];

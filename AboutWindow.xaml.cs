@@ -52,13 +52,13 @@ namespace SharedClasses
 		}
 
 		private static AboutWindow aboutWindow = null;
-		public static void ShowAboutWindow()
+		public static void ShowAboutWindow(Action<string> actionOnError)
 		{
 			if (aboutWindow == null)
 			{
 				Process currProc = Process.GetCurrentProcess();
 				if (currProc == null)
-					UserMessages.ShowWarningMessage("Cannot find current process");
+					actionOnError("Cannot find current process");
 				else
 				{
 					aboutWindow = new AboutWindow(currProc.MainModule.FileName);

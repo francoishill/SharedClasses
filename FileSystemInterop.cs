@@ -42,11 +42,11 @@ public class FileSystemInterop
 
 	//private const string EncodedCharStart = "[{_";
 	//private const string EncodedCharEnd = "_}]";
-	public static string FilenameEncodeToValid(string wantedFilename)
+	public static string FilenameEncodeToValid(string wantedFilename, Action<string> actionOnError)
 	{
 		string result = wantedFilename;
 
-		result = EncodeAndDecodeInterop.EncodeStringHex(result);
+		result = EncodeAndDecodeInterop.EncodeStringHex(result, actionOnError);
 
 		//var invalidChars = Path.GetInvalidFileNameChars();
 		//foreach (char c in invalidChars)

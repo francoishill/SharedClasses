@@ -62,14 +62,14 @@ namespace SharedClasses
 
 		private void Button_Click_4(object sender, RoutedEventArgs e)
 		{
-			//NamedPipesInterop.NamedPipeServer.ClientApplication ra = (sender as FrameworkElement).DataContext as NamedPipesInterop.NamedPipeServer.ClientApplication;
-			WindowMessagesInterop.RegisteredApp ra = (sender as FrameworkElement).DataContext as WindowMessagesInterop.RegisteredApp;
-			if (ra == null)
-				return;
+			////NamedPipesInterop.NamedPipeServer.ClientApplication ra = (sender as FrameworkElement).DataContext as NamedPipesInterop.NamedPipeServer.ClientApplication;
+			//WindowMessagesInterop.RegisteredApp ra = (sender as FrameworkElement).DataContext as WindowMessagesInterop.RegisteredApp;
+			//if (ra == null)
+			//    return;
 
-			string errStarting;
-			if (!ra.StartProcessWithName(out errStarting))
-				UserMessages.ShowErrorMessage(errStarting);
+			//string errStarting;
+			//if (!ra.StartProcessWithName(out errStarting))
+			//    UserMessages.ShowErrorMessage(errStarting);
 		}
 
 		private void Button_Click_5(object sender, RoutedEventArgs e)

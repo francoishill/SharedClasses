@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SharedClasses
 {
-	public class EnumsInterop
+	public static class EnumsInterop
 	{
 		/// <summary>
 		/// Use this function if a enum has [Description] values to get the description.
@@ -20,7 +20,7 @@ namespace SharedClasses
 		/// </summary>
 		/// <param name="value">The enum.whatever to get the description of.</param>
 		/// <returns>The description of the enum.whatever.</returns>
-		public static string GetEnumDescription(Enum value)
+		public static string GetEnumDescription<T>(this T value) where T : struct
 		{
 			System.Reflection.FieldInfo fi = value.GetType().GetField(value.ToString());
 			System.ComponentModel.DescriptionAttribute[] attributes =
@@ -29,12 +29,20 @@ namespace SharedClasses
 			return (attributes.Length > 0) ? attributes[0].Description : value.ToString();
 		}
 
-		public static List<string> GetStringListOfEnumNames(Type EnumType)
+		public static List<string> GetStringListOfEnumNames(this Type EnumType)
 		{
 			List<string> tmplist = new List<string>();
 			foreach (string s in Enum.GetNames(EnumType))
 				tmplist.Add(s);
 			return tmplist;
+		}
+
+		public static Dictionary<T, string> GetDictionaryWithDescriptions<T>(this Type enumType) where T : struct
+		{
+			Dictionary<T, string> tmpdict = new Dictionary<T, string>();
+			foreach (T en in Enum.GetValues(enumType))
+				tmpdict.Add(en, en.GetEnumDescription());
+			return tmpdict;
 		}
 	}
 }

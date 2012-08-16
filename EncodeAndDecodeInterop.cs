@@ -165,7 +165,7 @@ namespace SharedClasses
 
 		private const string cDefaultHexChars = "0123456789ABCDEF";
 
-		public static bool EncodeFileToHex(string originalFilePath, string outputFilePath)
+		public static bool EncodeFileToHex(string originalFilePath, string outputFilePath, Action<string> actionOnError)
 		{
 			using (IndeterminateProgress min = new IndeterminateProgress("File2Hex: " + Path.GetFileName(originalFilePath), true))
 			{
@@ -180,7 +180,7 @@ namespace SharedClasses
 					int actualread = fin.Read(buffer, 0, bufferlength);
 					while (actualread > 0)
 					{
-						sw.Write(EncodeBytesToHex(buffer, 0, actualread));
+						sw.Write(EncodeBytesToHex(buffer, 0, actualread, actionOnError));
 						actualread = fin.Read(buffer, 0, bufferlength);
 
 						if (cancelled)
@@ -193,7 +193,7 @@ namespace SharedClasses
 			}
 		}
 
-		public static string EncodeBytesToHex(byte[] bytesToEncode, int offset, int count, string Hex16CharactersToUse = null)
+		public static string EncodeBytesToHex(byte[] bytesToEncode, int offset, int count, Action<string> actionOnError, string Hex16CharactersToUse = null)
 		{
 			string _16charsToUse = Hex16CharactersToUse;
 			if (_16charsToUse == null)
@@ -219,13 +219,14 @@ namespace SharedClasses
 				}
 				catch (Exception exc)
 				{
-					UserMessages.ShowErrorMessage("Error, could not encode hex, byte " + b.ToString() + ": " + Environment.NewLine + exc.Message, "Exception error");
+					actionOnError("Error, could not encode hex, byte " + b.ToString() + ": " + Environment.NewLine + exc.Message);
+					//UserMessages.ShowErrorMessage("Error, could not encode hex, byte " + b.ToString() + ": " + Environment.NewLine + exc.Message, "Exception error");
 				}
 			}
 			return tmpstr.ToString();
 		}
 
-		public static string EncodeStringHex(string StringToEncode, string Hex16CharactersToUse = null)
+		public static string EncodeStringHex(string StringToEncode, Action<string> actionOnError, string Hex16CharactersToUse = null)
 		{
 			string _16charsToUse = Hex16CharactersToUse;
 			if (_16charsToUse == null)
@@ -244,7 +245,8 @@ namespace SharedClasses
 				}
 				catch (Exception exc)
 				{
-					UserMessages.ShowErrorMessage("Error, could not encode hex, char " + c.ToString() + ", (int)char = " + (int)c + ": " + Environment.NewLine + exc.Message, "Exception error");
+					actionOnError("Error, could not encode hex, char " + c.ToString() + ", (int)char = " + (int)c + ": " + Environment.NewLine + exc.Message);
+					//UserMessages.ShowErrorMessage("Error, could not encode hex, char " + c.ToString() + ", (int)char = " + (int)c + ": " + Environment.NewLine + exc.Message, "Exception error");
 				}
 			}
 			return tmpstr;

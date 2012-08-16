@@ -234,4 +234,27 @@ public class ThreadingInterop
 			disposed = true;
 		}
 	}
+
+	public static void ActionWithTimeout<T>(Action<T> action, int timeoutMilliseconds, T arg, Action<string> actionOnError)
+	{
+		try
+		{
+			Action wrappedAction = () =>
+			{
+				action(arg);
+			};
+
+			IAsyncResult result = wrappedAction.BeginInvoke(null, null);
+
+			if (result.AsyncWaitHandle.WaitOne(timeoutMilliseconds))
+			{
+				wrappedAction.EndInvoke(result);
+			}
+
+		}
+		catch (Exception ex)
+		{
+			actionOnError(ex.Message);
+		}
+	}
 }

@@ -98,6 +98,21 @@ public class NsisInterop
 		SectionGroupLines.Add(@"	SetOutPath ""$INSTDIR""");
 		SectionGroupLines.Add(@"  SetOverwrite ifnewer");
 		SectionGroupLines.Add(@"  File /a /x *.pdb /x *.application /x *.vshost.* /x *.manifest" + MainProgram_FaceDetectionNsisExclusionList() + @" """ + PublishedDir + @"\*.*""");
+
+		Prerequisites are NSIS plugins = DotNetChecker.dll, inetc.dll
+		see following lines how to download file with NSIS from internet
+		//RetryDownload:
+		//NSISdl::download http://www.domain.com/file localfile.exe
+		//Pop $R4
+		//StrCmp $R4 "success" Success
+		//;StrCmp $R4 "cancel" DownloadCanceled
+		//;IntCmp $R5 $R0 NoSuccess
+		//;;DetailPrint "Download failed (error $R4)" ;, trying with other mirror"
+		//MessageBox MB_RETRYCANCEL "Download failed, retry download?" IDRETRY RetryDownload
+		//    DetailPrint "Download unsuccessful (reason = $R4), cannot install ${PRODUCT_NAME}"
+		//    Abort ; causes installer to quit.
+		//Success:
+
 		if (WriteIntoRegistryForWindowsAutostartup) SectionGroupLines.Add(@"  WriteRegStr HKCU ""SOFTWARE\Microsoft\Windows\CurrentVersion\Run"" '${PRODUCT_NAME}' '$INSTDIR\${PRODUCT_EXE_NAME}'");
 		SectionGroupLines.Add(@"SectionEnd");
 

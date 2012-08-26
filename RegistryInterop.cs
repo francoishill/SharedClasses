@@ -341,17 +341,29 @@ namespace SharedClasses
 			public List<string> GetRegistryAssociationNsisLines()
 			{
 				List<string> nsisLines = new List<string>();
+				const string labelStart = "defaultkeyIsBlank";
+				int tmpcounter = 0;
+
 				foreach (SubContextMenuItem subcommand in this.SubCommands)
 					foreach (string pathInClassesRoot in subcommand.FileExtensionsInClassesRoot)
 					{
-						string pathInShell = pathInClassesRoot + @"\shell\" + this.MainmenuItemRegistryName;
+						tmpcounter++;
+						nsisLines.Add("");
+						nsisLines.Add(string.Format("StrCpy $classesRootMainKey \"{0}\" \"\" 0", pathInClassesRoot));
+						nsisLines.Add("ReadRegStr $0 HKCR $classesRootMainKey \"\"");
+						nsisLines.Add(string.Format("StrCmp $0 \"\" {0} 0", labelStart + tmpcounter));
+						nsisLines.Add(string.Format("StrCpy $classesRootMainKey $0 \"\" 0 ;the (default) value of CLASSES_ROOT\\{0} is not empty, using its value to get new path in CLASSES_ROOT", pathInClassesRoot));
+						nsisLines.Add(string.Format("{0}:", labelStart + tmpcounter));
+
+						//string pathInShell = pathInClassesRoot + @"\shell\" + this.MainmenuItemRegistryName;
+						string pathInShell = @"$classesRootMainKey\shell\" + this.MainmenuItemRegistryName;
 
 						string tmpline = GetNsisWriteRegStrLine(RegistryRootKeys.HKCR, pathInShell, "Icon", "$\\\"" + this.MainmenuItemIconpath.Trim('\\') + "$\\\"");
-						if (!nsisLines.Contains(tmpline))
-							nsisLines.Add(tmpline);
+						//if (!nsisLines.Contains(tmpline))
+						nsisLines.Add(tmpline);
 						tmpline = GetNsisWriteRegStrLine(RegistryRootKeys.HKCR, pathInShell, "SubCommands", GetSubcommandNamesConcatenated(pathInClassesRoot));
-						if (!nsisLines.Contains(tmpline))
-							nsisLines.Add(tmpline);
+						//if (!nsisLines.Contains(tmpline))
+						nsisLines.Add(tmpline);
 					}
 
 				foreach (SubContextMenuItem subcommand in this.SubCommands)
@@ -373,12 +385,23 @@ namespace SharedClasses
 			public List<string> GetRegistryUnassociationNsisLines()
 			{
 				List<string> nsisLines = new List<string>();
+				const string labelStart = "defaultkeyIsBlank";
+				int tmpcounter = 0;
+
 				foreach (SubContextMenuItem subcommand in this.SubCommands)
 					foreach (string pathInClassesRoot in subcommand.FileExtensionsInClassesRoot)
 					{
-						string tmpline = GetNsisDeleteRegKeyLine(RegistryRootKeys.HKCR, pathInClassesRoot + @"\shell\" + this.MainmenuItemRegistryName);
-						if (!nsisLines.Contains(tmpline))
-							nsisLines.Add(tmpline);
+						tmpcounter++;
+						nsisLines.Add("");
+						nsisLines.Add(string.Format("StrCpy $classesRootMainKey \"{0}\" \"\" 0", pathInClassesRoot));
+						nsisLines.Add("ReadRegStr $0 HKCR $classesRootMainKey \"\"");
+						nsisLines.Add(string.Format("StrCmp $0 \"\" {0} 0", labelStart + tmpcounter));
+						nsisLines.Add(string.Format("StrCpy $classesRootMainKey $0 \"\" 0 ;the (default) value of CLASSES_ROOT\\{0} is not empty, using its value to get new path in CLASSES_ROOT", pathInClassesRoot));
+						nsisLines.Add(string.Format("{0}:", labelStart + tmpcounter));
+
+						string tmpline = GetNsisDeleteRegKeyLine(RegistryRootKeys.HKCR, @"$classesRootMainKey\shell\" + this.MainmenuItemRegistryName);
+						//if (!nsisLines.Contains(tmpline))
+						nsisLines.Add(tmpline);
 					}
 
 				foreach (SubContextMenuItem subcommand in this.SubCommands)

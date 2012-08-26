@@ -20,6 +20,7 @@ namespace SharedClasses
 					OnlineSettings.OnlineAppsSettings.Instance.AppsDownloadFtpUsername,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,
 					OnlineSettings.OnlineAppsSettings.Instance.AppsDownloadFtpPassword,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,
 					OnlineSettings.AutoSyncSettings.Instance.OnlineXDeltaExeFileUrl,
+					(err) => UserMessages.ShowErrorMessage(err),
 					textFeedbackHandler);
 			}
 

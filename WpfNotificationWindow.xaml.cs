@@ -14,6 +14,7 @@ using System.Windows.Shapes;
 using System.Collections.ObjectModel;
 using System.Windows.Media.Animation;
 using System.Threading;
+using System.Windows.Threading;
 
 namespace SharedClasses
 {
@@ -22,7 +23,29 @@ namespace SharedClasses
 	/// </summary>
 	public partial class WpfNotificationWindow : Window
 	{
-		private static ObservableCollection<NotificationClass> notifications = new ObservableCollection<NotificationClass>();
+		private static ObservableCollection<NotificationClass> _notifications;// = new ObservableCollection<NotificationClass>();
+		private static ObservableCollection<NotificationClass> notifications
+		{
+			get
+			{
+				if (_notifications == null)
+				{
+					_notifications = new ObservableCollection<NotificationClass>();
+					//_notificationCreatedThread = Thread.CurrentThread;
+				}
+				return _notifications;
+			}
+		}
+		//private static Thread _notificationCreatedThread;
+		//private static Thread notificationCreatedThread
+		//{
+		//    get
+		//    {
+		//        var not = notifications;//Initializes the _notificationCreatedThread
+		//        return _notificationCreatedThread;
+		//    }
+		//}
+
 		private static WpfNotificationWindow notificationWindow;
 		private static System.Threading.Timer timerToCheckForTimedOutNotifications;
 		//private List<NotificationClass> notificationWithTimeouts = new List<NotificationClass>();
@@ -38,11 +61,14 @@ namespace SharedClasses
 					thread.Abort();
 			};
 
-#if WINFORMS
-			System.Windows.Forms.Application.ApplicationExit += (sn, ev) => actionOnAppClose();
-#else
+#if WPF
 			if (Application.Current != null)//It is an WPF application
-				Application.Current.SessionEnding += (sn, ev) => actionOnAppClose();
+				Application.Current.Dispatcher.Invoke((Action)delegate
+				{
+					Application.Current.SessionEnding += (sn, ev) => actionOnAppClose();
+				});
+#else
+			System.Windows.Forms.Application.ApplicationExit += (sn, ev) => actionOnAppClose();
 #endif
 
 			this.Top = SystemParameters.WorkArea.Top;
@@ -51,7 +77,13 @@ namespace SharedClasses
 			this.Height = SystemParameters.WorkArea.Height;// +7;
 			this.Width = SystemParameters.WorkArea.Width;// +7;
 
-			notifications.CollectionChanged += delegate { buttonCloseAllNotifications.Visibility = notifications.Count > 1 ? Visibility.Visible : Visibility.Hidden; };
+			notifications.CollectionChanged += delegate
+			{
+				Dispatcher.Invoke((Action)delegate
+				{
+					buttonCloseAllNotifications.Visibility = notifications.Count > 1 ? Visibility.Visible : Visibility.Hidden;
+				});
+			};
 			InitializeTimerToCheckForNotificationTimeouts();
 		}
 
@@ -96,20 +128,34 @@ namespace SharedClasses
 					rightClickCallback, rightClickCallbackArgument,
 					middleClickCallback, middleClickCallbackArgument,
 					onCloseCallback, onCloseCallbackArgument);
-			notifications.Insert(0, notif);
 
 			thread = new Thread(() =>
 			{
+				bool justcreated = false;
 				if (notificationWindow == null)
 				{
+					justcreated = true;
 					notificationWindow = new WpfNotificationWindow();
-					notificationWindow.listboxNotificationList.ItemsSource = notifications;
 				}
-				if (!notificationWindow.IsVisible)
-					notificationWindow.ShowDialog();
-				notificationWindow.BringIntoView();
-				notificationWindow.Topmost = !notificationWindow.Topmost;
-				notificationWindow.Topmost = !notificationWindow.Topmost;
+				notificationWindow.Dispatcher.Invoke(
+					(Action)delegate
+					{
+						try
+						{
+							if (justcreated)
+								notificationWindow.listboxNotificationList.ItemsSource = notifications;
+							notificationWindow.BringIntoView();
+							notificationWindow.Topmost = !notificationWindow.Topmost;
+							notificationWindow.Topmost = !notificationWindow.Topmost;
+							notifications.Insert(0, notif);
+							if (!notificationWindow.IsVisible)
+								notificationWindow.ShowDialog();
+						}
+						catch
+						{
+						}
+					});
+
 			});
 			thread.SetApartmentState(ApartmentState.STA);
 			thread.Start();
@@ -156,9 +202,13 @@ namespace SharedClasses
 			{
 				try
 				{
-					notificationWindow.Close();
+					notificationWindow.Dispatcher.Invoke((Action)delegate
+					{
+						notificationWindow.Close();
+					});
 				}
-				catch { }
+				catch //(Exception exc)
+				{ }
 			}
 		}
 
@@ -171,6 +221,12 @@ namespace SharedClasses
 		{
 			Border notifBorder = sender as Border;
 			if (notifBorder == null) return;
+
+			NotificationClass notif1 = notifBorder.DataContext as NotificationClass;
+			if (notif1 != null)
+				notif1.RemoveCloseCallback();
+
+			//This happens if clicked inside border, not close button
 			var notif = FadeOutAndRemoveNotificationFromBorder(notifBorder);
 			//notifications.Remove(notif);
 			switch (e.ChangedButton)
@@ -346,6 +402,8 @@ namespace SharedClasses
 		{
 			Dispose(false);
 		}
+
+		public void RemoveCloseCallback() { OnCloseCallback = null; }
 
 		private bool IsDisposed=false;
 		public void Dispose()

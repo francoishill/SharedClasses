@@ -267,6 +267,7 @@ namespace SharedClasses
 					NetworkInterop.StartServer_FileStream(
 						null,//tmpCommand,
 						out listeningSocket,
+						(err) => UserMessages.ShowErrorMessage(err),
 						MainFormUsedForShuttingDownServers,
 						TextFeedbackEvent: textFeedbackEvent,
 						ProgressChangedEvent: progressChangedEvent);

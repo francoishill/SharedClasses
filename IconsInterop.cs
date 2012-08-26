@@ -189,7 +189,7 @@ namespace SharedClasses
 			{
 			}
 
-			public System.Drawing.Icon Extract(string File, IconSize Size)
+			public static System.Drawing.Icon Extract(string File, IconSize Size)
 			{
 				IntPtr hIcon;
 				SHFILEINFO shinfo = new SHFILEINFO();
@@ -206,9 +206,9 @@ namespace SharedClasses
 				return System.Drawing.Icon.FromHandle(shinfo.hIcon);
 			}
 
-			public System.Drawing.Icon Extract(string File)
+			public static System.Drawing.Icon Extract(string File)
 			{
-				return this.Extract(File, IconSize.Small);
+				return Extract(File, IconSize.Small);
 			}
 		}
 	}

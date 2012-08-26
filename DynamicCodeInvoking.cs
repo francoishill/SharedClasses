@@ -592,7 +592,7 @@ public class DynamicCodeInvoking
 	{
 		try
 		{
-			var filepath = SettingsInterop.GetFullFilePathInLocalAppdata(FileSystemInterop.FilenameEncodeToValid(Name) + ".json", "JsonData", FileSystemInterop.FilenameEncodeToValid(Category));
+			var filepath = SettingsInterop.GetFullFilePathInLocalAppdata(FileSystemInterop.FilenameEncodeToValid(Name, (err) => UserMessages.ShowErrorMessage(err)) + ".json", "JsonData", FileSystemInterop.FilenameEncodeToValid(Category, (err) => UserMessages.ShowErrorMessage(err)));
 			File.WriteAllText(filepath, jsonString);
 			return new RunCodeReturnStruct()
 			{
@@ -618,7 +618,7 @@ public class DynamicCodeInvoking
 	{
 		try
 		{
-			var filepath = SettingsInterop.GetFullFilePathInLocalAppdata(FileSystemInterop.FilenameEncodeToValid(Name) + ".json", "JsonData", FileSystemInterop.FilenameEncodeToValid(Category));
+			var filepath = SettingsInterop.GetFullFilePathInLocalAppdata(FileSystemInterop.FilenameEncodeToValid(Name, (err) => UserMessages.ShowErrorMessage(err)) + ".json", "JsonData", FileSystemInterop.FilenameEncodeToValid(Category, (err) => UserMessages.ShowErrorMessage(err)));
 			var jsonStr = File.ReadAllText(filepath);
 			return new RunCodeReturnStruct()
 			{

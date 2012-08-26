@@ -311,6 +311,10 @@ public class VisualStudioInterop
 		string projDir =
                     Directory.Exists(projName) ? projName :
 						Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects\" + projName;
+
+		if (Directory.Exists(projName))
+			projName = Path.GetFileNameWithoutExtension(projName);
+
 		while (projDir.EndsWith("\\")) projDir = projDir.Substring(0, projDir.Length - 1);
 		string projFolderName = projDir.Split('\\')[projDir.Split('\\').Length - 1];
 		string csprojFileName = projDir + "\\" + projFolderName + ".csproj";
@@ -394,8 +398,11 @@ public class VisualStudioInterop
 
 				//DONE TODO: Must make provision if pc (to do building and compiling of NSIS scripts), does not have the DotNetChecker.dll plugin for NSIS
 				//bool DotNetCheckerDllFileFound = false;
-				string DotNetCheckerFilenameEndswith = "DotNetChecker.dll";
-				string dotnetCheckerDllPath = @"C:\Program Files (x86)\NSIS\Plugins\" + DotNetCheckerFilenameEndswith;
+				//string DotNetCheckerFilenameEndswith = "DotNetChecker.dll";
+				//string dotnetCheckerDllPath = @"C:\Program Files (x86)\NSIS\Plugins\" + DotNetCheckerFilenameEndswith;
+
+				string nsisDir = NsisInterop.GetNsisInstallDirectory();
+				string dotnetCheckerDllPath = Path.Combine(nsisDir, "Plugins", "dotnetchecker.dll");
 
 				if (!File.Exists(dotnetCheckerDllPath))
 				{
@@ -405,6 +412,7 @@ public class VisualStudioInterop
 							OnlineSettings.OnlineAppsSettings.Instance.AppsDownloadFtpUsername,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,
 							OnlineSettings.OnlineAppsSettings.Instance.AppsDownloadFtpPassword,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,
 							OnlineSettings.PublishSettings.Instance.OnlineDotnetCheckerDllFileUrl,
+							err => TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, err),
 							textFeedbackEvent);
 					if (downloadededPath == null)
 						UserMessages.ShowWarningMessage("Could not find (or download) DotNetChecker.dll from URL: " + OnlineSettings.PublishSettings.Instance.OnlineDotnetCheckerDllFileUrl);
@@ -617,14 +625,25 @@ public class VisualStudioInterop
 						"Attempting Ftp Uploading of Setup file and index file for " + projName);
 				string uriAfterUploading = GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForAFTERvspublishing() + "/" + validatedUrlsectionForProjname;
 
+				bool isAutoUpdater = projName.Replace(" ", "").Equals("AutoUpdater", StringComparison.InvariantCultureIgnoreCase);
+				string clonedSetupFilepathIfAutoUpdater = 
+					//Do not change this name, it is used in NSIS for downloading AutoUpdater if not installed yet
+					Path.Combine(Path.GetDirectoryName(publishedSetupPath), "AutoUpdater_SetupLatest.exe");
+
 				bool uploaded = true;
+				if (isAutoUpdater)
+					File.Copy(publishedSetupPath, clonedSetupFilepathIfAutoUpdater, true);
+
 				if (!NetworkInterop.FtpUploadFiles(
 					//Task uploadTask = NetworkInterop.FtpUploadFiles(
 						textfeedbackSenderObject,
 						rootFtpUri,
 						GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,//NetworkInterop.ftpUsername,
 						GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,//NetworkInterop.ftpPassword,
-						new string[] { publishedSetupPath, htmlFilePath },
+						isAutoUpdater
+						? new string[] { publishedSetupPath, htmlFilePath, clonedSetupFilepathIfAutoUpdater }
+						: new string[] { publishedSetupPath, htmlFilePath },
+						err => TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, err),
 						OpenWebsite ? uriAfterUploading : null,
 						textFeedbackEvent: textFeedbackEvent,
 						progressChanged: progressChanged))

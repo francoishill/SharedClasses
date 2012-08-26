@@ -9,6 +9,7 @@ using System.Windows.Forms;
 using System.IO;
 using System.Drawing;
 using SharedClasses;
+using Microsoft.Win32;
 
 public class NsisInterop
 {
@@ -68,7 +69,12 @@ public class NsisInterop
 			: rootProjDir + @"\" + VsProjectName + @"\" + VsProjectName + subDirInProj;
 		List<string> SectionGroupLines = new List<string>();
 
+		bool isAutoUpdater = ProductPublishedNameIn.Replace(" ", "").Equals("AutoUpdater", StringComparison.InvariantCultureIgnoreCase);
+
 		SectionGroupLines.Add("Function .onInit");
+		if (!isAutoUpdater)
+			if (WriteIntoRegistryForWindowsAutostartup)
+				SectionGroupLines.Add("StrCpy $state_autostartCheckbox 1");
 		SectionGroupLines.Add("	!include \"x64.nsh\"");
 		SectionGroupLines.Add("	; This checks if nsis is running under wow64 (since nsis is only 32bit)");
 		SectionGroupLines.Add("	; hopefully this will be dependable in the future too...");
@@ -99,21 +105,46 @@ public class NsisInterop
 		SectionGroupLines.Add(@"  SetOverwrite ifnewer");
 		SectionGroupLines.Add(@"  File /a /x *.pdb /x *.application /x *.vshost.* /x *.manifest" + MainProgram_FaceDetectionNsisExclusionList() + @" """ + PublishedDir + @"\*.*""");
 
-		Prerequisites are NSIS plugins = DotNetChecker.dll, inetc.dll
-		see following lines how to download file with NSIS from internet
-		//RetryDownload:
-		//NSISdl::download http://www.domain.com/file localfile.exe
-		//Pop $R4
-		//StrCmp $R4 "success" Success
-		//;StrCmp $R4 "cancel" DownloadCanceled
-		//;IntCmp $R5 $R0 NoSuccess
-		//;;DetailPrint "Download failed (error $R4)" ;, trying with other mirror"
-		//MessageBox MB_RETRYCANCEL "Download failed, retry download?" IDRETRY RetryDownload
-		//    DetailPrint "Download unsuccessful (reason = $R4), cannot install ${PRODUCT_NAME}"
-		//    Abort ; causes installer to quit.
-		//Success:
+		//If NSISdl does not work right may be required to have inetc.dll, NSISdl is already part of NSIS installation`
+		//string inetcDllPath = Path.Combine(nsisDir, "Plugins", "inetc.dll");
 
-		if (WriteIntoRegistryForWindowsAutostartup) SectionGroupLines.Add(@"  WriteRegStr HKCU ""SOFTWARE\Microsoft\Windows\CurrentVersion\Run"" '${PRODUCT_NAME}' '$INSTDIR\${PRODUCT_EXE_NAME}'");
+		string NsisUrlLibDllPath = Path.Combine(GetNsisInstallDirectory() ?? "c:\\zzzzzz", "Plugins", "NsisUrlLib.dll");
+		if (!File.Exists(NsisUrlLibDllPath))
+			UserMessages.ShowErrorMessage("NSIS will not compile, missing plugin: " + NsisUrlLibDllPath);
+
+		SectionGroupLines.Add(@"IfFileExists ""C:\Program Files (x86)\Auto Updater\AutoUpdater.exe"" AutoUpdaterFound");
+		SectionGroupLines.Add(@"	  RetryDownload:");
+		SectionGroupLines.Add(@"	  ;All following lines removed, gave error when trying to read content from a URL");
+		SectionGroupLines.Add(@"	  ;NsisUrlLib::UrlOpen /NOUNLOAD ""http://apps.getmyip.com/json/getautoupdaterlatest"" ;Get content of this page (it returns the URL of newest setup package of AutoUpdater");
+		SectionGroupLines.Add(@"	  ;Pop $7");
+		SectionGroupLines.Add(@"	  ;MessageBox MB_OK $7");
+		SectionGroupLines.Add(@"	  ;NsisUrlLib::IterateLine /NOUNLOAD ;Read the first line (which is the URL)");
+		SectionGroupLines.Add(@"	  ;Pop $7 ;Place the URL read into variable $7");
+		SectionGroupLines.Add(@"	  ;MessageBox MB_OK ""$7""");
+		SectionGroupLines.Add(@"	  ;NSISdl::download ""$7"" tmpAutoUpdater_SetupLatest.exe ;Download the file at this URL");
+		SectionGroupLines.Add(@"	  NSISdl::download ""http://apps.getmyip.com/ownapplications/autoupdater/AutoUpdater_SetupLatest.exe"" tmpAutoUpdater_SetupLatest.exe ; Download latest AutoUpdater Setup");
+		SectionGroupLines.Add(@"	  Pop $R4 ;Read the result of the download");
+		SectionGroupLines.Add(@"	  StrCmp $R4 ""success"" SuccessfullyDownloadedAutoUpdater");
+		SectionGroupLines.Add(@"	  ;StrCmp $R4 ""cancel"" DownloadCanceled");
+		SectionGroupLines.Add(@"	  ;IntCmp $R5 $R0 NoSuccess");
+		SectionGroupLines.Add(@"	  ;;DetailPrint ""Download failed (error $R4)"" ;, trying with other mirror");
+		SectionGroupLines.Add(@"	  MessageBox MB_RETRYCANCEL ""Download failed, retry download?"" IDRETRY RetryDownload");
+		SectionGroupLines.Add(@"	  	DetailPrint ""Download unsuccessful for AutoUpdater (reason = $R4), ${PRODUCT_NAME} will not automatically be updated""");
+		SectionGroupLines.Add(@"	  	;Abort ; causes installer to quit.");
+		SectionGroupLines.Add(@"	  	goto AutoUpdaterDownloadSkipped");
+		SectionGroupLines.Add(@"	  SuccessfullyDownloadedAutoUpdater:");
+		SectionGroupLines.Add(@"	  ExecWait ""tmpAutoUpdater_SetupLatest.exe /S""");
+		SectionGroupLines.Add(@"	  Delete tmpAutoUpdater_SetupLatest.exe");
+		SectionGroupLines.Add(@"	  ;nsExec::Exec tmpAutoUpdater_SetupLatest.exe /S ;Install AutoUpdater silently");
+		SectionGroupLines.Add(@"AutoUpdaterDownloadSkipped:");
+		SectionGroupLines.Add(@"AutoUpdaterFound:");
+
+		if (!isAutoUpdater)
+		{
+			SectionGroupLines.Add(@"${If} $state_autostartCheckbox <> 0");
+			SectionGroupLines.Add(@"  WriteRegStr HKCU ""SOFTWARE\Microsoft\Windows\CurrentVersion\Run"" '${PRODUCT_NAME}' '$INSTDIR\${PRODUCT_EXE_NAME}'");
+			SectionGroupLines.Add(@"${EndIf}");
+		}
 		SectionGroupLines.Add(@"SectionEnd");
 
 		//Section "Plugins" SEC002
@@ -205,6 +236,56 @@ public class NsisInterop
 			WriteIntoRegistryForWindowsAutostartup,
 			HasPlugins,
 			contextMenuItems);//SectionDescriptions);
+	}
+
+	public static string GetNsisInstallDirectory()
+	{
+		string subPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall";
+		RegistryKey uninstallKey = null;
+		RegistryKey nsisKey = null;
+
+		foreach (RegistryView rv in Enum.GetValues(typeof(RegistryView)))
+		{
+			if (uninstallKey != null)
+				uninstallKey.Close();
+			uninstallKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, rv)
+			 .OpenSubKey(subPath);
+			if (uninstallKey.GetSubKeyNames().Contains("NSIS", StringComparer.InvariantCultureIgnoreCase))
+			{
+				nsisKey = uninstallKey.OpenSubKey("NSIS");
+				break;
+			}
+			else
+			{
+				uninstallKey.Close();
+				uninstallKey = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, rv)
+					.OpenSubKey(subPath);
+				if (uninstallKey.GetSubKeyNames().Contains("NSIS", StringComparer.InvariantCultureIgnoreCase))
+				{
+					nsisKey = uninstallKey.OpenSubKey("NSIS");
+					break;
+				}
+			}
+		}
+		uninstallKey.Close();
+
+		if (nsisKey != null)
+		{
+			try
+			{
+				object installLocationObj = nsisKey.GetValue("InstallLocation", null);
+				if (installLocationObj != null)
+				{
+					string directoryWhereNsisIsInstalled = installLocationObj.ToString();
+					return directoryWhereNsisIsInstalled;
+				}
+			}
+			finally
+			{
+				nsisKey.Close();
+			}
+		}
+		return null;//Did not find NSIS directory in Registry
 	}
 
 	private static string MainProgram_FaceDetectionNsisExclusionList()
@@ -568,6 +649,8 @@ public class NsisInterop
 		{
 			List<string> tmpList = new List<string>();
 
+			bool isAutoUpdater = ProductName.Replace(" ", "").Equals("AutoUpdater", StringComparison.InvariantCultureIgnoreCase);
+
 			tmpList.Add(@"; Script generated by the HM NIS Edit Script Wizard.");
 			tmpList.Add("");
 			tmpList.Add(@"; HM NIS Edit Wizard helper defines");
@@ -588,14 +671,28 @@ public class NsisInterop
 			tmpList.Add(@"!define PRODUCT_SETUP_FILENAME """ + (SetupFileName.ToLower().EndsWith(".exe") ? SetupFileName : SetupFileName + ".exe") + @"""");
 			tmpList.Add("");
 
+			tmpList.Add("Var /GLOBAL classesRootMainKey  ;used for reading Registry keys for install/uninstall");
+			if (!isAutoUpdater)
+			{
+				tmpList.Add("Var /GLOBAL autostartCheckbox");
+				tmpList.Add("Var /GLOBAL state_autostartCheckbox");
+			}
+			tmpList.Add("");
+
 			tmpList.Add(@";SetCompressor ""/SOLID"" lzma ;Seems to be using more space..");
 			tmpList.Add(@"SetCompressor " + (CompressorUsed.Solid ? "/SOLID " : "") + (CompressorUsed.Final ? "/FINAL " : "") + CompressorUsed.CompressionMode.ToString());
+			tmpList.Add("");
+			tmpList.Add("BrandingText \"${PRODUCT_NAME} v${PRODUCT_VERSION} (NSIS 2.46)\"");
 			tmpList.Add("");
 			tmpList.Add(@"; MUI 1.67 compatible ------");
 			tmpList.Add(@"!include ""MUI.nsh""");
 			tmpList.Add("");
 			tmpList.Add(@"; DotNetChecker checks and downloads dotnet version");
 			tmpList.Add(@"!include ""DotNetChecker.nsh""");
+			tmpList.Add("");
+
+			tmpList.Add(";To use custom page with checkbox");
+			tmpList.Add(@"!include ""nsDialogs.nsh""");
 			tmpList.Add("");
 
 			tmpList.Add(@"; MUI Settings");
@@ -642,6 +739,25 @@ public class NsisInterop
 				tmpList.Add(@"!define MUI_STARTMENUPAGE_REGISTRY_KEY ""${PRODUCT_UNINST_KEY}""");
 				tmpList.Add(@"!define MUI_STARTMENUPAGE_REGISTRY_VALUENAME ""${PRODUCT_STARTMENU_REGVAL}""");
 				tmpList.Add(@"!insertmacro MUI_PAGE_STARTMENU Application $ICONS_GROUP");
+			}
+
+			if (!isAutoUpdater)
+			{
+				tmpList.Add(@";Checkbox if should autostart with windows");
+				tmpList.Add(@"Function AutostartWithWindowsShow");
+				tmpList.Add(@"		nsDialogs::Create /NOUNLOAD 1018");
+				tmpList.Add(@"		${NSD_CreateCheckbox} 10u 10u 100% 10u ""&Startup with windows""");
+				tmpList.Add(@"		Pop $autostartCheckbox");
+				tmpList.Add(@"		${If} $state_autostartCheckbox <> 0");
+				tmpList.Add(@"			  ${NSD_SetState} $autostartCheckbox 1");
+				tmpList.Add(@"		${EndIf}");
+				tmpList.Add(@"		SetCtlColors $autostartCheckbox "" """);
+				tmpList.Add(@"		nsDialogs::Show");
+				tmpList.Add(@"FunctionEnd");
+				tmpList.Add(@"Function AutostartWithWindowsLeave");
+				tmpList.Add(@"		${NSD_GetState} $autostartCheckbox $state_autostartCheckbox");
+				tmpList.Add(@"FunctionEnd");
+				tmpList.Add(@"Page custom AutostartWithWindowsShow AutostartWithWindowsLeave");
 			}
 
 			tmpList.Add(@"; Instfiles page");
@@ -819,7 +935,8 @@ public class NsisInterop
 
 			tmpList.Add(Spacer + @"DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} ""${PRODUCT_UNINST_KEY}""");
 			tmpList.Add(Spacer + @"DeleteRegKey HKLM ""${PRODUCT_DIR_REGKEY}""");
-			if (UninstallWillDeleteProgramAutoRunInRegistry_CurrentUser) tmpList.Add(Spacer + @"DeleteRegValue HKCU ""SOFTWARE\Microsoft\Windows\CurrentVersion\Run"" '${PRODUCT_NAME}'");
+			//if (UninstallWillDeleteProgramAutoRunInRegistry_CurrentUser)
+			tmpList.Add(Spacer + @"DeleteRegValue HKCU ""SOFTWARE\Microsoft\Windows\CurrentVersion\Run"" '${PRODUCT_NAME}'");
 
 			if (contextMenuItems != null)
 				foreach (var regUnassociatedRegistryline in contextMenuItems.GetRegistryUnassociationNsisLines())

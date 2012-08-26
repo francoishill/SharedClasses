@@ -62,7 +62,8 @@ namespace SharedClasses
 			int err = mciSendString(s_cmd, returnString, cchReturn, hwndCallback.HasValue ? hwndCallback.Value : IntPtr.Zero);
 			if (err != 0)
 			{
-				actionOnError(GetError((uint)err));
+				if (actionOnError != null)
+					actionOnError(GetError((uint)err));
 				return false;
 			}
 			else

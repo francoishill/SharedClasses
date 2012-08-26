@@ -125,6 +125,8 @@ namespace SharedClasses
 
 		public static string GetAppFullPath() { return Environment.GetCommandLineArgs()[0]; }
 		public static string GetApplicationName() { return Path.GetFileNameWithoutExtension(GetAppFullPath()); }
+		
+		[Obsolete("Please use CheckForUpdates in AutoUpdating", true)]
 		public static void CheckForUpdates(Action exitApplicationAction, Action<string> ActionIfUptoDate_Versionstring, Action<string> ActionIfUnableToCheckForUpdates, bool ShowModally = true)//string ApplicationName, string InstalledVersion)
 		//public static void CheckForUpdates(Action exitApplicationAction, bool ShowModally = true, Action<bool?, PublishDetails, PublishDetails> ActionAfterCheck_Uptodate_Currentdetails_OnlineDetails = null)//string ApplicationName, string InstalledVersion)
 		{

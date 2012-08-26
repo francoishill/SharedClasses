@@ -287,7 +287,7 @@ namespace SharedClasses
 			public string _GetFilePathForRegisteringAsMonitored()
 			{
 				return GetFolderForStoringMonitoredFolders() + "\\"
-					+ FileSystemInterop.FilenameEncodeToValid(this.LocalFolderPath) + cMonExtension;
+					+ FileSystemInterop.FilenameEncodeToValid(this.LocalFolderPath, (err) => UserMessages.ShowErrorMessage(err)) + cMonExtension;
 				//+ FileSystemInterop.FilenameEncodeToValid(GetZippedFilename(this.GetMetadataFullpathLocal())) + cMonExtension;
 			}
 			public void RegisterAsMonitoredPath()
@@ -764,7 +764,8 @@ namespace SharedClasses
 					+ "/" + Path.GetDirectoryName(file.RelativePath).Replace("\\", "/"), AutoSyncFtpPortToUse),
 					FtpUsername,
 					FtpPassword,
-					new string[] { patchfiledir });
+					new string[] { patchfiledir },
+					(err) => UserMessages.ShowErrorMessage(err));
 			}
 
 			public bool UploadFilesWithPatches(int newVersion, TextFeedbackEventHandler textFeedbackHandler)
@@ -838,7 +839,8 @@ namespace SharedClasses
 					NetworkInterop.InsertPortNumberIntoUrl(GetServerVersionFolderUri(newVersion) + "/", AutoSyncFtpPortToUse),// + Path.GetDirectoryName(file.RelativePath).Replace("\\", "/"),
 					FtpUsername,
 					FtpPassword,
-					new string[] { zippedJsonpathLocal });
+					new string[] { zippedJsonpathLocal },
+					(err) => UserMessages.ShowErrorMessage(err));
 			}
 
 			private string _SaveJsonReturnZippedPath(string path, TextFeedbackEventHandler textFeedbackHandler)
@@ -887,7 +889,7 @@ namespace SharedClasses
 
 			private bool IsServerLocked()
 			{
-				return NetworkInterop.FtpFileExists(NetworkInterop.InsertPortNumberIntoUrl(this.GetServerLockFileUri(), AutoSyncFtpPortToUse), FtpUsername, FtpPassword) == true;
+				return NetworkInterop.FtpFileExists(NetworkInterop.InsertPortNumberIntoUrl(this.GetServerLockFileUri(), AutoSyncFtpPortToUse), FtpUsername, FtpPassword, (err) => UserMessages.ShowErrorMessage(err)) == true;
 			}
 
 			private bool BytesArraysEqual(byte[] arr1, byte[] arr2)
@@ -915,7 +917,7 @@ namespace SharedClasses
 					byte[] guidBytes = Guid.NewGuid().ToByteArray();
 					File.WriteAllBytes(tmpFilePath, guidBytes);
 					//TODO: FtpUploadFiles returns boolean, is this returned value trustworthy? See steps in upload method itsself
-					if (!NetworkInterop.FtpUploadFiles(null, NetworkInterop.InsertPortNumberIntoUrl(ServerRootUri/*GetRootUserfolderUri()*/, AutoSyncFtpPortToUse), FtpUsername, FtpPassword, new string[] { tmpFilePath }))
+					if (!NetworkInterop.FtpUploadFiles(null, NetworkInterop.InsertPortNumberIntoUrl(ServerRootUri/*GetRootUserfolderUri()*/, AutoSyncFtpPortToUse), FtpUsername, FtpPassword, new string[] { tmpFilePath }, (err) => UserMessages.ShowErrorMessage(err)))
 						return false;
 					if (!DownloadFile(Path.GetDirectoryName(tmpFilePath), /*GetRootUserfolderUri()*/ServerRootUri + "//" + cServerLockFilename, textFeedbackHandler))
 						return false;
@@ -973,7 +975,7 @@ namespace SharedClasses
 				if (!File.Exists(onlineVersionFileLocalTempPath))
 					return false;
 				if (!NetworkInterop.FtpUploadFiles(null, onlineVersionUri, FtpUsername, FtpPassword,
-					new string[] { onlineVersionFileLocalTempPath }))
+					new string[] { onlineVersionFileLocalTempPath }, (err) => UserMessages.ShowErrorMessage(err)))
 					return false;
 				File.WriteAllText(localVersionFile, newVersion.ToString());
 				return true;
@@ -1061,7 +1063,8 @@ namespace SharedClasses
 						NetworkInterop.InsertPortNumberIntoUrl(/*GetRootUserfolderUri()*/ServerRootUri + "/Original/" + Path.GetDirectoryName(af.RelativePath).Replace("\\", "/"), AutoSyncFtpPortToUse),
 						FtpUsername,
 						FtpPassword,
-						new string[] { tempPath }))//GetAbsolutePath(af) }))
+						new string[] { tempPath },
+						(err) => UserMessages.ShowErrorMessage(err)))//GetAbsolutePath(af) }))
 						return false;
 				}
 
@@ -1084,7 +1087,7 @@ namespace SharedClasses
 
 			public bool DownloadFile(string localRoot, string onlineFileFullUrl, TextFeedbackEventHandler textFeedbackHandler)
 			{
-				return NetworkInterop.FtpDownloadFile(null, localRoot, FtpUsername, FtpPassword, NetworkInterop.InsertPortNumberIntoUrl(onlineFileFullUrl, AutoSyncFtpPortToUse), textFeedbackHandler) != null;
+				return NetworkInterop.FtpDownloadFile(null, localRoot, FtpUsername, FtpPassword, NetworkInterop.InsertPortNumberIntoUrl(onlineFileFullUrl, AutoSyncFtpPortToUse), (err) => UserMessages.ShowErrorMessage(err), textFeedbackHandler) != null;
 			}
 
 			public void InitialSetupLocally()
@@ -1107,7 +1110,7 @@ namespace SharedClasses
 				if (!createDir_NullIfExisted.HasValue)
 				{
 					//Server directory already existed
-					bool? serverVersionFileExists = NetworkInterop.FtpFileExists(NetworkInterop.InsertPortNumberIntoUrl(ServerRootUri + "/" + cServerVersionFilename, AutoSyncFtpPortToUse), this.FtpUsername, this.FtpPassword);
+					bool? serverVersionFileExists = NetworkInterop.FtpFileExists(NetworkInterop.InsertPortNumberIntoUrl(ServerRootUri + "/" + cServerVersionFilename, AutoSyncFtpPortToUse), this.FtpUsername, this.FtpPassword, (err) => UserMessages.ShowErrorMessage(err));
 					if (!serverVersionFileExists.HasValue)
 					{
 						//Could not determine if server folder was valid syncing folder
@@ -1152,14 +1155,14 @@ namespace SharedClasses
 
 					string tempVersionPath = tempFolder + "\\" + cServerVersionFilename;
 					File.WriteAllText(tempVersionPath, "1");
-					if (!NetworkInterop.FtpUploadFiles(null, NetworkInterop.InsertPortNumberIntoUrl(this.ServerRootUri, AutoSyncFtpPortToUse), this.FtpUsername, this.FtpPassword, new string[] { tempVersionPath }))
+					if (!NetworkInterop.FtpUploadFiles(null, NetworkInterop.InsertPortNumberIntoUrl(this.ServerRootUri, AutoSyncFtpPortToUse), this.FtpUsername, this.FtpPassword, new string[] { tempVersionPath }, (err) => UserMessages.ShowErrorMessage(err)))
 					{
 						UserMessages.ShowWarningMessage("Unable to initiate syncing, could not upload server version file: " + cServerVersionFilename);
 						return false;
 					}
 					string tempHowToUseFile = tempFolder + "\\" + cNewServerHowToUseFileName;
 					File.WriteAllText(tempHowToUseFile, "This file will eventually contain information of how to use AutoSync");
-					if (!NetworkInterop.FtpUploadFiles(null, NetworkInterop.InsertPortNumberIntoUrl(this.ServerRootUri + "/Original", AutoSyncFtpPortToUse), this.FtpUsername, this.FtpPassword, new string[] { tempHowToUseFile }))
+					if (!NetworkInterop.FtpUploadFiles(null, NetworkInterop.InsertPortNumberIntoUrl(this.ServerRootUri + "/Original", AutoSyncFtpPortToUse), this.FtpUsername, this.FtpPassword, new string[] { tempHowToUseFile }, (err) => UserMessages.ShowErrorMessage(err)))
 					{
 						UserMessages.ShowWarningMessage("Unable to initiate syncing, could not upload server 'How to use' file: " + cNewServerHowToUseFileName);
 						return false;
@@ -1173,7 +1176,7 @@ namespace SharedClasses
 						this.AddedFiles = new List<FileMetaData>();
 					this.AddedFiles.Add(tmpHowToUseFileData);
 					string tempZippedJsonPath = this._SaveJsonReturnZippedPath(tempFolder + "\\" + cMetaDataFilename, textFeedbackHandler);
-					if (!NetworkInterop.FtpUploadFiles(null, NetworkInterop.InsertPortNumberIntoUrl(this.ServerRootUri + "/Patches/Version1", AutoSyncFtpPortToUse), this.FtpUsername, this.FtpPassword, new string[] { tempZippedJsonPath }))
+					if (!NetworkInterop.FtpUploadFiles(null, NetworkInterop.InsertPortNumberIntoUrl(this.ServerRootUri + "/Patches/Version1", AutoSyncFtpPortToUse), this.FtpUsername, this.FtpPassword, new string[] { tempZippedJsonPath }, (err) => UserMessages.ShowErrorMessage(err)))
 					{
 						UserMessages.ShowWarningMessage("Unable to initiate syncing, could not upload server metadata file: " + cMetaDataFilename);
 						return false;

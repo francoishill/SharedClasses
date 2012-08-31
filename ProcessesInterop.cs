@@ -27,8 +27,15 @@ namespace SharedClasses
 		{
 			Process proc = GetRedirectingProcess(startInfo, onOutput, onError);
 
-			if (!proc.Start())
+			try
+			{
+				if (!proc.Start())
+					return false;
+			}
+			catch// (Exception exc)
+			{
 				return false;
+			}
 
 			proc.BeginErrorReadLine();
 			proc.BeginOutputReadLine();
@@ -58,7 +65,7 @@ namespace SharedClasses
 		/// <param name="outputs">The output strings that were redirected from the process</param>
 		/// <param name="errors">The error strings that were redirected from the process.</param>
 		/// <returns>True (ran successfully and had no output/errors), False (Could not run), Null (ran but had output/error feedback).</returns>
-		public static bool? StartProcessCatchOutput(ProcessStartInfo startInfo, out List<string> outputs, out List<string> errors)
+		public static bool? RunProcessCatchOutput(ProcessStartInfo startInfo, out List<string> outputs, out List<string> errors)
 		{
 			List<string> tmpoutputs = new List<string>();
 			List<string> tmperrors = new List<string>();

@@ -49,6 +49,13 @@
 		</Storyboard>
 	</Window.Resources>
 	<Grid>
+		<Label Name='versionStringLabel'
+			   FontSize='8'
+			   Foreground='White'
+			   Background='#000'
+			   VerticalAlignment='Bottom'
+			   Visibility='Hidden'
+			   HorizontalAlignment='Right' />
 		<Button Name='buttonCloseAllNotifications'
 				Content='Close all'
 				FontSize='10'
@@ -56,9 +63,9 @@
 				Foreground='#eee'
 				VerticalAlignment='Bottom'
 				HorizontalAlignment='Right'
-				Margin='0 0 40 0'
+				Margin='0 0 60 0'
 				Visibility='Hidden'
-				Click='Button_Click' />
+				Click='closeAllButton_Click' />
 		<ListBox Name='listboxNotificationList'
 				 VerticalAlignment='Bottom'
 				 HorizontalAlignment='Right'

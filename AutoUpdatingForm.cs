@@ -146,8 +146,8 @@ namespace SharedClasses
 						ActionIfUnableToCheckForUpdates(errIfFail);
 					else
 						WpfNotificationWindow.ShowNotification("Cannot check for updates of application " + ApplicationName + ": " + errIfFail,
-						notificationType: NotificationClass.NotificationTypes.Warning,
-						onCloseCallback: (closeobj) =>
+						notificationType: ShowNoCallbackNotificationInterop.NotificationTypes.Warning,
+						onCloseCallback_WasClickedToCallback: (closeobj, wasclicked) =>
 						{
 							WpfNotificationWindow.CloseNotificationWindow();
 						},
@@ -163,7 +163,7 @@ namespace SharedClasses
 					});
 					WpfNotificationWindow.ShowNotification(
 						string.Format("New update (from {0} to {1}) available for {2} (click to update)", InstalledVersion, detailsIfNewer.ApplicationVersion, ApplicationName),
-						NotificationClass.NotificationTypes.Success,
+						ShowNoCallbackNotificationInterop.NotificationTypes.Success,
 						null,						
 						leftClickCallback: (frm) =>
 						{
@@ -174,7 +174,7 @@ namespace SharedClasses
 								thisform.Show();
 						},
 						leftClickCallbackArgument: tmpform,
-						onCloseCallback: (closeobj) =>
+						onCloseCallback_WasClickedToCallback: (closeobj, wasclicked) =>
 						{
 							WpfNotificationWindow.CloseNotificationWindow();
 						});
@@ -185,8 +185,8 @@ namespace SharedClasses
 						ActionIfUptoDate_Versionstring(InstalledVersion);
 					else
 						WpfNotificationWindow.ShowNotification(ApplicationName + " is up to date, version " + InstalledVersion,
-						notificationType: NotificationClass.NotificationTypes.Subtle,
-						onCloseCallback: (closeobj) =>
+						notificationType: ShowNoCallbackNotificationInterop.NotificationTypes.Subtle,
+						onCloseCallback_WasClickedToCallback: (closeobj, wasclicked) =>
 						{
 							WpfNotificationWindow.CloseNotificationWindow();
 						},

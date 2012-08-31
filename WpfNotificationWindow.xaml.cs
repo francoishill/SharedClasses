@@ -15,6 +15,8 @@ using System.Collections.ObjectModel;
 using System.Windows.Media.Animation;
 using System.Threading;
 using System.Windows.Threading;
+using System.Diagnostics;
+using Microsoft.Win32;
 
 namespace SharedClasses
 {
@@ -46,9 +48,23 @@ namespace SharedClasses
 		//    }
 		//}
 
+		private static string CurrentVersionString = null;
 		private static WpfNotificationWindow notificationWindow;
 		private static System.Threading.Timer timerToCheckForTimedOutNotifications;
 		//private List<NotificationClass> notificationWithTimeouts = new List<NotificationClass>();
+
+		public static void SetCurrentVersionDisplayed(string versionString)
+		{
+			CurrentVersionString = versionString;
+			if (notificationWindow != null)
+			{
+				notificationWindow.Dispatcher.Invoke((Action)delegate
+				{
+					notificationWindow.versionStringLabel.Content = versionString;
+					notificationWindow.versionStringLabel.Visibility = Visibility.Visible;
+				});
+			}
+		}
 
 		public WpfNotificationWindow()
 		{
@@ -101,7 +117,8 @@ namespace SharedClasses
 							DateTime now = DateTime.Now;
 							for (int i = notifications.Count - 1; i >= 0; i--)
 								if (notifications[i].TimeWhenTimedOut.HasValue && now.Subtract(notifications[i].TimeWhenTimedOut.Value).TotalSeconds > 0)
-									InvokeFromSeparateThread((notif) => FadeOutAndRemoveNotificationFromBorder(GetBorderOfNotification(notif as NotificationClass)), notifications[i]);
+									//Notification has timed out and will close now
+									InvokeFromSeparateThread((notif) => FadeOutAndRemoveNotificationFromBorder(GetBorderOfNotification(notif as NotificationClass), false), notifications[i]);
 						}
 					}),
 				null,
@@ -112,23 +129,13 @@ namespace SharedClasses
 		private static Thread thread;
 		public static void ShowNotification(
 			string title, string message,
-			NotificationClass.NotificationTypes notificationType,
+			ShowNoCallbackNotificationInterop.NotificationTypes notificationType,
 			TimeSpan? timeout,
 			Action<object> leftClickCallback, object leftClickCallbackArgument,
 			Action<object> rightClickCallback, object rightClickCallbackArgument,
 			Action<object> middleClickCallback, object middleClickCallbackArgument,
-			Action<object> onCloseCallback, object onCloseCallbackArgument)
+			Action<object, bool> onCloseCallback_WasClickedToCallback, object onCloseCallbackArgument)
 		{
-			var notif = new NotificationClass(
-				//notifications.Count + " " + title, message,
-					title, message,
-					notificationType,
-					timeout,
-					leftClickCallback, leftClickCallbackArgument,
-					rightClickCallback, rightClickCallbackArgument,
-					middleClickCallback, middleClickCallbackArgument,
-					onCloseCallback, onCloseCallbackArgument);
-
 			thread = new Thread(() =>
 			{
 				bool justcreated = false;
@@ -136,10 +143,22 @@ namespace SharedClasses
 				{
 					justcreated = true;
 					notificationWindow = new WpfNotificationWindow();
+					if (CurrentVersionString != null)
+						SetCurrentVersionDisplayed(CurrentVersionString);
 				}
 				notificationWindow.Dispatcher.Invoke(
 					(Action)delegate
 					{
+						var notif = new NotificationClass(
+							//notifications.Count + " " + title, message,
+							title, message,
+							notificationType,
+							timeout,
+							leftClickCallback, leftClickCallbackArgument,
+							rightClickCallback, rightClickCallbackArgument,
+							middleClickCallback, middleClickCallbackArgument,
+							onCloseCallback_WasClickedToCallback, onCloseCallbackArgument);
+
 						try
 						{
 							if (justcreated)
@@ -179,21 +198,22 @@ namespace SharedClasses
 
 		public static void ShowNotification(
 			string message,
-			NotificationClass.NotificationTypes notificationType = NotificationClass.NotificationTypes.Subtle,
+			ShowNoCallbackNotificationInterop.NotificationTypes notificationType = ShowNoCallbackNotificationInterop.NotificationTypes.Subtle,
 			TimeSpan? timeout = null,
 			Action<object> leftClickCallback = null, object leftClickCallbackArgument = null,
 			Action<object> rightClickCallback = null, object rightClickCallbackArgument = null,
 			Action<object> middleClickCallback = null, object middleClickCallbackArgument = null,
-			Action<object> onCloseCallback = null, object onCloseCallbackArgument = null)
+			Action<object, bool> onCloseCallback_WasClickedToCallback = null, object onCloseCallbackArgument = null,
+			string title = null)
 		{
 			ShowNotification(
-				"Notification", message,
+				title ?? "Notification", message,
 				notificationType,
 				timeout,
 				leftClickCallback, leftClickCallbackArgument,
 				rightClickCallback, rightClickCallbackArgument,
 				middleClickCallback, middleClickCallbackArgument,
-				onCloseCallback, onCloseCallbackArgument);
+				onCloseCallback_WasClickedToCallback, onCloseCallbackArgument);
 		}
 
 		public static void CloseNotificationWindow()
@@ -205,6 +225,7 @@ namespace SharedClasses
 					notificationWindow.Dispatcher.Invoke((Action)delegate
 					{
 						notificationWindow.Close();
+						notificationWindow = null;
 					});
 				}
 				catch //(Exception exc)
@@ -223,11 +244,15 @@ namespace SharedClasses
 			if (notifBorder == null) return;
 
 			NotificationClass notif1 = notifBorder.DataContext as NotificationClass;
-			if (notif1 != null)
-				notif1.RemoveCloseCallback();
+			
+			//TODO: This was removed, otherwise close callback does not fire when clicked on the Notification itsself
+			//if (notif1 != null)
+			//    notif1.RemoveCloseCallback();
 
 			//This happens if clicked inside border, not close button
-			var notif = FadeOutAndRemoveNotificationFromBorder(notifBorder);
+			var notif = FadeOutAndRemoveNotificationFromBorder(
+				notifBorder,
+				e.ChangedButton == MouseButton.Left || e.ChangedButton == MouseButton.Right || e.ChangedButton == MouseButton.Middle);
 			//notifications.Remove(notif);
 			switch (e.ChangedButton)
 			{
@@ -247,13 +272,14 @@ namespace SharedClasses
 			}
 		}
 
-		private NotificationClass FadeOutAndRemoveNotificationFromBorder(Border borderWithNotificationDataContext)
+		private NotificationClass FadeOutAndRemoveNotificationFromBorder(Border borderWithNotificationDataContext, bool wasClosedViaClick)
 		{
 			if (borderWithNotificationDataContext == null)
 				return null;
 			NotificationClass notif = borderWithNotificationDataContext.DataContext as NotificationClass;
 			if (notif == null) return null;
 
+			notif.WasClosedViaClick = wasClosedViaClick;
 			Storyboard sb = (Storyboard)this.FindResource("FadeOutStoryboard");
 			DoubleAnimation da = sb.Children[0] as DoubleAnimation;
 			Storyboard.SetTarget(da, borderWithNotificationDataContext);
@@ -272,9 +298,9 @@ namespace SharedClasses
 			if (border == null) return;
 			NotificationClass notif = border.DataContext as NotificationClass;
 			if (notif == null) return;
+			if (notif.OnCloseCallback_WasClickedToCallback != null)
+				notif.OnCloseCallback_WasClickedToCallback(notif.OnCloseCallbackArgument, notif.WasClosedViaClick);
 			notifications.Remove(notif);
-			if (notif.OnCloseCallback != null)
-				notif.OnCloseCallback(notif.OnCloseCallbackArgument);
 
 			notif.Dispose();
 			notif = null;
@@ -290,12 +316,26 @@ namespace SharedClasses
 				parent = parent.Parent as FrameworkElement;
 			Border border = parent as Border;
 			if (border == null) return;
-			FadeOutAndRemoveNotificationFromBorder(border);
+			FadeOutAndRemoveNotificationFromBorder(border, false);//Was closed via close button, not clicking on notification
 		}
 
-		private void Button_Click(object sender, RoutedEventArgs e)
+		bool busy = false;
+		private void closeAllButton_Click(object sender, RoutedEventArgs e)
 		{
-			notifications.Clear();
+			if (busy)
+				return;
+
+			busy = true;
+			int cnt = notifications.Count;
+			for (int i = 0; i < cnt; i++)
+			{
+				var notif = notifications[0];//Just take first element every time
+				if (notif.OnCloseCallback_WasClickedToCallback != null)
+					notif.OnCloseCallback_WasClickedToCallback(notif.OnCloseCallbackArgument, false);
+				notifications.Remove(notif);
+			}
+			//notifications.Clear();
+			busy = false;
 		}
 
 		protected Border GetBorderOfNotification(NotificationClass notificationItem)
@@ -329,11 +369,9 @@ namespace SharedClasses
 
 	public class NotificationClass : IDisposable
 	{
-		public enum NotificationTypes { Subtle, Info, Success, Warning, Error }
-
 		public string Title { get; private set; }
 		public string Message { get; private set; }
-		private NotificationTypes NotificationType { get; set; }
+		private ShowNoCallbackNotificationInterop.NotificationTypes NotificationType { get; set; }
 
 		public Action<object> LeftClickCallback { get; private set; }
 		public object LeftClickCallbackArgument { get; private set; }
@@ -344,9 +382,11 @@ namespace SharedClasses
 		public Action<object> MiddleClickCallback { get; private set; }
 		public object MiddleClickCallbackArgument { get; private set; }
 
-		public Action<object> OnCloseCallback { get; private set; }
+		public Action<object, bool> OnCloseCallback_WasClickedToCallback { get; private set; }
 		public object OnCloseCallbackArgument { get; private set; }
 		public DateTime? TimeWhenTimedOut { get; private set; }
+
+		public bool WasClosedViaClick = false;
 
 		public SolidColorBrush TitleFontColor
 		{
@@ -354,15 +394,15 @@ namespace SharedClasses
 			{
 				switch (NotificationType)
 				{
-					case NotificationTypes.Subtle:
+					case ShowNoCallbackNotificationInterop.NotificationTypes.Subtle:
 						return new SolidColorBrush(Color.FromArgb(150, 200, 200, 200));
-					case NotificationTypes.Info:
+					case ShowNoCallbackNotificationInterop.NotificationTypes.Info:
 						return new SolidColorBrush(Colors.Yellow);
-					case NotificationTypes.Success:
+					case ShowNoCallbackNotificationInterop.NotificationTypes.Success:
 						return new SolidColorBrush(Color.FromRgb(40, 200, 40));
-					case NotificationTypes.Warning:
+					case ShowNoCallbackNotificationInterop.NotificationTypes.Warning:
 						return new SolidColorBrush(Colors.Orange);
-					case NotificationTypes.Error:
+					case ShowNoCallbackNotificationInterop.NotificationTypes.Error:
 						return new SolidColorBrush(Colors.Red);
 					default:
 						return new SolidColorBrush(Color.FromArgb(150, 200, 200, 200));
@@ -373,12 +413,12 @@ namespace SharedClasses
 
 		public NotificationClass(
 			string Title, string Message,
-			NotificationTypes NotificationType,
+			ShowNoCallbackNotificationInterop.NotificationTypes NotificationType,
 			TimeSpan? TimeOut,
 			Action<object> LeftClickCallback, object LeftClickCallbackArgument,
 			Action<object> RightClickCallback, object RightClickCallbackArgument,
 			Action<object> MiddleClickCallback, object MiddleClickCallbackArgument,
-			Action<object> OnCloseCallback, object OnCloseCallbackArgument)
+			Action<object, bool> OnCloseCallback_WasClickedToCallback, object OnCloseCallbackArgument)
 		{
 			this.Title = Title;
 			this.Message = Message;
@@ -395,7 +435,7 @@ namespace SharedClasses
 			this.MiddleClickCallback = MiddleClickCallback;
 			this.MiddleClickCallbackArgument = MiddleClickCallbackArgument;
 
-			this.OnCloseCallback = OnCloseCallback;
+			this.OnCloseCallback_WasClickedToCallback = OnCloseCallback_WasClickedToCallback;
 			this.OnCloseCallbackArgument = OnCloseCallbackArgument;
 		}
 		~NotificationClass()
@@ -403,7 +443,7 @@ namespace SharedClasses
 			Dispose(false);
 		}
 
-		public void RemoveCloseCallback() { OnCloseCallback = null; }
+		public void RemoveCloseCallback() { OnCloseCallback_WasClickedToCallback = null; }
 
 		private bool IsDisposed=false;
 		public void Dispose()

@@ -14,7 +14,7 @@ using System.Windows.Input;
 /// It is intended to be used with FocusManager.FocusedElement:
 /// <Window ... FocusManager.FocusedElement={ft:FirstFocusedElement} />
 /// </summary>
-namespace FocusTest
+namespace SharedClasses
 {
 	public class FirstFocusedElementExtension : MarkupExtension
 	{

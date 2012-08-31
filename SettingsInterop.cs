@@ -153,4 +153,36 @@ public class SettingsInterop
 			return c;
 		}
 	}
+
+	public static Environment.SpecialFolder? GetLongestSpecialFolderMatch(string fullpath, out string RelativeToSpecialFolder_NoSlash)
+	{
+		Environment.SpecialFolder? currSf = null;
+		foreach (Environment.SpecialFolder sf in Enum.GetValues(typeof(Environment.SpecialFolder)))
+		{
+			string sfpath = Environment.GetFolderPath(sf).TrimEnd('\\');
+			if (fullpath.StartsWith(sfpath, StringComparison.InvariantCultureIgnoreCase))
+			{
+				if (!currSf.HasValue)
+					currSf = sf;
+				else
+				{
+					//if (sfpath.Split(new char[]{'\\'}, StringSplitOptions.RemoveEmptyEntries).Length
+					//    > Environment.GetFolderPath(currSf.Value).TrimEnd('\\').Split(new char[]{'\\'}, StringSplitOptions.RemoveEmptyEntries).Length)
+					if (sfpath.Length > Environment.GetFolderPath(currSf.Value).TrimEnd('\\').Length)
+						currSf = sf;
+				}
+			}
+		}
+		if (currSf.HasValue)
+		{
+			int startIndex = Environment.GetFolderPath(currSf.Value).TrimEnd('\\').Length + 1;
+			if (startIndex < fullpath.Length)
+				RelativeToSpecialFolder_NoSlash = fullpath.Substring(Environment.GetFolderPath(currSf.Value).TrimEnd('\\').Length + 1);
+			else
+				RelativeToSpecialFolder_NoSlash = "";
+		}
+		else
+			RelativeToSpecialFolder_NoSlash = fullpath;
+		return currSf;
+	}
 }

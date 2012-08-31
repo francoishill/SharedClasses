@@ -282,52 +282,52 @@ namespace SharedClasses
 				return str;
 			}
 
-			[Obsolete("Please use GetNsisLines()", true)]
-			public bool WriteRegistryEntries()
-			{
-				Boolean Is64Bit = Is64BitOperatingSystem;
-				RegistryView registryViewToUse = Is64Bit ? RegistryView.Registry64 : RegistryView.Registry32;
+			//[Obsolete("Please use GetNsisLines()", true)]
+			//public bool WriteRegistryEntries()
+			//{
+			//    Boolean Is64Bit = Is64BitOperatingSystem;
+			//    RegistryView registryViewToUse = Is64Bit ? RegistryView.Registry64 : RegistryView.Registry32;
 
-				bool succeeded = false;
+			//    bool succeeded = false;
 
-				try
-				{
-					/*foreach (string pathInClassesRoot in this.FileExtensionsInClassesRoot)
-						using (RegistryKey subfolderInClassesRootShell =
-								RegistryKey.OpenBaseKey(RegistryHive.ClassesRoot, registryViewToUse)
-										.OpenOrCreateWriteableSubkey(pathInClassesRoot + "\\" + "shell" + "\\" + this.MainmenuItemRegistryName))
-						{
-							//subfolderInClassesRootShell.SetValue(null, this.MainmenuItemDisplayName, RegistryValueKind.String);
-							subfolderInClassesRootShell.SetValue("Icon", this.MainmenuItemIconpath, RegistryValueKind.String);
-							subfolderInClassesRootShell.SetValue("SubCommands", GetSubcommandNamesConcatenated());
+			//    try
+			//    {
+			//        /*foreach (string pathInClassesRoot in this.FileExtensionsInClassesRoot)
+			//            using (RegistryKey subfolderInClassesRootShell =
+			//                    RegistryKey.OpenBaseKey(RegistryHive.ClassesRoot, registryViewToUse)
+			//                            .OpenOrCreateWriteableSubkey(pathInClassesRoot + "\\" + "shell" + "\\" + this.MainmenuItemRegistryName))
+			//            {
+			//                //subfolderInClassesRootShell.SetValue(null, this.MainmenuItemDisplayName, RegistryValueKind.String);
+			//                subfolderInClassesRootShell.SetValue("Icon", this.MainmenuItemIconpath, RegistryValueKind.String);
+			//                subfolderInClassesRootShell.SetValue("SubCommands", GetSubcommandNamesConcatenated());
 
-							foreach (SubContextMenuItem subcommand in this.SubCommands)
-							{
-								using (RegistryKey subfolderInCommandStoreShell =
-									RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, registryViewToUse)
-										.OpenOrCreateWriteableSubkey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\" + subcommand.CommandName))
-								{
-									subfolderInCommandStoreShell.SetValue(null, subcommand.DisplayName);
-									subfolderInCommandStoreShell.SetValue("Icon", subcommand.CommandIconpath);
+			//                foreach (SubContextMenuItem subcommand in this.SubCommands)
+			//                {
+			//                    using (RegistryKey subfolderInCommandStoreShell =
+			//                        RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, registryViewToUse)
+			//                            .OpenOrCreateWriteableSubkey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\" + subcommand.CommandName))
+			//                    {
+			//                        subfolderInCommandStoreShell.SetValue(null, subcommand.DisplayName);
+			//                        subfolderInCommandStoreShell.SetValue("Icon", subcommand.CommandIconpath);
 
-									using (RegistryKey subcommandRegistryKey = subfolderInCommandStoreShell.OpenOrCreateWriteableSubkey("Command"))
-									{
-										subcommandRegistryKey.SetValue(null, subcommand.CommandlineExcludingArgumentString);
+			//                        using (RegistryKey subcommandRegistryKey = subfolderInCommandStoreShell.OpenOrCreateWriteableSubkey("Command"))
+			//                        {
+			//                            subcommandRegistryKey.SetValue(null, subcommand.CommandlineExcludingArgumentString);
 
-										succeeded = true;
-									}
-								}
-							}
-						}*/
-				}
-				catch (Exception exc)
-				{
-					UserMessages.ShowErrorMessage("Error setting registry entries: " + exc.Message);
-					return false;
-				}
+			//                            succeeded = true;
+			//                        }
+			//                    }
+			//                }
+			//            }*/
+			//    }
+			//    catch (Exception exc)
+			//    {
+			//        UserMessages.ShowErrorMessage("Error setting registry entries: " + exc.Message);
+			//        return false;
+			//    }
 
-				return succeeded;
-			}
+			//    return succeeded;
+			//}
 
 			private enum RegistryRootKeys { HKCR, HKLM, HKCU, HKU, HKCC, HKDD, HKPD, SHCTX };
 
@@ -338,7 +338,7 @@ namespace SharedClasses
 			}
 
 			const string commandStore_Shell_Subpath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell";
-			public List<string> GetRegistryAssociationNsisLines()
+			public List<string> GetRegistryAssociationNsisLines(Action<string> actionOnError)
 			{
 				List<string> nsisLines = new List<string>();
 				const string labelStart = "defaultkeyIsBlank";
@@ -373,7 +373,7 @@ namespace SharedClasses
 					string commandStoreShell_CommandSubpath = commandStore_Shell_Subpath + "\\" + subcommand.CommandName;
 					nsisLines.Add(GetNsisWriteRegStrLine(RegistryRootKeys.HKLM, commandStoreShell_CommandSubpath, "", subcommand.DisplayName));
 					nsisLines.Add(GetNsisWriteRegStrLine(RegistryRootKeys.HKLM, commandStoreShell_CommandSubpath, "Icon", "$\\\"" + subcommand.CommandIconpath.Trim('\\') + "$\\\""));
-					nsisLines.Add(GetNsisWriteRegStrLine(RegistryRootKeys.HKLM, commandStoreShell_CommandSubpath + "\\Command", "", "$\\\"" + subcommand.CommandlineExcludingArgumentString.Trim('\\') + "$\\\"" + subcommand.GetNsisArgumentsPostfixToCommandline()));
+					nsisLines.Add(GetNsisWriteRegStrLine(RegistryRootKeys.HKLM, commandStoreShell_CommandSubpath + "\\Command", "", "$\\\"" + subcommand.CommandlineExcludingArgumentString.Trim('\\') + "$\\\"" + subcommand.GetNsisArgumentsPostfixToCommandline(actionOnError)));
 				}
 				return nsisLines;
 			}
@@ -435,11 +435,13 @@ namespace SharedClasses
 				this.CommandlinePassedConstantArgument = CommandlinePassedConstantArgument;
 				this.ArgumentCount = ArgumentCount;
 			}
-			public string GetNsisArgumentsPostfixToCommandline()
+			public string GetNsisArgumentsPostfixToCommandline(Action<string> actionOnError)
 			{
 				if (this.ArgumentCount > 1)
 				{
-					UserMessages.ShowWarningMessage("Currently more than 1 argument for registry association is unsupported");
+					//UserMessages.ShowWarningMessage("Currently more than 1 argument for registry association is unsupported");
+					if (actionOnError != null)
+						actionOnError("Currently more than 1 argument for registry association is unsupported");
 					return "";
 				}
 				return
@@ -456,9 +458,9 @@ namespace SharedClasses
 			//return mainItem.WriteRegistryEntries();
 		}
 
-		public static List<string> GetNsisLines(MainContextMenuItem mainItem)
+		public static List<string> GetNsisLines(MainContextMenuItem mainItem, Action<string> actionOnError)
 		{
-			return mainItem.GetRegistryAssociationNsisLines();
+			return mainItem.GetRegistryAssociationNsisLines(actionOnError);
 		}
 
 		[Obsolete("Please use AddSubMenuCommands with '*' as part of its FileExtensionsInClassesRoot")]

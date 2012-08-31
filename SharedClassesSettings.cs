@@ -8,6 +8,7 @@ using System.Runtime;
 #if WPF && HAVEPLUGINS
 using DynamicDLLsInterop;
 #endif
+using System.Drawing.Design;
 using System.Windows.Forms;
 using System.IO;
 using System.Globalization;
@@ -16,9 +17,9 @@ using System.Runtime.Remoting.Messaging;
 using System.Runtime.Remoting;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using System.Drawing.Design;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Collections;
 
 
 namespace SharedClasses
@@ -424,7 +425,8 @@ namespace SharedClasses
 					object tmpobj = values[i][prop];
 					object tmpobj2 = prop.GetValue(keys[i], new object[0]);
 
-					ComparisonResult compareResult = CompareObjectsByValue(tmpobj, tmpobj2);
+					string err;
+					ComparisonResult compareResult = CompareObjectsByValue(tmpobj, tmpobj2, out err);
 					switch (compareResult)
 					{
 						case ComparisonResult.NullValue:
@@ -441,7 +443,12 @@ namespace SharedClasses
 							keys[i].OnPropertySet(prop.Name);
 							break;
 						case ComparisonResult.UnsupportedType:
-							UserMessages.ShowWarningMessage(string.Format("Type unsupported for comparison, either Obj1 = '{0}' or Obj2 = '{1}'", tmpobj.GetType().ToString(), tmpobj2.GetType().ToString()));
+							UserMessages.ShowWarningMessage(
+								string.Format("Type unsupported for comparison, either Obj1 = '{0}' or Obj2 = '{1}', error message:{2}{3}",
+									tmpobj.GetType().ToString(),
+									tmpobj2.GetType().ToString(),
+									Environment.NewLine,
+									err));
 							break;
 					}
 				}
@@ -450,10 +457,13 @@ namespace SharedClasses
 #endif
 
 		public enum ComparisonResult { Equal, NotEqual, UnsupportedType, DifferentTypes, NullValue };
-		public static ComparisonResult CompareObjectsByValue(object obj1, object obj2)
+		public static ComparisonResult CompareObjectsByValue(object obj1, object obj2, out string errorIfUnsupportedType)
 		{
+			errorIfUnsupportedType = null;
 			if (obj1 == null || obj2 == null)
+			{
 				return ComparisonResult.NullValue;
+			}
 			if (obj1.GetType() != obj2.GetType())
 				return ComparisonResult.DifferentTypes;
 
@@ -472,7 +482,35 @@ namespace SharedClasses
 				List<string> tmplist2 = obj2 as List<string>;
 				return tmplist1.SequenceEqual(tmplist2, StringComparer.InvariantCultureIgnoreCase) ? ComparisonResult.Equal : ComparisonResult.NotEqual;
 			}
-			return ComparisonResult.UnsupportedType;
+			/*else if (obj1.GetType().IsGenericType && obj1 is IEnumerable)
+			{
+				return ComparisonResult.NotEqual;
+				//The following code crashes with OnlineSettings.ApplicationManagerSettings.RunCommand
+				//var enum1 = (obj1 as IEnumerable).GetEnumerator();
+				//var enum2 = (obj2 as IEnumerable).GetEnumerator();
+				//while (enum1.MoveNext() && enum2.MoveNext()) ;
+				//    if (!enum1.Current.Equals(enum2.Current))
+				//        return ComparisonResult.NotEqual;
+			}*/
+			else
+			{
+				try
+				{
+					bool deepCompareIsEqual = new CompareObjects() { CompareChildren = true }
+						.Compare(obj1, obj2);
+					if (deepCompareIsEqual)
+						return ComparisonResult.Equal;
+					else
+						return ComparisonResult.NotEqual;
+				}
+				catch (Exception exc)
+				{
+					errorIfUnsupportedType = exc.Message;
+					return ComparisonResult.UnsupportedType;
+				}
+			}
+			//errorIfUnsupportedType = "Unsupported types to compare, current compare tool cannot c
+			//return ComparisonResult.UnsupportedType;
 		}
 
 		//TODO: Have a look at Lazy<> in c#, being able to initialize an object the first time it is used.
@@ -561,7 +599,10 @@ namespace SharedClasses
 			[Description("A tasklist of application names to be started with windows, split with pipe character |.")]
 			public string ListedStartupApplicationNames { get; set; }
 			[Description("A list of excecutable commands, arguments come after a | character.")]
-			public List<string> RunCommands { get; set; }
+			
+			//[Obsolete("Please use SharedClasses.OnlineSettings.ApplicationManagerSettings.Instance.RunCommands", true)]
+			//public List<string> RunCommands { get; set; }
+			
 			//public string ListedApplicationNames
 			//{
 			//	get
@@ -1238,6 +1279,8 @@ GlobalSettings.ReadConsole(
 		//	}
 		//}
 
+		public class GuidAsCategoryPrefixAttribute : Attribute { }
+
 		public class PropertyInterceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable, new()
 		{
 
@@ -1311,8 +1354,37 @@ GlobalSettings.ReadConsole(
 
 		public abstract class BaseOnlineClass<T> : MarshalByRefObject, IInterceptorNotifiable where T : BaseOnlineClass<T>, new()
 		{
+			private static string GetComputerGuid()
+			{
+				var guidpath = SettingsInterop.GetFullFilePathInLocalAppdata("_ComputerGuid", "SharedClasses");
+				if (File.Exists(guidpath))
+				{
+					string guidfromfile = File.ReadAllText(guidpath).Trim();
+					Guid tmpguid;
+					if (Guid.TryParse(guidfromfile, out tmpguid))
+						return tmpguid.ToString();
+				}
+				Guid newGuid = Guid.NewGuid();
+				string newGuidStr = newGuid.ToString();
+				File.WriteAllText(guidpath, newGuidStr);
+				return newGuidStr;
+			}
+
 			private const string LocalCacheDateFormat = "yyyy-MM-dd HH:mm:ss";
-			private const string SettingsCategory = "globalsettings";
+			private const string _settingsCategory = "globalsettings";
+			[XmlIgnore]
+			public string SettingsCategory
+			{
+				get
+				{
+					var thisType = this.GetType();
+					string displayName = thisType.Name.Split('+')[thisType.Name.Split('+').Length - 1];
+					if (thisType.GetCustomAttributes(typeof(GuidAsCategoryPrefixAttribute), true).Length > 0)
+						return GetComputerGuid() + "-" + _settingsCategory;
+					else
+						return _settingsCategory;
+				}
+			}
 
 			private string SettingName { get { var thisType = this.GetType(); return thisType.Name.Split('+')[thisType.Name.Split('+').Length - 1]; } }
 			private string SettingsFileName { get { return SettingName + SettingsInterop.SettingsFileExtension; } }
@@ -1453,7 +1525,10 @@ GlobalSettings.ReadConsole(
 			public void SaveToLocalCache()
 			{
 				SetStaticJsonSettings();
-				var json = JSON.Instance.Beautify(JSON.Instance.ToJSON(this, false));
+				var json =
+					//JSON.Instance.Beautify(JSON.Instance.ToJSON(this, false));
+					//There are issues with the Beautifying
+					JSON.Instance.ToJSON(this, false);
 				File.WriteAllText(SettingsFilePath, json);
 				File.WriteAllText(LocalCachedDateFilePath, OnlineModifiedDate.ToString(LocalCacheDateFormat));
 			}
@@ -1603,7 +1678,7 @@ GlobalSettings.ReadConsole(
 
 			public PublishSettings()//Defaults
 			{
-				this.OnlineDotnetCheckerDllFileUrl = OnlineAppsSettings.Instance.RootFtpUrl.TrimEnd('/') + "/DotNetChecker.dll";	
+				this.OnlineDotnetCheckerDllFileUrl = OnlineAppsSettings.Instance.RootFtpUrl.TrimEnd('/') + "/DotNetChecker.dll";
 				this.ListedApplicationNames = new List<string>()
                 {
 					"AutoConnectWifiAdhoc",
@@ -1655,6 +1730,90 @@ GlobalSettings.ReadConsole(
 				this.RootFtpUrl = "ftp://fjh.dyndns.org";//"ftp://fjh.dyndns.org/francois/websites/firepuma/ownapplications";
 				this.AppsDownloadFtpUsername = "appsdownload";
 				this.AppsDownloadFtpPassword = "appsdownload.pass123";
+			}
+		}
+
+		[GuidAsCategoryPrefixAttribute]
+		public class ApplicationManagerSettings : BaseOnlineClass<ApplicationManagerSettings>
+		{
+			[Serializable]
+			public class RunCommand
+			{
+				public enum PathTypes { FullPath, OwnApp };
+				public string DisplayName { get; set; }
+				public string AppPath { get; set; }
+				public PathTypes PathType { get; set; }
+				public string CommandlineArguments { get; set; }
+				public RunCommand() { }
+				public RunCommand(string AppPath, string DisplayName, PathTypes PathType, string CommandlineArguments = null)
+				{
+					this.AppPath = AppPath;
+					this.DisplayName = DisplayName;
+					this.PathType = PathType;
+					this.CommandlineArguments = CommandlineArguments;
+				}
+				/// <summary>
+				/// Supported formats are:
+				/// c:\path\to\app.exe -arg1 arg2
+				/// "c:\path\to\app.exe" arg1 -arg2 arg3
+				/// c:\path\to\app.exe "arg1" "arg3"
+				/// </summary>
+				/// <param name="fullCommandLine">The full command line: path (with/without quotes), including all commandline arguments</param>
+				/// <param name="displayName">The display name</param>
+				/// <returns>Returns the newly created RunCommand if succeeded, otherwise null</returns>
+				public static RunCommand CreateFromFullCommandline(string fullCommandLine, string displayName)
+				{
+					int _ExeIndex = fullCommandLine.IndexOf(".exe", StringComparison.InvariantCultureIgnoreCase);
+					if (_ExeIndex != -1)
+					{
+						int fullpathStartIndex = 0;
+						if (fullCommandLine[fullpathStartIndex].Equals('"')
+							|| fullCommandLine[fullpathStartIndex].Equals('\''))
+							fullpathStartIndex++;
+						string fullpath = fullCommandLine.Substring(
+							fullpathStartIndex, _ExeIndex + ".exe".Length - fullpathStartIndex).Trim();
+
+						string commandlineargs = null;
+						int commandLineStartIndex = _ExeIndex + ".exe".Length;
+						if (commandLineStartIndex < fullCommandLine.Length)
+						{
+							if (fullCommandLine[commandLineStartIndex].Equals('"')
+								|| fullCommandLine[commandLineStartIndex].Equals('\''))
+								commandLineStartIndex++;
+							if (commandLineStartIndex < fullCommandLine.Length)
+								commandlineargs = fullCommandLine.Substring(commandLineStartIndex).Trim();
+						}
+						return new RunCommand(fullpath, displayName, PathTypes.FullPath, commandlineargs);
+					}
+					UserMessages.ShowWarningMessage("Cannot obtain RunCommand from full Commanline: " + fullCommandLine);
+					return null;
+				}
+			}
+			public List<RunCommand> RunCommands { get; set; }
+			public ApplicationManagerSettings()//Defaults
+			{
+				this.RunCommands = new List<RunCommand>()
+				{
+					new RunCommand("MonitorSystem", "Monitor System", RunCommand.PathTypes.OwnApp),
+					new RunCommand("TestingMonitorSubversion", "Testing Monitor Subversion", RunCommand.PathTypes.OwnApp),
+					new RunCommand("StartupTodoManager", "Startup Todo Manager", RunCommand.PathTypes.OwnApp),
+					new RunCommand("QuickAccess", "Quick Access", RunCommand.PathTypes.OwnApp),
+					new RunCommand(@"C:\Program Files (x86)\WizMouse\WizMouse.exe", "WizMouse", RunCommand.PathTypes.FullPath),
+					new RunCommand(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+						@"Google\Chrome\Application\chrome.exe"), "Google Chrome", RunCommand.PathTypes.FullPath, "-no-startup-window")
+				};
+			}
+		}
+
+		public class BuildTestSystemSettings : BaseOnlineClass<BuildTestSystemSettings>
+		{
+			public List<string> ListOfApplicationsToBuild { get; set; }
+			public BuildTestSystemSettings()//Defaults
+			{
+				ListOfApplicationsToBuild = new List<string>()
+				{
+					"PublishOwnApps"
+				};
 			}
 		}
 	}

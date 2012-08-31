@@ -13,6 +13,31 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 
+public class PublishDetails
+{
+	public const string OnlineJsonCategory = "Own Applications";
+	public const string LastestVersionJsonNamePostfix = " - latest";
+
+	public string ApplicationName;
+	public string ApplicationVersion;
+	public long SetupSize;
+	public string MD5Hash;
+	public DateTime PublishedDate;
+	public string FtpUrl;
+	//TODO: May want to add TracUrl here
+	public PublishDetails() { }
+	public PublishDetails(string ApplicationName, string ApplicationVersion, long SetupSize, string MD5Hash, DateTime PublishedDate, string FtpUrl)
+	{
+		this.ApplicationName = ApplicationName;
+		this.ApplicationVersion = ApplicationVersion;
+		this.SetupSize = SetupSize;
+		this.MD5Hash = MD5Hash;
+		this.PublishedDate = PublishedDate;
+		this.FtpUrl = FtpUrl;
+	}
+	public string GetJsonString() { return WebInterop.GetJsonStringFromObject(this, true); }
+}
+
 public class VisualStudioInterop
 {
 	//TODO: Make it easy to add todo item to a specific c# file if visual studio is not open
@@ -626,13 +651,19 @@ public class VisualStudioInterop
 				string uriAfterUploading = GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForAFTERvspublishing() + "/" + validatedUrlsectionForProjname;
 
 				bool isAutoUpdater = projName.Replace(" ", "").Equals("AutoUpdater", StringComparison.InvariantCultureIgnoreCase);
+				bool isShowNoCallbackNotification = projName.Replace(" ", "").Equals("ShowNoCallbackNotification", StringComparison.InvariantCultureIgnoreCase);
 				string clonedSetupFilepathIfAutoUpdater = 
 					//Do not change this name, it is used in NSIS for downloading AutoUpdater if not installed yet
 					Path.Combine(Path.GetDirectoryName(publishedSetupPath), "AutoUpdater_SetupLatest.exe");
+				string clonedSetupFilepathIfShowNoCallbackNotification =
+					//Do not change this name, it is used in NSIS for downloading AutoUpdater if not installed yet
+					Path.Combine(Path.GetDirectoryName(publishedSetupPath), "ShowNoCallbackNotification_SetupLatest.exe");
 
 				bool uploaded = true;
 				if (isAutoUpdater)
 					File.Copy(publishedSetupPath, clonedSetupFilepathIfAutoUpdater, true);
+				if (isShowNoCallbackNotification)
+					File.Copy(publishedSetupPath, clonedSetupFilepathIfShowNoCallbackNotification, true);
 
 				if (!NetworkInterop.FtpUploadFiles(
 					//Task uploadTask = NetworkInterop.FtpUploadFiles(
@@ -642,7 +673,9 @@ public class VisualStudioInterop
 						GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,//NetworkInterop.ftpPassword,
 						isAutoUpdater
 						? new string[] { publishedSetupPath, htmlFilePath, clonedSetupFilepathIfAutoUpdater }
-						: new string[] { publishedSetupPath, htmlFilePath },
+						: isShowNoCallbackNotification
+							? new string[] { publishedSetupPath, htmlFilePath, clonedSetupFilepathIfShowNoCallbackNotification }
+							: new string[] { publishedSetupPath, htmlFilePath },
 						err => TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, err),
 						OpenWebsite ? uriAfterUploading : null,
 						textFeedbackEvent: textFeedbackEvent,

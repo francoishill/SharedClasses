@@ -1,4 +1,4 @@
-﻿partial class UserMessageBox
+﻿partial class UserMessages
 {
 	/// <summary>
 	/// Required designer variable.
@@ -92,7 +92,7 @@
 			this.labelCountRepeatedCount.Text = "0";
 			this.labelCountRepeatedCount.Visible = false;
 			// 
-			// UserMessageBox
+			// UserMessages
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -107,13 +107,13 @@
 			this.MaximizeBox = false;
 			this.MinimizeBox = false;
 			this.MinimumSize = new System.Drawing.Size(200, 38);
-			this.Name = "UserMessageBox";
+			this.Name = "UserMessages";
 			this.ShowIcon = false;
 			this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-			this.Text = "UserMessageBox";
-			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.UserMessageBox_FormClosing);
-			this.SizeChanged += new System.EventHandler(this.UserMessageBox_SizeChanged);
+			this.Text = "UserMessages";
+			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.UserMessages_FormClosing);
+			this.SizeChanged += new System.EventHandler(this.UserMessages_SizeChanged);
 			this.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.GlobalKeyDown);
 			((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
 			this.panel1.ResumeLayout(false);

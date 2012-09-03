@@ -61,12 +61,12 @@ public class NsisInterop
 			//InstallForAllUsersIn: InstallForAllUsers
 			);
 
-		string rootProjDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects";
+		//string rootProjDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects";
 		string subDirInProj = @"\bin\Release";
 		string PublishedDir = 
-			Directory.Exists(rootProjDir + @"\" + VsProjectName + subDirInProj)
-			? rootProjDir + @"\" + VsProjectName + subDirInProj
-			: rootProjDir + @"\" + VsProjectName + @"\" + VsProjectName + subDirInProj;
+			Directory.Exists(VisualStudioInterop.cProjectsRootDir.TrimEnd('\\') + @"\" + VsProjectName + subDirInProj)
+			? VisualStudioInterop.cProjectsRootDir.TrimEnd('\\') + @"\" + VsProjectName + subDirInProj
+			: VisualStudioInterop.cProjectsRootDir.TrimEnd('\\') + @"\" + VsProjectName + @"\" + VsProjectName + subDirInProj;
 		List<string> SectionGroupLines = new List<string>();
 
 		bool isAutoUpdater = ProductPublishedNameIn.Replace(" ", "").Equals("AutoUpdater", StringComparison.InvariantCultureIgnoreCase);
@@ -100,9 +100,9 @@ public class NsisInterop
 
 		SectionGroupLines.Add(@"Section ""Full program"" SEC001");
 		SectionGroupLines.Add(@"  SetShellVarContext all");
-		SectionGroupLines.Add(@"  SetOverwrite ifnewer");
+		SectionGroupLines.Add(@"  SetOverwrite on");
 		SectionGroupLines.Add(@"	SetOutPath ""$INSTDIR""");
-		SectionGroupLines.Add(@"  SetOverwrite ifnewer");
+		SectionGroupLines.Add(@"  SetOverwrite on");
 		SectionGroupLines.Add(@"  File /a /x *.pdb /x *.application /x *.vshost.* /x *.manifest" + MainProgram_FaceDetectionNsisExclusionList() + @" """ + PublishedDir + @"\*.*""");
 
 		//If NSISdl does not work right may be required to have inetc.dll, NSISdl is already part of NSIS installation`
@@ -153,6 +153,20 @@ public class NsisInterop
 		SectionGroupLines.Add(@"ShowNoCallbackNotificationDownloadSkipped:");
 		SectionGroupLines.Add(@"ShowNoCallbackNotificationFound:");
 
+		SectionGroupLines.Add(@"IfFileExists ""C:\Program Files (x86)\Standalone Uploader\StandaloneUploader.exe"" StandaloneUploaderFound");
+		SectionGroupLines.Add(@"	  RetryDownload3:");
+		SectionGroupLines.Add(@"	  NSISdl::download ""http://apps.getmyip.com/ownapplications/standaloneuploader/StandaloneUploader_SetupLatest.exe"" tmpStandaloneUploader_SetupLatest.exe ; Download latest StandaloneUploader Setup");
+		SectionGroupLines.Add(@"	  Pop $R4 ;Read the result of the download");
+		SectionGroupLines.Add(@"	  StrCmp $R4 ""success"" SuccessfullyDownloadedStandaloneUploader");
+		SectionGroupLines.Add(@"	  MessageBox MB_RETRYCANCEL ""Download failed, retry download?"" IDRETRY RetryDownload3");
+		SectionGroupLines.Add(@"	  	DetailPrint ""Download unsuccessful for StandaloneUploader (reason = $R4), ${PRODUCT_NAME} might not upload some files""");
+		SectionGroupLines.Add(@"	  	goto StandaloneUploaderDownloadSkipped");
+		SectionGroupLines.Add(@"	  SuccessfullyDownloadedStandaloneUploader:");
+		SectionGroupLines.Add(@"	  ExecWait ""tmpStandaloneUploader_SetupLatest.exe /S""");
+		SectionGroupLines.Add(@"	  Delete tmpStandaloneUploader_SetupLatest.exe");
+		SectionGroupLines.Add(@"StandaloneUploaderDownloadSkipped:");
+		SectionGroupLines.Add(@"StandaloneUploaderFound:");
+
 		if (!isAutoUpdater)
 		{
 			SectionGroupLines.Add(@"${If} $state_autostartCheckbox <> 0");
@@ -171,7 +185,7 @@ public class NsisInterop
 		if (HasPlugins)
 		{
 			int startSectionNumber = 2;//SEC002
-			string SolutionBaseDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects\" + VsProjectName;
+			string SolutionBaseDir = Path.Combine(VisualStudioInterop.cProjectsRootDir, VsProjectName);//Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects\" + VsProjectName;
 
 			SectionGroupLines.Add("");
 			SectionGroupLines.Add(@"SectionGroup ""Plugins""");
@@ -197,9 +211,9 @@ public class NsisInterop
 				//SectionGroupLines.Add("");
 				SectionGroupLines.Add(NSISclass.Spacer + @"Section """ + pluginName + @""" SEC" + startSectionNumber++.ToString("000"));
 				SectionGroupLines.Add(NSISclass.Spacer + @"  SetShellVarContext all");
-				SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite ifnewer");
+				SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite on");
 				SectionGroupLines.Add(NSISclass.Spacer + @"	SetOutPath ""$INSTDIR\Plugins""");
-				SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite ifnewer");
+				SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite on");
 				SectionGroupLines.Add(NSISclass.Spacer + @"  File /a /x *.pdb /x *.xml /x *Toolkit* /x *InterfaceFor* /x *CookComputing.XmlRpcV2.dll /x *MouseGestures.dll /x *System.Windows.Controls.WpfPropertyGrid.dll" + Plugins_FaceDetectionNsisExclusionList() + Plugins_Pdf2textExclusionList() + @" """ + pluginDllPath + @"\*.*""");
 				SectionGroupLines.Add(NSISclass.Spacer + @"SectionEnd");
 				SectionGroupLines.Add("");
@@ -665,6 +679,7 @@ public class NsisInterop
 
 			bool isAutoUpdater = ProductName.Replace(" ", "").Equals("AutoUpdater", StringComparison.InvariantCultureIgnoreCase);
 			bool isShowNoCallbackNotification = ProductName.Replace(" ", "").Equals("ShowNoCallbackNotification", StringComparison.InvariantCultureIgnoreCase);
+			bool isStandaloneUploader = ProductName.Replace(" ", "").Equals("StandaloneUploader", StringComparison.InvariantCultureIgnoreCase);
 
 			tmpList.Add(@"; Script generated by the HM NIS Edit Script Wizard.");
 			tmpList.Add("");
@@ -688,7 +703,7 @@ public class NsisInterop
 			tmpList.Add("");
 
 			tmpList.Add("Var /GLOBAL classesRootMainKey  ;used for reading Registry keys for install/uninstall");
-			if (!isAutoUpdater && !isShowNoCallbackNotification)
+			if (!isAutoUpdater && !isShowNoCallbackNotification && !isStandaloneUploader)
 			{
 				tmpList.Add("Var /GLOBAL autostartCheckbox");
 				tmpList.Add("Var /GLOBAL state_autostartCheckbox");
@@ -757,7 +772,7 @@ public class NsisInterop
 				tmpList.Add(@"!insertmacro MUI_PAGE_STARTMENU Application $ICONS_GROUP");
 			}
 
-			if (!isAutoUpdater && !isShowNoCallbackNotification)
+			if (!isAutoUpdater && !isShowNoCallbackNotification && !isStandaloneUploader)
 			{
 				tmpList.Add(@";Checkbox if should autostart with windows");
 				tmpList.Add(@"Function AutostartWithWindowsShow");

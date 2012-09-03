@@ -24,13 +24,14 @@ namespace SharedClasses
 		/// <param name="actionBeforeRunning">This could typically be the following for a winforms application: Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);</param>
 		/// <param name="actionToRunApplication">Typically for a winforms application: Application.Run(frm);</param>
 		/// <param name="actionToPerformOnFirstInstanceWhenSecondInstanceStarts">What should happen to the first started application when a second is called (parameters that are passed via this action are the second one's arguments and the first created form)</param>
-		public static MainFormOrWindowType CheckIfAlreadyRunningElseCreateNew(Action<InstanceCallbackEventArgs, MainFormOrWindowType> actionToPerformOnFirstInstanceWhenSecondInstanceStarts, Action<MainFormOrWindowType> actionToStartAppWithFormOrWindow)
+		public static MainFormOrWindowType CheckIfAlreadyRunningElseCreateNew(Action<InstanceCallbackEventArgs, MainFormOrWindowType> actionToPerformOnFirstInstanceWhenSecondInstanceStarts, Action<string[], MainFormOrWindowType> actionToStartAppWithFormOrWindowWithCommandlineArguments)
 		{
 			if (!CreateSingleInstance(
 					Assembly.GetExecutingAssembly().GetName().Name,
-					actionToPerformOnFirstInstanceWhenSecondInstanceStarts)) return default(MainFormOrWindowType);
+					actionToPerformOnFirstInstanceWhenSecondInstanceStarts))
+				return mainformOrwindow;//default(MainFormOrWindowType);
 			mainformOrwindow = new MainFormOrWindowType();
-			actionToStartAppWithFormOrWindow(mainformOrwindow);
+			actionToStartAppWithFormOrWindowWithCommandlineArguments(Environment.GetCommandLineArgs(), mainformOrwindow);
 			CheckApplicationTypes.CheckIfWpfAppHasStartupUri(typeof(MainFormOrWindowType));
 			return mainformOrwindow;
 		}

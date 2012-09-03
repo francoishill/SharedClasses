@@ -69,6 +69,10 @@ public class ThreadingInterop
 			AttachForceExitToFormClose,
 			apartmentState);
 	}
+	public static Thread PerformOneArgFunctionSeperateThread<ArgType>(Action<ArgType> action, object arg, bool WaitUntilFinish = true, string ThreadName = "UnknownName", bool CheckInvokeRequired = false, Control controlToCheckInvokeRequired = null, bool AttachForceExitToFormClose = true, ApartmentState? apartmentState = null)
+	{
+		return PerformOneArgFunctionSeperateThread((obj) => action((ArgType)obj), arg, WaitUntilFinish, ThreadName, CheckInvokeRequired, controlToCheckInvokeRequired, AttachForceExitToFormClose, apartmentState);
+	}
 
 	public static void UpdateGuiFromThread(Control controlToUpdate, Action action)
 	{

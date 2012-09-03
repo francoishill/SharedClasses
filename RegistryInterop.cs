@@ -341,7 +341,7 @@ namespace SharedClasses
 			public List<string> GetRegistryAssociationNsisLines(Action<string> actionOnError)
 			{
 				List<string> nsisLines = new List<string>();
-				const string labelStart = "defaultkeyIsBlank";
+				const string labelStartUseCurrentClassesRootVariable = "defaultkeyIsBlank";
 				int tmpcounter = 0;
 
 				foreach (SubContextMenuItem subcommand in this.SubCommands)
@@ -349,11 +349,20 @@ namespace SharedClasses
 					{
 						tmpcounter++;
 						nsisLines.Add("");
+						
+						string gotolabelClassesRootIsBlank = labelStartUseCurrentClassesRootVariable + tmpcounter;
+						
 						nsisLines.Add(string.Format("StrCpy $classesRootMainKey \"{0}\" \"\" 0", pathInClassesRoot));
 						nsisLines.Add("ReadRegStr $0 HKCR $classesRootMainKey \"\"");
-						nsisLines.Add(string.Format("StrCmp $0 \"\" {0} 0", labelStart + tmpcounter));
+						nsisLines.Add(string.Format("StrCmp $0 \"\" {0} 0", gotolabelClassesRootIsBlank));
 						nsisLines.Add(string.Format("StrCpy $classesRootMainKey $0 \"\" 0 ;the (default) value of CLASSES_ROOT\\{0} is not empty, using its value to get new path in CLASSES_ROOT", pathInClassesRoot));
-						nsisLines.Add(string.Format("{0}:", labelStart + tmpcounter));
+
+						//nsisLines.Add(string.Format("StrCpy $classesRootMainKey \"$classesRootMainKey\\CurVer\" \"\" 0", pathInClassesRoot));
+						nsisLines.Add("ReadRegStr $1 HKCR \"$classesRootMainKey\\CurVer\" \"\"");
+						nsisLines.Add(string.Format("StrCmp $1 \"\" {0} 0", gotolabelClassesRootIsBlank) + " ; The CurVer value was empty, jump to label");
+						nsisLines.Add(string.Format("StrCpy $classesRootMainKey $1 \"\" 0 ;the (CurVer) value of CLASSES_ROOT\\{0} is not empty, using its value to get new path in CLASSES_ROOT", pathInClassesRoot));
+						
+						nsisLines.Add(string.Format("{0}:", gotolabelClassesRootIsBlank) + " ; jump to here when we are happy with the current classesRootMainKey variable");
 
 						//string pathInShell = pathInClassesRoot + @"\shell\" + this.MainmenuItemRegistryName;
 						string pathInShell = @"$classesRootMainKey\shell\" + this.MainmenuItemRegistryName;
@@ -385,7 +394,7 @@ namespace SharedClasses
 			public List<string> GetRegistryUnassociationNsisLines()
 			{
 				List<string> nsisLines = new List<string>();
-				const string labelStart = "defaultkeyIsBlank";
+				const string labelStartUseCurrentClassesRootVariable = "defaultkeyIsBlank";
 				int tmpcounter = 0;
 
 				foreach (SubContextMenuItem subcommand in this.SubCommands)
@@ -393,11 +402,19 @@ namespace SharedClasses
 					{
 						tmpcounter++;
 						nsisLines.Add("");
+						string gotolabelClassesRootIsBlank = labelStartUseCurrentClassesRootVariable + tmpcounter;
+						
 						nsisLines.Add(string.Format("StrCpy $classesRootMainKey \"{0}\" \"\" 0", pathInClassesRoot));
 						nsisLines.Add("ReadRegStr $0 HKCR $classesRootMainKey \"\"");
-						nsisLines.Add(string.Format("StrCmp $0 \"\" {0} 0", labelStart + tmpcounter));
+						nsisLines.Add(string.Format("StrCmp $0 \"\" {0} 0", gotolabelClassesRootIsBlank));
 						nsisLines.Add(string.Format("StrCpy $classesRootMainKey $0 \"\" 0 ;the (default) value of CLASSES_ROOT\\{0} is not empty, using its value to get new path in CLASSES_ROOT", pathInClassesRoot));
-						nsisLines.Add(string.Format("{0}:", labelStart + tmpcounter));
+
+						//nsisLines.Add(string.Format("StrCpy $classesRootMainKey \"$classesRootMainKey\\CurVer\" \"\" 0", pathInClassesRoot));
+						nsisLines.Add("ReadRegStr $1 HKCR \"$classesRootMainKey\\CurVer\" \"\"");
+						nsisLines.Add(string.Format("StrCmp $1 \"\" {0} 0", gotolabelClassesRootIsBlank) + " ; The CurVer value was empty, jump to label");
+						nsisLines.Add(string.Format("StrCpy $classesRootMainKey $1 \"\" 0 ;the (CurVer) value of CLASSES_ROOT\\{0} is not empty, using its value to get new path in CLASSES_ROOT", pathInClassesRoot));
+						
+						nsisLines.Add(string.Format("{0}:", gotolabelClassesRootIsBlank));
 
 						string tmpline = GetNsisDeleteRegKeyLine(RegistryRootKeys.HKCR, @"$classesRootMainKey\shell\" + this.MainmenuItemRegistryName);
 						//if (!nsisLines.Contains(tmpline))
@@ -542,6 +559,32 @@ namespace SharedClasses
 				foreach (String extension in ExtensionList)
 					DoNotUseOnOwn_AddFileExtensionToFileTypeHandlerRemoveCommands(extension, FileTypeName);
 			}
+		}
+
+		public static string GetAppPathFromRegistry(string exeKeyName)
+		{
+			using (var appPathRootkey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, Is64BitOperatingSystem ? RegistryView.Registry64 : RegistryView.Registry32)
+				.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths"))
+			{
+				if (null == appPathRootkey)
+					return null;
+				var appPathKeys = appPathRootkey.GetSubKeyNames().ToArray();
+				for (int i = 0; i < appPathKeys.Length; i++)
+				{
+					if (appPathKeys[i].Equals(exeKeyName, StringComparison.InvariantCultureIgnoreCase))
+					{
+						using (var foundKey = appPathRootkey.OpenSubKey(appPathKeys[i]))
+							return foundKey.GetValue(null).ToString();
+					}
+					else if (!exeKeyName.EndsWith(".exe", StringComparison.InvariantCultureIgnoreCase)
+						&& appPathKeys[i].Equals(exeKeyName + ".exe", StringComparison.InvariantCultureIgnoreCase))
+					{
+						using (var foundKey = appPathRootkey.OpenSubKey(appPathKeys[i]))
+							return foundKey.GetValue(null).ToString();
+					}
+				}
+			}
+			return null;
 		}
 	}
 

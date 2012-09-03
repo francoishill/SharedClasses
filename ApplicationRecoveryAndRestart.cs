@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Windows.Forms;
 using Microsoft.WindowsAPICodePack.ApplicationServices;
 using MS.WindowsAPICodePack.Internal;
 
@@ -9,13 +8,23 @@ using MS.WindowsAPICodePack.Internal;
 /// </summary>
 public class ApplicationRecoveryAndRestart
 {
-	public static MethodInvoker FunctionToPerformOnCrash;
+	public static Action FunctionToPerformOnCrash;
 
 	public const string CrashReportsDirectory = @"C:\Francois\Crash reports";
 	public const string SavetofileDateFormat = @"yyyy MM dd \a\buildTask HH mm ss";
 
-	public static void RegisterApplicationRecoveryAndRestart(MethodInvoker functionToPerformOnCrash, MethodInvoker callbackWhenApplicationIsRestartReadyAfter60seconds = null)
+	public static void RegisterApplicationRecoveryAndRestart(Action functionToPerformOnCrash, Action callbackWhenApplicationIsRestartReadyAfter60seconds, Action<string> actionOnError)
 	{
+		//Note the functionToPerformOnCrash will be performed event if 60 seconds has not passed
+
+		//Make sure WindowsAPICodePack dll is present for application recovery/restart
+		string dllpath = Path.Combine(Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]), "Microsoft.WindowsAPICodePack.dll");
+		if (!File.Exists(dllpath))
+		{
+			actionOnError("Cannot start 'StandaloneUploader' withouth Microsoft.WindowsAPICodePack.dll: " + Environment.NewLine + dllpath);
+			Environment.Exit(0);
+		}
+
 		if (!CoreHelpers.RunningOnVista && !CoreHelpers.RunningOnWin7)
 		{
 			return;
@@ -37,16 +46,14 @@ public class ApplicationRecoveryAndRestart
 
 		if (callbackWhenApplicationIsRestartReadyAfter60seconds != null)
 		{
-			Timer timerRecoveryAndRestartSafe = new Timer();
-			timerRecoveryAndRestartSafe.Interval = 60000;
-			timerRecoveryAndRestartSafe.Tick += delegate
-			{
-				timerRecoveryAndRestartSafe.Stop();
-				timerRecoveryAndRestartSafe.Dispose();
-				timerRecoveryAndRestartSafe = null;
-				callbackWhenApplicationIsRestartReadyAfter60seconds.Invoke();
-			};
-			timerRecoveryAndRestartSafe.Start();
+			System.Threading.Timer timer = new System.Threading.Timer(
+				delegate
+				{
+					callbackWhenApplicationIsRestartReadyAfter60seconds();
+				},
+				null,
+				(int)TimeSpan.FromMinutes(1).TotalMilliseconds,
+				System.Threading.Timeout.Infinite);
 		}
 	}
 
@@ -61,7 +68,8 @@ public class ApplicationRecoveryAndRestart
 		{
 			ApplicationRestartRecoveryManager.ApplicationRecoveryInProgress();
 
-			FunctionToPerformOnCrash.Invoke();
+			if (FunctionToPerformOnCrash != null)
+				FunctionToPerformOnCrash.Invoke();
 
 			ApplicationRestartRecoveryManager.ApplicationRecoveryFinished(true);
 		}
@@ -83,9 +91,10 @@ public class ApplicationRecoveryAndRestart
 		ApplicationRestartRecoveryManager.UnregisterApplicationRecovery();
 	}
 
-	public static void TestCrash(bool showWarningFirst)
+	public static void TestCrash(bool showWarningFirst, Func<string, bool> functionToConfirm)
 	{
-		if (!showWarningFirst || MessageBox.Show("Program will now perform a crash to set RecoveryAndRestart, are you sure?", "Confirm", MessageBoxButtons.YesNo) == System.Windows.Forms.DialogResult.Yes)
+		if (!showWarningFirst || functionToConfirm("Program will now perform a crash to set RecoveryAndRestart, are you sure?"))
+			//MessageBox.Show("Program will now perform a crash to set RecoveryAndRestart, are you sure?", "Confirm", MessageBoxButtons.YesNo) == System.Windows.Forms.DialogResult.Yes)
 			Environment.FailFast("Testing the Application Restart Recovery");
 	}
 

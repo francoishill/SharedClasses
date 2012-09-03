@@ -40,12 +40,14 @@ namespace SharedClasses
 
 				List<string> outputs;
 				List<string> errors;
-				bool? result = SharedClasses.ProcessesInterop.StartProcessCatchOutput(
+				int exitcode;
+				bool? result = SharedClasses.ProcessesInterop.RunProcessCatchOutput(
 					new System.Diagnostics.ProcessStartInfo(
 						xdelta3Path,
 						string.Format("{0} \"{1}\" \"{2}\" \"{3}\"", commandStr, file1, file2, file3)),
 					out outputs,
-					out errors);
+					out errors,
+					out exitcode);
 
 				if (result == true)//Successfully ran with no errors/output
 					return true;

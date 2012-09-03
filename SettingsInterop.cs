@@ -16,9 +16,9 @@ public class SettingsInterop
 	public static string LocalAppdataPath(string ApplicationName, string CompanyName = "FJH", bool EnsurePathExists = true)
 	{
 		string LocalAppdataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-		FileSystemInterop.RemoveLeadingAndTrailingBackslashes(ref LocalAppdataPath);
-		FileSystemInterop.RemoveLeadingAndTrailingBackslashes(ref ApplicationName);
-		FileSystemInterop.RemoveLeadingAndTrailingBackslashes(ref CompanyName);
+		LocalAppdataPath = (LocalAppdataPath ?? "").Trim('\\');
+		ApplicationName = (ApplicationName ?? "").Trim('\\');
+		CompanyName = CompanyName.Trim('\\');
 		string returnPath = LocalAppdataPath + "\\" + CompanyName + "\\" + ApplicationName;
 		if (EnsurePathExists && !Directory.Exists(returnPath)) Directory.CreateDirectory(returnPath);
 		return returnPath;
@@ -26,10 +26,10 @@ public class SettingsInterop
 
 	public static string GetFullFilePathInLocalAppdata(string fileName, string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH", bool EnsurePathExists = true)
 	{
-		FileSystemInterop.RemoveLeadingAndTrailingBackslashes(ref ApplicationName);
-		FileSystemInterop.RemoveLeadingAndTrailingBackslashes(ref SubfolderNameInApplication);
-		FileSystemInterop.RemoveLeadingAndTrailingBackslashes(ref fileName);
-		FileSystemInterop.RemoveLeadingAndTrailingBackslashes(ref CompanyName);
+		ApplicationName = (ApplicationName ?? "").Trim('\\');
+		SubfolderNameInApplication = (SubfolderNameInApplication ?? "").Trim('\\');
+		fileName = (fileName ?? "").Trim('\\');
+		CompanyName = (CompanyName ?? "").Trim('\\');
 		bool isSubfolderDefined = SubfolderNameInApplication != null && SubfolderNameInApplication.Trim().Length > 0;
 		string folderOfFile =
 			LocalAppdataPath(ApplicationName, CompanyName, EnsurePathExists) +

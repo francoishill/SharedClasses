@@ -6,7 +6,7 @@ namespace SharedClasses
 {
 	public class ProcessesInterop
 	{
-		private static Process GetRedirectingProcess(ProcessStartInfo startInfo, Action<object, DataReceivedEventArgs> onOutput, Action<object, DataReceivedEventArgs> onError)
+		private static Process GetRedirectingProcess(ProcessStartInfo startInfo, Action<object, string> onOutput, Action<object, string> onError)
 		{
 			Process proc = new Process();
 
@@ -17,36 +17,41 @@ namespace SharedClasses
 
 			proc.StartInfo = startInfo;
 
-			proc.OutputDataReceived += (s, e) => onOutput(s, e);
-			proc.ErrorDataReceived += (s, e) => onError(s, e);
+			proc.OutputDataReceived += (s, e) => onOutput(s, e.Data);
+			proc.ErrorDataReceived += (s, e) => onError(s, e.Data);
 
 			return proc;
 		}
 
-		public static bool StartAndWaitProcessRedirectOutput(ProcessStartInfo startInfo, Action<object, DataReceivedEventArgs> onOutput, Action<object, DataReceivedEventArgs> onError)
+		public static bool StartAndWaitProcessRedirectOutput(ProcessStartInfo startInfo, Action<object, string> onOutput, Action<object, string> onError, out int ExitCodeIfRan)
 		{
 			Process proc = GetRedirectingProcess(startInfo, onOutput, onError);
 
 			try
 			{
 				if (!proc.Start())
+				{
+					ExitCodeIfRan = -1;
 					return false;
+				}
 			}
-			catch// (Exception exc)
+			catch (Exception exc)
 			{
+				onError(null, "Could not start '" + startInfo.FileName + "': " + exc.Message);
+				ExitCodeIfRan = -1;
 				return false;
 			}
 
 			proc.BeginErrorReadLine();
 			proc.BeginOutputReadLine();
 			proc.WaitForExit();
-
+			ExitCodeIfRan = proc.ExitCode;
 			proc.Dispose();
 			proc = null;
 			return true;
 		}
 
-		public static Process StartDontWaitProcessRedirectOutput(ProcessStartInfo startInfo, Action<object, DataReceivedEventArgs> onOutput, Action<object, DataReceivedEventArgs> onError)
+		public static Process StartDontWaitProcessRedirectOutput(ProcessStartInfo startInfo, Action<object, string> onOutput, Action<object, string> onError)
 		{
 			Process proc = GetRedirectingProcess(startInfo, onOutput, onError);
 			if (!proc.Start())
@@ -65,15 +70,16 @@ namespace SharedClasses
 		/// <param name="outputs">The output strings that were redirected from the process</param>
 		/// <param name="errors">The error strings that were redirected from the process.</param>
 		/// <returns>True (ran successfully and had no output/errors), False (Could not run), Null (ran but had output/error feedback).</returns>
-		public static bool? RunProcessCatchOutput(ProcessStartInfo startInfo, out List<string> outputs, out List<string> errors)
+		public static bool? RunProcessCatchOutput(ProcessStartInfo startInfo, out List<string> outputs, out List<string> errors, out int ExitCodeIfRan)
 		{
 			List<string> tmpoutputs = new List<string>();
 			List<string> tmperrors = new List<string>();
 
 			bool result = StartAndWaitProcessRedirectOutput(
 				startInfo,
-				(sn, outev) => { if (outev.Data != null) tmpoutputs.Add(outev.Data); },
-				(sn, errev) => { if (errev.Data != null) tmperrors.Add(errev.Data); });
+				(sn, outev) => { if (outev != null) tmpoutputs.Add(outev); },
+				(sn, errev) => { if (errev != null) tmperrors.Add(errev); },
+				out ExitCodeIfRan);
 			outputs = tmpoutputs;
 			errors = tmperrors;
 			if (!result)

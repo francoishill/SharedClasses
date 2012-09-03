@@ -1,21 +1,150 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.ComponentModel;
+using System.Data;
+using System.Linq;
+using System.Text;
 #if CONSOLE
 #else
 using System.Drawing;
 using System.Windows.Forms;
 #endif
 
-public class UserMessages
+public partial class UserMessages : Form
 {
-	/*
-	Additional dependencies
-	Minimum winforms
-	Winforms: Form: UserMessageBox
-	*/
+	//public static Dictionary<string, UserMessages> ListOfShowingMessages = new Dictionary<string, UserMessages>(StringComparer.InvariantCultureIgnoreCase);
+	public static ConcurrentDictionary<string, UserMessages> ListOfShowingMessages = new ConcurrentDictionary<string, UserMessages>(StringComparer.InvariantCultureIgnoreCase);
+
+	public MessageBoxButtons CurrentButtons;
+
+	[ThreadStatic]
+	private static Dictionary<MessageBoxIcon, Image> _mappedIcons;
+	private static Dictionary<MessageBoxIcon, Image> MappedIcons
+	{
+		get
+		{
+			if (_mappedIcons == null)
+			{
+				_mappedIcons = new Dictionary<MessageBoxIcon, Image>();
+
+				_mappedIcons.Add(MessageBoxIcon.Error, SystemIcons.Error.ToBitmap());
+				_mappedIcons.Add(MessageBoxIcon.Warning, SystemIcons.Warning.ToBitmap());
+				_mappedIcons.Add(MessageBoxIcon.Information, SystemIcons.Information.ToBitmap());
+				_mappedIcons.Add(MessageBoxIcon.Question, SystemIcons.Question.ToBitmap());
+			}
+			return _mappedIcons;
+		}
+	}
+
+	private UserMessages()
+	{
+		InitializeComponent();
+		labelCountRepeatedCount.Text = "0 times";
+		EnsureClosingEventAttached();
+	}
+
+	private bool alreadyAttached = false;
+	private void EnsureClosingEventAttached()
+	{
+		if (!alreadyAttached)
+		{
+			if (Application.OpenForms.Count > 0)
+				Application.OpenForms[0].FormClosing += delegate
+				{
+					var keys = ListOfShowingMessages.Keys.ToArray();
+					for (int i = keys.Length - 1; i >= 0; i--)
+					{
+						//ListOfShowingMessages[keys[i]].Close();
+						UserMessages tmpMbox;
+						while (!ListOfShowingMessages.TryGetValue(keys[i], out tmpMbox))
+							System.Threading.Thread.Sleep(200);
+
+						Action action = (Action)delegate { tmpMbox.Close(); };
+						if (tmpMbox.InvokeRequired)
+							tmpMbox.Invoke(action);
+						else
+							action();
+					}
+				};
+			alreadyAttached = true;
+		}
+	}
+
+	public static DialogResult ShowUserMessage(IWin32Window owner, string Message, string Title, MessageBoxIcon icon, bool AlwaysOnTop)
+	{
+		if (ListOfShowingMessages.ContainsKey(Message))
+		{
+			Action showConfirmAction = delegate
+			{
+				ListOfShowingMessages[Message].labelCountRepeatedCount.Visible = true;
+				int curCount;
+				if (int.TryParse(ListOfShowingMessages[Message].labelCountRepeatedCount.Text.Substring(0, ListOfShowingMessages[Message].labelCountRepeatedCount.Text.IndexOf(' ')), out curCount))
+					ListOfShowingMessages[Message].labelCountRepeatedCount.Text = (curCount + 1).ToString() + " times";
+			};
+			if (ListOfShowingMessages[Message].InvokeRequired)
+				ListOfShowingMessages[Message].Invoke(showConfirmAction);
+			else
+				showConfirmAction();
+			return DialogResult.Cancel;//Might cause issues as the 2nd, 3rd, 4th, etc occurance will always return Cancel
+		}
+
+		UserMessages umb = new UserMessages();
+		umb.TopMost = AlwaysOnTop;
+		ListOfShowingMessages.AddOrUpdate(Message, umb, (s, u) => { return null; });
+
+		if (icon == MessageBoxIcon.None)
+			umb.pictureBox1.Visible = false;
+		else
+			umb.pictureBox1.Image = MappedIcons[icon];
+		umb.CurrentButtons = MessageBoxButtons.OK;
+		umb.labelMessage.Text = Message;
+		umb.Text = Title;
+		//umb.TopMost = AlwaysOnTop;
+		return umb.ShowDialog(owner);
+	}
+
+	private void GlobalKeyDown(object sender, PreviewKeyDownEventArgs e)
+	{
+		if (e.KeyData == Keys.Escape)
+			this.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+	}
+
+	private bool labelLocationChanged = false;
+	private void UserMessages_SizeChanged(object sender, EventArgs e)
+	{
+		if (this.Size.Width != 138 || this.Size.Height != 170)
+		{
+			if (this.Size.Height > 170)
+				if (!labelLocationChanged)
+				{
+					labelMessage.Location = new Point(labelMessage.Location.X, labelMessage.Location.Y - 9);
+					labelLocationChanged = true;
+				}
+			if (CurrentButtons == MessageBoxButtons.OK)
+			{
+				Button acceptButton = new Button()
+				{
+					Text = "&OK",
+					Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
+					DialogResult = System.Windows.Forms.DialogResult.OK
+				};
+				this.panel2.Controls.Add(acceptButton);
+				acceptButton.PreviewKeyDown += GlobalKeyDown;
+				acceptButton.Location = new Point(this.panel2.Width - acceptButton.Width - 5, (this.panel2.Height - acceptButton.Height) / 2);
+			}
+		}
+	}
+
+	private void UserMessages_FormClosing(object sender, FormClosingEventArgs e)
+	{
+		UserMessages tmpMbox;
+		while (!ListOfShowingMessages.TryRemove(this.labelMessage.Text, out tmpMbox))
+			System.Threading.Thread.Sleep(200);
+	}
 
 
-#if CONSOLE
+	#if CONSOLE
 	public static void ShowWarningMessage(string message)
 	{
 		Console.WriteLine(string.Format("Warning: {0}", message));
@@ -28,7 +157,7 @@ public class UserMessages
 	private static bool ShowMsg(IWin32Window owner, string Message, string Title, MessageBoxIcon icon, bool AlwaysOnTop)
 	{
 		//AlwayOnTop is currently broken if no owner assigned
-		UserMessageBox.ShowUserMessage(owner, Message, Title, icon, AlwaysOnTop);
+		UserMessages.ShowUserMessage(owner, Message, Title, icon, AlwaysOnTop);
 		return true;
 		/*if (owner == null && Form.ActiveForm != null && AlwaysOnTop) owner = Form.ActiveForm;
 		bool useTempForm = false;
@@ -51,7 +180,7 @@ public class UserMessages
 			}
 			if (iconForMessages != null) ((Form)owner).Icon = iconForMessages;
 			//MessageBox.Show(owner, Message, Title, MessageBoxButtons.OK, icon);
-			UserMessageBox.ShowUserMessage(owner, Message, Title, icon, AlwaysOnTop);
+			UserMessages.ShowUserMessage(owner, Message, Title, icon, AlwaysOnTop);
 			if (useTempForm && topmostForm != null && !topmostForm.IsDisposed) topmostForm.Dispose();
 			if (owner != null)
 				((Form)owner).TopMost = ownerOriginalTopmostState;

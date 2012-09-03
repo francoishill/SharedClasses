@@ -1700,10 +1700,12 @@ GlobalSettings.ReadConsole(
 		{
 			[Description("The full URL to the online xdelta3.exe file.")]
 			public string OnlineXDeltaExeFileUrl { get; set; }
+			public string OnlinePdfTkExeFileUrl { get; set; }
 
 			public AutoSyncSettings()//Defaults
 			{
 				this.OnlineXDeltaExeFileUrl = OnlineAppsSettings.Instance.RootFtpUrl.TrimEnd('/') + "/xDelta3.exe";
+				this.OnlinePdfTkExeFileUrl = OnlineAppsSettings.Instance.RootFtpUrl.TrimEnd('/') + "/pdftk.exe";
 			}
 		}
 
@@ -1812,8 +1814,47 @@ GlobalSettings.ReadConsole(
 			{
 				ListOfApplicationsToBuild = new List<string>()
 				{
-					"PublishOwnApps"
+					"PublishOwnApps",
+					"FileOperations",
+					"AutoConnectWifiAdhoc",
+					"AddDependenciesCSharp",
+					"MonitorSystem",
+					"QuickAccess",
+					"GenericTextFunctions",
+					"AForgeMotionDetector",
+					"TestingMonitorSubversion",
+					"StartupTodoManager",
+					"ApplicationManager",
+					"MonitorClipboardDebugAssertions",
+					"KillWadiso6",
+					"CodeSnippets",
+					"AutoUploadChangesToFtp",
+					"TestingByteArrayDiff",
+					"TestHoursWorkedCalculator",
+					"InstantMessengerClient",
+					"InstantMessengerServer",
+					"PublishFromCommandline",
+					"StickyNotes",
+					"MiniPopupTasks",
+					"AutoUpdater",
+					"WindowsStartupManager",
+					"ShowNoCallbackNotification"
 				};
+			}
+			public static void EnsureDefaultItemsInList()
+			{
+				var tmpdefaultBuildTest = new BuildTestSystemSettings();
+				var tmpInstanceList = BuildTestSystemSettings.Instance.ListOfApplicationsToBuild;
+				bool allthere = true;
+				foreach (var app in tmpdefaultBuildTest.ListOfApplicationsToBuild)
+					if (!tmpInstanceList.Contains(app, StringComparer.InvariantCultureIgnoreCase))
+					{
+						allthere = false;
+						tmpInstanceList.Add(app);
+					}
+				allthere = false;
+				if (!allthere)
+					BuildTestSystemSettings.Instance.ListOfApplicationsToBuild = tmpInstanceList;
 			}
 		}
 	}

@@ -23,7 +23,7 @@ namespace SharedClasses
 		private const string ifUpToDateStartString = "Up to date:";
 
 		//private static bool isUpToDate = false;
-		public static void CheckForUpdates(Action<string> ActionIfUptoDate_Versionstring = null, Action<string> ActionOnError = null)
+		public static void CheckForUpdates(Action<string> ActionIfUptoDate_Versionstring = null, Action<string> ActionOnError = null, bool SeparateThreadDoNotWait = true)
 		{
 			//If running from Visual Studio paths
 			if (Environment.GetCommandLineArgs()[0].StartsWith(@"C:\Francois\Dev\VSprojects", StringComparison.InvariantCultureIgnoreCase)
@@ -44,40 +44,44 @@ namespace SharedClasses
 			}
 			else
 			{
-				List<string> outputs;
-				List<string> errors;
-				int exitcode;
-				bool? runresult = ProcessesInterop.RunProcessCatchOutput(
-					new ProcessStartInfo(
-						autoupdaterFilepath,
-						"checkforupdates \"" + Environment.GetCommandLineArgs()[0] + "\""
-							+ (isCheckingForAutoUpdater ? " " + cCalledItsselfThirdParameter : "")),//Pass extra commandline argument if is checking for ittsself (AutoUpdater)
-					out outputs,
-					out errors,
-					out exitcode);
-
-				if (runresult.HasValue && runresult.Value == true)//Ran but with errors/output
-					errors.RemoveAll(s => string.IsNullOrWhiteSpace(s));
-				ExitCodes parsedExitCode;
-				if (Enum.TryParse<ExitCodes>(exitcode.ToString(), out parsedExitCode))
+				ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 				{
-					switch (parsedExitCode)
+					List<string> outputs;
+					List<string> errors;
+					int exitcode;
+					bool? runresult = ProcessesInterop.RunProcessCatchOutput(
+						new ProcessStartInfo(
+							autoupdaterFilepath,
+							"checkforupdates \"" + Environment.GetCommandLineArgs()[0] + "\""
+								+ (isCheckingForAutoUpdater ? " " + cCalledItsselfThirdParameter : "")),//Pass extra commandline argument if is checking for ittsself (AutoUpdater)
+						out outputs,
+						out errors,
+						out exitcode);
+
+					if (runresult.HasValue && runresult.Value == true)//Ran but with errors/output
+						errors.RemoveAll(s => string.IsNullOrWhiteSpace(s));
+					ExitCodes parsedExitCode;
+					if (Enum.TryParse<ExitCodes>(exitcode.ToString(), out parsedExitCode))
 					{
-						case ExitCodes.UpToDateExitCode:
-							if (ActionIfUptoDate_Versionstring != null)
-								ActionIfUptoDate_Versionstring(FileVersionInfo.GetVersionInfo(Environment.GetCommandLineArgs()[0]).FileVersion);
-							break;
-						case ExitCodes.NewVersionAvailableExitCode:
-							//A WPFNotification got shown, no need to show more
-							break;
-						case ExitCodes.UnableToCheckForUpdatesErrorCode:
-							if (errors.Count > 0 && ActionOnError != null)
-								ActionOnError("Could not check for updates: " + string.Join(".  ", errors));
-							break;
-						default:
-							break;
+						switch (parsedExitCode)
+						{
+							case ExitCodes.UpToDateExitCode:
+								if (ActionIfUptoDate_Versionstring != null)
+									ActionIfUptoDate_Versionstring(FileVersionInfo.GetVersionInfo(Environment.GetCommandLineArgs()[0]).FileVersion);
+								break;
+							case ExitCodes.NewVersionAvailableExitCode:
+								//A WPFNotification got shown, no need to show more
+								break;
+							case ExitCodes.UnableToCheckForUpdatesErrorCode:
+								if (errors.Count > 0 && ActionOnError != null)
+									ActionOnError("Could not check for updates: " + string.Join(".  ", errors));
+								break;
+							default:
+								break;
+						}
 					}
-				}
+				},
+				!SeparateThreadDoNotWait);
 			}
 		}
 	}

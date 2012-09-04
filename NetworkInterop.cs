@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using SharedClasses;
+using System.Text.RegularExpressions;
 
 //TODO: Check out extension functions (a static class with methods which uses this as one of the parameters)
 //TODO: Check out BeforeFieldInit and NotBeforeFieldInit for static initializers: http://geekswithblogs.net/BlackRabbitCoder/archive/2010/09/02/c.net-five-more-little-wonders-that-make-code-better-2.aspx
@@ -20,6 +21,19 @@ public static class StringExtensions
 	//{
 	//	return str.Equals("Francois", CaseSensitive ? StringComparison.InvariantCulture : StringComparison.InvariantCultureIgnoreCase);
 	//}
+
+	public static string GetExternalIp()
+	{
+		try
+		{
+			string externalIP;
+			externalIP = (new WebClient()).DownloadString("http://checkip.dyndns.org/");
+			externalIP = (new Regex(@"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"))
+						 .Matches(externalIP)[0].ToString();
+			return externalIP;
+		}
+		catch { return null; }
+	}
 
 	public static bool IsNullOrEmpty(this string str)
 	{

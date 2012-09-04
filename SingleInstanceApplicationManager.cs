@@ -71,7 +71,11 @@ namespace SharedClasses
 				// init handle
 				eventWaitHandle = new EventWaitHandle(false, EventResetMode.AutoReset, eventName);
 
-				callbackInFirstInstanceWhenAnotherStarts += (sn, ev) => { actionToPerformOnFirstInstanceWhenSecondInstanceStarts(ev, mainformOrwindow); };
+				callbackInFirstInstanceWhenAnotherStarts += (sn, ev) =>
+				{
+					while (mainformOrwindow == null) { }//Wait until main form created
+					actionToPerformOnFirstInstanceWhenSecondInstanceStarts(ev, mainformOrwindow);
+				};
 				// register wait handle for this instance (process)
 				ThreadPool.RegisterWaitForSingleObject(eventWaitHandle, WaitOrTimerCallback,
 					//callback,

@@ -356,6 +356,9 @@ public class UserActivityHook
 	[DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
 	private static extern short GetKeyState(int vKey);
 
+	[DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true)]
+	public static extern int GetDoubleClickTime();//In milliseconds
+
 	#endregion
 
 	#region Windows constants
@@ -648,7 +651,9 @@ public class UserActivityHook
 		}
 	}
 
-
+	DateTime lastLeftDown = DateTime.MinValue;
+	DateTime lastMiddleDown = DateTime.MinValue;
+	DateTime lastRightDown = DateTime.MinValue;
 	/// <summary>
 	/// A callback function which will be called every time a mouse activity detected.
 	/// </summary>
@@ -684,34 +689,59 @@ public class UserActivityHook
 			//detect button clicked
 			MoreMouseButton button = null;
 			short mouseDelta = 0;
+			DateTime now = DateTime.Now;
 			switch (wParam)
 			{
 				case WM_LBUTTONDOWN:
 					button = new MoreMouseButton(MouseButtons.Left, MoreMouseButton.MoreButtonStates.Down);
+					if (now.Subtract(lastLeftDown).TotalMilliseconds <= GetDoubleClickTime())
+					{
+						button.ButtonState = MoreMouseButton.MoreButtonStates.DoubleClicked;
+						lastLeftDown = DateTime.MinValue;//So we dont receive another double-click on the third fast click
+					}
+					else
+						lastLeftDown = now;
 					break;
 				case WM_LBUTTONUP:
-					button = new MoreMouseButton(MouseButtons.Left, MoreMouseButton.MoreButtonStates.DoubleClicked);
-					break;
-				case WM_LBUTTONDBLCLK: 
 					button = new MoreMouseButton(MouseButtons.Left, MoreMouseButton.MoreButtonStates.Up);
+					break;
+				case WM_LBUTTONDBLCLK:
+					//Never occurs see inside the left button down case
+					//button = new MoreMouseButton(MouseButtons.Left, MoreMouseButton.MoreButtonStates.DoubleClicked);
 					break;
 				case WM_MBUTTONDOWN:
 					button = new MoreMouseButton(MouseButtons.Middle, MoreMouseButton.MoreButtonStates.Down);
+					if (now.Subtract(lastMiddleDown).TotalMilliseconds <= GetDoubleClickTime())
+					{
+						button.ButtonState = MoreMouseButton.MoreButtonStates.DoubleClicked;
+						lastMiddleDown = DateTime.MinValue;//So we dont receive another double-click on the third fast click
+					}
+					else
+						lastMiddleDown = now;
 					break;
 				case WM_MBUTTONUP:
 					button = new MoreMouseButton(MouseButtons.Middle, MoreMouseButton.MoreButtonStates.Up);
 					break;
 				case WM_MBUTTONDBLCLK:
-					button = new MoreMouseButton(MouseButtons.Middle, MoreMouseButton.MoreButtonStates.DoubleClicked);
+					//Never occurs see inside the middle button down case
+					//button = new MoreMouseButton(MouseButtons.Middle, MoreMouseButton.MoreButtonStates.DoubleClicked);
 					break;
 				case WM_RBUTTONDOWN:
 					button = new MoreMouseButton(MouseButtons.Right, MoreMouseButton.MoreButtonStates.Down);
+					if (now.Subtract(lastRightDown).TotalMilliseconds <= GetDoubleClickTime())
+					{
+						button.ButtonState = MoreMouseButton.MoreButtonStates.DoubleClicked;
+						lastRightDown = DateTime.MinValue;//So we dont receive another double-click on the third fast click
+					}
+					else
+						lastRightDown = now;
 					break;
 				case WM_RBUTTONUP:
 					button = new MoreMouseButton(MouseButtons.Right, MoreMouseButton.MoreButtonStates.Up);
 					break;
 				case WM_RBUTTONDBLCLK:
-					button = new MoreMouseButton(MouseButtons.Right, MoreMouseButton.MoreButtonStates.DoubleClicked);
+					//Never occurs see inside the right button down case
+					//button = new MoreMouseButton(MouseButtons.Right, MoreMouseButton.MoreButtonStates.DoubleClicked);
 					break;
 				case WM_MOUSEWHEEL:
 					//If the message is WM_MOUSEWHEEL, the high-order word of mouseData member is the wheel delta. 

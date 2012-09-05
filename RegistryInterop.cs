@@ -129,131 +129,6 @@ namespace SharedClasses
 			return false;
 		}
 
-		[Obsolete("Please use AddSubMenuCommands with '*' as part of its FileExtensionsInClassesRoot")]
-		private static void DoNotUseOnOwn_EnsureClassesRootSubpathExists(String ClassesRootSub)
-		{
-			Microsoft.Win32.RegistryKey regkeyClassesRoot = Microsoft.Win32.Registry.ClassesRoot;
-			Boolean ExtensionKeyFound = false;
-			foreach (String s in regkeyClassesRoot.GetSubKeyNames()) if (s.ToUpper() == ClassesRootSub.ToUpper()) ExtensionKeyFound = true;
-			if (!ExtensionKeyFound) regkeyClassesRoot.CreateSubKey(ClassesRootSub);
-		}
-
-		[Obsolete("Please use AddSubMenuCommands with '*' as part of its FileExtensionsInClassesRoot")]
-		private static void DoNotUseOnOwn_EnsureClassesRootSubShellpathExists(String ClassesRootSub, String DefaultCommandName = null)
-		{
-			DoNotUseOnOwn_EnsureClassesRootSubpathExists(ClassesRootSub);
-
-			Microsoft.Win32.RegistryKey tempregkeyFileExtension = Microsoft.Win32.Registry.ClassesRoot.OpenSubKey(ClassesRootSub, true);
-			Boolean ShellKeyFound = false;
-			foreach (String s in tempregkeyFileExtension.GetSubKeyNames()) if (s.ToUpper() == "Shell".ToUpper()) ShellKeyFound = true;
-			if (!ShellKeyFound) tempregkeyFileExtension.CreateSubKey("Shell");
-			if (DefaultCommandName != null) tempregkeyFileExtension.OpenSubKey("Shell", true).SetValue("", DefaultCommandName);
-		}
-
-		[Obsolete("Please use AddSubMenuCommands with '*' as part of its FileExtensionsInClassesRoot")]
-		public static void AddCommandToFolder(String CommandName, String CommandLine, String CommandDisplayName, String CommandIcon, String DefaultCommandName = null, string ThisAppKeyName = null)//"%V" is the file full path when right clicking on it
-		{
-			//Check if it is windows 7
-			Boolean Windows7 = GetMachineOS() == WindowsVersion.Win7;
-			if (Windows7) AddCommandToFolder_Windows7(ThisAppKeyName, CommandName, CommandLine, CommandDisplayName, CommandIcon, DefaultCommandName);
-			else AddCommandToFolder_Normal(ThisAppKeyName, CommandName, CommandLine, CommandDisplayName, CommandIcon, DefaultCommandName);
-		}
-
-		[Obsolete("Please use AddSubMenuCommands with '*' as part of its FileExtensionsInClassesRoot")]
-		private static void AddCommandToFolder_Normal(string ThisAppKeyName, String CommandName, String CommandLine, String CommandDisplayName, String CommandIcon, String DefaultCommandName = null)
-		{
-			//Check if system is 64bit
-			Boolean Is64Bit = Is64BitOperatingSystem;
-
-			DoNotUseOnOwn_EnsureClassesRootSubShellpathExists("Folder", DefaultCommandName);
-
-			//Microsoft.Win32.RegistryKey tempregkeyShellFolder = Microsoft.Win32.Registry.ClassesRoot.OpenSubKey("Folder", true).OpenSubKey("Shell", true);
-			Microsoft.Win32.RegistryKey tempregkeyShellFolder = RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.ClassesRoot, Is64Bit ? Microsoft.Win32.RegistryView.Registry64 : Microsoft.Win32.RegistryView.Registry32).OpenSubKey("Folder", true).OpenSubKey("Shell", true);
-			Boolean CommandNameKeyFound = false;
-			foreach (String s in tempregkeyShellFolder.GetSubKeyNames()) if (s.ToUpper() == CommandName.ToUpper()) CommandNameKeyFound = true;
-			if (!CommandNameKeyFound) tempregkeyShellFolder.CreateSubKey(CommandName);
-
-			tempregkeyShellFolder.OpenSubKey(CommandName, true).SetValue("", CommandDisplayName == null ? CommandName : CommandDisplayName);
-			if (CommandIcon != null) tempregkeyShellFolder.OpenSubKey(CommandName, true).SetValue("Icon", CommandIcon);
-
-			Microsoft.Win32.RegistryKey tempregkeyCommandName = tempregkeyShellFolder.OpenSubKey(CommandName, true);
-			Boolean CommandKeyFound = false;
-			foreach (String s in tempregkeyCommandName.GetSubKeyNames()) if (s.ToUpper() == "Command".ToUpper()) CommandKeyFound = true;
-			if (!CommandKeyFound) tempregkeyCommandName.CreateSubKey("Command");
-
-			tempregkeyCommandName.OpenSubKey("Command", true).SetValue("", CommandLine);
-		}
-
-		[Obsolete("Please use AddSubMenuCommands with '*' as part of its FileExtensionsInClassesRoot")]
-		private static void AddCommandToFolder_Windows7(string ThisAppKeyName, String CommandName, String CommandLine, String CommandDisplayName, String CommandIcon, String DefaultCommandName = null)
-		{
-			//Check if system is 64bit
-			Boolean Is64Bit = Is64BitOperatingSystem;
-
-			DoNotUseOnOwn_EnsureClassesRootSubShellpathExists("Folder", DefaultCommandName);
-
-			string tmpFullCommandName = "_" + ThisAppKeyName + "." + CommandName;
-
-			string CommandStoreRelativePath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell";
-			string FullCommandPath = @"HKEY_LOCAL_MACHINE\" + CommandStoreRelativePath + "\\" + tmpFullCommandName;
-			string ThisAppFullFolderShellPath = @"HKEY_CLASSES_ROOT\Folder\shell\" + ThisAppKeyName;
-
-			//Sets the command and icon of it
-			RegistryKey LocalMachineKey = RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Is64Bit ? Microsoft.Win32.RegistryView.Registry64 : Microsoft.Win32.RegistryView.Registry32);
-			LocalMachineKey.CreateSubKey(CommandStoreRelativePath + "\\" + tmpFullCommandName + @"\Command");
-			LocalMachineKey.OpenSubKey(CommandStoreRelativePath + "\\" + tmpFullCommandName, true).SetValue("", CommandDisplayName == null ? CommandName : CommandDisplayName);
-			LocalMachineKey.OpenSubKey(CommandStoreRelativePath + "\\" + tmpFullCommandName + @"\Command", true).SetValue("", CommandLine);
-			if (CommandIcon != null)
-				LocalMachineKey.OpenSubKey(CommandStoreRelativePath + "\\" + tmpFullCommandName, true).SetValue("Icon", CommandIcon);
-
-			//Enusre default value is "null"
-			Boolean DefaultValueFound = false;
-			if (!Registry.ClassesRoot.OpenSubKey(@"Folder\shell").GetSubKeyNames().Contains(ThisAppKeyName, StringComparer.InvariantCultureIgnoreCase))
-				Registry.ClassesRoot.OpenSubKey(@"Folder\shell", true).CreateSubKey(ThisAppKeyName);
-			RegistryKey rk = Registry.ClassesRoot.OpenSubKey(@"Folder\shell\" + ThisAppKeyName, false);
-			if (rk != null)
-				foreach (string val in rk.GetValueNames()) if (val == "") DefaultValueFound = true;
-			if (DefaultValueFound) Registry.ClassesRoot.OpenSubKey(@"Folder\shell\" + ThisAppKeyName, true).DeleteValue("");
-
-			//Set the icon
-			if (CommandIcon != null)
-				Registry.ClassesRoot.OpenSubKey(@"Folder\shell\" + ThisAppKeyName, true).SetValue("Icon", CommandIcon);
-
-			//Set the subommands (add if currently existing)
-			string CurrentSubCommands = "";
-			object tmpobj = Registry.GetValue(ThisAppFullFolderShellPath, "SubCommands", "");
-			if (tmpobj != null)
-				CurrentSubCommands = tmpobj.ToString();
-			//if (!CurrentSubCommands.ToUpper().Contains(tmpFullCommandName.ToUpper()))
-			//{
-			if (!CurrentSubCommands.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries).ToList<string>().Contains(tmpFullCommandName, StringComparer.InvariantCultureIgnoreCase))
-			{
-				if (CurrentSubCommands.Length > 0) CurrentSubCommands += ";";
-				CurrentSubCommands += tmpFullCommandName;
-				Registry.SetValue(ThisAppFullFolderShellPath, "SubCommands", CurrentSubCommands);
-			}
-			//}
-			LocalMachineKey.Close();
-		}
-
-		[Obsolete("Please use AddSubMenuCommands with '*' as part of its FileExtensionsInClassesRoot")]
-		private static void AddSeperatorToFolder_Windows7(string ThisAppKeyName)
-		{
-			string ThisAppFullFolderShellPath = @"HKEY_CLASSES_ROOT\Folder\shell\" + ThisAppKeyName;
-			string CurrentSubCommands = Registry.GetValue(ThisAppFullFolderShellPath, "SubCommands", "").ToString();
-			if (CurrentSubCommands.Length > 0) CurrentSubCommands += ";";
-			CurrentSubCommands += "Windows.separator";
-			Registry.SetValue(ThisAppFullFolderShellPath, "SubCommands", CurrentSubCommands);
-		}
-
-		[Obsolete("Please use AddSubMenuCommands with '*' as part of its FileExtensionsInClassesRoot")]
-		private static void DoNotUseOnOwn_AddFileExtensionToFileTypeHandlerRemoveCommands(String FileExtension, String FileTypeName)
-		{
-			DoNotUseOnOwn_EnsureClassesRootSubpathExists(FileExtension);
-			Microsoft.Win32.Registry.ClassesRoot.OpenSubKey(FileExtension, true).SetValue("", FileTypeName);
-			Microsoft.Win32.Registry.ClassesRoot.OpenSubKey(FileExtension, true).DeleteSubKeyTree("Shell", false);
-		}
-
 		public class MainContextMenuItem
 		{
 			public string MainmenuItemRegistryName;
@@ -469,97 +344,9 @@ namespace SharedClasses
 			public bool IsSeparator() { return this.CommandName == "|"; }
 		}
 
-		[Obsolete("Not used anymore, use static call to GetNsisLines(MainContextMenuItem mainItem)", true)]
-		public static bool AddSubMenuCommands(MainContextMenuItem mainItem)
-		{
-			return false;
-			//return mainItem.WriteRegistryEntries();
-		}
-
 		public static List<string> GetNsisLines(MainContextMenuItem mainItem, Action<string> actionOnError)
 		{
 			return mainItem.GetRegistryAssociationNsisLines(actionOnError);
-		}
-
-		[Obsolete("Please use AddSubMenuCommands with '*' as part of its FileExtensionsInClassesRoot")]
-		public static void AddCommandToAllFiles(String CommandName, String CommandLine, String CommandDisplayName, String CommandIcon, ShowErrorMessageDelegate showErrorDelegate, String DefaultCommandName = null)
-		{
-			DoNotUseOnOwn_EnsureClassesRootSubShellpathExists("*", DefaultCommandName);
-
-			Microsoft.Win32.RegistryKey tempregkeyShellFileTypeName = Microsoft.Win32.Registry.ClassesRoot.OpenSubKey("*", true).OpenSubKey("Shell", true);
-			Boolean CommandNameKeyFound = false;
-			foreach (String s in tempregkeyShellFileTypeName.GetSubKeyNames()) if (s.ToUpper() == CommandName.ToUpper()) CommandNameKeyFound = true;
-			if (!CommandNameKeyFound) tempregkeyShellFileTypeName.CreateSubKey(CommandName);
-
-			tempregkeyShellFileTypeName.OpenSubKey(CommandName, true).SetValue("", CommandDisplayName == null ? CommandName : CommandDisplayName);
-			if (CommandIcon != null) tempregkeyShellFileTypeName.OpenSubKey(CommandName, true).SetValue("Icon", CommandIcon);
-
-			Microsoft.Win32.RegistryKey tempregkeyCommandName = tempregkeyShellFileTypeName.OpenSubKey(CommandName, true);
-			Boolean CommandKeyFound = false;
-			foreach (String s in tempregkeyCommandName.GetSubKeyNames()) if (s.ToUpper() == "Command".ToUpper()) CommandKeyFound = true;
-			if (!CommandKeyFound) tempregkeyCommandName.CreateSubKey("Command");
-
-			tempregkeyCommandName.OpenSubKey("Command", true).SetValue("", CommandLine);
-		}
-
-		[Obsolete("Please use AddSubMenuCommands with '*' as part of its FileExtensionsInClassesRoot")]
-		public static void AddCommandToFileTypeHandlerAndAddExstensionListToHandler(List<string> ExtensionList, String FileTypeName, String FileTypeDescription, String FileTypeDefaultIcon, String CommandName, String CommandLine, String CommandDisplayName, String CommandIcon, ShowErrorMessageDelegate showErrorDelegate, String DefaultCommandName = null)
-		{
-			Boolean Continue = true;
-			foreach (String extension in ExtensionList)
-			{
-				if (extension.Length > 1)
-				{
-					if (!extension.StartsWith("."))
-					{
-						Continue = false;
-						showErrorDelegate("Each extension must have at least two characters", "Extensions error");
-						//MessageBox.Show("Each extension must have at least two characters", "Extensions error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-					}
-				}
-				else if (extension != "*")
-				{
-					Continue = false;
-					showErrorDelegate("Extensions must start with a dot: \".\"", "Extensions error");
-					//MessageBox.Show("Extensions must start with a dot: \".\"", "Extensions error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-				}
-			}
-
-			if (Continue)
-			{
-				DoNotUseOnOwn_EnsureClassesRootSubShellpathExists(FileTypeName, DefaultCommandName);
-
-				if (FileTypeDescription != null) Microsoft.Win32.Registry.ClassesRoot.OpenSubKey(FileTypeName, true).SetValue("", FileTypeDescription);
-				else Microsoft.Win32.Registry.ClassesRoot.OpenSubKey(FileTypeName, true).DeleteValue("", false);
-
-				Microsoft.Win32.RegistryKey tempregkeyShellFileTypeName = Microsoft.Win32.Registry.ClassesRoot.OpenSubKey(FileTypeName, true).OpenSubKey("Shell", true);
-				Boolean CommandNameKeyFound = false;
-				foreach (String s in tempregkeyShellFileTypeName.GetSubKeyNames()) if (s.ToUpper() == CommandName.ToUpper()) CommandNameKeyFound = true;
-				if (!CommandNameKeyFound) tempregkeyShellFileTypeName.CreateSubKey(CommandName);
-
-				tempregkeyShellFileTypeName.OpenSubKey(CommandName, true).SetValue("", CommandDisplayName == null ? CommandName : CommandDisplayName);
-				if (CommandIcon != null) tempregkeyShellFileTypeName.OpenSubKey(CommandName, true).SetValue("Icon", CommandIcon);
-
-				Microsoft.Win32.RegistryKey tempregkeyCommandName = tempregkeyShellFileTypeName.OpenSubKey(CommandName, true);
-				Boolean CommandKeyFound = false;
-				foreach (String s in tempregkeyCommandName.GetSubKeyNames()) if (s.ToUpper() == "Command".ToUpper()) CommandKeyFound = true;
-				if (!CommandKeyFound) tempregkeyCommandName.CreateSubKey("Command");
-
-				tempregkeyCommandName.OpenSubKey("Command", true).SetValue("", CommandLine);
-
-				if (FileTypeDefaultIcon != null)
-				{
-					Microsoft.Win32.RegistryKey tempregkeyFileTypeName = Microsoft.Win32.Registry.ClassesRoot.OpenSubKey(FileTypeName, true);
-					Boolean DefaultIconKeyFound = false;
-					foreach (String s in tempregkeyFileTypeName.GetSubKeyNames()) if (s.ToUpper() == "DefaultIcon".ToUpper()) DefaultIconKeyFound = true;
-					if (!DefaultIconKeyFound) tempregkeyFileTypeName.CreateSubKey("DefaultIcon");
-
-					tempregkeyFileTypeName.OpenSubKey("DefaultIcon", true).SetValue("", FileTypeDefaultIcon);
-				}
-
-				foreach (String extension in ExtensionList)
-					DoNotUseOnOwn_AddFileExtensionToFileTypeHandlerRemoveCommands(extension, FileTypeName);
-			}
 		}
 
 		public static string GetAppPathFromRegistry(string exeKeyName)
@@ -588,11 +375,11 @@ namespace SharedClasses
 			return null;
 		}
 
-		public static RegistryInterop.MainContextMenuItem GetRegistryAssociationItemFromJsonFile(string registryEntriesJsonFilepath, Action<string> actionOnError)
+		public static RegistryInterop.MainContextMenuItem GetRegistryAssociationItemFromJsonFile(string registryEntriesJsonFilepath, Action<string, FeedbackMessageTypes> actionOnMessage)
 		{
 			if (!File.Exists(registryEntriesJsonFilepath))
 			{
-				actionOnError("No file for project to define registry entries, file not found: " + registryEntriesJsonFilepath);
+				actionOnMessage("No file for project to define registry entries, file not found: " + registryEntriesJsonFilepath, FeedbackMessageTypes.Status);
 				return null;
 			}
 			RegistryInterop.MainContextMenuItem mainRegistryItem = new RegistryInterop.MainContextMenuItem();
@@ -603,9 +390,10 @@ namespace SharedClasses
 			}
 			catch (Exception exc)
 			{
-				actionOnError("Could not fill json object from file contents: " + registryEntriesJsonFilepath
+				actionOnMessage("Could not fill json object from file contents: " + registryEntriesJsonFilepath
 						+ Environment.NewLine + "Error:"
-						+ Environment.NewLine + exc.Message);
+						+ Environment.NewLine + exc.Message,
+						FeedbackMessageTypes.Error);
 				return null;
 			}
 		}

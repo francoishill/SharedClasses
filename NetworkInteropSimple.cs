@@ -8,7 +8,7 @@ namespace SharedClasses
 {
 	public class NetworkInteropSimple
 	{
-		public static string FtpDownloadFile(string localRootFolder, string userName, string password, string onlineFileUrl, Action<string> actionOnError, Action<int> actionOnProgressPercentage)
+		public static string FtpDownloadFile(string localRootFolder, string userName, string password, string onlineFileUrl, Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage)
 		{
 			int maxRetries = 5;
 			int retryCount = 0;
@@ -20,13 +20,12 @@ namespace SharedClasses
 				{
 					client.Credentials = new System.Net.NetworkCredential(userName, password);
 					bool isComplete = false;
-					long filesize = FtpGetFileSize(onlineFileUrl, userName, password, actionOnError);
+					long filesize = FtpGetFileSize(onlineFileUrl, userName, password, actionOnMessage);
 
 					if (filesize == -1)//File does not exist
 					{
 						string errMsg = "Ftp file does not exist: " + onlineFileUrl;
-						actionOnError(errMsg);
-						actionOnError(errMsg);
+						actionOnMessage(errMsg, FeedbackMessageTypes.Error);
 						return null;
 					}
 
@@ -77,14 +76,14 @@ namespace SharedClasses
 			catch (Exception exc)
 			{
 				if (exc.Message.ToLower().Contains("the operation has timed out"))
-					actionOnError("Download from ftp timed out, the System.Net.ServicePointManager.DefaultConnectionLimit has been reached");
+					actionOnMessage("Download from ftp timed out, the System.Net.ServicePointManager.DefaultConnectionLimit has been reached", FeedbackMessageTypes.Error);
 				else
-					actionOnError("Exception in transfer: " + exc.Message);
+					actionOnMessage("Exception in transfer: " + exc.Message, FeedbackMessageTypes.Error);
 			}
 			return null;
 		}
 
-		public static long FtpGetFileSize(string fullFileUri, string userName, string password, Action<string> actionOnError)
+		public static long FtpGetFileSize(string fullFileUri, string userName, string password, Action<string, FeedbackMessageTypes> actionOnMessage)
 		{
 			try
 			{
@@ -112,7 +111,7 @@ namespace SharedClasses
 					return -1;//Does not exist
 				}
 				response.Close();
-				actionOnError("Cannot determine ftp file size for '" + fullFileUri + ex.Message);
+				actionOnMessage("Cannot determine ftp file size for '" + fullFileUri + ex.Message, FeedbackMessageTypes.Error);
 				return -2;//Cannot obtain size (could be internet connectivity, timeout, etc)
 			}
 		}

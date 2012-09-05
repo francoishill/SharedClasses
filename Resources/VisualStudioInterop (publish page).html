@@ -1,0 +1,122 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+    <title></title>
+    <link href="/css/prettify.css" rel="stylesheet" />
+    <script src="/js/prettify.js"></script>
+    <style>
+        html, body
+        {
+            height: 100%;
+        }
+
+        body
+        {
+            background-color: #111;
+            /*background-image: -webkit-gradient(linear, 0% 100%, 0% 0%, from(#111), to(#333));
+		    background-image: -moz-linear-gradient(bottom, #111, 50%, #333);*/
+            font-size: 44px;
+        }
+
+        .pagegenerateddate
+        {
+            font-size: 14px;
+            color: #555;
+        }
+
+        .headingvaluepair
+        {
+        }
+
+        .heading
+        {
+            color: #777;
+        }
+
+        .value
+        {
+            color: #ddd;
+        }
+
+        .description
+        {
+            font-size: 20px;
+            text-indent: 120px;
+        }
+
+        .bugsfixedlist
+        {
+            color: #f00;
+        }
+
+        .improvementslist
+        {
+            color: #0af;
+            
+        }
+
+        .newfeatureslist
+        {
+            color: #3f0;
+            
+        }
+
+        .jsonText
+        {
+            font-size: 10pt;
+        }
+
+        .downloadlink
+        {
+            font-size: 36px;
+            color: #f51;
+        }
+
+        .graycolor
+        {
+            color: #333;
+        }
+    </style>
+</head>
+<body onload='prettyPrint();'>
+    <div class='pagegenerateddate'>
+    <label>Page was generated on {PageGeneratedDate}</label>
+    </div>
+    <div class='headingvaluepair'>
+        <label class='heading'>
+            Project:
+        </label>
+        <label class='value'>
+            {ProjectName}</label>
+    </div>
+    <div class='headingvaluepair'>
+        <label class='heading'>
+            Version:
+        </label>
+        <label class='value'>
+            {ProjectVersion}</label>
+    </div>
+    <br />
+    <div class='description'>
+        <ol class='bugsfixedlist'>
+            {BugsFixedList}
+        </ol>
+        <ol class='improvementslist'>
+            {ImprovementList}
+        </ol>
+        <ol class='newfeatureslist'>
+            {NewFeaturesList}
+        </ol>
+    </div>
+    <br />
+
+    <div class="jsonText">
+        <pre><code class='prettyprint'>{JsonText}</code></pre>
+    </div>
+
+    <br />
+    <div class='headingvaluepair'>
+        <a href='{SetupFilename}' class='downloadlink'>Download</a>
+    </div>
+</body>
+</html>

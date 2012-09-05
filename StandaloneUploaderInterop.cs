@@ -1,6 +1,7 @@
 using System;
 using Microsoft.Win32;
 using System.Diagnostics;
+using System.Threading;
 
 namespace SharedClasses
 {
@@ -44,6 +45,17 @@ namespace SharedClasses
 				}
 				if (WaitForExit)
 					proc.WaitForExit();
+				else
+				{
+					bool found = false;
+					while (!found)
+					{
+						var procs = Process.GetProcessesByName(proc.ProcessName);
+						if (procs.Length > 0)
+							found = true;
+						Thread.Sleep(500);
+					}
+				}
 				return true;
 			}
 

@@ -9,6 +9,10 @@ namespace SharedClasses
 {
 	public sealed class WebInterop
 	{
+		public const string RootUrlForApps = "http://fjh.dyndns.org";//http://apps.getmyip.com
+		//TODO: Url (apps.getmyip.com) blocked at work, as IT to whitelist
+		int seeAboveTODOatRootUrlsForApps;
+
 		/// <summary>
 		/// Post data to php, maximum length of data is 8Mb
 		/// </summary>
@@ -86,9 +90,6 @@ namespace SharedClasses
 		public const string cErrorIfNotFoundOnline = "Value does not exist online";
 		public const string NORESULT_STRING = "[NO RESULT]";
 
-		public const string rootUrl = "http://apps.getmyip.com";
-		//public const string rootUrl = "http://fjh.dyndns.org";
-
 		public enum OnlineOperations { GetModifiedTime, GetValue, SetValue };
 
 		public static string GetOperationUri(OnlineOperations onlineOperation)
@@ -96,11 +97,11 @@ namespace SharedClasses
 			switch (onlineOperation)
 			{
 				case OnlineOperations.GetModifiedTime:
-					return rootUrl + "/json/getdatemodified";
+					return RootUrlForApps + "/json/getdatemodified";
 				case OnlineOperations.GetValue:
-					return rootUrl + "/json/getvalue";
+					return RootUrlForApps + "/json/getvalue";
 				case OnlineOperations.SetValue:
-					return rootUrl + "/json/setvalue";
+					return RootUrlForApps + "/json/setvalue";
 				default:
 					return "";
 			}
@@ -114,7 +115,8 @@ namespace SharedClasses
 			if (WebInterop.PostPHP(
 				GetOperationUri(OnlineOperations.GetModifiedTime),
 				new Dictionary<string, string>() { { "category", category }, { "name", name } },
-				out response))
+				out response,
+				TimeSpan.FromSeconds(15)))
 			{
 				if (response.Equals(NORESULT_STRING, StringComparison.InvariantCultureIgnoreCase))
 				{
@@ -204,7 +206,8 @@ namespace SharedClasses
 			if (WebInterop.PostPHP(
 				GetOperationUri(OnlineOperations.SetValue),
 				new Dictionary<string, string>() { { "category", category }, { "name", name }, { "jsonstring", newvalue } },
-				out response))
+				out response,
+				TimeSpan.FromSeconds(15)))
 			{
 				if (response.Equals("1") || response.Equals("0"))
 				{

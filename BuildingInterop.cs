@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Collections;
 
 namespace SharedClasses
 {
@@ -23,7 +24,7 @@ namespace SharedClasses
 		public virtual bool? LastBuildResult { get; set; }
 		public virtual bool HasErrors { get; set; }
 
-		protected string SolutionFullpath;
+		public string SolutionFullpath { get; protected set; }
 
 		public VSBuildProject(string ApplicationName)
 		{
@@ -86,15 +87,19 @@ namespace SharedClasses
 		private class MyLogger : ILogger
 		{
 			private Action<BuildErrorEventArgs> OnBuildError;
-			public MyLogger(Action<BuildErrorEventArgs> OnBuildError)
+			private Action<ProjectStartedEventArgs> OnProjectStarted;
+			public MyLogger(Action<BuildErrorEventArgs> OnBuildError, Action<ProjectStartedEventArgs> OnProjectStarted)
 			{
 				this.OnBuildError = OnBuildError;
+				this.OnProjectStarted = OnProjectStarted;
 			}
 
 			public void Initialize(IEventSource eventSource)
 			{
 				if (OnBuildError != null)
 					eventSource.ErrorRaised += (snd, evt) => OnBuildError(evt);
+				if (OnProjectStarted != null)
+					eventSource.ProjectStarted += (snd, evt) => OnProjectStarted(evt);
 			}
 
 			public string Parameters { get; set; }
@@ -111,18 +116,21 @@ namespace SharedClasses
 		/// <summary>
 		/// Builds and returns error
 		/// </summary>
+		/// <param name="errorIfFail">Returns an error string if the result was FALSE</param>
 		/// <returns>Returns null if succeeded, otherwise error</returns>
-		public bool PerformBuild(out string errorIfFail)
+		public bool PerformBuild(out List<string> csprojectPaths, out string errorIfFail)
 		{
 			if (IsBusyBuilding)
 			{
 				errorIfFail = "Cannot build " + this.ApplicationName + ", another build is already in progress.";
+				csprojectPaths = null;
 				return false;
 			}
 
 			if (SolutionFullpath == null)
 			{
 				errorIfFail = "SolutionFullPath is null for application " + this.ApplicationName + ", cannot build project";
+				csprojectPaths = null;
 				return false;
 			}
 
@@ -139,6 +147,7 @@ namespace SharedClasses
 				if (ChecksAlreadyDone == false)
 				{
 					errorIfFail = "Cannot find RootVisualStudio path";
+					csprojectPaths = null;
 					return false;
 				}
 
@@ -150,38 +159,49 @@ namespace SharedClasses
 
 				BuildRequestData BuidlRequest = new BuildRequestData(projectFileName, GlobalProperty, null, new string[] { "Build" }, null);
 
-				List<string> buildErrorsCatched = new List<string>();
+				List<string> csprojectPathsCaughtMatchingSolutionName = new List<string>();
+				List<string> buildErrorsCaught = new List<string>();
 				BuildResult buildResult = BuildManager.DefaultBuildManager.Build(
 					new BuildParameters(pc)
 					{
 						DetailedSummary = true,
 						Loggers = new ILogger[]
 					{
-						new MyLogger((builderr)
-							=> buildErrorsCatched.Add(
-							string.Format("Could not build '{0}',{1}Error in {2}: line {3},{1}Error message: '{4}'",
-								builderr.ProjectFile, Environment.NewLine, builderr.File, builderr.LineNumber, builderr.Message)
-							)) 
+						new MyLogger(
+							(builderr) =>
+								buildErrorsCaught.Add(
+								string.Format("Could not build '{0}',{1}Error in {2}: line {3},{1}Error message: '{4}'",
+									builderr.ProjectFile, Environment.NewLine, builderr.File, builderr.LineNumber, builderr.Message)
+								),
+							(projstarted) =>
+								csprojectPathsCaughtMatchingSolutionName.AddRange(projstarted.Items.Cast<DictionaryEntry>()
+								.Where(de => de.Key is string && (de.Key ?? "").ToString().Equals("ProjectReference", StringComparison.InvariantCultureIgnoreCase))
+								.Select(de => de.Value.ToString())
+								.Where(csprojpath => Path.GetFileNameWithoutExtension(csprojpath).Equals(Path.GetFileNameWithoutExtension(SolutionFullpath), StringComparison.InvariantCultureIgnoreCase))))
 					}
 					},
 					BuidlRequest);
 
-				if (buildResult.OverallResult == BuildResultCode.Success)
+				if (buildResult.OverallResult == BuildResultCode.Success && csprojectPathsCaughtMatchingSolutionName.Count > 0)
 				{
 					this.HasErrors = false;
 					errorIfFail = null;
+					csprojectPaths = csprojectPathsCaughtMatchingSolutionName;
 					return true;
 				}
 				else
 				{
 					this.HasErrors = true;
 					string nowString = DateTime.Now.ToString("HH:mm:ss.fff");
-					if (buildErrorsCatched.Count == 0)
+					if (csprojectPathsCaughtMatchingSolutionName.Count == 0 && buildResult.OverallResult == BuildResultCode.Success)//Build successfully but could not obtain csProject filepaths
+						this.LastBuildFeedback = string.Format("[{0}] Build successfully but could not obtain .csproj path(s) for solution: {1}", nowString, SolutionFullpath);
+					else if (buildErrorsCaught.Count == 0)
 						this.LastBuildFeedback = string.Format("[{0}] Unknown error to build " + this.ApplicationName, nowString);
 					else
 						this.LastBuildFeedback = string.Format("[{0}] Build failed for " + this.ApplicationName, nowString)
-							+ Environment.NewLine + string.Join(Environment.NewLine, buildErrorsCatched);
+							+ Environment.NewLine + string.Join(Environment.NewLine, buildErrorsCaught);
 					errorIfFail = this.LastBuildFeedback;
+					csprojectPaths = null;
 					return false;
 				}
 			}
@@ -189,6 +209,47 @@ namespace SharedClasses
 			{
 				IsBusyBuilding = false;
 			}
+		}
+
+		public bool PerformPublish(Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage)
+		{
+			int seeFollowingTodoItems;
+
+			string outPublishedVersion;
+			string resultSetupFilename;
+			bool publishResult = PublishInterop.PerformPublish(
+				this.ApplicationName,
+				false,//TODO: What if required
+				false,//TODO: What about QuickAccess
+				true,
+				true,//TODO: Always install locally?
+				false,//Never run on startup?
+				false,
+				out outPublishedVersion,
+				out resultSetupFilename,
+				actionOnMessage,
+				actionOnProgressPercentage);
+			return publishResult;
+		}
+
+		public bool PerformPublishOnline(Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage)
+		{
+			string outPublishedVersion;
+			string resultSetupFilename;
+			bool publishResult = PublishInterop.PerformPublishOnline(
+				this.ApplicationName,
+				false,//TODO: What if required
+				false,//TODO: What about QuickAccess
+				true,
+				true,//TODO: Always install locally?
+				false,//Never run on startup?
+				false,
+				false,
+				out outPublishedVersion,
+				out resultSetupFilename,
+				actionOnMessage,
+				actionOnProgressPercentage);
+			return publishResult;
 		}
 	}
 }

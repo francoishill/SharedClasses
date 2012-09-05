@@ -5,6 +5,7 @@ using Microsoft.Build.Execution;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace SharedClasses
 {
@@ -82,7 +83,7 @@ namespace SharedClasses
 				return rootVSprojectsDir;
 			}
 		}
-		public class MyLogger : ILogger
+		private class MyLogger : ILogger
 		{
 			private Action<BuildErrorEventArgs> OnBuildError;
 			public MyLogger(Action<BuildErrorEventArgs> OnBuildError)
@@ -111,13 +112,19 @@ namespace SharedClasses
 		/// Builds and returns error
 		/// </summary>
 		/// <returns>Returns null if succeeded, otherwise error</returns>
-		public string PerformBuild()
+		public bool PerformBuild(out string errorIfFail)
 		{
 			if (IsBusyBuilding)
-				return "Cannot build " + this.ApplicationName + ", another build is already in progress.";
+			{
+				errorIfFail = "Cannot build " + this.ApplicationName + ", another build is already in progress.";
+				return false;
+			}
 
 			if (SolutionFullpath == null)
-				return null;
+			{
+				errorIfFail = "SolutionFullPath is null for application " + this.ApplicationName + ", cannot build project";
+				return false;
+			}
 
 			IsBusyBuilding = true;
 
@@ -130,7 +137,10 @@ namespace SharedClasses
 				if (!ChecksAlreadyDone.HasValue)
 					ChecksAlreadyDone = RootVSprojectsDir != null;
 				if (ChecksAlreadyDone == false)
-					return "Cannot find RootVisualStudio path";
+				{
+					errorIfFail = "Cannot find RootVisualStudio path";
+					return false;
+				}
 
 				string projectFileName = this.SolutionFullpath;//@"...\ConsoleApplication3\ConsoleApplication3.sln";
 				ProjectCollection pc = new ProjectCollection();
@@ -159,7 +169,8 @@ namespace SharedClasses
 				if (buildResult.OverallResult == BuildResultCode.Success)
 				{
 					this.HasErrors = false;
-					return null;
+					errorIfFail = null;
+					return true;
 				}
 				else
 				{
@@ -170,10 +181,9 @@ namespace SharedClasses
 					else
 						this.LastBuildFeedback = string.Format("[{0}] Build failed for " + this.ApplicationName, nowString)
 							+ Environment.NewLine + string.Join(Environment.NewLine, buildErrorsCatched);
-					return this.LastBuildFeedback;
+					errorIfFail = this.LastBuildFeedback;
+					return false;
 				}
-
-				//return null;
 			}
 			finally
 			{

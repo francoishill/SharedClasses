@@ -71,8 +71,15 @@ public partial class UserMessages : Form
 		}
 	}
 
+	private static bool VisualStylesAlreadyEnabled = false;
 	public static DialogResult ShowUserMessage(IWin32Window owner, string Message, string Title, MessageBoxIcon icon, bool AlwaysOnTop)
 	{
+		if (!VisualStylesAlreadyEnabled)
+		{
+			Application.EnableVisualStyles();
+			VisualStylesAlreadyEnabled = true;
+		}
+
 		if (ListOfShowingMessages.ContainsKey(Message))
 		{
 			Action showConfirmAction = delegate

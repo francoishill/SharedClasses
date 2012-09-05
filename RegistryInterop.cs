@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 //using System.Windows.Forms;
 using Microsoft.Win32;
+using System.IO;
 
 namespace SharedClasses
 {
@@ -585,6 +586,28 @@ namespace SharedClasses
 				}
 			}
 			return null;
+		}
+
+		public static RegistryInterop.MainContextMenuItem GetRegistryAssociationItemFromJsonFile(string registryEntriesJsonFilepath, Action<string> actionOnError)
+		{
+			if (!File.Exists(registryEntriesJsonFilepath))
+			{
+				actionOnError("No file for project to define registry entries, file not found: " + registryEntriesJsonFilepath);
+				return null;
+			}
+			RegistryInterop.MainContextMenuItem mainRegistryItem = new RegistryInterop.MainContextMenuItem();
+			try
+			{
+				JSON.Instance.FillObject(mainRegistryItem, File.ReadAllText(registryEntriesJsonFilepath));
+				return mainRegistryItem;
+			}
+			catch (Exception exc)
+			{
+				actionOnError("Could not fill json object from file contents: " + registryEntriesJsonFilepath
+						+ Environment.NewLine + "Error:"
+						+ Environment.NewLine + exc.Message);
+				return null;
+			}
 		}
 	}
 

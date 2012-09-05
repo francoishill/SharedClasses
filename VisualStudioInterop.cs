@@ -371,13 +371,12 @@ public class VisualStudioInterop
 		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 		{
 			var proj = new VSBuildProject_NonAbstract(projName);
-			string errIfNotNull = proj.PerformBuild();
-			if (errIfNotNull != null)
-				TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent,
-					errIfNotNull, TextFeedbackType.Error);
+			string errIfNotNull;
+			if (!proj.PerformBuild(out errIfNotNull))
+				TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, errIfNotNull, TextFeedbackType.Error);
 			else
 				TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent,
-					"Successfully build project " + projName, TextFeedbackType.Success);
+					"Successfully built project " + projName, TextFeedbackType.Success);
 			errorOccurred = errIfNotNull != null;
 		},
 		true);
@@ -414,7 +413,7 @@ public class VisualStudioInterop
 		return s;
 	}
 
-	//TODO: Start building own publishing platform (FTP, the html page, etc)
+	//DONE: Start building own publishing platform (FTP, the html page, etc)
 	public static string PerformPublish(Object textfeedbackSenderObject, string projName, bool _64Only, out string publishedVersionString, bool HasPlugins, bool AutomaticallyUpdateRevision = false, bool InstallLocallyAfterSuccessfullNSIS = true, bool WriteIntoRegistryForWindowsAutostartup = true, TextFeedbackEventHandler textFeedbackEvent = null, bool SelectSetupIfSuccessful = false)
 	{
 		publishedVersionString = "";
@@ -488,6 +487,9 @@ public class VisualStudioInterop
 				}
 				using (StreamWriter sw1 = new StreamWriter(nsisFileName))
 				{
+					string registryEntriesFilename = "RegistryEntries.json";
+					string registryEntriesFilepath = Path.Combine(Path.GetDirectoryName(csprojFileName), "Properties", registryEntriesFilename);
+
 					//TODO: This is awesome, after installing with NSIS you can type appname in RUN and it will open
 					List<string> list = NsisInterop.CreateOwnappNsis(
 						projName,
@@ -495,7 +497,7 @@ public class VisualStudioInterop
 						outCurrentversionString,//Should obtain (and increase) product version from csproj file
 						"http://fjh.dyndns.org/ownapplications/" + projName.ToLower(),
 						projName + ".exe",
-						GetRegistryAssociationItem(csprojFileName, textFeedbackEvent),
+						RegistryInterop.GetRegistryAssociationItemFromJsonFile(registryEntriesFilepath, err => TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, err, TextFeedbackType.Error)),
 						null,
 						true,
 						NsisInterop.NSISclass.DotnetFrameworkTargetedEnum.DotNet4client,
@@ -606,33 +608,6 @@ public class VisualStudioInterop
 				return resultSetupFileName;
 		}
 		return null;
-	}
-
-	public static RegistryInterop.MainContextMenuItem GetRegistryAssociationItem(string csprojFileName, TextFeedbackEventHandler textFeedbackEvent)
-	{
-		string registryEntriesFilename = "RegistryEntries.json";
-		string registryEntriesFilepath = Path.Combine(Path.GetDirectoryName(csprojFileName), "Properties", registryEntriesFilename);
-		if (!File.Exists(registryEntriesFilepath))
-		{
-			TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, "No file for project to define registry entries, file not found: " + registryEntriesFilepath, TextFeedbackType.Noteworthy);
-			return null;
-		}
-		RegistryInterop.MainContextMenuItem mainRegistryItem = new RegistryInterop.MainContextMenuItem();
-		try
-		{
-			JSON.Instance.FillObject(mainRegistryItem, File.ReadAllText(registryEntriesFilepath));
-			return mainRegistryItem;
-		}
-		catch (Exception exc)
-		{
-			TextFeedbackEventArgs.RaiseSimple(
-				textFeedbackEvent,
-				"Could not fill json object from file contents: " + registryEntriesFilepath
-					+ Environment.NewLine + "Error:"
-					+ Environment.NewLine + exc.Message,
-				TextFeedbackType.Error);
-			return null;
-		}
 	}
 
 	private static string SurroundWithHtmlTag(string textToSurround, string tagName, string className = null)

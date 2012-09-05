@@ -64,9 +64,9 @@ public class NsisInterop
 		//string rootProjDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects";
 		string subDirInProj = @"\bin\Release";
 		string PublishedDir = 
-			Directory.Exists(VisualStudioInterop.cProjectsRootDir.TrimEnd('\\') + @"\" + VsProjectName + subDirInProj)
-			? VisualStudioInterop.cProjectsRootDir.TrimEnd('\\') + @"\" + VsProjectName + subDirInProj
-			: VisualStudioInterop.cProjectsRootDir.TrimEnd('\\') + @"\" + VsProjectName + @"\" + VsProjectName + subDirInProj;
+			Directory.Exists(PublishInterop.cProjectsRootDir.TrimEnd('\\') + @"\" + VsProjectName + subDirInProj)
+			? PublishInterop.cProjectsRootDir.TrimEnd('\\') + @"\" + VsProjectName + subDirInProj
+			: PublishInterop.cProjectsRootDir.TrimEnd('\\') + @"\" + VsProjectName + @"\" + VsProjectName + subDirInProj;
 		List<string> SectionGroupLines = new List<string>();
 
 		bool isAutoUpdater = ProductPublishedNameIn.Replace(" ", "").Equals("AutoUpdater", StringComparison.InvariantCultureIgnoreCase);
@@ -185,7 +185,7 @@ public class NsisInterop
 		if (HasPlugins)
 		{
 			int startSectionNumber = 2;//SEC002
-			string SolutionBaseDir = Path.Combine(VisualStudioInterop.cProjectsRootDir, VsProjectName);//Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects\" + VsProjectName;
+			string SolutionBaseDir = Path.Combine(PublishInterop.cProjectsRootDir, VsProjectName);//Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects\" + VsProjectName;
 
 			SectionGroupLines.Add("");
 			SectionGroupLines.Add(@"SectionGroup ""Plugins""");
@@ -194,10 +194,9 @@ public class NsisInterop
 				string baseFolderNameForPlugin = Path.GetFileName(baseDirForEachPluginProjects);
 				string pluginDllPath = baseDirForEachPluginProjects + @"\bin\Release";
 				string pluginName = 
-					VisualStudioInterop.InsertSpacesBeforeCamelCase(
-						baseFolderNameForPlugin.ToLower().EndsWith("plugin")
+						(baseFolderNameForPlugin.ToLower().EndsWith("plugin")
 						? baseFolderNameForPlugin.Substring(0, baseFolderNameForPlugin.Length - 6)
-						: baseFolderNameForPlugin);
+						: baseFolderNameForPlugin).InsertSpacesBeforeCamelCase();
 
 				//SectionGroupLines.Add("");
 				//foreach (string dllfile in Directory.GetFiles(PluginsDir, "*.dll"))

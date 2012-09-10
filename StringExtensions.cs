@@ -36,6 +36,8 @@ namespace SharedClasses
 			return string.Format(str, args);
 		}
 
+		private static MD5 md5 = MD5.Create();
+
 		/// <summary>
 		/// Function to get file impression in form of string from a file location.
 		/// </summary>
@@ -43,15 +45,23 @@ namespace SharedClasses
 		/// <returns>Byte Array</returns>
 		public static string FileToMD5Hash(this string _fileName)
 		{
-			if (!File.Exists(_fileName))
-				return "[InvalidFilePath:" + _fileName + "]";
-
-			using (var stream = new BufferedStream(File.OpenRead(_fileName), 1200000))
+			using ( FileStream stream = File.OpenRead ( _fileName ) )
 			{
-				SHA256Managed sha = new SHA256Managed();
-				byte[] checksum = sha.ComputeHash(stream);
-				return BitConverter.ToString(checksum).Replace("-", string.Empty);
-			}
-		}
+				byte[] checksum = md5.ComputeHash (stream);
+				return BitConverter.ToString (checksum).Replace ( "-", string.Empty );
+			} // End of using fileStream
+		} // End of CalculateChecksum 
+		//public static string FileToMD5Hash(this string _fileName)
+		//{
+		//    if (!File.Exists(_fileName))
+		//        return "[InvalidFilePath:" + _fileName + "]";
+
+		//    using (var stream = new BufferedStream(File.OpenRead(_fileName), 1200000))
+		//    {
+		//        SHA256Managed sha = new SHA256Managed();
+		//        byte[] checksum = sha.ComputeHash(stream);
+		//        return BitConverter.ToString(checksum).Replace("-", string.Empty);
+		//    }
+		//}
 	}
 }

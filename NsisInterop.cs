@@ -44,7 +44,8 @@ public class NsisInterop
 			"Francois Hill",//ProductPublisherIn,
 			ProductWebsiteIn,
 			ProductExeNameIn,
-			new NSISclass.Compressor(NSISclass.Compressor.CompressionModeEnum.bzip2, false, false),
+			new NSISclass.Compressor(NSISclass.Compressor.CompressionModeEnum.lzma, true, true),//new NSISclass.Compressor(NSISclass.Compressor.CompressionModeEnum.bzip2, false, false),
+			64,
 			GetSetupNameForProduct(ProductPublishedNameIn, ProductVersionIn),
 			NSISclass.LanguagesEnum.English,
 			true,
@@ -115,14 +116,14 @@ public class NsisInterop
 		SectionGroupLines.Add(@"IfFileExists ""C:\Program Files (x86)\Auto Updater\AutoUpdater.exe"" AutoUpdaterFound");
 		SectionGroupLines.Add(@"	  RetryDownload:");
 		SectionGroupLines.Add(@"	  ;All following lines removed, gave error when trying to read content from a URL");
-		SectionGroupLines.Add(@"	  ;NsisUrlLib::UrlOpen /NOUNLOAD """ + WebInterop.RootUrlForApps + @"/json/getautoupdaterlatest"" ;Get content of this page (it returns the URL of newest setup package of AutoUpdater");
+		SectionGroupLines.Add(@"	  ;NsisUrlLib::UrlOpen /NOUNLOAD """ + PublishInterop.RootUrlForApps + @"/json/getautoupdaterlatest"" ;Get content of this page (it returns the URL of newest setup package of AutoUpdater");
 		SectionGroupLines.Add(@"	  ;Pop $7");
 		SectionGroupLines.Add(@"	  ;MessageBox MB_OK $7");
 		SectionGroupLines.Add(@"	  ;NsisUrlLib::IterateLine /NOUNLOAD ;Read the first line (which is the URL)");
 		SectionGroupLines.Add(@"	  ;Pop $7 ;Place the URL read into variable $7");
 		SectionGroupLines.Add(@"	  ;MessageBox MB_OK ""$7""");
 		SectionGroupLines.Add(@"	  ;NSISdl::download ""$7"" tmpAutoUpdater_SetupLatest.exe ;Download the file at this URL");
-		SectionGroupLines.Add(@"	  NSISdl::download """ + WebInterop.RootUrlForApps + @"/ownapplications/autoupdater/AutoUpdater_SetupLatest.exe"" tmpAutoUpdater_SetupLatest.exe ; Download latest AutoUpdater Setup");
+		SectionGroupLines.Add(@"	  NSISdl::download """ + PublishInterop.RootUrlForApps + @"/ownapplications/autoupdater/AutoUpdater_SetupLatest.exe"" tmpAutoUpdater_SetupLatest.exe ; Download latest AutoUpdater Setup");
 		SectionGroupLines.Add(@"	  Pop $R4 ;Read the result of the download");
 		SectionGroupLines.Add(@"	  StrCmp $R4 ""success"" SuccessfullyDownloadedAutoUpdater");
 		SectionGroupLines.Add(@"	  ;StrCmp $R4 ""cancel"" DownloadCanceled");
@@ -141,7 +142,7 @@ public class NsisInterop
 
 		SectionGroupLines.Add(@"IfFileExists ""C:\Program Files (x86)\Show No Callback Notification\ShowNoCallbackNotification.exe"" ShowNoCallbackNotificationFound");
 		SectionGroupLines.Add(@"	  RetryDownload2:");
-		SectionGroupLines.Add(@"	  NSISdl::download """ + WebInterop.RootUrlForApps + @"/ownapplications/shownocallbacknotification/ShowNoCallbackNotification_SetupLatest.exe"" tmpShowNoCallbackNotification_SetupLatest.exe ; Download latest ShowNoCallbackNotification Setup");
+		SectionGroupLines.Add(@"	  NSISdl::download """ + PublishInterop.RootUrlForApps + @"/ownapplications/shownocallbacknotification/ShowNoCallbackNotification_SetupLatest.exe"" tmpShowNoCallbackNotification_SetupLatest.exe ; Download latest ShowNoCallbackNotification Setup");
 		SectionGroupLines.Add(@"	  Pop $R4 ;Read the result of the download");
 		SectionGroupLines.Add(@"	  StrCmp $R4 ""success"" SuccessfullyDownloadedShowNoCallbackNotification");
 		SectionGroupLines.Add(@"	  MessageBox MB_RETRYCANCEL ""Download failed, retry download?"" IDRETRY RetryDownload2");
@@ -155,7 +156,7 @@ public class NsisInterop
 
 		SectionGroupLines.Add(@"IfFileExists ""C:\Program Files (x86)\Standalone Uploader\StandaloneUploader.exe"" StandaloneUploaderFound");
 		SectionGroupLines.Add(@"	  RetryDownload3:");
-		SectionGroupLines.Add(@"	  NSISdl::download """ + WebInterop.RootUrlForApps + @"/ownapplications/standaloneuploader/StandaloneUploader_SetupLatest.exe"" tmpStandaloneUploader_SetupLatest.exe ; Download latest StandaloneUploader Setup");
+		SectionGroupLines.Add(@"	  NSISdl::download """ + PublishInterop.RootUrlForApps + @"/ownapplications/standaloneuploader/StandaloneUploader_SetupLatest.exe"" tmpStandaloneUploader_SetupLatest.exe ; Download latest StandaloneUploader Setup");
 		SectionGroupLines.Add(@"	  Pop $R4 ;Read the result of the download");
 		SectionGroupLines.Add(@"	  StrCmp $R4 ""success"" SuccessfullyDownloadedStandaloneUploader");
 		SectionGroupLines.Add(@"	  MessageBox MB_RETRYCANCEL ""Download failed, retry download?"" IDRETRY RetryDownload3");
@@ -482,6 +483,7 @@ public class NsisInterop
 		public string ProductExeName;
 
 		public Compressor CompressorUsed;
+		public int? CompressorDictSizeMegabytes;
 		public string SetupFileName;
 		public LanguagesEnum SetupLanguage;
 
@@ -514,6 +516,7 @@ public class NsisInterop
 				string ProductWebsiteIn,
 				string ProductExeNameIn,
 				Compressor CompressorUsedIn,
+				int? CompressorDictSizeMegabytesIn,
 				string SetupFileNameIn,
 				LanguagesEnum SetupLanguageIn,
 			//LanguagesEnum LanguagesIn,
@@ -538,6 +541,7 @@ public class NsisInterop
 			ProductWebsite = ProductWebsiteIn;
 			ProductExeName = ProductExeNameIn;
 			CompressorUsed = CompressorUsedIn;
+			CompressorDictSizeMegabytes = CompressorDictSizeMegabytesIn;
 			SetupFileName = SetupFileNameIn;
 
 			int CountSetupLanguages = 0; foreach (LanguagesEnum testLanguageFound in Enum.GetValues(typeof(LanguagesEnum))) if (SetupLanguage.HasFlag(testLanguageFound)) CountSetupLanguages++;
@@ -711,6 +715,9 @@ public class NsisInterop
 
 			tmpList.Add(@";SetCompressor ""/SOLID"" lzma ;Seems to be using more space..");
 			tmpList.Add(@"SetCompressor " + (CompressorUsed.Solid ? "/SOLID " : "") + (CompressorUsed.Final ? "/FINAL " : "") + CompressorUsed.CompressionMode.ToString());
+			if (CompressorDictSizeMegabytes.HasValue)
+				tmpList.Add(@"SetCompressorDictSize " + CompressorDictSizeMegabytes.Value.ToString());
+
 			tmpList.Add("");
 			tmpList.Add("BrandingText \"${PRODUCT_NAME} v${PRODUCT_VERSION} (NSIS 2.46)\"");
 			tmpList.Add("");
@@ -1558,6 +1565,7 @@ public class NsisInterop
 									"www.francoishill.com",
 									AppNameIncludingEXEextension,
 									new Compressor(),
+									64,
 									AppNameOnly + "_Setup_0.0.exe",//" 1_0_0_0 setup.exe",
 									LanguagesEnum.English,
 									true,

@@ -36,6 +36,12 @@ namespace SharedClasses
 
 	public static class PublishInterop
 	{
+		//public const string RootUrlForApps = "http://fjh.dyndns.org";//http://apps.getmyip.com
+		public const string RootUrlForApps = "https://fjh.dyndns.org";
+		//public const string RootFtpUrlForAppsUploading = "ftp://fjh.dyndns.org";
+		//TODO: Url (apps.getmyip.com) blocked at work, as IT to whitelist
+		static int seeAboveTODOatRootUrlsForApps;
+
 		public static readonly string cProjectsRootDir = @"C:\Francois\Dev\VSprojects";
 
 		private static bool GetNewVersionStringFromAssemblyFile(string csprojFilename, bool AutomaticallyUpdateRevision, bool updateVersionInFile, out string errorIfNull, out string newVersionString, out string currentVersionString)
@@ -152,7 +158,7 @@ namespace SharedClasses
 					: "Using current revision of " + projName + " (" + publishedVersionString + "), attempting to publish...",
 					FeedbackMessageTypes.Status);
 
-			string localAppDatapath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+			string localAppDatapath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 
 			string nsisFileName = Path.Combine(localAppDatapath, @"FJH\NSISinstaller\NSISexports\" + projName + "_" + publishedVersionString + ".nsi");
 			publishedSetupPath = Path.GetDirectoryName(nsisFileName) + "\\" + NsisInterop.GetSetupNameForProduct(projName.InsertSpacesBeforeCamelCase(), publishedVersionString);
@@ -294,14 +300,21 @@ namespace SharedClasses
 			
 			string validatedUrlsectionForProjname = HttpUtility.UrlPathEncode(projName).ToLower();
 
-			string rootFtpUri = GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForVsPublishing() + "/" + validatedUrlsectionForProjname;
+			int changedTheFollowing;
+
+			string relativeUrl = "/downloadownapps.php?relativepath=" + validatedUrlsectionForProjname;
+
+			//string rootFtpUri = GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForVsPublishing() + "/" + validatedUrlsectionForProjname;
+			//string rootFtpUri = WebInterop.RootFtpUrlForAppsUploading.TrimEnd('/') + relativeUrl;
+			string rootDownloadHttpUri = RootUrlForApps.TrimEnd('/') + relativeUrl.TrimEnd('/');
+			
 			PublishDetails publishDetails = new PublishDetails(
 					projName,
 					publishedVersionString,
 					new FileInfo(publishedSetupPath).Length,
 					publishedSetupPath.FileToMD5Hash(),
 					DateTime.Now,
-					rootFtpUri + "/" + (new FileInfo(publishedSetupPath).Name));
+					rootDownloadHttpUri + "/" + (new FileInfo(publishedSetupPath).Name));
 			string errorStringIfFailElseJsonString;
 			if (!WebInterop.SaveObjectOnline(PublishDetails.OnlineJsonCategory, projName + " - " + publishedVersionString, publishDetails, out errorStringIfFailElseJsonString))
 			{
@@ -368,10 +381,12 @@ namespace SharedClasses
 				if (!StandaloneUploaderInterop.UploadVia_StandaloneUploader_UsingExternalApp(
 					err => actionOnMessage(err, FeedbackMessageTypes.Error),
 					dispname,
+					UploadingProtocolTypes.Ownapps,
 					localfilepath,
-					rootFtpUri.TrimEnd('/') + "/" + Path.GetFileName(localfilepath),
-					GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,
-					GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,
+					//rootFtpUri.TrimEnd('/') + "/" + Path.GetFileName(localfilepath),
+					validatedUrlsectionForProjname + "/" + Path.GetFileName(localfilepath),
+					OnlineSettings.OnlineAppsSettings.Instance.AppsUploadFtpUsername,
+					OnlineSettings.OnlineAppsSettings.Instance.AppsUploadFtpPassword,
 					true))
 					uploadsQueued = false;
 			}
@@ -414,7 +429,8 @@ namespace SharedClasses
 				textOfFile = textOfFile.Replace("{PageGeneratedDate}", DateTime.Now.ToString(@"dddd, dd MMMM yyyy \a\t HH:mm:ss"));
 				textOfFile = textOfFile.Replace("{ProjectName}", projectName);
 				textOfFile = textOfFile.Replace("{ProjectVersion}", projectVersion);
-				textOfFile = textOfFile.Replace("{SetupFilename}", Path.GetFileName(setupFilename));
+				//textOfFile = textOfFile.Replace("{SetupFilename}", Path.GetFileName(setupFilename));
+				textOfFile = textOfFile.Replace("{SetupFilename}", "/downloadownapps.php?relativepath=" + projectName + "/" + Path.GetFileName(setupFilename));
 				//textOfFile = textOfFile.Replace("{DescriptionLiElements}", description);
 				textOfFile = textOfFile.Replace("{BugsFixedList}", bugsfixed);
 				textOfFile = textOfFile.Replace("{ImprovementList}", improvements);

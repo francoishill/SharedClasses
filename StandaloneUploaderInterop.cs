@@ -7,7 +7,7 @@ namespace SharedClasses
 {
 	public class StandaloneUploaderInterop
 	{
-		public static bool UploadVia_StandaloneUploader_UsingExternalApp(Action<string> actionOnError, string DisplayName, string LocalPath, string FtpUrl, string FtpUsername, string FtpPassword, bool AutoOverwriteIfExists, bool WaitForExit = false)
+		public static bool UploadVia_StandaloneUploader_UsingExternalApp(Action<string> actionOnError, string DisplayName, UploadingProtocolTypes ProtocolType , string LocalPath, string FtpUrl, string FtpUsername, string FtpPassword, bool AutoOverwriteIfExists, bool WaitForExit = false)
 		{
 			string notifAppExe = RegistryInterop.GetAppPathFromRegistry("StandaloneUploader.exe");
 			if (notifAppExe == null)
@@ -20,8 +20,9 @@ namespace SharedClasses
 			{
 				Process proc = new Process();
 				proc.StartInfo = new ProcessStartInfo(notifAppExe,
-					string.Format("\"{0}\" \"{1}\" \"{2}\" \"{3}\" \"{4}\"{5}",
+					string.Format("\"{0}\" \"{1}\" \"{2}\" \"{3}\" \"{4}\" \"{5}\"{6}",
 						DisplayName,
+						ProtocolType.ToString(),
 						LocalPath,
 						FtpUrl,
 						FtpUsername,

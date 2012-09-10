@@ -1726,12 +1726,16 @@ GlobalSettings.ReadConsole(
 			public string RootFtpUrl { get; set; }
 			public string AppsDownloadFtpUsername { get; set; }
 			public string AppsDownloadFtpPassword { get; set; }
+			public string AppsUploadFtpUsername { get; set; }
+			public string AppsUploadFtpPassword { get; set; }
 
 			public OnlineAppsSettings()
 			{
 				this.RootFtpUrl = "ftp://fjh.dyndns.org";//"ftp://fjh.dyndns.org/francois/websites/firepuma/ownapplications";
 				this.AppsDownloadFtpUsername = "appsdownload";
 				this.AppsDownloadFtpPassword = "appsdownload.pass123";
+				this.AppsUploadFtpUsername = "ownappsupload";
+				this.AppsUploadFtpPassword = "ownappsuploadpass123";
 			}
 		}
 
@@ -1838,7 +1842,9 @@ GlobalSettings.ReadConsole(
 					"MiniPopupTasks",
 					"AutoUpdater",
 					"WindowsStartupManager",
-					"ShowNoCallbackNotification"
+					"ShowNoCallbackNotification",
+					"StandaloneUploader",
+					"BuildTestSystem"
 				};
 			}
 			public static void EnsureDefaultItemsInList()

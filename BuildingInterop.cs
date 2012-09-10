@@ -22,7 +22,7 @@ namespace SharedClasses
 		public virtual string ApplicationName { get; set; }
 		public virtual string LastBuildFeedback { get; set; }
 		public virtual bool? LastBuildResult { get; set; }
-		public virtual bool HasErrors { get; set; }
+		public virtual bool HasFeedbackText { get; set; }
 
 		public string SolutionFullpath { get; protected set; }
 
@@ -30,7 +30,7 @@ namespace SharedClasses
 		{
 			this.ApplicationName = Path.GetFileNameWithoutExtension(ApplicationName);
 			this.LastBuildFeedback = null;
-			this.HasErrors = false;
+			this.HasFeedbackText = false;
 			this.LastBuildResult = null;
 
 			string err;
@@ -139,7 +139,7 @@ namespace SharedClasses
 			try
 			{
 				this.LastBuildFeedback = null;
-				this.HasErrors = true;//Just for incase
+				this.HasFeedbackText = true;//Just for incase
 				this.LastBuildResult = null;
 
 				if (!ChecksAlreadyDone.HasValue)
@@ -184,14 +184,14 @@ namespace SharedClasses
 
 				if (buildResult.OverallResult == BuildResultCode.Success && csprojectPathsCaughtMatchingSolutionName.Count > 0)
 				{
-					this.HasErrors = false;
+					this.HasFeedbackText = false;
 					errorIfFail = null;
 					csprojectPaths = csprojectPathsCaughtMatchingSolutionName;
 					return true;
 				}
 				else
 				{
-					this.HasErrors = true;
+					this.HasFeedbackText = true;
 					string nowString = DateTime.Now.ToString("HH:mm:ss.fff");
 					if (csprojectPathsCaughtMatchingSolutionName.Count == 0 && buildResult.OverallResult == BuildResultCode.Success)//Build successfully but could not obtain csProject filepaths
 						this.LastBuildFeedback = string.Format("[{0}] Build successfully but could not obtain .csproj path(s) for solution: {1}", nowString, SolutionFullpath);

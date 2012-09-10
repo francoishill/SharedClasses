@@ -9,9 +9,43 @@ namespace SharedClasses
 {
 	public sealed class WebInterop
 	{
-		public const string RootUrlForApps = "http://fjh.dyndns.org";//http://apps.getmyip.com
-		//TODO: Url (apps.getmyip.com) blocked at work, as IT to whitelist
-		int seeAboveTODOatRootUrlsForApps;
+		public const string RootUrlForJsonData = "https://json.getmyip.com";
+
+		private static bool certifcateTrustCalledYet = false;
+		public static void TrustCertificates()
+		{
+			//Trust all certificates
+			System.Net.ServicePointManager.ServerCertificateValidationCallback +=
+				((sender, certificate, chain, sslPolicyErrors) => true);
+
+		//    // trust sender
+		//    System.Net.ServicePointManager.ServerCertificateValidationCallback
+		//                    = ((sender, cert, chain, errors) => cert.Subject.Contains("YourServerName"));
+
+		//    // validate cert by calling a function
+		//    ServicePointManager.ServerCertificateValidationCallback += new RemoteCertificateValidationCallback(ValidateRemoteCertificate);
+		}
+
+		public static void EnsureHttpsTrustAll()
+		{
+			if (!certifcateTrustCalledYet)
+			{
+				TrustCertificates();
+				certifcateTrustCalledYet = true;
+			}
+		}
+
+		// callback used to validate the certificate in an SSL conversation
+		//private static bool ValidateRemoteCertificate(object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors policyErrors)
+		//{
+		//    bool result = false;
+		//    if (cert.Subject.ToUpper().Contains("YourServerName"))
+		//    {
+		//        result = true;
+		//    }
+
+		//    return result;
+		//}
 
 		/// <summary>
 		/// Post data to php, maximum length of data is 8Mb
@@ -21,6 +55,7 @@ namespace SharedClasses
 		/// <returns>Returns the data received from the php (usually the "echo" statements in the php.</returns>
 		public static bool PostPHP(string url, string escapedData, out string ResponseOrError, TimeSpan? timeout = null)
 		{
+			EnsureHttpsTrustAll();
 			string vystup = "";
 			try
 			{
@@ -31,6 +66,7 @@ namespace SharedClasses
 				byte[] buffer = Encoding.ASCII.GetBytes(escapedData);
 				//Initialisation, we use localhost, change if appliable
 				HttpWebRequest WebReq = (HttpWebRequest)WebRequest.Create(url);
+
 				//Our method is post, otherwise the buffer (postvars) would be useless
 				WebReq.Method = "POST";
 				//We use form contentType, for the postvars.
@@ -97,11 +133,11 @@ namespace SharedClasses
 			switch (onlineOperation)
 			{
 				case OnlineOperations.GetModifiedTime:
-					return RootUrlForApps + "/json/getdatemodified";
+					return RootUrlForJsonData + "/json/getdatemodified";
 				case OnlineOperations.GetValue:
-					return RootUrlForApps + "/json/getvalue";
+					return RootUrlForJsonData + "/json/getvalue";
 				case OnlineOperations.SetValue:
-					return RootUrlForApps + "/json/setvalue";
+					return RootUrlForJsonData + "/json/setvalue";
 				default:
 					return "";
 			}
@@ -109,6 +145,7 @@ namespace SharedClasses
 
 		public static bool GetModifiedTimeFromOnline(string category, string name, out DateTime ModifiedTimeOut, out string errorStringIfFail)
 		{
+			EnsureHttpsTrustAll();
 			JSON.SetDefaultJsonInstanceSettings();
 
 			string response;
@@ -151,6 +188,7 @@ namespace SharedClasses
 
 		public static bool PopulateObjectFromOnline(string category, string name, object objectToPopulate, out string errorStringIfFail, TimeSpan? timeout = null)
 		{
+			EnsureHttpsTrustAll();
 			JSON.SetDefaultJsonInstanceSettings();
 
 			string response;
@@ -198,6 +236,7 @@ namespace SharedClasses
 
 		public static bool SaveObjectOnline(string category, string name, object obj, out string errorStringIfFailElseJsonString)
 		{
+			EnsureHttpsTrustAll();
 			JSON.SetDefaultJsonInstanceSettings();
 
 			string response;

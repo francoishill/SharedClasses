@@ -8,6 +8,50 @@ namespace SharedClasses
 {
 	public class NetworkInteropSimple
 	{
+		#region Http
+		/*public static bool HttpDownloadFile(string fullLocalPath, string onlineFileUrl, Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage)
+		{
+			HttpWebRequest request;
+			HttpWebResponse response = null;
+
+			try
+			{
+				request = (HttpWebRequest)WebRequest.Create(onlineFileUrl);
+				//
+				//request.AddRange(0, 107046);
+				//request.AddRange(107047, 214091);
+				request.Timeout = 10000;
+				request.AllowWriteStreamBuffering = false;
+				response = (HttpWebResponse)request.GetResponse();
+				Stream s = response.GetResponseStream();
+
+				//Write to disk
+				FileStream fs = new FileStream(fullLocalPath, FileMode.Create);
+				byte[] read = new byte[256];
+				int count = s.Read(read, 0, read.Length);
+				while (count > 0)
+				{
+					fs.Write(read, 0, count);
+					count = s.Read(read, 0, read.Length);
+				}
+
+				//Close everything
+				fs.Close();
+				s.Close();
+				response.Close();
+				return true;
+			}
+
+			catch (System.Net.WebException)
+			{
+				if (response != null)
+					response.Close();
+				return false;
+			}
+		}*/
+		#endregion Http
+
+		#region Ftp
 		public static string FtpDownloadFile(string localRootFolder, string userName, string password, string onlineFileUrl, Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage)
 		{
 			int maxRetries = 5;
@@ -115,5 +159,6 @@ namespace SharedClasses
 				return -2;//Cannot obtain size (could be internet connectivity, timeout, etc)
 			}
 		}
+		#endregion Ftp
 	}
 }

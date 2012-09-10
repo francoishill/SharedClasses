@@ -187,6 +187,7 @@ public class VisualStudioInterop
 	}
 
 	//DONE: Start building own publishing platform (FTP, the html page, etc)
+	[Obsolete("Start using PublishInterop.PerformPublish()", true)]
 	public static string PerformPublish(Object textfeedbackSenderObject, string projName, bool _64Only, out string publishedVersionString, bool HasPlugins, bool AutomaticallyUpdateRevision = false, bool InstallLocallyAfterSuccessfullNSIS = true, bool WriteIntoRegistryForWindowsAutostartup = true, TextFeedbackEventHandler textFeedbackEvent = null, bool SelectSetupIfSuccessful = false)
 	{
 		publishedVersionString = "";
@@ -436,6 +437,7 @@ public class VisualStudioInterop
 		return tempFilename;
 	}
 
+	[Obsolete("Start using PublishInterop.PerformPublishOnline()", true)]
 	public static void PerformPublishOnline(Object textfeedbackSenderObject, string projName, bool _64Only, bool HasPlugins, bool AutomaticallyUpdateRevision = false, bool WriteIntoRegistryForWindowsAutostartup = true, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChanged = null, bool OpenSetupFileAfterSuccessfullNSIS = true, bool OpenFolderAfterSuccessfullNSIS = false, bool OpenWebsite = true)
 	{
 		string publishedVersionString = null;
@@ -544,8 +546,9 @@ public class VisualStudioInterop
 				if (!StandaloneUploaderInterop.UploadVia_StandaloneUploader_UsingExternalApp(
 					(err) => TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, err),
 					dispname,
+					UploadingProtocolTypes.Ownapps,
 					localfilepath,
-					rootFtpUri.TrimEnd('/') + "/" + Path.GetFileName(localfilepath),
+					/*rootFtpUri.TrimEnd('/') */validatedUrlsectionForProjname + "/" + Path.GetFileName(localfilepath),
 					GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,
 					GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,
 					true))

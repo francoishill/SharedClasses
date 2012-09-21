@@ -1354,22 +1354,6 @@ GlobalSettings.ReadConsole(
 
 		public abstract class BaseOnlineClass<T> : MarshalByRefObject, IInterceptorNotifiable where T : BaseOnlineClass<T>, new()
 		{
-			private static string GetComputerGuid()
-			{
-				var guidpath = SettingsInterop.GetFullFilePathInLocalAppdata("_ComputerGuid", "SharedClasses");
-				if (File.Exists(guidpath))
-				{
-					string guidfromfile = File.ReadAllText(guidpath).Trim();
-					Guid tmpguid;
-					if (Guid.TryParse(guidfromfile, out tmpguid))
-						return tmpguid.ToString();
-				}
-				Guid newGuid = Guid.NewGuid();
-				string newGuidStr = newGuid.ToString();
-				File.WriteAllText(guidpath, newGuidStr);
-				return newGuidStr;
-			}
-
 			private const string LocalCacheDateFormat = "yyyy-MM-dd HH:mm:ss";
 			private const string _settingsCategory = "globalsettings";
 			[XmlIgnore]
@@ -1380,7 +1364,7 @@ GlobalSettings.ReadConsole(
 					var thisType = this.GetType();
 					string displayName = thisType.Name.Split('+')[thisType.Name.Split('+').Length - 1];
 					if (thisType.GetCustomAttributes(typeof(GuidAsCategoryPrefixAttribute), true).Length > 0)
-						return GetComputerGuid() + "-" + _settingsCategory;
+						return SettingsInterop.GetComputerGuid() + "-" + _settingsCategory;
 					else
 						return _settingsCategory;
 				}

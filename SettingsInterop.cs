@@ -7,6 +7,27 @@ public class SettingsInterop
 {
 	public const string SettingsFileExtension = ".fset";
 
+	public static string GetComputerGuidAsString()
+	{
+		return GetComputerGuid().ToString();
+	}
+
+	public static Guid GetComputerGuid()
+	{
+		var guidpath = SettingsInterop.GetFullFilePathInLocalAppdata("_ComputerGuid", "SharedClasses");
+		if (File.Exists(guidpath))
+		{
+			string guidfromfile = File.ReadAllText(guidpath).Trim();
+			Guid tmpguid;
+			if (Guid.TryParse(guidfromfile, out tmpguid))
+				return tmpguid;
+		}
+		Guid newGuid = Guid.NewGuid();
+		string newGuidStr = newGuid.ToString();
+		File.WriteAllText(guidpath, newGuidStr);
+		return newGuid;
+	}
+
 	/// <summary>
 	/// Always returned without leading backslash.
 	/// </summary>

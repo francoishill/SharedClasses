@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.IO;
 
 namespace SharedClasses
 {
@@ -62,9 +63,8 @@ namespace SharedClasses
 			return proc;
 		}
 
-		//true=ran no output/error, false=could not run, null=ran with output/error
 		/// <summary>
-		/// Runs a process and returns true if ran successfully without output/errors, false if could not run, and null if ran but had output/errors.
+		/// true=ran no output/error, false=could not run, null=ran with output/error
 		/// </summary>
 		/// <param name="startInfo">The Process StartInfo for the process to run.</param>
 		/// <param name="outputs">The output strings that were redirected from the process</param>

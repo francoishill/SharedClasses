@@ -403,6 +403,15 @@ namespace SharedClasses
 			}
 		}
 
+		public static bool IsInstalled(string applicationName)
+		{
+			string appExePath = Path.Combine(
+				Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+				applicationName.InsertSpacesBeforeCamelCase(),
+				applicationName + ".exe");
+			return File.Exists(appExePath);
+		}
+
 		public static string CreateHtmlPageReturnFilename(string projectName, string projectVersion, string setupFilename, List<string> BugsFixed, List<string> Improvements, List<string> NewFeatures, PublishDetails publishDetails = null)
 		{
 			string tempFilename = Path.GetTempPath() + "index.html";

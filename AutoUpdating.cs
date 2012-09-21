@@ -84,5 +84,36 @@ namespace SharedClasses
 				!SeparateThreadDoNotWait);
 			}
 		}
+
+		public static void InstallLatest(string applicationName, Action<string> ActionOnError)
+		{
+			var autoupdaterFilepath = RegistryInterop.GetAppPathFromRegistry("AutoUpdater.exe");
+
+			if (autoupdaterFilepath == null)
+			{
+				if (ActionOnError != null)
+					ActionOnError("AutoUpdater not installed, could not find AutoUpdater.exe in App Paths of Regsitry.");
+			}
+			else
+			{
+				ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+				{
+					List<string> outputs;
+					List<string> errors;
+					int exitcode;
+					bool? runresult = ProcessesInterop.RunProcessCatchOutput(
+						new ProcessStartInfo(
+							autoupdaterFilepath,
+							"installlatest \"" + applicationName + "\""),
+						out outputs,
+						out errors,
+						out exitcode);
+
+					if (runresult.HasValue && runresult.Value == true)//Ran but with errors/output
+						errors.RemoveAll(s => string.IsNullOrWhiteSpace(s));
+				},
+				false);
+			}
+		}
 	}
 }

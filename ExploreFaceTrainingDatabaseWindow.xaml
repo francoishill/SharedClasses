@@ -25,7 +25,6 @@
 								SelectionChanged='dataGrid1_SelectionChanged'
 								CanUserAddRows="False"
 								ScrollViewer.CanContentScroll='False'
-								VirtualizingPanel.IsVirtualizing='True'
 								SelectionMode="Single"
 								Width='200' />
 			<Image DockPanel.Dock='Left'

@@ -56,6 +56,18 @@ public class ThreadingInterop
 	//{
 	//    return PerformOneArgFunctionSeperateThread(action, arg, WaitUntilFinish, ThreadName, CheckInvokeRequired, controlToCheckInvokeRequired, AttachForceExitToFormClose, apartmentState);
 	//}
+	public static Thread DoAction(MethodInvoker method, bool WaitUntilFinish = true, string ThreadName = "UnknownName", bool CheckInvokeRequired = false, Control controlToCheckInvokeRequired = null, bool AttachForceExitToFormClose = true, ApartmentState? apartmentState = null)
+	{
+		return PerformOneArgFunctionSeperateThread(
+			(Action<object>)delegate(object arg) { method(); },
+			null,
+			WaitUntilFinish,
+			ThreadName,
+			CheckInvokeRequired,
+			controlToCheckInvokeRequired,
+			AttachForceExitToFormClose,
+			apartmentState);
+	}
 	public static Thread PerformVoidFunctionSeperateThread(MethodInvoker method, bool WaitUntilFinish = true, string ThreadName = "UnknownName", bool CheckInvokeRequired = false, Control controlToCheckInvokeRequired = null, bool AttachForceExitToFormClose = true, ApartmentState? apartmentState = null)
 	{
 		return PerformOneArgFunctionSeperateThread(

@@ -13,7 +13,7 @@ namespace SharedClasses
 	public static class PhpUploadingInterop
 	{
 		//private const string phpUrl = "https://localhost/uploadownapps.php";
-		private const string phpUrl = "https://ftpviahttp.getmyip.com/uploadownapps.php";
+		//private const string phpUrl = "https://ftpviahttp.getmyip.com/uploadownapps.php";
 
 		//public enum PhpActions { GetFileSize, UploadFile, CreateDirectory, CheckFileExists, DeleteFile };
 		public static int? PhpGetFileSize(string relativePath, out string errorIfFailed, Func<object, X509Certificate, X509Chain, SslPolicyErrors, bool> actionOnSSLcertificateValidation)
@@ -28,7 +28,7 @@ namespace SharedClasses
 					NameValueCollection inputs = new NameValueCollection();
 					inputs.Add("task", "getfilesize");
 					inputs.Add("relativepath", relativePath);
-					var responseBytes = client.UploadValues(phpUrl, inputs);
+					var responseBytes = client.UploadValues(SettingsSimple.HomePcUrls.Instance.PhpUploadUrl, inputs);
 
 					string responseString = System.Text.Encoding.UTF8.GetString(responseBytes, 0, responseBytes.Length);
 					int tmpint;
@@ -48,6 +48,11 @@ namespace SharedClasses
 						return tmpint;
 					}
 				}
+			}
+			catch (Exception exc)
+			{
+				errorIfFailed = exc.Message;
+				return null;
 			}
 			finally
 			{
@@ -77,6 +82,24 @@ namespace SharedClasses
 				errorIfFailed = "File already existed online";
 				return null;//Means existed already
 			}
+			else if (!existsResult.HasValue)
+			{
+				if (!err.Equals("directorynotfound"))
+				{
+					errorIfFailed = err;
+					return false;
+				}
+				else
+				{
+					string createdirerr;
+					bool? createdirResult = PhpCreateDirectory(relativePath.Substring(0, relativePath.Replace('\\', '/').LastIndexOf('/')), out createdirerr, actionOnSSLcertificateValidation);
+					if (createdirResult == false)//Could not create (error)
+					{
+						errorIfFailed = createdirerr;
+						return false;
+					}
+				}
+			}
 
 			if (onProgress_Percentage_BytesPerSec == null)
 				onProgress_Percentage_BytesPerSec = delegate { };
@@ -95,11 +118,20 @@ namespace SharedClasses
 
 					Stopwatch stopwatchFromUploadStart = Stopwatch.StartNew();
 					byte[] responseBytes = null;
+					string ifFailedError = null;
 					double lastBytesPerSec = 0;
 					client.UploadFileCompleted += (sn, ev) =>
 					{
 						if (!ev.Cancelled)
-							responseBytes = ev.Result;
+						{
+							if (ev.Error == null)
+							{
+								ifFailedError = null;
+								responseBytes = ev.Result;
+							}
+							else
+								ifFailedError = ev.Error.InnerException.Message;
+						}
 						stopwatchFromUploadStart.Stop();
 
 						Logging.LogInfoToFile(
@@ -123,7 +155,7 @@ namespace SharedClasses
 					};
 
 					client.UploadFileAsync(
-						new Uri(phpUrl.TrimEnd('/') + "?task=uploadfile&relativepath=" + HttpUtility.UrlEncode(relativePath)),
+						new Uri(SettingsSimple.HomePcUrls.Instance.PhpUploadUrl.TrimEnd('/') + "?task=uploadfile&relativepath=" + HttpUtility.UrlEncode(relativePath)),
 						"POST",
 						localFileToUpload);
 
@@ -141,13 +173,18 @@ namespace SharedClasses
 						errorIfFailed = "User cancelled upload";
 						return false;
 					}
+					if (ifFailedError != null)
+					{
+						errorIfFailed = ifFailedError;
+						return false;
+					}
 
 					string responseString = System.Text.Encoding.UTF8.GetString(responseBytes, 0, responseBytes.Length);
 					//fileexisted OR directorynotfound OR fileuploaded OR Error:errorstring
 					if (responseString.Equals("fileexisted", StringComparison.InvariantCultureIgnoreCase))
 					{
 						errorIfFailed = "File already existed online";
-						return null;//Existed alread
+						return null;//Existed already
 					}
 					else if (responseString.Equals("directorynotfound", StringComparison.InvariantCultureIgnoreCase))
 					{
@@ -165,13 +202,24 @@ namespace SharedClasses
 					}
 				}
 			}
+			catch (Exception exc)
+			{
+				errorIfFailed = exc.Message;
+				return false;
+			}
 			finally
 			{
 				ServicePointManager.ServerCertificateValidationCallback = null;
 			}
 		}
 
-		//true=successfully created,null=alreadyexisted,false=could not create
+		/// <summary>
+		/// true=successfully created,null=alreadyexisted,false=could not create
+		/// </summary>
+		/// <param name="relativePath"></param>
+		/// <param name="errorIfFailed"></param>
+		/// <param name="actionOnSSLcertificateValidation"></param>
+		/// <returns></returns>
 		public static bool? PhpCreateDirectory(string relativePath, out string errorIfFailed, Func<object, X509Certificate, X509Chain, SslPolicyErrors, bool> actionOnSSLcertificateValidation)
 		{
 			ServicePointManager.ServerCertificateValidationCallback += (snder, certif, chain, sslPolicyErrors) => actionOnSSLcertificateValidation(snder, certif, chain, sslPolicyErrors);
@@ -182,7 +230,7 @@ namespace SharedClasses
 					NameValueCollection inputs = new NameValueCollection();
 					inputs.Add("task", "createdirectory");
 					inputs.Add("relativepath", relativePath);
-					var responseBytes = client.UploadValues(phpUrl, inputs);
+					var responseBytes = client.UploadValues(SettingsSimple.HomePcUrls.Instance.PhpUploadUrl, inputs);
 
 					string responseString = System.Text.Encoding.UTF8.GetString(responseBytes, 0, responseBytes.Length);
 					if (responseString.Equals("directoryexisted", StringComparison.InvariantCultureIgnoreCase))
@@ -201,6 +249,11 @@ namespace SharedClasses
 						return true;
 					}
 				}
+			}
+			catch (Exception exc)
+			{
+				errorIfFailed = exc.Message;
+				return false;
 			}
 			finally
 			{
@@ -225,13 +278,18 @@ namespace SharedClasses
 					NameValueCollection inputs = new NameValueCollection();
 					inputs.Add("task", "checkfileexists");
 					inputs.Add("relativepath", relativePath);
-					var responseBytes = client.UploadValues(phpUrl, inputs);
+					var responseBytes = client.UploadValues(SettingsSimple.HomePcUrls.Instance.PhpUploadUrl, inputs);
 
 					string responseString = System.Text.Encoding.UTF8.GetString(responseBytes, 0, responseBytes.Length);
 					if (responseString.Equals("filenotfound", StringComparison.InvariantCultureIgnoreCase))
 					{
 						errorIfFailed = null;
 						return false;
+					}
+					else if (responseString.Equals("directorynotfound", StringComparison.InvariantCultureIgnoreCase))
+					{
+						errorIfFailed = "directorynotfound";
+						return null;
 					}
 					else if (responseString.Equals("fileexists", StringComparison.InvariantCultureIgnoreCase))
 					{
@@ -249,6 +307,11 @@ namespace SharedClasses
 						return null;
 					}
 				}
+			}
+			catch (Exception exc)
+			{
+				errorIfFailed = exc.Message;
+				return null;
 			}
 			finally
 			{
@@ -272,30 +335,35 @@ namespace SharedClasses
 					NameValueCollection inputs = new NameValueCollection();
 					inputs.Add("task", "deletefile");
 					inputs.Add("relativepath", relativePath);
-					var responseBytes = client.UploadValues(phpUrl, inputs);
+						var responseBytes = client.UploadValues(SettingsSimple.HomePcUrls.Instance.PhpUploadUrl, inputs);
 
-					string responseString = System.Text.Encoding.UTF8.GetString(responseBytes, 0, responseBytes.Length);
-					if (responseString.Equals("filenotfound", StringComparison.InvariantCultureIgnoreCase))
-					{
-						errorIfFailed = "File did not exist: " + relativePath;
-						return null;
-					}
-					else if (responseString.Equals("existsbutisdirectory", StringComparison.InvariantCultureIgnoreCase))
-					{
-						errorIfFailed = "Could not delete file as it exists but is a directory: " + relativePath;
-						return false;
-					}
-					else if (!responseString.Equals("filedeleted", StringComparison.InvariantCultureIgnoreCase))
-					{
-						errorIfFailed = "Could not delete file: " + responseString;
-						return false;
-					}
-					else
-					{
-						errorIfFailed = null;
-						return true;
-					}
+						string responseString = System.Text.Encoding.UTF8.GetString(responseBytes, 0, responseBytes.Length);
+						if (responseString.Equals("filenotfound", StringComparison.InvariantCultureIgnoreCase))
+						{
+							errorIfFailed = "File did not exist: " + relativePath;
+							return null;
+						}
+						else if (responseString.Equals("existsbutisdirectory", StringComparison.InvariantCultureIgnoreCase))
+						{
+							errorIfFailed = "Could not delete file as it exists but is a directory: " + relativePath;
+							return false;
+						}
+						else if (!responseString.Equals("filedeleted", StringComparison.InvariantCultureIgnoreCase))
+						{
+							errorIfFailed = "Could not delete file: " + responseString;
+							return false;
+						}
+						else
+						{
+							errorIfFailed = null;
+							return true;
+						}
 				}
+			}
+			catch (Exception exc)
+			{
+				errorIfFailed = exc.Message;
+				return false;
 			}
 			finally
 			{

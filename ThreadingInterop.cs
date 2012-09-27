@@ -133,26 +133,36 @@ public class ThreadingInterop
 		}
 	}
 
-	public static void ActionWithTimeout<T>(Action<T> action, int timeoutMilliseconds, T arg, Action<string> actionOnError)
+	public static bool ActionWithTimeout(Action action, int timeoutMilliseconds, Action<string> actionOnError)
 	{
-		try
+		return ActionWithTimeout<string>(delegate { action(); }, timeoutMilliseconds, "", actionOnError);
+	}
+
+	public static bool ActionWithTimeout<T>(Action<T> action, int timeoutMilliseconds, T arg, Action<string> actionOnError)
+	{
+		bool succeeded = false;
+		Action wrappedAction = () =>
 		{
-			Action wrappedAction = () =>
+			try
 			{
 				action(arg);
-			};
-
-			IAsyncResult result = wrappedAction.BeginInvoke(null, null);
-
-			if (result.AsyncWaitHandle.WaitOne(timeoutMilliseconds))
-			{
-				wrappedAction.EndInvoke(result);
+				succeeded = true;
 			}
+			catch (Exception ex)
+			{
+				actionOnError(ex.Message);
+			}
+		};
 
-		}
-		catch (Exception ex)
+		IAsyncResult result = wrappedAction.BeginInvoke(null, null);
+
+		if (result.AsyncWaitHandle.WaitOne(timeoutMilliseconds))
 		{
-			actionOnError(ex.Message);
+			//It did not timeout but the action completed before the duration
+			wrappedAction.EndInvoke(result);
+			return succeeded;
 		}
+		//The action timed out
+		return false;
 	}
 }

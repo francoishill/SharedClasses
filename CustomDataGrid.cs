@@ -2,146 +2,147 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Windows.Input;
-using System.Collections.ObjectModel;
 using System.Windows;
-using System.Diagnostics;
-using System.ComponentModel;
-using System.Windows.Data;
 using System.Windows.Controls;
+using System.Windows.Media;
+using System.Collections;
+using System.Reflection;
+using System.Windows.Controls.Primitives;
 
 namespace SharedClasses
 {
     public class CustomDataGrid : DataGrid
     {
+        #region Constructors
+
         static CustomDataGrid()
         {
-            CommandManager.RegisterClassCommandBinding(
-                typeof(CustomDataGrid),
-                new CommandBinding(ApplicationCommands.Paste,
-                    new ExecutedRoutedEventHandler(OnExecutedPaste),
-                    new CanExecuteRoutedEventHandler(OnCanExecutePaste)));
+            Type ownerType = typeof(CustomDataGrid);
+            DefaultStyleKeyProperty.OverrideMetadata(ownerType, new FrameworkPropertyMetadata(ownerType));
+            ItemsPanelProperty.OverrideMetadata(ownerType, new FrameworkPropertyMetadata(new ItemsPanelTemplate(new FrameworkElementFactory(typeof(CustomDataGridRowsPresenter)))));
         }
 
-        #region Clipboard Paste
-
-        private static void OnCanExecutePaste(object target, CanExecuteRoutedEventArgs args)
+        public CustomDataGrid()
         {
-            ((CustomDataGrid)target).OnCanExecutePaste(args);
+            this.Loaded += new RoutedEventHandler(CustomDataGrid_Loaded);
+        }
+
+        void CustomDataGrid_Loaded(object sender, RoutedEventArgs e)
+        {
+            CustomDataGridRowsPresenter panel = (CustomDataGridRowsPresenter)WPFHelper.GetVisualChild<CustomDataGridRowsPresenter>(this);
+            panel.InvalidateArrange();
+        }        
+
+        #endregion
+
+        #region Frozen Rows
+
+        /// <summary>
+        /// Dependency Property fro FrozenRowCount Property
+        /// </summary>
+        public static readonly DependencyProperty FrozenRowCountProperty =
+            DependencyProperty.Register("FrozenRowCount",
+                                        typeof(int),
+                                        typeof(DataGrid),
+                                        new FrameworkPropertyMetadata(0,
+                                                                      new PropertyChangedCallback(OnFrozenRowCountPropertyChanged),
+                                                                      new CoerceValueCallback(OnCoerceFrozenRowCount)),
+                                        new ValidateValueCallback(ValidateFrozenRowCount));
+
+        /// <summary>
+        /// Property which determines the number of rows which are frozen from 
+        /// the beginning in order of display
+        /// </summary>
+        public int FrozenRowCount
+        {
+            get { return (int)GetValue(FrozenRowCountProperty); }
+            set { SetValue(FrozenRowCountProperty, value); }
         }
 
         /// <summary>
-        /// This virtual method is called when ApplicationCommands.Paste command query its state.
+        /// Coercion call back for FrozenRowCount property, which ensures that 
+        /// it is never more that Item count
         /// </summary>
-        /// <param name="args"></param>
-        protected virtual void OnCanExecutePaste(CanExecuteRoutedEventArgs args)
+        /// <param name="d"></param>
+        /// <param name="baseValue"></param>
+        /// <returns></returns>
+        private static object OnCoerceFrozenRowCount(DependencyObject d, object baseValue)
         {
-            args.CanExecute = CurrentCell != null;
-            args.Handled = true;
-        }
+            DataGrid dataGrid = (DataGrid)d;
+            int frozenRowCount = (int)baseValue;
 
-        private static void OnExecutedPaste(object target, ExecutedRoutedEventArgs args)
-        {
-            ((CustomDataGrid)target).OnExecutedPaste(args);
-        }
-
-        /// <summary>
-        /// This virtual method is called when ApplicationCommands.Paste command is executed.
-        /// </summary>
-        /// <param name="args"></param>
-        protected virtual void OnExecutedPaste(ExecutedRoutedEventArgs args)
-        {
-            Debug.WriteLine("OnExecutedPaste begin");
-
-            // parse the clipboard data            
-            List<string[]> rowData = ClipboardHelper.ParseClipboardData();
-
-            bool hasAddedNewRow = false;
-
-            // call OnPastingCellClipboardContent for each cell
-            int minRowIndex = Items.IndexOf(CurrentItem);
-            int maxRowIndex = Items.Count - 1;
-            int minColumnDisplayIndex = (SelectionUnit != DataGridSelectionUnit.FullRow) ? Columns.IndexOf(CurrentColumn) : 0;
-            int maxColumnDisplayIndex = Columns.Count - 1;
-            int rowDataIndex = 0;
-            for (int i = minRowIndex; i <= maxRowIndex && rowDataIndex < rowData.Count; i++, rowDataIndex++)
+            if (frozenRowCount > dataGrid.Items.Count)
             {
-                if (CanUserPasteToNewRows && CanUserAddRows && i == maxRowIndex)
-                {
-                    // add a new row to be pasted to
-                    ICollectionView cv = CollectionViewSource.GetDefaultView(Items);
-                    IEditableCollectionView iecv = cv as IEditableCollectionView;
-                    if (iecv != null)
-                    {
-                        hasAddedNewRow = true;
-                        iecv.AddNew();
-
-                        if (rowDataIndex + 1 < rowData.Count)
-                        {
-                            // still has more items to paste, update the maxRowIndex
-                            maxRowIndex = Items.Count - 1;
-                        }
-                    }
-                }
-                else if (i == maxRowIndex)
-                {
-                    continue;
-                }
-
-                int columnDataIndex = 0;
-                for (int j = minColumnDisplayIndex; j < maxColumnDisplayIndex && columnDataIndex < rowData[rowDataIndex].Length; j++, columnDataIndex++)
-                {
-                    DataGridColumn column = ColumnFromDisplayIndex(j);
-                    column.OnPastingCellClipboardContent(Items[i], rowData[rowDataIndex][columnDataIndex]);
-                }
+                return dataGrid.Items.Count;
             }
 
-            // update selection
-            if (hasAddedNewRow)
+            return baseValue;
+        }
+
+        /// <summary>
+        /// Property changed callback fro FrozenRowCount
+        /// </summary>
+        /// <param name="d"></param>
+        /// <param name="e"></param>
+        private static void OnFrozenRowCountPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            CustomDataGridRowsPresenter panel = (CustomDataGridRowsPresenter)WPFHelper.GetVisualChild<CustomDataGridRowsPresenter>(d as Visual);
+            panel.InvalidateArrange();
+            (d as DataGrid).UpdateLayout();
+            panel.InvalidateArrange();
+        }
+
+        /// <summary>
+        /// Validation call back for frozen row count
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        private static bool ValidateFrozenRowCount(object value)
+        {
+            int frozenCount = (int)value;
+            return (frozenCount >= 0);
+        }
+
+        /// <summary>
+        /// Dependency Property key for NonFrozenColumnsViewportHorizontalOffset Property
+        /// </summary>
+        private static readonly DependencyPropertyKey NonFrozenRowsViewportVerticalOffsetPropertyKey =
+                DependencyProperty.RegisterReadOnly(
+                        "NonFrozenRowsViewportVerticalOffset",
+                        typeof(double),
+                        typeof(DataGrid),
+                        new FrameworkPropertyMetadata(0.0));
+
+        /// <summary>
+        /// Dependency property for NonFrozenRowsViewportVerticalOffset Property
+        /// </summary>
+        public static readonly DependencyProperty NonFrozenRowsViewportVerticalOffsetProperty = NonFrozenRowsViewportVerticalOffsetPropertyKey.DependencyProperty;
+
+        /// <summary>
+        /// Property which gets/sets the start y coordinate of non frozen rows in view port
+        /// </summary>
+        public double NonFrozenRowsViewportVerticalOffset
+        {
+            get
             {
-                UnselectAll();
-                UnselectAllCells();
-
-                CurrentItem = Items[minRowIndex];
-
-                if (SelectionUnit == DataGridSelectionUnit.FullRow)
-                {
-                    SelectedItem = Items[minRowIndex];
-                }
-                else if (SelectionUnit == DataGridSelectionUnit.CellOrRowHeader ||
-                         SelectionUnit == DataGridSelectionUnit.Cell)
-                {
-                    SelectedCells.Add(new DataGridCellInfo(Items[minRowIndex], Columns[minColumnDisplayIndex]));
-                    
-                }
+                return (double)GetValue(NonFrozenRowsViewportVerticalOffsetProperty);
+            }
+            internal set
+            {
+                SetValue(NonFrozenRowsViewportVerticalOffsetPropertyKey, value);
             }
         }
 
         /// <summary>
-        ///     Whether the end-user can add new rows to the ItemsSource.
+        /// Method which gets called when Vertical scroll occurs on the scroll viewer of datagrid.
+        /// Forwards the call to rows and header presenter.
         /// </summary>
-        public bool CanUserPasteToNewRows
+        internal void OnVerticalScroll()
         {
-            get { return (bool)GetValue(CanUserPasteToNewRowsProperty); }
-            set { SetValue(CanUserPasteToNewRowsProperty, value); }
+            CustomDataGridRowsPresenter panel = (CustomDataGridRowsPresenter)WPFHelper.GetVisualChild<CustomDataGridRowsPresenter>(this);
+            panel.InvalidateArrange();
         }
 
-        /// <summary>
-		///     DependencyProperty for CanUserPasteToNewRows
-        /// </summary>
-        public static readonly DependencyProperty CanUserPasteToNewRowsProperty =
-            DependencyProperty.Register("CanUserPasteToNewRows",
-                                        typeof(bool), typeof(CustomDataGrid), 
-                                        new FrameworkPropertyMetadata(true, null, null));
-
-		/// <summary>
-		///     DependencyProperty for CanUserAddRows
-		/// </summary>
-		public static new readonly DependencyProperty CanUserAddRowsProperty =
-		    DependencyProperty.Register("CanUserAddRows",
-										typeof(bool), typeof(CustomDataGrid),
-										new FrameworkPropertyMetadata(true, null, null));
-        
-        #endregion Clipboard Paste
+        #endregion
     }
 }

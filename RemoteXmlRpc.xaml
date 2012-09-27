@@ -109,13 +109,12 @@
 												<StackPanel Orientation='Horizontal'
 																		DockPanel.Dock='Bottom'
 																		Visibility='{Binding IsSelected, Converter={StaticResource booleanToVisibilityConverter}}'>
-													<propgrid:PropertyGrid Width='200'
+													<propgrid:PropertyGrid Width='200' 
 																								 SelectedObject='{Binding PropertyGridAdapter}'
 																								 ShowAdvancedOptions='False'
 																								 ShowSearchBox='False'
 																								 
 																								 ShowSortOptions='False'
-																								 DisplaySummary='True'
 																								 IsCategorized='False'
 																								 NameColumnWidth='80' />
 													<StackPanel Orientation='Vertical'>

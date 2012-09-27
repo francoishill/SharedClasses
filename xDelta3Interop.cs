@@ -17,9 +17,9 @@ namespace SharedClasses
 				NetworkInterop.FtpDownloadFile(
 					null,
 					Path.GetDirectoryName(xdelta3Path),
-					OnlineSettings.OnlineAppsSettings.Instance.AppsDownloadFtpUsername,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,
-					OnlineSettings.OnlineAppsSettings.Instance.AppsDownloadFtpPassword,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,
-					OnlineSettings.AutoSyncSettings.Instance.OnlineXDeltaExeFileUrl,
+					SettingsSimple.OnlineAppsSettings.Instance.AppsDownloadFtpUsername,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,
+					SettingsSimple.OnlineAppsSettings.Instance.AppsDownloadFtpPassword,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,
+					SettingsSimple.AutoSyncSettings.Instance.OnlineXDeltaExeFileUrl,
 					(err) => UserMessages.ShowErrorMessage(err),
 					textFeedbackHandler);
 			}

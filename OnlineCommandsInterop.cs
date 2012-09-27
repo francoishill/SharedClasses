@@ -5,10 +5,10 @@ namespace SharedClasses
 	public enum OnlineCommands { 
 		/*Client_ConnectAndRegister, *//*Client_UploadFile, Client_RequestToDownloadFile,
 		Server_ShowMessage, Server_TakeScreenshot, Server_StartReceivingFile*/
-		ThisSide_TakeScreenshotAndSend, ThisSide_ReceiveScreenshot, ThisSide_DownloadFileFromUrl,
-		ThisSide_SendFile,
+		TakeScreenshotAndSend, DownloadFileFromUrl,
+		SendFile,
 
-		OtherSide_TakeScreenshot, OtherSide_ReceiveScreenshot, OtherSide_DownloadFileFromUrl};
+		ReceiveScreenshot};
 
 	public class OnlineCommandsInterop
 	{

@@ -79,6 +79,8 @@ using KellermanSoftware.CompareNETObjects.Properties;
 //namespace KellermanSoftware.CompareNetObjects
 namespace SharedClasses
 {
+	public enum ComparisonResult { Equal, NotEqual, UnsupportedType, DifferentTypes, NullValue };//Added by Francois
+
     /// <summary>
     /// Class that allows comparison of two objects of the same type to each other.  Supports classes, lists, arrays, dictionaries, child comparison and more.
     /// </summary>
@@ -1486,5 +1488,63 @@ namespace SharedClasses
             return sb.ToString();
         }
         #endregion
-    }
+
+		#region Francois Added
+		public static ComparisonResult CompareObjectsByValue(object obj1, object obj2, out string errorIfUnsupportedType)
+		{
+			errorIfUnsupportedType = null;
+			if (obj1 == null || obj2 == null)
+			{
+				return ComparisonResult.NullValue;
+			}
+			if (obj1.GetType() != obj2.GetType())
+				return ComparisonResult.DifferentTypes;
+
+			if (obj1 is string || obj1 is char
+						   || obj1 is bool
+						   || obj1 is int || obj1 is long || obj1 is double || obj1 is decimal || obj1 is float
+						   || obj1 is byte || obj1 is short || obj1 is sbyte || obj1 is ushort || obj1 is uint || obj1 is ulong
+						   || obj1 is DateTime
+						   || obj1 is Enum)
+			{
+				return obj1.Equals(obj2) ? ComparisonResult.Equal : ComparisonResult.NotEqual;
+			}
+			else if (obj1 is List<string>)
+			{
+				List<string> tmplist1 = obj1 as List<string>;
+				List<string> tmplist2 = obj2 as List<string>;
+				return tmplist1.SequenceEqual(tmplist2, StringComparer.InvariantCultureIgnoreCase) ? ComparisonResult.Equal : ComparisonResult.NotEqual;
+			}
+			/*else if (obj1.GetType().IsGenericType && obj1 is IEnumerable)
+			{
+				return ComparisonResult.NotEqual;
+				//The following code crashes with OnlineSettings.ApplicationManagerSettings.RunCommand
+				//var enum1 = (obj1 as IEnumerable).GetEnumerator();
+				//var enum2 = (obj2 as IEnumerable).GetEnumerator();
+				//while (enum1.MoveNext() && enum2.MoveNext()) ;
+				//    if (!enum1.Current.Equals(enum2.Current))
+				//        return ComparisonResult.NotEqual;
+			}*/
+			else
+			{
+				try
+				{
+					bool deepCompareIsEqual = new CompareObjects() { CompareChildren = true }
+						.Compare(obj1, obj2);
+					if (deepCompareIsEqual)
+						return ComparisonResult.Equal;
+					else
+						return ComparisonResult.NotEqual;
+				}
+				catch (Exception exc)
+				{
+					errorIfUnsupportedType = exc.Message;
+					return ComparisonResult.UnsupportedType;
+				}
+			}
+			//errorIfUnsupportedType = "Unsupported types to compare, current compare tool cannot c
+			//return ComparisonResult.UnsupportedType;
+		}
+		#endregion Francois Added
+	}
 }

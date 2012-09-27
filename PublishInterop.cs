@@ -37,7 +37,7 @@ namespace SharedClasses
 	public static class PublishInterop
 	{
 		//public const string RootUrlForApps = "http://fjh.dyndns.org";//http://apps.getmyip.com
-		public const string RootUrlForApps = "https://fjh.dyndns.org";
+		//public const string RootUrlForApps = "https://fjh.dyndns.org";
 		//public const string RootFtpUrlForAppsUploading = "ftp://fjh.dyndns.org";
 		//TODO: Url (apps.getmyip.com) blocked at work, as IT to whitelist
 		static int seeAboveTODOatRootUrlsForApps;
@@ -196,13 +196,13 @@ namespace SharedClasses
 			{
 				string downloadededPath = NetworkInteropSimple.FtpDownloadFile(
 						Path.GetDirectoryName(dotnetCheckerDllPath),
-						OnlineSettings.OnlineAppsSettings.Instance.AppsDownloadFtpUsername,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,
-						OnlineSettings.OnlineAppsSettings.Instance.AppsDownloadFtpPassword,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,
-						OnlineSettings.PublishSettings.Instance.OnlineDotnetCheckerDllFileUrl,
+						SettingsSimple.OnlineAppsSettings.Instance.AppsDownloadFtpUsername,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,
+						SettingsSimple.OnlineAppsSettings.Instance.AppsDownloadFtpPassword,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,
+						SettingsSimple.PublishSettings.Instance.OnlineDotnetCheckerDllFileUrl,
 						actionOnMessage,
 						actionOnProgressPercentage);
 				if (downloadededPath == null)
-					UserMessages.ShowWarningMessage("Could not find (or download) DotNetChecker.dll from URL: " + OnlineSettings.PublishSettings.Instance.OnlineDotnetCheckerDllFileUrl);
+					UserMessages.ShowWarningMessage("Could not find (or download) DotNetChecker.dll from URL: " + SettingsSimple.PublishSettings.Instance.OnlineDotnetCheckerDllFileUrl);
 				else
 					dotnetCheckerDllPath = downloadededPath;
 			}
@@ -306,7 +306,7 @@ namespace SharedClasses
 
 			//string rootFtpUri = GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForVsPublishing() + "/" + validatedUrlsectionForProjname;
 			//string rootFtpUri = WebInterop.RootFtpUrlForAppsUploading.TrimEnd('/') + relativeUrl;
-			string rootDownloadHttpUri = RootUrlForApps.TrimEnd('/') + relativeUrl.TrimEnd('/');
+			string rootDownloadHttpUri = SharedClasses.SettingsSimple.HomePcUrls.Instance.AppsPublishingRoot.TrimEnd('/') + relativeUrl.TrimEnd('/');
 			
 			PublishDetails publishDetails = new PublishDetails(
 					projName,
@@ -385,8 +385,8 @@ namespace SharedClasses
 					localfilepath,
 					//rootFtpUri.TrimEnd('/') + "/" + Path.GetFileName(localfilepath),
 					validatedUrlsectionForProjname + "/" + Path.GetFileName(localfilepath),
-					OnlineSettings.OnlineAppsSettings.Instance.AppsUploadFtpUsername,
-					OnlineSettings.OnlineAppsSettings.Instance.AppsUploadFtpPassword,
+					SettingsSimple.OnlineAppsSettings.Instance.AppsUploadFtpUsername,
+					SettingsSimple.OnlineAppsSettings.Instance.AppsUploadFtpPassword,
 					true))
 					uploadsQueued = false;
 			}

@@ -6,6 +6,7 @@ using System.IO;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Diagnostics;
+using SharedClasses;
 #if WINFORMS
 using System.Windows.Forms;
 #endif

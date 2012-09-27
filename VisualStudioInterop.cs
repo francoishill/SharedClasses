@@ -312,13 +312,13 @@ public class VisualStudioInterop
 					string downloadededPath = NetworkInterop.FtpDownloadFile(
 							null,
 							Path.GetDirectoryName(dotnetCheckerDllPath),
-							OnlineSettings.OnlineAppsSettings.Instance.AppsDownloadFtpUsername,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,
-							OnlineSettings.OnlineAppsSettings.Instance.AppsDownloadFtpPassword,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,
-							OnlineSettings.PublishSettings.Instance.OnlineDotnetCheckerDllFileUrl,
+							SettingsSimple.OnlineAppsSettings.Instance.AppsDownloadFtpUsername,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,
+							SettingsSimple.OnlineAppsSettings.Instance.AppsDownloadFtpPassword,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,
+							SettingsSimple.PublishSettings.Instance.OnlineDotnetCheckerDllFileUrl,
 							err => TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, err),
 							textFeedbackEvent);
 					if (downloadededPath == null)
-						UserMessages.ShowWarningMessage("Could not find (or download) DotNetChecker.dll from URL: " + OnlineSettings.PublishSettings.Instance.OnlineDotnetCheckerDllFileUrl);
+						UserMessages.ShowWarningMessage("Could not find (or download) DotNetChecker.dll from URL: " + SettingsSimple.PublishSettings.Instance.OnlineDotnetCheckerDllFileUrl);
 					else
 						dotnetCheckerDllPath = downloadededPath;
 				}

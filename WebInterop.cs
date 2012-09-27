@@ -9,7 +9,7 @@ namespace SharedClasses
 {
 	public sealed class WebInterop
 	{
-		public const string RootUrlForJsonData = "https://json.getmyip.com";
+		//public const string RootUrlForJsonData = "https://json.getmyip.com";
 
 		private static bool certifcateTrustCalledYet = false;
 		public static void TrustCertificates()
@@ -133,11 +133,11 @@ namespace SharedClasses
 			switch (onlineOperation)
 			{
 				case OnlineOperations.GetModifiedTime:
-					return RootUrlForJsonData + "/json/getdatemodified";
+					return SettingsSimple.HomePcUrls.Instance.JsonDataRoot + "/json/getdatemodified";
 				case OnlineOperations.GetValue:
-					return RootUrlForJsonData + "/json/getvalue";
+					return SettingsSimple.HomePcUrls.Instance.JsonDataRoot + "/json/getvalue";
 				case OnlineOperations.SetValue:
-					return RootUrlForJsonData + "/json/setvalue";
+					return SettingsSimple.HomePcUrls.Instance.JsonDataRoot + "/json/setvalue";
 				default:
 					return "";
 			}

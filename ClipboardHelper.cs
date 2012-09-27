@@ -43,7 +43,19 @@ namespace SharedClasses
                 }
                 Debug.Assert(rawDataStr != null, string.Format("clipboardRawData: {0}, could not be converted to a string or memorystream.", clipboardRawData));
 
-                string[] rows = rawDataStr.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+				//See if it is maybe tab separated
+				//if (parseFormat == ParseTextFormat && rawDataStr.Contains('\t'))
+				//{
+				//    var tmplines = rawDataStr.Split('\r', '\n');
+				//    if (tmplines.Min(s => s.Split('\t').Length) == tmplines.Max(s => s.Split('\t').Length)
+				//        && tmplines.Min(s => s.Split('\t').Length > 0))
+				//        //We have lines where each line has same amount of tab characters, so its tab delimited
+				//        parseFormat = ParseTabdelimitedFormat;
+				//}
+
+				//string[] rows = rawDataStr.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+				string[] rows = rawDataStr.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
                 if (rows != null && rows.Length > 0)
                 {
                     clipboardData = new List<string[]>();

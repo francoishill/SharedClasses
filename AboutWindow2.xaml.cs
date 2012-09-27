@@ -13,6 +13,7 @@ using System.Windows.Shapes;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Windows.Interop;
+using System.ComponentModel;
 
 namespace SharedClasses
 {
@@ -43,6 +44,7 @@ namespace SharedClasses
 		private void Window_Loaded(object sender, RoutedEventArgs e)
 		{
 			listboxItemsToDisplay.ItemsSource = ItemsToDisplay;
+			listboxItemsToDisplay.UpdateLayout();
 			imageIcon.Source = this.Icon;
 		}
 
@@ -54,19 +56,39 @@ namespace SharedClasses
 			if (di == null) return;
 			di.GotoLink();
 		}
+
+		public static void ShowAboutWindow(ObservableCollection<DisplayItem> ItemsToDisplay, bool showmodal = true, Window owner = null)
+		{
+			var win = new AboutWindow2(ItemsToDisplay)
+			{
+				Owner = owner
+			};
+			if (showmodal)
+				win.ShowDialog();
+			else
+				win.Show();
+		}
 	}
 
-	public class DisplayItem
+	public class DisplayItem : INotifyPropertyChanged
 	{
-		public string Name { get; set; }
-		public string Text { get; set; }
-		private string LinkOnClick { get; set; }
-		public Cursor CurrentCursor { get; private set; }
+		private string _name;
+		public string Name { get { return _name; } set { _name = value; OnPropertyChanged("Name"); } }
 
-		public DisplayItem(string Name, string Text, string LinkOnClick = null)
+		private string _displaytext;
+		public string DisplayText { get { return _displaytext; } set { _displaytext = value; OnPropertyChanged("DisplayText"); } }
+
+		private string _linkonclick;
+		public string LinkOnClick { get { return _linkonclick; } set { _linkonclick = value; OnPropertyChanged("LinkOnClick"); } }
+
+		private Cursor _currentcursor;
+		public Cursor CurrentCursor { get { return _currentcursor; } set { _currentcursor = value; OnPropertyChanged("CurrentCursor"); } }
+
+
+		public DisplayItem(string Name, string DisplayText, string LinkOnClick = null)
 		{
 			this.Name = Name;
-			this.Text = Text;
+			this.DisplayText = DisplayText;
 			this.LinkOnClick = LinkOnClick;
 			if (LinkOnClick != null) CurrentCursor = Cursors.Hand;
 		}
@@ -76,5 +98,8 @@ namespace SharedClasses
 				return;
 			Process.Start(LinkOnClick);
 		}
+
+		public event PropertyChangedEventHandler PropertyChanged = delegate { };
+		public void OnPropertyChanged(string propertyName) { PropertyChanged(this, new PropertyChangedEventArgs(propertyName)); }
 	}
 }

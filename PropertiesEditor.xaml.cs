@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.WpfPropertyGrid;
+//using System.Windows.Controls.WpfPropertyGrid;
 using System.Windows.Data;
 using System.Windows.Documents;
 //using System.Windows.Forms;
 using System.Data;
-using UriProtocol = SharedClasses.GlobalSettings.VisualStudioInteropSettings.UriProtocol;
+//using UriProtocol = SharedClasses.GlobalSettings.VisualStudioInteropSettings.UriProtocol;
 
 namespace SharedClasses
 {
@@ -56,10 +56,15 @@ namespace SharedClasses
 			////tabControl1.ItemsSource = new ObservableCollection<object>() { selectedObject };
 			//propertyGrid1.SelectedObject = null;
 
+			PopulateList(objectsToView);
+			//propertyGrid1.SelectedObject = selectedObject;
+		}
+
+		public void PopulateList(List<object> objectsToView)
+		{
 			listBox1.Items.Clear();
 			foreach (object obj in objectsToView)
 				listBox1.Items.Add(obj);
-			//propertyGrid1.SelectedObject = selectedObject;
 		}
 
 		private void listBox1_SelectionChanged(object sender, SelectionChangedEventArgs e)

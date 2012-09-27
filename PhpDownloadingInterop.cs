@@ -15,7 +15,7 @@ namespace SharedClasses
 	public static class PhpDownloadingInterop
 	{
 		//private const string PhpUrl = "https://localhost/downloadownapps.php";
-		private const string PhpUrl = "https://ftpviahttp.getmyip.com/downloadownapps.php";
+		//private const string PhpUrl = "https://ftpviahttp.getmyip.com/downloadownapps.php";
 
 		private const int cBufferSize = 1024 * 256;//8 KB
 		private static byte[] buffer = new byte[cBufferSize];
@@ -81,7 +81,7 @@ namespace SharedClasses
 				ServicePointManager.ServerCertificateValidationCallback += (snder, certif, chain, sslPolicyErrors) => actionOnSSLcertificateValidation(snder, certif, chain, sslPolicyErrors);
 				NameValueCollection inputs = new NameValueCollection();
 				inputs.Add("relativepath", downloadRelativePath);
-				var req = GetHttpWebRequest(PhpUrl, inputs);
+				var req = GetHttpWebRequest(SettingsSimple.HomePcUrls.Instance.PhpDownloadUrl, inputs);
 
 				if (rangeToDownload.HasValue)
 				{

@@ -32,7 +32,7 @@
 							<Label Content=': '
 								   Margin='0'
 								   Padding='0' />
-							<Label Content='{Binding Text}'
+							<Label Content='{Binding DisplayText}'
 								   Foreground='#FF239CF5'
 								   Margin='0'
 								   Padding='0'

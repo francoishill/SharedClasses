@@ -116,14 +116,14 @@ public class NsisInterop
 		SectionGroupLines.Add(@"IfFileExists ""C:\Program Files (x86)\Auto Updater\AutoUpdater.exe"" AutoUpdaterFound");
 		SectionGroupLines.Add(@"	  RetryDownload:");
 		SectionGroupLines.Add(@"	  ;All following lines removed, gave error when trying to read content from a URL");
-		SectionGroupLines.Add(@"	  ;NsisUrlLib::UrlOpen /NOUNLOAD """ + PublishInterop.RootUrlForApps + @"/json/getautoupdaterlatest"" ;Get content of this page (it returns the URL of newest setup package of AutoUpdater");
+		SectionGroupLines.Add(@"	  ;NsisUrlLib::UrlOpen /NOUNLOAD """ + SharedClasses.SettingsSimple.HomePcUrls.Instance.AppsPublishingRoot + @"/json/getautoupdaterlatest"" ;Get content of this page (it returns the URL of newest setup package of AutoUpdater");
 		SectionGroupLines.Add(@"	  ;Pop $7");
 		SectionGroupLines.Add(@"	  ;MessageBox MB_OK $7");
 		SectionGroupLines.Add(@"	  ;NsisUrlLib::IterateLine /NOUNLOAD ;Read the first line (which is the URL)");
 		SectionGroupLines.Add(@"	  ;Pop $7 ;Place the URL read into variable $7");
 		SectionGroupLines.Add(@"	  ;MessageBox MB_OK ""$7""");
 		SectionGroupLines.Add(@"	  ;NSISdl::download ""$7"" tmpAutoUpdater_SetupLatest.exe ;Download the file at this URL");
-		SectionGroupLines.Add(@"	  NSISdl::download """ + PublishInterop.RootUrlForApps + @"/downloadownapps.php?relativepath=autoupdater/AutoUpdater_SetupLatest.exe"" tmpAutoUpdater_SetupLatest.exe ; Download latest AutoUpdater Setup");
+		SectionGroupLines.Add(@"	  NSISdl::download """ + SharedClasses.SettingsSimple.HomePcUrls.Instance.AppsPublishingRoot + @"/downloadownapps.php?relativepath=autoupdater/AutoUpdater_SetupLatest.exe"" tmpAutoUpdater_SetupLatest.exe ; Download latest AutoUpdater Setup");
 		SectionGroupLines.Add(@"	  Pop $R4 ;Read the result of the download");
 		SectionGroupLines.Add(@"	  StrCmp $R4 ""success"" SuccessfullyDownloadedAutoUpdater");
 		SectionGroupLines.Add(@"	  ;StrCmp $R4 ""cancel"" DownloadCanceled");
@@ -142,7 +142,7 @@ public class NsisInterop
 
 		SectionGroupLines.Add(@"IfFileExists ""C:\Program Files (x86)\Show No Callback Notification\ShowNoCallbackNotification.exe"" ShowNoCallbackNotificationFound");
 		SectionGroupLines.Add(@"	  RetryDownload2:");
-		SectionGroupLines.Add(@"	  NSISdl::download """ + PublishInterop.RootUrlForApps + @"/downloadownapps.php?relativepath=shownocallbacknotification/ShowNoCallbackNotification_SetupLatest.exe"" tmpShowNoCallbackNotification_SetupLatest.exe ; Download latest ShowNoCallbackNotification Setup");
+		SectionGroupLines.Add(@"	  NSISdl::download """ + SharedClasses.SettingsSimple.HomePcUrls.Instance.AppsPublishingRoot + @"/downloadownapps.php?relativepath=shownocallbacknotification/ShowNoCallbackNotification_SetupLatest.exe"" tmpShowNoCallbackNotification_SetupLatest.exe ; Download latest ShowNoCallbackNotification Setup");
 		SectionGroupLines.Add(@"	  Pop $R4 ;Read the result of the download");
 		SectionGroupLines.Add(@"	  StrCmp $R4 ""success"" SuccessfullyDownloadedShowNoCallbackNotification");
 		SectionGroupLines.Add(@"	  MessageBox MB_RETRYCANCEL ""Download failed, retry download?"" IDRETRY RetryDownload2");
@@ -156,7 +156,7 @@ public class NsisInterop
 
 		SectionGroupLines.Add(@"IfFileExists ""C:\Program Files (x86)\Standalone Uploader\StandaloneUploader.exe"" StandaloneUploaderFound");
 		SectionGroupLines.Add(@"	  RetryDownload3:");
-		SectionGroupLines.Add(@"	  NSISdl::download """ + PublishInterop.RootUrlForApps + @"/downloadownapps.php?relativepath=standaloneuploader/StandaloneUploader_SetupLatest.exe"" tmpStandaloneUploader_SetupLatest.exe ; Download latest StandaloneUploader Setup");
+		SectionGroupLines.Add(@"	  NSISdl::download """ + SharedClasses.SettingsSimple.HomePcUrls.Instance.AppsPublishingRoot + @"/downloadownapps.php?relativepath=standaloneuploader/StandaloneUploader_SetupLatest.exe"" tmpStandaloneUploader_SetupLatest.exe ; Download latest StandaloneUploader Setup");
 		SectionGroupLines.Add(@"	  Pop $R4 ;Read the result of the download");
 		SectionGroupLines.Add(@"	  StrCmp $R4 ""success"" SuccessfullyDownloadedStandaloneUploader");
 		SectionGroupLines.Add(@"	  MessageBox MB_RETRYCANCEL ""Download failed, retry download?"" IDRETRY RetryDownload3");

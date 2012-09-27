@@ -41,13 +41,13 @@
 					Grid.Column="0"
 					Text="{Binding StringValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
 					IsReadOnly="{Binding IsReadOnly}" />
-				<Button
+				<!--<Button
 					Grid.Column="1"
 					Margin="2,0,0,0"
 					Content="[...]"
 					Width="20"
 					Command="Custom:PropertyEditorCommands.ShowExtendedEditor"
-					CommandParameter="{Binding}" />
+					CommandParameter="{Binding}" />-->
 			</Grid>
 		</DataTemplate>
 		<DataTemplate
@@ -263,6 +263,9 @@
 			x:Name='propertyGrid2'
 			ShowAdvancedOptions='True'
 			Grid.Column='2'>
+			<extToolkit:PropertyGrid.AdvancedOptionsMenu>
+				<ContextMenu HasDropShadow='True' />
+			</extToolkit:PropertyGrid.AdvancedOptionsMenu>
 			<extToolkit:PropertyGrid.EditorDefinitions>
 				<!--<extToolkit:EditorDefinition TargetType="{x:Type System:DateTime}">
 					<extToolkit:EditorDefinition.EditorTemplate>

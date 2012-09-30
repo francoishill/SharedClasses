@@ -165,4 +165,23 @@ public class ThreadingInterop
 		//The action timed out
 		return false;
 	}
+
+	public static void ActionAfterDelay(Action action, TimeSpan delay, Action<string> actionOnError)
+	{
+		new System.Threading.Timer(
+			delegate
+			{
+				try
+				{
+					action();
+				}
+				catch (Exception exc)
+				{
+					actionOnError(exc.Message);
+				}
+			},
+			null,
+			delay,
+			TimeSpan.FromMilliseconds(-1));
+	}
 }

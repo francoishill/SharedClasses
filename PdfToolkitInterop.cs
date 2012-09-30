@@ -17,9 +17,9 @@ namespace SharedClasses
 				NetworkInterop.FtpDownloadFile(
 					null,
 					Path.GetDirectoryName(PdfTkExePath),
-					OnlineSettings.OnlineAppsSettings.Instance.AppsDownloadFtpUsername,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,
-					OnlineSettings.OnlineAppsSettings.Instance.AppsDownloadFtpPassword,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,
-					OnlineSettings.AutoSyncSettings.Instance.OnlinePdfTkExeFileUrl,
+					SettingsSimple.OnlineAppsSettings.Instance.AppsDownloadFtpUsername,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,
+					SettingsSimple.OnlineAppsSettings.Instance.AppsDownloadFtpPassword,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,
+					SettingsSimple.AutoSyncSettings.Instance.OnlinePdfTkExeFileUrl,
 					(err) => UserMessages.ShowErrorMessage(err),
 					(snder, textfeedback) => tmplist.Add(textfeedback.FeedbackType.ToString() + ":" + textfeedback.FeedbackText));
 				allfeedbackCatched.AddRange(tmplist);

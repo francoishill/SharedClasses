@@ -759,10 +759,10 @@ namespace SharedClasses
 
 			public HomePcUrls()//Defaults
 			{
-				this.JsonDataRoot = "http://json.getmyip.com";
-				this.PhpDownloadUrl = "http://ftpviahttp.getmyip.com/downloadownapps.php";
-				this.PhpUploadUrl = "http://ftpviahttp.getmyip.com/uploadownapps.php";
-				this.AppsPublishingRoot = "http://fjh.dyndns.org";
+				this.JsonDataRoot = "http://firepuma.com";//"http://json.getmyip.com";
+				this.PhpDownloadUrl = "http://firepuma.com/downloadownapps.php";//"http://ftpviahttp.getmyip.com/downloadownapps.php";
+				this.PhpUploadUrl = "http://firepuma.com/uploadownapps.php";//"http://ftpviahttp.getmyip.com/uploadownapps.php";
+				this.AppsPublishingRoot = "http://firepuma.com";// "http://fjh.dyndns.org";
 			}
 		}
 	}

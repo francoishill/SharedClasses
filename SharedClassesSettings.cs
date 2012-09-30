@@ -345,7 +345,7 @@ namespace SharedClasses
 				}
 		}
 
-#if WPF// && HAVEPLUGINS
+#if WPF && HAVEPLUGINS
 		public static void ShowAndEditAllSettings()
 		{
 			List<object> objList = new List<object>();

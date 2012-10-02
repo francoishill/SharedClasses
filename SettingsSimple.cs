@@ -586,11 +586,13 @@ namespace SharedClasses
 			[Description("The full URL to the online xdelta3.exe file.")]
 			public string OnlineXDeltaExeFileUrl { get; set; }
 			public string OnlinePdfTkExeFileUrl { get; set; }
+			public string OnlineSharpRSyncFileUrl { get; set; }
 
 			public AutoSyncSettings()//Defaults
 			{
 				this.OnlineXDeltaExeFileUrl = OnlineAppsSettings.Instance.RootFtpUrl.TrimEnd('/') + "/xDelta3.exe";
 				this.OnlinePdfTkExeFileUrl = OnlineAppsSettings.Instance.RootFtpUrl.TrimEnd('/') + "/pdftk.exe";
+				this.OnlineSharpRSyncFileUrl = OnlineAppsSettings.Instance.RootFtpUrl.TrimEnd('/') + "/sharprsync.exe";
 			}
 		}
 

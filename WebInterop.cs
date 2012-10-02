@@ -66,7 +66,7 @@ namespace SharedClasses
 				byte[] buffer = Encoding.ASCII.GetBytes(escapedData);
 				//Initialisation, we use localhost, change if appliable
 				HttpWebRequest WebReq = (HttpWebRequest)WebRequest.Create(url);
-
+				WebReq.KeepAlive = true;
 				//Our method is post, otherwise the buffer (postvars) would be useless
 				WebReq.Method = "POST";
 				//We use form contentType, for the postvars.

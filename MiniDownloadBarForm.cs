@@ -30,6 +30,7 @@ namespace SharedClasses
 		}
 		public static void CloseDownloadBar()
 		{
+			if (miniForm == null) return;
 			miniForm.ForceClose = true;
 			ThreadingInterop.UpdateGuiFromThread(miniForm, () =>
 			{

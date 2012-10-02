@@ -319,4 +319,25 @@ public static class Win32Api
 	public static extern IntPtr SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 	[DllImport("user32.dll")]
 	public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+	[DllImport("user32.dll")]
+	[return: MarshalAs(UnmanagedType.Bool)]
+	//public static extern bool GetCursorPos(ref Win32Point pt);
+	public static extern bool GetCursorPos(out Win32Point lpPoint);
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct Win32Point
+	{
+		public Int32 X;
+		public Int32 Y;
+	};
+
+	[DllImport("user32.dll")]
+	public static extern IntPtr WindowFromPoint(Win32Point Point);
+
+	[DllImport("user32.dll")]
+	public static extern IntPtr WindowFromPoint(int xPoint, int yPoint);
+
+	[DllImport("user32.dll")]
+	public static extern bool SetWindowText(IntPtr hWnd, string lpString);
 }

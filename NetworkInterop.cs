@@ -1253,7 +1253,7 @@ public class NetworkInterop
 							percentage,
 							100);
 						//Thread tmpthread =
-						MiniDownloadBarForm.UpdateProgress(percentage);
+						//MiniDownloadBarForm.UpdateProgress(percentage);
 						//if (!progressbarThreads.Contains(tmpthread))
 						//    progressbarThreads.Add(tmpthread);
 					}
@@ -1282,7 +1282,7 @@ public class NetworkInterop
 						}
 				}
 
-				MiniDownloadBarForm.CloseDownloadBar();
+				//MiniDownloadBarForm.CloseDownloadBar();
 				//for (int i = 0; i < progressbarThreads.Count; i++)
 				//{
 				//    try

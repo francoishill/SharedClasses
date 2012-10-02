@@ -87,6 +87,7 @@ public class ThreadingInterop
 
 	public static void UpdateGuiFromThread(Control controlToUpdate, Action action)
 	{
+		if (controlToUpdate == null) return;
 		if (controlToUpdate.InvokeRequired)
 		{
 			try
@@ -169,18 +170,18 @@ public class ThreadingInterop
 	public static void ActionAfterDelay(Action action, TimeSpan delay, Action<string> actionOnError)
 	{
 		new System.Threading.Timer(
-			delegate
+			(state) =>
 			{
 				try
 				{
-					action();
+					((Action)state)();
 				}
 				catch (Exception exc)
 				{
 					actionOnError(exc.Message);
 				}
 			},
-			null,
+			action,
 			delay,
 			TimeSpan.FromMilliseconds(-1));
 	}

@@ -47,10 +47,11 @@
 			// labelMessage
 			// 
 			this.labelMessage.AutoSize = true;
-			this.labelMessage.Font = new System.Drawing.Font("Arial", 6.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.labelMessage.Font = new System.Drawing.Font("Arial", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.labelMessage.ForeColor = System.Drawing.Color.White;
 			this.labelMessage.Location = new System.Drawing.Point(3, 4);
 			this.labelMessage.Name = "labelMessage";
-			this.labelMessage.Size = new System.Drawing.Size(29, 12);
+			this.labelMessage.Size = new System.Drawing.Size(35, 14);
 			this.labelMessage.TabIndex = 3;
 			this.labelMessage.Text = "label1";
 			// 
@@ -59,6 +60,7 @@
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+			this.BackColor = System.Drawing.SystemColors.ControlDarkDark;
 			this.ClientSize = new System.Drawing.Size(172, 30);
 			this.ControlBox = false;
 			this.Controls.Add(this.labelMessage);

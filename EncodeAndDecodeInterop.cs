@@ -168,36 +168,42 @@ namespace SharedClasses
 		public static bool EncodeFileToHex(string originalFilePath, string outputFilePath, Action<string> actionOnError)
 		{
 			MiniDownloadBarForm.UpdateMessage("File2Hex", "File2Hex: " + Path.GetFileName(originalFilePath));
-			//using (IndeterminateProgress min = new IndeterminateProgress("File2Hex: " + Path.GetFileName(originalFilePath), true))
+			try
 			{
-				bool cancelled = false;
-				//min.onCancel += delegate { cancelled = true; };
-				long filesize = new FileInfo(originalFilePath).Length;
-				MiniDownloadBarForm.UpdateProgress(0);
-
-				int bufferlength = 1024 * 1024 * 10;//10MB
-				byte[] buffer = new byte[bufferlength];
-				long totalRead = 0;
-				using (FileStream fin = new FileStream(originalFilePath, FileMode.Open))
-				using (StreamWriter sw = new StreamWriter(outputFilePath, false))
+				//using (IndeterminateProgress min = new IndeterminateProgress("File2Hex: " + Path.GetFileName(originalFilePath), true))
 				{
-					int actualread = fin.Read(buffer, 0, bufferlength);
-					while (actualread > 0)
-					{
-						totalRead += actualread;
-						MiniDownloadBarForm.UpdateProgress((int)(100D * (double)totalRead / (double)filesize));
-						sw.Write(EncodeBytesToHex(buffer, 0, actualread, actionOnError));
-						actualread = fin.Read(buffer, 0, bufferlength);
+					bool cancelled = false;
+					//min.onCancel += delegate { cancelled = true; };
+					long filesize = new FileInfo(originalFilePath).Length;
+					MiniDownloadBarForm.UpdateProgress(0);
 
-						if (cancelled)
+					int bufferlength = 1024 * 1024 * 10;//10MB
+					byte[] buffer = new byte[bufferlength];
+					long totalRead = 0;
+					using (FileStream fin = new FileStream(originalFilePath, FileMode.Open))
+					using (StreamWriter sw = new StreamWriter(outputFilePath, false))
+					{
+						int actualread = fin.Read(buffer, 0, bufferlength);
+						while (actualread > 0)
 						{
-							return false;
+							totalRead += actualread;
+							MiniDownloadBarForm.UpdateProgress((int)(100D * (double)totalRead / (double)filesize));
+							sw.Write(EncodeBytesToHex(buffer, 0, actualread, actionOnError));
+							actualread = fin.Read(buffer, 0, bufferlength);
+
+							if (cancelled)
+							{
+								return false;
+							}
 						}
+						return true;
 					}
-					return true;
 				}
 			}
-			MiniDownloadBarForm.CloseDownloadBar();
+			finally
+			{
+				MiniDownloadBarForm.CloseDownloadBar();
+			}
 		}
 
 		public static string EncodeBytesToHex(byte[] bytesToEncode, int offset, int count, Action<string> actionOnError, string Hex16CharactersToUse = null)
@@ -262,37 +268,43 @@ namespace SharedClasses
 		public static bool DecodeFileFromHex(string hexfilepath, string outputfilepath)
 		{
 			MiniDownloadBarForm.UpdateMessage("FileFromHex", "FileFromHex: " + Path.GetFileName(hexfilepath));
-			//using (IndeterminateProgress min = new IndeterminateProgress("FileFromHex: " + Path.GetFileName(hexfilepath), true))
+			try
 			{
-				bool cancelled = false;
-				//min.onCancel += delegate { cancelled = true; };
-				long filesize = new FileInfo(hexfilepath).Length;
-
-				int bufferlength = 1024 * 1024 * 10;//10MB
-				char[] buffer = new char[bufferlength];
-				long totalRead = 0;
-				using (StreamReader sread = new StreamReader(hexfilepath))
-				using (FileStream fwrite = new FileStream(outputfilepath, FileMode.Create))
+				//using (IndeterminateProgress min = new IndeterminateProgress("FileFromHex: " + Path.GetFileName(hexfilepath), true))
 				{
-					int actualread = sread.ReadBlock(buffer, 0, bufferlength);
-					while (actualread > 0)
-					{
-						totalRead += actualread;
-						MiniDownloadBarForm.UpdateProgress((int)(100D * (double)totalRead / (double)filesize));
-						byte[] bytes = DecodeBytesFromHex(new string(buffer), 0, actualread);
-						fwrite.Write(bytes, 0, bytes.Length);
-						//sw.Write(EncodeBytesToHex(buffer, 0, actualread));
-						actualread = sread.ReadBlock(buffer, 0, bufferlength);
+					bool cancelled = false;
+					//min.onCancel += delegate { cancelled = true; };
+					long filesize = new FileInfo(hexfilepath).Length;
 
-						if (cancelled)
+					int bufferlength = 1024 * 1024 * 10;//10MB
+					char[] buffer = new char[bufferlength];
+					long totalRead = 0;
+					using (StreamReader sread = new StreamReader(hexfilepath))
+					using (FileStream fwrite = new FileStream(outputfilepath, FileMode.Create))
+					{
+						int actualread = sread.ReadBlock(buffer, 0, bufferlength);
+						while (actualread > 0)
 						{
-							return false;
+							totalRead += actualread;
+							MiniDownloadBarForm.UpdateProgress((int)(100D * (double)totalRead / (double)filesize));
+							byte[] bytes = DecodeBytesFromHex(new string(buffer), 0, actualread);
+							fwrite.Write(bytes, 0, bytes.Length);
+							//sw.Write(EncodeBytesToHex(buffer, 0, actualread));
+							actualread = sread.ReadBlock(buffer, 0, bufferlength);
+
+							if (cancelled)
+							{
+								return false;
+							}
 						}
+						return true;
 					}
-					return true;
 				}
 			}
-			MiniDownloadBarForm.CloseDownloadBar();
+			finally
+			{
+				MiniDownloadBarForm.CloseDownloadBar();
+			}
 		}
 
 		public static byte[] DecodeBytesFromHex(string StringToDecode, int offset, int count, string Hex16CharactersToUse = null)//, StringTypeEnum StringType)

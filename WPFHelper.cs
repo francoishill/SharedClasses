@@ -5,6 +5,8 @@ using System.Text;
 using System.Windows.Media;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media.Imaging;
+using System.IO;
 
 namespace SharedClasses
 {
@@ -129,6 +131,74 @@ namespace SharedClasses
 				Win32Api.GetCursorPos(out w32Mouse);
 				return new Point(w32Mouse.X, w32Mouse.Y);
 			}
+		}
+
+		/// <summary>
+		/// Copies a UI element to the clipboard as an image.
+		/// </summary>
+		/// <param name="element">The element to copy.</param>
+		public static BitmapSource GetImageFromUIElement(FrameworkElement element, Size? fitToSize = null)
+		{
+			//http://elegantcode.com/2010/12/09/wpf-copy-uielement-as-image-to-clipboard/
+
+			double width = element.ActualWidth;
+			double height = element.ActualHeight;
+			if (fitToSize.HasValue)
+			{
+				width = fitToSize.Value.Width;
+				height = fitToSize.Value.Height;
+			}
+
+			if (width == 0 || height == 0)
+				return null;
+
+			if (width < 30)
+			{
+				double factor = 30D / width;
+				width *= factor;
+				height *= factor;
+			}
+
+			//double minratio = 0.1D;
+			//if (width/height < minratio)
+			//    width = height * minratio;
+			//if (width < 30)
+			//    width = 30;
+
+			RenderTargetBitmap bmpCopied = new RenderTargetBitmap(
+				(int)Math.Round(width),
+				(int)Math.Round(height),
+				96, 96, PixelFormats.Default);
+			DrawingVisual dv = new DrawingVisual();
+			using (DrawingContext dc = dv.RenderOpen())
+			{
+				VisualBrush vb = new VisualBrush(element);
+				vb.Stretch = Stretch.UniformToFill;
+				dc.DrawRectangle(vb, null, new Rect(new Point(), new Size(width, height)));
+			}
+			bmpCopied.Render(dv);
+			//Clipboard.SetImage(bmpCopied);
+			return bmpCopied;
+		}
+
+		public static BitmapImage BitmapSourceToBitmapImage(BitmapSource bitmapSource)
+		{
+			if (bitmapSource == null)
+				return null;
+			JpegBitmapEncoder encoder = new JpegBitmapEncoder();
+			MemoryStream memoryStream = new MemoryStream();
+			BitmapImage bImg = new BitmapImage();
+
+			encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
+			encoder.Save(memoryStream);
+
+			bImg.BeginInit();
+			bImg.StreamSource = new MemoryStream(memoryStream.ToArray());
+			bImg.EndInit();
+
+			memoryStream.Close();
+
+			return bImg;
 		}
     }
 }

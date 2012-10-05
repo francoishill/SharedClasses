@@ -92,10 +92,21 @@ public static class Win32Api
 	public static readonly int SW_SHOWNOACTIVATE = 4;
 	public static readonly uint SWP_NOACTIVATE = 0x0010;
 
+	[DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+	public static extern int GetWindowTextLength(IntPtr hWnd);
 	[DllImport("user32.dll")]
 	public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
 	[DllImport("msvcr70.dll", CallingConvention = CallingConvention.Cdecl)]
 	public static extern int _fpreset();
+
+	public static string GetWindowText(IntPtr hWnd)
+	{
+		// Allocate correct string length first
+		int length       = GetWindowTextLength(hWnd);
+		StringBuilder sb = new StringBuilder(length + 1);
+		GetWindowText(hWnd, sb, sb.Capacity);
+		return sb.ToString();
+	}
 
 	[DllImport("User32.dll")]
 	public static extern bool LockWorkStation();
@@ -340,4 +351,34 @@ public static class Win32Api
 
 	[DllImport("user32.dll")]
 	public static extern bool SetWindowText(IntPtr hWnd, string lpString);
+
+	[DllImport("user32.dll")]
+	[return: MarshalAs(UnmanagedType.Bool)]
+	public static extern bool FlashWindowEx(ref FLASHWINFO pwfi);
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct FLASHWINFO
+	{
+		public UInt32 cbSize;
+		public IntPtr hwnd;
+		public UInt32 dwFlags;
+		public UInt32 uCount;
+		public UInt32 dwTimeout;
+	}
+
+	public enum FLASHWINFOFLAGS
+	{
+		FLASHW_STOP = 0,
+		FLASHW_CAPTION = 0x00000001,
+		FLASHW_TRAY = 0x00000002,
+		FLASHW_ALL = (FLASHW_CAPTION | FLASHW_TRAY),
+		FLASHW_TIMER = 0x00000004,
+		FLASHW_TIMERNOFG = 0x0000000C
+	}
+	public delegate bool CallBackPtr(int hwnd, int lParam);
+	[DllImport("user32.dll")]
+	public static extern int EnumWindows(CallBackPtr callPtr, int lPar);
+
+	[DllImport("user32.dll", SetLastError = true)]
+	public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 }

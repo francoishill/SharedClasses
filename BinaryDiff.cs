@@ -798,10 +798,10 @@ namespace SharedClasses
 						|| !tmpcacheddict.ContainsKey(f.RelativePath)
 						|| HasFileChanged(f, tmpcacheddict[f.RelativePath]))
 					{
-						string tempPath = GetTempCopyToFilePath(f);
-						if (!File.Exists(tempPath))
+						string tmpCopiedLocalModifiedFile = GetTempCopyToFilePath(f);
+						if (!File.Exists(tmpCopiedLocalModifiedFile))
 						{
-							TextFeedbackEventArgs.RaiseSimple(textFeedbackHandler, "Could not find temp copied file: " + tempPath);
+							TextFeedbackEventArgs.RaiseSimple(textFeedbackHandler, "Could not find temp copied file: " + tmpCopiedLocalModifiedFile);
 							return false;
 						}
 
@@ -818,7 +818,8 @@ namespace SharedClasses
 						if (tmpcacheddict != null && tmpcacheddict.ContainsKey(f.RelativePath))
 						{
 							//DONE: Why is patches generated/uploaded for NEW FILES?
-							xDelta3Interop.MakePatch(GetLocalOriginalFilePath(f), tempPath/*GetAbsolutePath(f)*/, patchfile, textFeedbackHandler);
+							if (!xDelta3Interop.MakePatch(GetLocalOriginalFilePath(f), tmpCopiedLocalModifiedFile/*GetAbsolutePath(f)*/, patchfile, textFeedbackHandler))
+								return false;
 							if (!UploadPatch(f, patchfile, newVersion))
 								return false;
 						}

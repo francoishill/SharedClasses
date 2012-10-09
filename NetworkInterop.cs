@@ -1090,7 +1090,16 @@ public class NetworkInterop
 		int posDoubleSlash = originalUrl.IndexOf("//");
 		int posFirstSingleSlash = originalUrl.IndexOf("/", (posDoubleSlash >= 0 ? posDoubleSlash : 0) + 2);
 		if (posFirstSingleSlash != -1)
-			return originalUrl.Insert(posFirstSingleSlash, ":" + portNumber.ToString());
+		{
+			if (portNumber == 21 && originalUrl.StartsWith("ftp://", StringComparison.InvariantCultureIgnoreCase))
+				return originalUrl;
+			else if (portNumber == 80 && originalUrl.StartsWith("http://", StringComparison.InvariantCultureIgnoreCase))
+				return originalUrl;
+			else if (portNumber == 443 && originalUrl.StartsWith("https://", StringComparison.InvariantCultureIgnoreCase))
+				return originalUrl;
+			else
+				return originalUrl.Insert(posFirstSingleSlash, ":" + portNumber.ToString());
+		}
 		else
 			return originalUrl + ":" + portNumber.ToString();
 	}
@@ -1209,6 +1218,16 @@ public class NetworkInterop
 		}
 	}
 
+	private class FTPClient : WebClient
+	{
+		protected override WebRequest GetWebRequest(System.Uri address)
+		{
+			FtpWebRequest req = (FtpWebRequest)base.GetWebRequest(address);
+			req.UsePassive = true;// false;
+			return req;
+		}
+	}
+	private static FTPClient client;
 	public static string FtpDownloadFile(Object textfeedbackSenderObject, string localRootFolder, string userName, string password, string onlineFileUrl, Action<string> actionOnError, TextFeedbackEventHandler textFeedbackHandler = null, ProgressChangedEventHandler progressChanged = null)
 	{
 		int maxRetries = 5;
@@ -1217,7 +1236,7 @@ public class NetworkInterop
 		{
 			if (!Directory.Exists(localRootFolder))
 				Directory.CreateDirectory(localRootFolder);
-			using (System.Net.WebClient client = new System.Net.WebClient())
+			using (client = new FTPClient())
 			{
 				client.Credentials = new System.Net.NetworkCredential(userName, password);
 				//client.Headers.Add(HttpRequestHeader.UserAgent, "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)");
@@ -1262,7 +1281,9 @@ public class NetworkInterop
 
 			retryhere:
 				client.DownloadFileAsync(new Uri(onlineFileUrl), localFilepath);
+				
 				while (!isComplete)
+				//while (client.IsBusy)
 					Application.DoEvents();
 
 				//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackHandler, "Successfully downloaded " + onlineFileUrl);
@@ -1300,8 +1321,18 @@ public class NetworkInterop
 				//GC.WaitForPendingFinalizers();
 				if (!File.Exists(localFilepath) || new FileInfo(localFilepath).Length != filesize)
 				{
+					bool fileExistedButWasEmpty = File.Exists(localFilepath) && new FileInfo(localFilepath).Length == 0;
 					if (File.Exists(localFilepath))
 						File.Delete(localFilepath);
+					string errMsg = "Unable to download file";
+					if (fileExistedButWasEmpty)
+						errMsg += ", file download 'succeeded' but file was empty";
+					errMsg += ":" + Environment.NewLine
+						+ localFilepath + Environment.NewLine
+						+ "downloaded from:" + Environment.NewLine
+						+ onlineFileUrl;
+					TextFeedbackEventArgs.RaiseSimple(textFeedbackHandler, 
+						errMsg, TextFeedbackType.Error);
 					return null;
 				}
 				return localFilepath;

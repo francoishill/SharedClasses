@@ -29,6 +29,8 @@
 		private void InitializeComponent()
 		{
 			this.groupBox1 = new System.Windows.Forms.GroupBox();
+			this.textBoxExcludedFolders = new System.Windows.Forms.TextBox();
+			this.label1 = new System.Windows.Forms.Label();
 			this.buttonRemoveSelf = new System.Windows.Forms.Button();
 			this.textBoxFtpPassword = new System.Windows.Forms.TextBox();
 			this.label5 = new System.Windows.Forms.Label();
@@ -39,8 +41,6 @@
 			this.label2 = new System.Windows.Forms.Label();
 			this.buttonBrowseForLocalFolder = new System.Windows.Forms.Button();
 			this.textBoxLocalRootDirectory = new System.Windows.Forms.TextBox();
-			this.textBoxExcludedFolders = new System.Windows.Forms.TextBox();
-			this.label1 = new System.Windows.Forms.Label();
 			this.groupBox1.SuspendLayout();
 			this.SuspendLayout();
 			// 
@@ -67,6 +67,26 @@
 			this.groupBox1.TabIndex = 20;
 			this.groupBox1.TabStop = false;
 			this.groupBox1.Text = "groupBox1";
+			// 
+			// textBoxExcludedFolders
+			// 
+			this.textBoxExcludedFolders.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.textBoxExcludedFolders.Location = new System.Drawing.Point(34, 160);
+			this.textBoxExcludedFolders.Multiline = true;
+			this.textBoxExcludedFolders.Name = "textBoxExcludedFolders";
+			this.textBoxExcludedFolders.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+			this.textBoxExcludedFolders.Size = new System.Drawing.Size(288, 91);
+			this.textBoxExcludedFolders.TabIndex = 30;
+			// 
+			// label1
+			// 
+			this.label1.AutoSize = true;
+			this.label1.Location = new System.Drawing.Point(31, 144);
+			this.label1.Name = "label1";
+			this.label1.Size = new System.Drawing.Size(160, 13);
+			this.label1.TabIndex = 29;
+			this.label1.Text = "Excluded folders (relative paths):";
 			// 
 			// buttonRemoveSelf
 			// 
@@ -121,7 +141,7 @@
 			this.textBoxFtpRootUrl.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.textBoxFtpRootUrl.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
-			this.textBoxFtpRootUrl.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.AllUrl;
+			this.textBoxFtpRootUrl.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.RecentlyUsedList;
 			this.textBoxFtpRootUrl.Location = new System.Drawing.Point(123, 56);
 			this.textBoxFtpRootUrl.Name = "textBoxFtpRootUrl";
 			this.textBoxFtpRootUrl.Size = new System.Drawing.Size(452, 20);
@@ -165,26 +185,6 @@
 			this.textBoxLocalRootDirectory.Name = "textBoxLocalRootDirectory";
 			this.textBoxLocalRootDirectory.Size = new System.Drawing.Size(452, 20);
 			this.textBoxLocalRootDirectory.TabIndex = 19;
-			// 
-			// textBoxExcludedFolders
-			// 
-			this.textBoxExcludedFolders.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.textBoxExcludedFolders.Location = new System.Drawing.Point(34, 160);
-			this.textBoxExcludedFolders.Multiline = true;
-			this.textBoxExcludedFolders.Name = "textBoxExcludedFolders";
-			this.textBoxExcludedFolders.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-			this.textBoxExcludedFolders.Size = new System.Drawing.Size(288, 91);
-			this.textBoxExcludedFolders.TabIndex = 30;
-			// 
-			// label1
-			// 
-			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(31, 144);
-			this.label1.Name = "label1";
-			this.label1.Size = new System.Drawing.Size(160, 13);
-			this.label1.TabIndex = 29;
-			this.label1.Text = "Excluded folders (relative paths):";
 			// 
 			// LinkedFolderUserControl
 			// 

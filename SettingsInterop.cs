@@ -30,6 +30,11 @@ namespace SharedClasses
 			return newGuid;
 		}
 
+		public static string GetComputerGuidAsFileName()
+		{
+			return GetComputerGuid().ToString().Replace('-', '_');
+		}
+
 		/// <summary>
 		/// Always returned without leading backslash.
 		/// </summary>

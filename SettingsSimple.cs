@@ -183,17 +183,20 @@ namespace SharedClasses
 			{
 				get
 				{
-					var thisType = this.GetType();
-					string displayName = thisType.Name.Split('+')[thisType.Name.Split('+').Length - 1];
-					if (thisType.GetCustomAttributes(typeof(GuidAsCategoryPrefixAttribute), true).Length > 0)
+					//var thisType = this.GetType();
+					//string displayName = thisType.Name.Split('+')[thisType.Name.Split('+').Length - 1];
+					//if (thisType.GetCustomAttributes(typeof(GuidAsCategoryPrefixAttribute), true).Length > 0)
+					if (IsSeparateSettingsForEachPc)
 						return SettingsInterop.GetComputerGuid() + "-" + _settingsCategory;
 					else
 						return _settingsCategory;
 				}
 			}
+			private bool IsSeparateSettingsForEachPc { get { return this.GetType().GetCustomAttributes(typeof(GuidAsCategoryPrefixAttribute), true).Length > 0; } }
 
 			private string SettingName { get { var thisType = this.GetType(); return thisType.Name.Split('+')[thisType.Name.Split('+').Length - 1]; } }
-			private string SettingsFileName { get { return SettingName + SettingsInterop.SettingsFileExtension; } }
+			//Add the computer GUID to the filename, otherwise it will not work correctly as the OnlineSettings are synced over DropBox
+			private string SettingsFileName { get { return SettingName + (IsSeparateSettingsForEachPc ? "[" + SettingsInterop.GetComputerGuidAsFileName() + "]" : "") + SettingsInterop.SettingsFileExtension; } }
 			private string SettingsFilePath { get { return SettingsInterop.GetFullFilePathInLocalAppdata(SettingsFileName, "SharedClasses", "OnlineCached", "FJH"); } }
 			private string LocalCachedDateFilePath { get { return SettingsFilePath + ".mdate"; } }
 			[XmlIgnore]

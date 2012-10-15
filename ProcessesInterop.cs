@@ -7,10 +7,12 @@ namespace SharedClasses
 {
 	public class ProcessesInterop
 	{
-		private static Process GetRedirectingProcess(ProcessStartInfo startInfo, Action<object, string> onOutput, Action<object, string> onError)
+		private static Process GetRedirectingProcess(ProcessStartInfo startInfo, Action<object, string> onOutput, Action<object, string> onError, string WriteToStandardInputBeforeReadingText)
 		{
 			Process proc = new Process();
 
+			if (WriteToStandardInputBeforeReadingText != null)
+				startInfo.RedirectStandardInput = true;
 			startInfo.RedirectStandardError = true;
 			startInfo.RedirectStandardOutput = true;
 			startInfo.CreateNoWindow = true;
@@ -24,9 +26,9 @@ namespace SharedClasses
 			return proc;
 		}
 
-		public static bool StartAndWaitProcessRedirectOutput(ProcessStartInfo startInfo, Action<object, string> onOutput, Action<object, string> onError, out int ExitCodeIfRan)
+		public static bool StartAndWaitProcessRedirectOutput(ProcessStartInfo startInfo, Action<object, string> onOutput, Action<object, string> onError, out int ExitCodeIfRan, string WriteToStandardInputBeforeReadingText = null)
 		{
-			Process proc = GetRedirectingProcess(startInfo, onOutput, onError);
+			Process proc = GetRedirectingProcess(startInfo, onOutput, onError, WriteToStandardInputBeforeReadingText);
 
 			try
 			{
@@ -45,6 +47,8 @@ namespace SharedClasses
 
 			proc.BeginErrorReadLine();
 			proc.BeginOutputReadLine();
+			if (WriteToStandardInputBeforeReadingText != null)
+				proc.StandardInput.Write(WriteToStandardInputBeforeReadingText);
 			proc.WaitForExit();
 			ExitCodeIfRan = proc.ExitCode;
 			proc.Dispose();
@@ -52,14 +56,16 @@ namespace SharedClasses
 			return true;
 		}
 
-		public static Process StartDontWaitProcessRedirectOutput(ProcessStartInfo startInfo, Action<object, string> onOutput, Action<object, string> onError)
+		public static Process StartDontWaitProcessRedirectOutput(ProcessStartInfo startInfo, Action<object, string> onOutput, Action<object, string> onError, string WriteToStandardInputBeforeReadingText = null)
 		{
-			Process proc = GetRedirectingProcess(startInfo, onOutput, onError);
+			Process proc = GetRedirectingProcess(startInfo, onOutput, onError, WriteToStandardInputBeforeReadingText);
 			if (!proc.Start())
 				return null;
 
 			proc.BeginErrorReadLine();
 			proc.BeginOutputReadLine();
+			if (WriteToStandardInputBeforeReadingText != null)
+				proc.StandardInput.Write(WriteToStandardInputBeforeReadingText);
 			return proc;
 		}
 
@@ -70,7 +76,7 @@ namespace SharedClasses
 		/// <param name="outputs">The output strings that were redirected from the process</param>
 		/// <param name="errors">The error strings that were redirected from the process.</param>
 		/// <returns>True (ran successfully and had no output/errors), False (Could not run), Null (ran but had output/error feedback).</returns>
-		public static bool? RunProcessCatchOutput(ProcessStartInfo startInfo, out List<string> outputs, out List<string> errors, out int ExitCodeIfRan)
+		public static bool? RunProcessCatchOutput(ProcessStartInfo startInfo, out List<string> outputs, out List<string> errors, out int ExitCodeIfRan, string WriteToStandardInputBeforeReadingText = null)
 		{
 			List<string> tmpoutputs = new List<string>();
 			List<string> tmperrors = new List<string>();
@@ -79,7 +85,8 @@ namespace SharedClasses
 				startInfo,
 				(sn, outev) => { if (outev != null) tmpoutputs.Add(outev); },
 				(sn, errev) => { if (errev != null) tmperrors.Add(errev); },
-				out ExitCodeIfRan);
+				out ExitCodeIfRan,
+				WriteToStandardInputBeforeReadingText);
 			outputs = tmpoutputs;
 			errors = tmperrors;
 			if (!result)

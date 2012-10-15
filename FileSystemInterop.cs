@@ -2,107 +2,111 @@
 using System;
 using System.Windows.Forms;
 using SharedClasses;
-public class FileSystemInterop
-{
-	/// <summary>
-	/// Because it uses a ref keyword it will convert the input argument itsself, but it also returns the result for more flexible use.
-	/// </summary>
-	/// <param name="FolderOrFileName">The reference of the string to remove the backslashes from.</param>
-	/// <returns></returns>
-	public static string RemoveLeadingAndTrailingBackslashes(ref string FolderOrFileName)
-	{
-		if (FolderOrFileName == null) return "";
-		while (FolderOrFileName.StartsWith("\\") && FolderOrFileName.Length > 0) FolderOrFileName = FolderOrFileName.Substring(1);
-		while (FolderOrFileName.EndsWith("\\")) FolderOrFileName = FolderOrFileName.Substring(0, FolderOrFileName.Length - 1);
-		return FolderOrFileName;
-	}
 
-	public static bool CanOpenFileForReading(string fullpath, out string errorIfCannotOpen)
+namespace SharedClasses
+{
+	public class FileSystemInterop
 	{
-		if (!File.Exists(fullpath))
+		/// <summary>
+		/// Because it uses a ref keyword it will convert the input argument itsself, but it also returns the result for more flexible use.
+		/// </summary>
+		/// <param name="FolderOrFileName">The reference of the string to remove the backslashes from.</param>
+		/// <returns></returns>
+		public static string RemoveLeadingAndTrailingBackslashes(ref string FolderOrFileName)
 		{
-			errorIfCannotOpen = "File deleted before processed: " + fullpath;
-			return false;
+			if (FolderOrFileName == null) return "";
+			while (FolderOrFileName.StartsWith("\\") && FolderOrFileName.Length > 0) FolderOrFileName = FolderOrFileName.Substring(1);
+			while (FolderOrFileName.EndsWith("\\")) FolderOrFileName = FolderOrFileName.Substring(0, FolderOrFileName.Length - 1);
+			return FolderOrFileName;
 		}
-		else
+
+		public static bool CanOpenFileForReading(string fullpath, out string errorIfCannotOpen)
 		{
-			try
+			if (!File.Exists(fullpath))
 			{
-				File.OpenRead(fullpath).Close();
-				errorIfCannotOpen = null;
-				return true;
-			}
-			catch (Exception exc)
-			{
-				errorIfCannotOpen = "Cannot read from file: " + fullpath + ". " + exc.Message;
+				errorIfCannotOpen = "File deleted before processed: " + fullpath;
 				return false;
 			}
+			else
+			{
+				try
+				{
+					File.OpenRead(fullpath).Close();
+					errorIfCannotOpen = null;
+					return true;
+				}
+				catch (Exception exc)
+				{
+					errorIfCannotOpen = "Cannot read from file: " + fullpath + ". " + exc.Message;
+					return false;
+				}
+			}
 		}
-	}
 
-	//private const string EncodedCharStart = "[{_";
-	//private const string EncodedCharEnd = "_}]";
-	public static string FilenameEncodeToValid(string wantedFilename, Action<string> actionOnError)
-	{
-		string result = wantedFilename;
+		//private const string EncodedCharStart = "[{_";
+		//private const string EncodedCharEnd = "_}]";
+		public static string FilenameEncodeToValid(string wantedFilename, Action<string> actionOnError)
+		{
+			string result = wantedFilename;
 
-		result = EncodeAndDecodeInterop.EncodeStringHex(result, actionOnError);
+			result = EncodeAndDecodeInterop.EncodeStringHex(result, actionOnError);
 
-		//var invalidChars = Path.GetInvalidFileNameChars();
-		//foreach (char c in invalidChars)
-		//    result = result.Replace(c.ToString(), string.Format("{0}{1}{2}", EncodedCharStart, (int)c, EncodedCharEnd));
+			//var invalidChars = Path.GetInvalidFileNameChars();
+			//foreach (char c in invalidChars)
+			//    result = result.Replace(c.ToString(), string.Format("{0}{1}{2}", EncodedCharStart, (int)c, EncodedCharEnd));
 
-		return result;
-	}
+			return result;
+		}
 
-	public static string FilenameDecodeToValid(string encodedFilename)
-	{
-		string result = encodedFilename;
+		public static string FilenameDecodeToValid(string encodedFilename)
+		{
+			string result = encodedFilename;
 
-		result = EncodeAndDecodeInterop.DecodeStringHex(result);
+			result = EncodeAndDecodeInterop.DecodeStringHex(result);
 
-		//if (encodedFilename.Split(new string[] { EncodedCharStart }, StringSplitOptions.None).Length != encodedFilename.Split(new string[] { EncodedCharEnd }, StringSplitOptions.None).Length)
-		//	UserMessages.ShowWarningMessage("Cannot decode filename: " + encodedFilename);
-		//else
-		//{
-		//	var invalidChars = Path.GetInvalidFileNameChars();
-		//	foreach (char c in invalidChars)
-		//		result = result.Replace(string.Format("{0}{1}{2}", EncodedCharStart, (int)c, EncodedCharEnd), c.ToString());
-		//}
+			//if (encodedFilename.Split(new string[] { EncodedCharStart }, StringSplitOptions.None).Length != encodedFilename.Split(new string[] { EncodedCharEnd }, StringSplitOptions.None).Length)
+			//	UserMessages.ShowWarningMessage("Cannot decode filename: " + encodedFilename);
+			//else
+			//{
+			//	var invalidChars = Path.GetInvalidFileNameChars();
+			//	foreach (char c in invalidChars)
+			//		result = result.Replace(string.Format("{0}{1}{2}", EncodedCharStart, (int)c, EncodedCharEnd), c.ToString());
+			//}
 
-		return result;
-	}
+			return result;
+		}
 
-	public static string SelectFile(string title, string initialDir = null, string filterstring = null, IWin32Window owner = null)
-	{
-		OpenFileDialog ofd = new OpenFileDialog();
-		ofd.Multiselect = false;
-		ofd.CheckFileExists = true;
+		public static string SelectFile(string title, string initialDir = null, string filterstring = null, IWin32Window owner = null)
+		{
+			OpenFileDialog ofd = new OpenFileDialog();
+			ofd.Multiselect = false;
+			ofd.CheckFileExists = true;
 
-		ofd.Title = title;
-		if (filterstring != null)
-			ofd.Filter = filterstring;
-		if (initialDir != null)
-			ofd.InitialDirectory = initialDir;
-		if (ofd.ShowDialog(owner) == DialogResult.OK)
-			return ofd.FileName;
-		else
-			return null;
-	}
+			ofd.Title = title;
+			if (filterstring != null)
+				ofd.Filter = filterstring;
+			if (initialDir != null)
+				ofd.InitialDirectory = initialDir;
+			if (ofd.ShowDialog(owner) == DialogResult.OK)
+				return ofd.FileName;
+			else
+				return null;
+		}
 
-	public static string SelectFolder(string title, string selectedDir = null, Environment.SpecialFolder? rootFolder = null, IWin32Window owner = null)
-	{
-		FolderBrowserDialog fbd = new FolderBrowserDialog();
-		fbd.ShowNewFolderButton = true;
+		public static string SelectFolder(string title, string selectedDir = null, Environment.SpecialFolder? rootFolder = null, IWin32Window owner = null)
+		{
+			FolderBrowserDialog fbd = new FolderBrowserDialog();
+			fbd.ShowNewFolderButton = true;
 
-		fbd.Description = title;
-		if (rootFolder.HasValue)
-			fbd.RootFolder = rootFolder.Value;
-		if (selectedDir != null)
-			fbd.SelectedPath = selectedDir;
-		if (fbd.ShowDialog(owner) == DialogResult.OK)
-			return fbd.SelectedPath;
-		else
-			return null;
+			fbd.Description = title;
+			if (rootFolder.HasValue)
+				fbd.RootFolder = rootFolder.Value;
+			if (selectedDir != null)
+				fbd.SelectedPath = selectedDir;
+			if (fbd.ShowDialog(owner) == DialogResult.OK)
+				return fbd.SelectedPath;
+			else
+				return null;
+		}
 	}
 }

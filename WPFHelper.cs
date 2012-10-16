@@ -7,90 +7,118 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using System.IO;
+using System.Windows.Threading;
+using System.Threading;
 
 namespace SharedClasses
 {
-    public static class WPFHelper
-    {
-        #region GetVisualChild
+	public static class WPFHelper
+	{
+		public static void DoEvents()
+		{
+			DispatcherFrame frame = new DispatcherFrame(true);
+			Dispatcher.CurrentDispatcher.BeginInvoke
+			(
+			DispatcherPriority.Background,
+			(SendOrPostCallback)delegate(object arg)
+			{
+				var f = arg as DispatcherFrame;
+				f.Continue = false;
+			},
+			frame
+			);
+			Dispatcher.PushFrame(frame);
+		}
+
+		public static void ShowAndActivateWindow(Window window)
+		{
+			System.Windows.Forms.Integration.ElementHost.EnableModelessKeyboardInterop(window);
+			//window.Visibility = Visibility.Visible;
+			window.Show();
+			window.UpdateLayout();
+			if (window.WindowState != WindowState.Normal) window.WindowState = WindowState.Normal;
+			window.Activate();
+		}
+
+		#region GetVisualChild
 
 		public static IntPtr GetHandle(this Window window)
 		{
 			return new WindowInteropHelper(window).Handle;
 		}
 
-        public static T GetVisualChild<T>(Visual parent) where T : Visual
-        {
-            T child = default(T);
+		public static T GetVisualChild<T>(Visual parent) where T : Visual
+		{
+			T child = default(T);
 
-            int numVisuals = VisualTreeHelper.GetChildrenCount(parent);
-            for (int i = 0; i < numVisuals; i++)
-            {
-                Visual v = (Visual)VisualTreeHelper.GetChild(parent, i);
-                child = v as T;
-                if (child == null)
-                {
-                    child = GetVisualChild<T>(v);
-                }
-                if (child != null)
-                {
-                    break;
-                }
-            }
+			int numVisuals = VisualTreeHelper.GetChildrenCount(parent);
+			for (int i = 0; i < numVisuals; i++)
+			{
+				Visual v = (Visual)VisualTreeHelper.GetChild(parent, i);
+				child = v as T;
+				if (child == null)
+				{
+					child = GetVisualChild<T>(v);
+				}
+				if (child != null)
+				{
+					break;
+				}
+			}
 
-            return child;
-        }
+			return child;
+		}
 
-        #endregion GetVisualChild
+		#endregion GetVisualChild
 
-        #region FindVisualParent
+		#region FindVisualParent
 
-        public static T FindVisualParent<T>(UIElement element) where T : UIElement
-        {
-            UIElement parent = element;
-            while (parent != null)
-            {
-                T correctlyTyped = parent as T;
-                if (correctlyTyped != null)
-                {
-                    return correctlyTyped;
-                }
+		public static T FindVisualParent<T>(UIElement element) where T : UIElement
+		{
+			UIElement parent = element;
+			while (parent != null)
+			{
+				T correctlyTyped = parent as T;
+				if (correctlyTyped != null)
+				{
+					return correctlyTyped;
+				}
 
-                parent = VisualTreeHelper.GetParent(parent) as UIElement;
-            }
+				parent = VisualTreeHelper.GetParent(parent) as UIElement;
+			}
 
-            return null;
-        }
+			return null;
+		}
 
-        #endregion FindVisualParent
+		#endregion FindVisualParent
 
-        #region FindPartByName
+		#region FindPartByName
 
-        public static DependencyObject FindPartByName(DependencyObject ele, string name)
-        {
-            DependencyObject result;
-            if (ele == null)
-            {
-                return null;
-            }
-            if (name.Equals(ele.GetValue(FrameworkElement.NameProperty)))
-            {
-                return ele;
-            }
+		public static DependencyObject FindPartByName(DependencyObject ele, string name)
+		{
+			DependencyObject result;
+			if (ele == null)
+			{
+				return null;
+			}
+			if (name.Equals(ele.GetValue(FrameworkElement.NameProperty)))
+			{
+				return ele;
+			}
 
-            int numVisuals = VisualTreeHelper.GetChildrenCount(ele);
-            for (int i = 0; i < numVisuals; i++)
-            {
-                DependencyObject vis = VisualTreeHelper.GetChild(ele, i);
-                if ((result = FindPartByName(vis, name)) != null)
-                {
-                    return result;
-                }
-            }
-            return null;
-        }
+			int numVisuals = VisualTreeHelper.GetChildrenCount(ele);
+			for (int i = 0; i < numVisuals; i++)
+			{
+				DependencyObject vis = VisualTreeHelper.GetChild(ele, i);
+				if ((result = FindPartByName(vis, name)) != null)
+				{
+					return result;
+				}
+			}
+			return null;
+		}
 
-        #endregion FindPartByName
+		#endregion FindPartByName
 
 		public static bool DoesFrameworkElementContainMouse(FrameworkElement frameworkElement, int ignoreBorderWidth = 0)
 		{
@@ -200,5 +228,5 @@ namespace SharedClasses
 
 			return bImg;
 		}
-    }
+	}
 }

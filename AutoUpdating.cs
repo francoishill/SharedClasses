@@ -31,7 +31,8 @@ namespace SharedClasses
 				return;
 
 			bool isCheckingForAutoUpdater = false;
-			string ApplicationName = FileVersionInfo.GetVersionInfo(Environment.GetCommandLineArgs()[0]).ProductName;
+			string fullExePath = Environment.GetCommandLineArgs()[0];
+			string ApplicationName = FileVersionInfo.GetVersionInfo(fullExePath).ProductName;
 			if (ApplicationName != null && ApplicationName.Equals("AutoUpdater", StringComparison.InvariantCultureIgnoreCase))
 				isCheckingForAutoUpdater = true;
 
@@ -52,7 +53,7 @@ namespace SharedClasses
 					bool? runresult = ProcessesInterop.RunProcessCatchOutput(
 						new ProcessStartInfo(
 							autoupdaterFilepath,
-							"checkforupdates \"" + Environment.GetCommandLineArgs()[0] + "\""
+							"checkforupdates \"" + fullExePath + "\""
 								+ (isCheckingForAutoUpdater ? " " + cCalledItsselfThirdParameter : "")),//Pass extra commandline argument if is checking for ittsself (AutoUpdater)
 						out outputs,
 						out errors,
@@ -114,6 +115,87 @@ namespace SharedClasses
 				},
 				false);
 			}
+		}
+
+		//true=up to date, false=newer version available, null=could not check
+		public static bool? CheckForUpdatesSilently(string ApplicationName, string InstalledVersion, out string errorIfNull, out MockPublishDetails onlineVersionDetails)
+		{
+			var autoupdaterFilepath = RegistryInterop.GetAppPathFromRegistry("AutoUpdater.exe");
+
+			if (autoupdaterFilepath == null)
+			{
+				errorIfNull = "AutoUpdater not installed, could not find AutoUpdater.exe in App Paths of Regsitry.";
+				onlineVersionDetails = null;
+				return null;
+			}
+			else
+			{
+				//string tmpErr = null;
+				//PublishDetails tmpOnlineDetails = null;
+				//bool? returnVal = true;
+				//ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+				//{
+
+					List<string> outputs;
+					List<string> errors;
+					int exitcode;
+					bool? runresult = ProcessesInterop.RunProcessCatchOutput(
+						new ProcessStartInfo(
+							autoupdaterFilepath,
+							"checkforupdatesilently \"" + ApplicationName + "\" \"" + InstalledVersion + "\""),
+						out outputs,
+						out errors,
+						out exitcode);
+
+					if (runresult != false)//Actually ran the AutoUpdater app
+					{
+						if (exitcode != (int)ExitCodes.UpToDateExitCode)//Application is not up to date, or has error
+						{
+							if (exitcode == (int)ExitCodes.UnableToCheckForUpdatesErrorCode)
+							{
+								errorIfNull = string.Join(Environment.NewLine, errors.RemoveAll(s => string.IsNullOrWhiteSpace(s)));
+								onlineVersionDetails = null;
+								return null;
+							}
+							else if (exitcode == (int)ExitCodes.NewVersionAvailableExitCode)
+							{
+								errorIfNull = null;
+								onlineVersionDetails = new MockPublishDetails();
+								string jsonStr = outputs[0];
+								JSON.SetDefaultJsonInstanceSettings();
+								JSON.Instance.FillObject(onlineVersionDetails, jsonStr);
+								return false;
+							}
+							else
+							{
+								errorIfNull = "Unknown exit code returned for checking updates for " + ApplicationName + ": " + exitcode;
+								onlineVersionDetails = null;
+								return null;
+							}
+						}
+						else
+						{
+							errorIfNull = null;
+							onlineVersionDetails = null;
+							return true;
+						}
+					}
+					else
+					{
+						if (runresult.HasValue && runresult.Value == true)//Ran but with errors/output
+							errors.RemoveAll(s => string.IsNullOrWhiteSpace(s));
+						errorIfNull = string.Join(Environment.NewLine, errors);
+						onlineVersionDetails = null;
+						return null;
+					}
+				//},
+				//false);
+			}
+		}
+
+		public class MockPublishDetails
+		{
+			public string ApplicationVersion;
 		}
 	}
 }

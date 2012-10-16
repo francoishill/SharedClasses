@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Interop;
+using Shell32;
 
 namespace SharedClasses
 {
@@ -13,6 +14,37 @@ namespace SharedClasses
 	{
 		public static readonly string LocalAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 		public static readonly string MydocsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+		public static bool GetShortcutTargetFile(string shortcutFilename, out string outFilePathOrError, out string outArguments)
+		{
+			try
+			{
+				string pathOnly = System.IO.Path.GetDirectoryName(shortcutFilename);
+				string filenameOnly = System.IO.Path.GetFileName(shortcutFilename);
+
+				//Requires the following DLL from the COM references
+				//Microsoft Shell Control And Automation
+				Shell shell = new Shell();
+				Folder folder = shell.NameSpace(pathOnly);
+				FolderItem folderItem = folder.ParseName(filenameOnly);
+				if (folderItem != null)
+				{
+					Shell32.ShellLinkObject link = (Shell32.ShellLinkObject)folderItem.GetLink;
+					outFilePathOrError = link.Path;
+					outArguments = link.Arguments;
+					return true;
+				}
+				outFilePathOrError = "Unable to parse to shortcut file";
+				outArguments = null;
+				return false;
+			}
+			catch (Exception exc)
+			{
+				outFilePathOrError = exc.Message;
+				outArguments = null;
+				return false;
+			}
+		}
 
 		public static void StartCommandPromptOrVScommandPrompt(Object textfeedbackSenderObject, string cmdpath, bool VisualStudioMode, TextFeedbackEventHandler textFeedbackEvent = null)
 		{
@@ -43,14 +75,15 @@ namespace SharedClasses
 			form.WindowState = FormWindowState.Normal;
 		}
 
+		[Obsolete("This method was moved to WPFHelper", true)]
 		public static void ShowAndActivateWindow(Window window)
 		{
-			System.Windows.Forms.Integration.ElementHost.EnableModelessKeyboardInterop(window);
+			/*System.Windows.Forms.Integration.ElementHost.EnableModelessKeyboardInterop(window);
 			//window.Visibility = Visibility.Visible;
 			window.Show();
 			window.UpdateLayout();
 			if (window.WindowState != WindowState.Normal) window.WindowState = WindowState.Normal;
-			window.Activate();
+			window.Activate();*/
 		}
 
 		// Define the Win32 API methods we are going to use

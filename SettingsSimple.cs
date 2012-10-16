@@ -659,6 +659,7 @@ namespace SharedClasses
 				/// <returns>Returns the newly created RunCommand if succeeded, otherwise null</returns>
 				public static RunCommand CreateFromFullCommandline(string fullCommandLine, string displayName)
 				{
+					//fullCommandLine = fullCommandLine.Trim('\"');//Otherwise the last " gets removed for batch file command: cmd.exe /C "c:\path\to\batch.bat"
 					int _ExeIndex = fullCommandLine.IndexOf(".exe", StringComparison.InvariantCultureIgnoreCase);
 					if (_ExeIndex != -1)
 					{
@@ -681,6 +682,10 @@ namespace SharedClasses
 						}
 						return new RunCommand(fullpath, displayName, PathTypes.FullPath, commandlineargs);
 					}
+					else if (File.Exists(fullCommandLine))
+						return new RunCommand(fullCommandLine, Path.GetFileName(fullCommandLine), PathTypes.FullPath);
+					else if (Directory.Exists(fullCommandLine))
+						return new RunCommand(fullCommandLine, Path.GetFileName(fullCommandLine), PathTypes.FullPath);
 					UserMessages.ShowWarningMessage("Cannot obtain RunCommand from full Commanline: " + fullCommandLine);
 					return null;
 				}

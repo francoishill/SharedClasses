@@ -403,12 +403,17 @@ namespace SharedClasses
 			}
 		}
 
-		public static bool IsInstalled(string applicationName)
+		public static string GetApplicationExePathFromApplicationName(string applicationName)
 		{
-			string appExePath = Path.Combine(
+			return Path.Combine(
 				Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
 				applicationName.InsertSpacesBeforeCamelCase(),
 				applicationName + ".exe");
+		}
+
+		public static bool IsInstalled(string applicationName)
+		{
+			string appExePath = GetApplicationExePathFromApplicationName(applicationName);
 			return File.Exists(appExePath);
 		}
 

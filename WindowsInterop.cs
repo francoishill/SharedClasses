@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Interop;
-using Shell32;
+using Shell32;//Requires COM assembly: Microsoft Shell Control And Automation
 
 namespace SharedClasses
 {

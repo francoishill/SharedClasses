@@ -545,4 +545,36 @@ public static class Win32Api
 	[return: MarshalAs(UnmanagedType.Bool)]
 	[DllImport("user32.dll", SetLastError = true)]
 	public static extern bool GetWindowInfo(IntPtr hwnd, ref WINDOWINFO pwi);
+
+	public delegate int RecoveryDelegate(object parameterData);
+	[DllImport("kernel32.dll")]
+	public static extern int RegisterApplicationRecoveryCallback(
+		RecoveryDelegate recoveryCallback,
+		string parameterData,
+		uint pingInterval,
+		uint flags);
+
+	[DllImport("kernel32.dll")]
+	public static extern void ApplicationRecoveryFinished(bool success);
+
+	[DllImport("kernel32.dll")]
+	public static extern int ApplicationRecoveryInProgress(out bool canceled);
+
+	[Flags]
+	public enum RestartRestrictions
+	{
+		None = 0,
+		NotOnCrash = 1,
+		NotOnHang = 2,
+		NotOnPatch = 4,
+		NotOnReboot = 8
+	}
+	[DllImport("kernel32.dll")]
+	public static extern int RegisterApplicationRestart([MarshalAs(UnmanagedType.BStr)] string commandLineArgs, int flags);
+
+	[DllImport("kernel32.dll")]
+	public static extern int UnregisterApplicationRecoveryCallback();
+
+	[DllImport("kernel32.dll")]
+	public static extern int UnregisterApplicationRestart();
 }

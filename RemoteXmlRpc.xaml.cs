@@ -80,7 +80,7 @@ namespace SharedClasses
 								UserMessages.ShowWarningMessage("Cannot read Parameter value: " + paramNode.OuterXml);
 							else//Successful
 							{
-								var tmpparamtype = DynamicCodeInvoking.GetTypeFromSimpleString(tmpParamAssemblyQualifiedName.Substring(0, tmpParamAssemblyQualifiedName.IndexOf(',')));
+								var tmpparamtype = ReflectionInterop.GetTypeFromSimpleString(tmpParamAssemblyQualifiedName.Substring(0, tmpParamAssemblyQualifiedName.IndexOf(',')));
 								var tmpParam = new ParameterNameAndType(tmpParamName, tmpparamtype);
 								tmpParamValue = Convert.ChangeType(tmpParamValue, tmpparamtype);
 								tmpParam.OverrideValue(tmpParamValue);

@@ -354,139 +354,6 @@ public class DynamicCodeInvoking
 		ParametersModified = tmpParameterList.ToArray();
 	}
 
-	public static class DynamicTypeBuilder
-	{
-		public class Property
-		{
-			public string FieldName;
-			public Type FieldType;
-			public Property(string FieldName, Type FieldType)
-			{
-				this.FieldName = FieldName;
-				this.FieldType = FieldType;
-			}
-		}
-
-		public static object CreateNewObject(string TypeName, List<Property> yourListOfFields)
-		{
-			var myType = CompileResultType(TypeName, yourListOfFields);
-			return Activator.CreateInstance(myType);
-		}
-		private static Type CompileResultType(string TypeName, List<Property> yourListOfFields)
-		{
-			TypeBuilder tb = GetTypeBuilder(TypeName);
-			ConstructorBuilder constructor = tb.DefineDefaultConstructor(MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName);
-
-			// NOTE: assuming your list contains Property objects with fields FieldName(string) and FieldType(Type)
-			foreach (var field in yourListOfFields)
-				CreateProperty(tb, field.FieldName, field.FieldType);
-
-			Type objectType = tb.CreateType();
-			return objectType;
-		}
-
-		private static TypeBuilder GetTypeBuilder(string TypeName)
-		{
-			var typeSignature = TypeName;
-			var an = new AssemblyName(typeSignature);
-			AssemblyBuilder assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(an, AssemblyBuilderAccess.Run);
-			ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule("MainModule");
-			TypeBuilder tb = moduleBuilder.DefineType(
-				typeSignature,
-				TypeAttributes.Public |
-					TypeAttributes.Class |
-					TypeAttributes.AutoClass |
-					TypeAttributes.AnsiClass |
-					TypeAttributes.BeforeFieldInit |
-					TypeAttributes.AutoLayout,
-				null);
-			return tb;
-		}
-
-		private static void CreateProperty(TypeBuilder tb, string propertyName, Type propertyType)
-		{
-			FieldBuilder fieldBuilder = tb.DefineField("_" + propertyName, propertyType, FieldAttributes.Private);
-
-			PropertyBuilder propertyBuilder = tb.DefineProperty(propertyName, System.Reflection.PropertyAttributes.HasDefault, propertyType, null);
-			MethodBuilder getPropMthdBldr = tb.DefineMethod("get_" + propertyName, MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig, propertyType, Type.EmptyTypes);
-			ILGenerator getIl = getPropMthdBldr.GetILGenerator();
-
-			getIl.Emit(OpCodes.Ldarg_0);
-			getIl.Emit(OpCodes.Ldfld, fieldBuilder);
-			getIl.Emit(OpCodes.Ret);
-
-			MethodBuilder setPropMthdBldr =
-				tb.DefineMethod("set_" + propertyName,
-						MethodAttributes.Public |
-						MethodAttributes.SpecialName |
-						MethodAttributes.HideBySig,
-						null, new[] { propertyType });
-
-			ILGenerator setIl = setPropMthdBldr.GetILGenerator();
-			System.Reflection.Emit.Label modifyProperty = setIl.DefineLabel();
-			System.Reflection.Emit.Label exitSet = setIl.DefineLabel();
-
-			setIl.MarkLabel(modifyProperty);
-			setIl.Emit(OpCodes.Ldarg_0);
-			setIl.Emit(OpCodes.Ldarg_1);
-			setIl.Emit(OpCodes.Stfld, fieldBuilder);
-
-			setIl.Emit(OpCodes.Nop);
-			setIl.MarkLabel(exitSet);
-			setIl.Emit(OpCodes.Ret);
-
-			propertyBuilder.SetGetMethod(getPropMthdBldr);
-			propertyBuilder.SetSetMethod(setPropMthdBldr);
-		}
-	}
-
-	private static List<Type> AllUniqueSimpleTypesInCurrentAssembly = null;
-	public static List<Type> GetAllUniqueSimpleTypesInCurrentAssembly
-	{
-		get
-		{
-			if (AllUniqueSimpleTypesInCurrentAssembly != null)
-				return AllUniqueSimpleTypesInCurrentAssembly;
-			AllUniqueSimpleTypesInCurrentAssembly = new List<Type>();
-			Assembly[] appAssemblies = System.AppDomain.CurrentDomain.GetAssemblies();
-			foreach (Assembly assembly in appAssemblies)
-				foreach (Type type in assembly.GetTypes())
-					AllUniqueSimpleTypesInCurrentAssembly.Add(type);
-			return AllUniqueSimpleTypesInCurrentAssembly.OrderBy(t => t.FullName).ToList();
-		}
-	}
-	public static Type GetTypeFromSimpleString(string SimpleTypeString, bool IgnoreCase = false)
-	{
-		Type TypeIAmLookingFor = null;
-		//List<Type> typeList = GetAllUniqueSimpleTypesInCurrentAssembly;
-		foreach (Type type in GetAllUniqueSimpleTypesInCurrentAssembly)
-			if (type.ToString().Equals(SimpleTypeString) || (IgnoreCase && type.ToString().ToLower().Equals(SimpleTypeString.ToLower())))
-				TypeIAmLookingFor = type;
-		return TypeIAmLookingFor;
-	}
-
-	private static List<string> AllUniqueSimpleTypeStringsInCurrentAssembly = null;
-	public static List<string> GetAllUniqueSimpleTypeStringsInCurrentAssembly
-	{
-		get
-		{
-			if (AllUniqueSimpleTypeStringsInCurrentAssembly != null) return AllUniqueSimpleTypeStringsInCurrentAssembly;
-			List<string> tmpList = new List<string>();
-			List<string> tmpDuplicateList = new List<string>();
-			//Assembly[] appAssemblies = System.AppDomain.CurrentDomain.GetAssemblies();
-			//foreach (Assembly assembly in appAssemblies)
-			//	foreach (Type type in assembly.GetTypes())
-			foreach (Type type in GetAllUniqueSimpleTypesInCurrentAssembly)
-				if (tmpList.Contains(type.ToString())) tmpDuplicateList.Add(type.ToString());
-				else tmpList.Add(type.ToString());
-			foreach (string dup in tmpDuplicateList)
-				tmpList.RemoveAll((s) => s == dup);
-			AllUniqueSimpleTypeStringsInCurrentAssembly = tmpList;
-			AllUniqueSimpleTypeStringsInCurrentAssembly.Sort();
-			return AllUniqueSimpleTypeStringsInCurrentAssembly;
-		}
-	}
-
 	private static ObservableCollection<ClassWithStaticMethods> _uniqueTypes = null;
 	public static ObservableCollection<ClassWithStaticMethods> UniqueTypes
 	{
@@ -495,7 +362,7 @@ public class DynamicCodeInvoking
 			if (_uniqueTypes != null)
 				return _uniqueTypes;
 			_uniqueTypes = new ObservableCollection<ClassWithStaticMethods>();
-			foreach (Type type in GetAllUniqueSimpleTypesInCurrentAssembly)
+			foreach (Type type in ReflectionInterop.GetAllUniqueSimpleTypesInCurrentAssembly)
 				_uniqueTypes.Add(new ClassWithStaticMethods(type));
 			return _uniqueTypes;
 
@@ -3011,7 +2878,7 @@ public class MethodClass : INotifyPropertyChanged
 	{
 		PropertyGridAdapter = new DictionaryPropertyGridAdapter(Parameters);
 		//Must improve the way to obtain a type
-		this.ParentClass = new ClassWithStaticMethods(DynamicCodeInvoking.GetTypeFromSimpleString(ParentClass_AssemblyQualifiedName.Substring(0, ParentClass_AssemblyQualifiedName.IndexOf(','))));
+		this.ParentClass = new ClassWithStaticMethods(ReflectionInterop.GetTypeFromSimpleString(ParentClass_AssemblyQualifiedName.Substring(0, ParentClass_AssemblyQualifiedName.IndexOf(','))));
 
 		bool MethodFound = false;
 		foreach (var m in this.ParentClass.Methods)

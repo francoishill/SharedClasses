@@ -281,6 +281,9 @@ public static class Win32Api
 			IntPtr lParam
 	);
 
+	[DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
+	public static extern void mouse_event(long dwFlags, long dx, long dy, long cButtons, long dwExtraInfo);
+
 	/// <summary>
 	/// Animates the window from left to right. This flag can be used with roll or slide animation.
 	/// </summary>
@@ -558,7 +561,7 @@ public static class Win32Api
 	public static extern void ApplicationRecoveryFinished(bool success);
 
 	[DllImport("kernel32.dll")]
-	public static extern int ApplicationRecoveryInProgress(out bool canceled);
+	public static extern int ApplicationRecoveryInProgress(out bool cancelled);
 
 	[Flags]
 	public enum RestartRestrictions

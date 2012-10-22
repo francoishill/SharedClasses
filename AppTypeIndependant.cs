@@ -78,7 +78,7 @@ namespace SharedClasses
 					MethodInfo showMethod = winformsMessageBoxType.GetMethod("Show", new Type[] { typeof(string) });
 					if (showMethod != null)
 					{
-						showMethod.Invoke(null, new object[] { "Error: " + errorMsg });
+						showMethod.Invoke(null, new object[] { errorMsg });
 						return;
 					}
 				}
@@ -92,7 +92,7 @@ namespace SharedClasses
 					MethodInfo showMethod = wpfMessageBoxType.GetMethod("Show", new Type[] { typeof(string) });
 					if (showMethod != null)
 					{
-						showMethod.Invoke(null, new object[] { "Error: " + errorMsg });
+						showMethod.Invoke(null, new object[] { errorMsg });
 						return;
 					}
 				}

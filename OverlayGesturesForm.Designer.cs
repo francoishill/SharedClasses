@@ -34,9 +34,9 @@
 			// 
 			// mouseGestures1
 			// 
-			this.mouseGestures1.BeginGestureEvent += new System.EventHandler(this.mouseGestures1_BeginGestureEvent);
-			this.mouseGestures1.MouseMove += new System.EventHandler(this.mouseGestures1_MouseMove);
-			this.mouseGestures1.EndGestureEvent += new System.EventHandler(this.mouseGestures1_EndGestureEvent);
+			//this.mouseGestures1.BeginGestureEvent += new System.EventHandler(this.mouseGestures1_BeginGestureEvent);
+			//this.mouseGestures1.MouseMove += new System.EventHandler(this.mouseGestures1_MouseMove);
+			//this.mouseGestures1.EndGestureEvent += new System.EventHandler(this.mouseGestures1_EndGestureEvent);
 			this.mouseGestures1.Gesture += new MouseGestures.MouseGestures.GestureHandler(this.mouseGestures1_Gesture);
 			// 
 			// OverlayGesturesForm

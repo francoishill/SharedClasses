@@ -200,9 +200,9 @@ namespace SharedClasses
 					// Set up timer to notify WER that recovery work is in progress.
 					Timer pinger = new Timer(delegate
 					{
-						bool isCanceled;
-						Win32Api.ApplicationRecoveryInProgress(out isCanceled);
-						if (isCanceled)
+						bool isCancelled;
+						Win32Api.ApplicationRecoveryInProgress(out isCancelled);
+						if (isCancelled)
 						{
 							Console.WriteLine("Recovery has been canceled by user.");
 							Environment.Exit(2);

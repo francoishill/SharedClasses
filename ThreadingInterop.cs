@@ -26,7 +26,7 @@ public class ThreadingInterop
 				AlreadyAttachedToApplicationExitEvent = true;
 			}
 
-		System.Threading.Thread th = new System.Threading.Thread(() =>
+		Thread th = new Thread(() =>
 		{
 			if (CheckInvokeRequired && controlToCheckInvokeRequired != null)
 				controlToCheckInvokeRequired.Invoke((Action)delegate { action(arg); });
@@ -34,6 +34,7 @@ public class ThreadingInterop
 				action(arg);
 		});
 		th.Name = ThreadName;
+		th.IsBackground = true;
 		if (apartmentState.HasValue)
 			th.SetApartmentState(apartmentState.Value);
 		th.Start();

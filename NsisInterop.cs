@@ -113,7 +113,7 @@ public class NsisInterop
 		if (!File.Exists(NsisUrlLibDllPath))
 			UserMessages.ShowErrorMessage("NSIS will not compile, missing plugin: " + NsisUrlLibDllPath);
 
-		SectionGroupLines.Add(@"IfFileExists ""C:\Program Files (x86)\Auto Updater\AutoUpdater.exe"" AutoUpdaterFound");
+		SectionGroupLines.Add(@"IfFileExists ""$PROGRAMFILES\Auto Updater\AutoUpdater.exe"" AutoUpdaterFound");
 		SectionGroupLines.Add(@"	  RetryDownload:");
 		SectionGroupLines.Add(@"	  ;All following lines removed, gave error when trying to read content from a URL");
 		SectionGroupLines.Add(@"	  ;NsisUrlLib::UrlOpen /NOUNLOAD """ + SharedClasses.SettingsSimple.HomePcUrls.Instance.AppsPublishingRoot + @"/json/getautoupdaterlatest"" ;Get content of this page (it returns the URL of newest setup package of AutoUpdater");
@@ -140,7 +140,7 @@ public class NsisInterop
 		SectionGroupLines.Add(@"AutoUpdaterDownloadSkipped:");
 		SectionGroupLines.Add(@"AutoUpdaterFound:");
 
-		SectionGroupLines.Add(@"IfFileExists ""C:\Program Files (x86)\Show No Callback Notification\ShowNoCallbackNotification.exe"" ShowNoCallbackNotificationFound");
+		SectionGroupLines.Add(@"IfFileExists ""$PROGRAMFILES\Show No Callback Notification\ShowNoCallbackNotification.exe"" ShowNoCallbackNotificationFound");
 		SectionGroupLines.Add(@"	  RetryDownload2:");
 		SectionGroupLines.Add(@"	  NSISdl::download """ + SharedClasses.SettingsSimple.HomePcUrls.Instance.AppsPublishingRoot + @"/downloadownapps.php?relativepath=shownocallbacknotification/ShowNoCallbackNotification_SetupLatest.exe"" tmpShowNoCallbackNotification_SetupLatest.exe ; Download latest ShowNoCallbackNotification Setup");
 		SectionGroupLines.Add(@"	  Pop $R4 ;Read the result of the download");
@@ -154,7 +154,7 @@ public class NsisInterop
 		SectionGroupLines.Add(@"ShowNoCallbackNotificationDownloadSkipped:");
 		SectionGroupLines.Add(@"ShowNoCallbackNotificationFound:");
 
-		SectionGroupLines.Add(@"IfFileExists ""C:\Program Files (x86)\Standalone Uploader\StandaloneUploader.exe"" StandaloneUploaderFound");
+		SectionGroupLines.Add(@"IfFileExists ""$PROGRAMFILES\Standalone Uploader\StandaloneUploader.exe"" StandaloneUploaderFound");
 		SectionGroupLines.Add(@"	  RetryDownload3:");
 		SectionGroupLines.Add(@"	  NSISdl::download """ + SharedClasses.SettingsSimple.HomePcUrls.Instance.AppsPublishingRoot + @"/downloadownapps.php?relativepath=standaloneuploader/StandaloneUploader_SetupLatest.exe"" tmpStandaloneUploader_SetupLatest.exe ; Download latest StandaloneUploader Setup");
 		SectionGroupLines.Add(@"	  Pop $R4 ;Read the result of the download");

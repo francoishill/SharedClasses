@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,6 +6,8 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.ComponentModel;
 using System.Reflection;
+//using System.Drawing;
+using System.Threading;
 using System.Drawing;
 
 namespace SharedClasses
@@ -14,9 +16,223 @@ namespace SharedClasses
 	/// This class allows you to tap keyboard and mouse and / or to detect their activity even when an 
 	/// application runes in background or does not have any user interface at all. This class raises 
 	/// common .NET events with KeyEventArgs and MouseEventArgs so you can easily retrive any information you need.
+	/// MouseGestures code obtained from http://mousegestures.codeplex.com
 	/// </summary>
 	public class UserActivityHook
 	{
+		/// <summary>
+		/// Represents the method that will handle MouseGesture events.
+		/// </summary>
+		/// <param name="sender">The source of event.</param>
+		/// <param name="start">A MouseGestureEventArgs that contains event data.</param>
+		public delegate void GestureHandler(object sender, MouseGestureEventArgs e);
+		public event GestureHandler OnGesture;
+
+		private MouseGesture gesture;
+		private Point lastGesturePoint;
+		private double distance;
+
+		public enum MouseGestureDirection
+		{
+			Unknown,
+			Up,
+			Right,
+			Down,
+			Left
+		}
+
+		/// <summary>
+		/// A MouseGesture is a sequence of movements
+		/// </summary>
+		public class MouseGesture
+		{
+			#region Constants
+			//TODO consider moving the hardcoded value to a property
+			public const int minGestureSize = 30;
+			/// <summary>
+			/// Minimal length of MouseMoveSegment
+			/// </summary>
+			//TODO consider moving the hardcoded value to a property
+			public const uint mouseMoveSegmentLength = 8;
+			/// <summary>
+			/// Defines maximum angle error in degrees. If the angle error is greater then
+			/// maxAngleError then the direction is not recognized.
+			/// </summary>
+			/// <remarks>
+			/// It must be positive number lesser then 45
+			/// </remarks>
+			//TODO: consider moving the hardcoded value to a propery
+			private const double maxAngleError = 30;
+			#endregion Constants
+
+			Point start;
+			List<MouseGestureDirection> directions;
+
+			/// <summary>
+			/// Create a empty mouse gesture
+			/// </summary>
+			/// <param name="start">The point where the gesture started</param>
+			public MouseGesture(Point point)
+			{
+				start = point;
+				directions = new List<MouseGestureDirection>();
+			}
+
+			/// <summary>
+			/// The point where the gesture started
+			/// </summary>
+			public Point Start
+			{
+				get
+				{
+					return start;
+				}
+			}
+
+			/// <summary>
+			/// Append a motion to the gesture
+			/// </summary>
+			/// <remarks>
+			/// Duplicate and unknown motions will be filtered out.
+			/// </remarks>
+			public void AddSegment(MouseGestureDirection direction)
+			{
+				if (direction != MouseGestureDirection.Unknown &&
+				  (directions.Count == 0 ||
+					direction != directions[directions.Count - 1]))
+					directions.Add(direction);
+			}
+
+			/// <summary>
+			/// The number of motions in the gesture
+			/// </summary>
+			public int Count
+			{
+				get
+				{
+					return directions.Count;
+				}
+			}
+
+			/// <summary>
+			/// Gets the performed gesture
+			/// </summary>
+			public string Motions
+			{
+				get
+				{
+					return this.ToString();
+				}
+			}
+
+			#region Helper Functions
+			/// <summary>
+			/// Calculates distance between 2 points
+			/// </summary>
+			/// <param name="p1">First point</param>
+			/// <param name="p2">Second point</param>
+			/// <returns>Distance between two points</returns>
+			public static double GetDistance(Point p1, Point p2)
+			{
+				int dx = p1.X - p2.X;
+				int dy = p1.Y - p2.Y;
+
+				return Math.Sqrt(dx * dx + dy * dy);
+			}
+
+			/// <summary>
+			/// Recognizes direction between two points
+			/// </summary>
+			/// <param name="deltaX">Lenght of movement in the horizontal direction</param>
+			/// <param name="deltaY">Lenght of movement in the vertical direction</param>
+			/// <returns>Gesture direction, if fails returns MouseGestureDirection.Unknown</returns>
+			public static MouseGestureDirection GetDirection(Point start, Point end)
+			{
+				int deltaX = end.X - start.X;
+				int deltaY = end.Y - start.Y;
+
+				double length = Math.Sqrt(deltaX * deltaX + deltaY * deltaY);
+
+				double sin = deltaX / length;
+				double cos = deltaY / length;
+
+				double angle = Math.Asin(Math.Abs(sin)) * 180 / Math.PI;
+
+				if ((sin >= 0) && (cos < 0))
+					angle = 180 - angle;
+				else if ((sin < 0) && (cos < 0))
+					angle = angle + 180;
+				else if ((sin < 0) && (cos >= 0))
+					angle = 360 - angle;
+
+				//direction recognition
+				if ((angle > 360 - maxAngleError) || (angle < 0 + maxAngleError))
+					return MouseGestureDirection.Down;
+				else if ((angle > 90 - maxAngleError) && (angle < 90 + maxAngleError))
+					return MouseGestureDirection.Right;
+				else if ((angle > 180 - maxAngleError) && (angle < 180 + maxAngleError))
+					return MouseGestureDirection.Up;
+				else if ((angle > 270 - maxAngleError) && (angle < 270 + maxAngleError))
+					return MouseGestureDirection.Left;
+				else return MouseGestureDirection.Unknown;
+			}
+			#endregion
+
+			/// <summary>
+			/// A string representation of the gesture
+			/// </summary>
+			public override string ToString()
+			{
+				string s = string.Empty;
+				foreach (MouseGestureDirection d in directions)
+				{
+					switch (d)
+					{
+						case MouseGestureDirection.Left:
+							s += 'L'; break;
+						case MouseGestureDirection.Right:
+							s += 'R'; break;
+						case MouseGestureDirection.Up:
+							s += 'U'; break;
+						case MouseGestureDirection.Down:
+							s += 'D'; break;
+						case MouseGestureDirection.Unknown:
+							break;
+					}
+				}
+				return s;
+			}
+		}
+
+		/// <summary>
+		/// Provides data for MouseGesture events
+		/// </summary>
+		public class MouseGestureEventArgs : EventArgs
+		{
+			private MouseGesture gesture;
+
+			/// <summary>
+			/// Initializes new instance of MouseGestureEventArgs
+			/// </summary>
+			/// <param name="gesture">The gesture performed.</param>
+			public MouseGestureEventArgs(MouseGesture mouseGesture)
+				: base()
+			{
+				gesture = mouseGesture;
+			}
+
+			/// <summary>
+			/// The gesture performed.
+			/// </summary>
+			public MouseGesture Gesture
+			{
+				get
+				{
+					return gesture;
+				}
+			}
+		}
+
 		public class MoreMouseButton
 		{
 			public enum MoreButtonStates { Up, Down, DoubleClicked, None };
@@ -50,25 +266,6 @@ namespace SharedClasses
 		#region Windows structure definitions
 
 		/// <summary>
-		/// The POINT structure defines the x- and y- coordinates of a point. 
-		/// </summary>
-		/// <remarks>
-		/// http://msdn.microsoft.com/library/default.asp?url=/library/en-us/gdi/rectangl_0tiq.asp
-		/// </remarks>
-		[StructLayout(LayoutKind.Sequential)]
-		private class POINT
-		{
-			/// <summary>
-			/// Specifies the x-coordinate of the point. 
-			/// </summary>
-			public int x;
-			/// <summary>
-			/// Specifies the y-coordinate of the point. 
-			/// </summary>
-			public int y;
-		}
-
-		/// <summary>
 		/// The MOUSEHOOKSTRUCT structure contains information about a mouse event passed to a WH_MOUSE hook procedure, MouseProc. 
 		/// </summary>
 		/// <remarks>
@@ -80,7 +277,7 @@ namespace SharedClasses
 			/// <summary>
 			/// Specifies a POINT structure that contains the x- and y-coordinates of the cursor, in screen coordinates. 
 			/// </summary>
-			public POINT pt;
+			public Point pt;
 			/// <summary>
 			/// Handle to the window that will receive the mouse message corresponding to the mouse event. 
 			/// </summary>
@@ -104,7 +301,7 @@ namespace SharedClasses
 			/// <summary>
 			/// Specifies a POINT structure that contains the x- and y-coordinates of the cursor, in screen coordinates. 
 			/// </summary>
-			public POINT pt;
+			public Point pt;
 			/// <summary>
 			/// If the message is WM_MOUSEWHEEL, the high-order word of this member is the wheel delta. 
 			/// The low-order word is reserved. A positive value indicates that the wheel was rotated forward, 
@@ -137,7 +334,6 @@ namespace SharedClasses
 			/// </summary>
 			public int dwExtraInfo;
 		}
-
 
 		/// <summary>
 		/// The KBDLLHOOKSTRUCT structure contains information about a low-level keyboard input event. 
@@ -482,8 +678,11 @@ namespace SharedClasses
 		/// <remarks>
 		/// To create an instance without installing hooks call new UserActivityHook(false, false)
 		/// </remarks>
-		public UserActivityHook(bool InstallMouseHook, bool InstallKeyboardHook)
+		public UserActivityHook(bool InstallMouseHook, bool InstallKeyboardHook, bool GestureOnLeft = false, bool GestureOnMiddle = false, bool GestureOnRight = false)
 		{
+			this.GestureOnLeft = GestureOnLeft;
+			this.GestureOnMiddle = GestureOnMiddle;
+			this.GestureOnRight = GestureOnRight;
 			Start(InstallMouseHook, InstallKeyboardHook);
 		}
 
@@ -533,7 +732,6 @@ namespace SharedClasses
 		/// </summary>
 		private static HookProc KeyboardHookProcedure;
 
-
 		/// <summary>
 		/// Installs both mouse and keyboard hooks and starts rasing events
 		/// </summary>
@@ -554,14 +752,13 @@ namespace SharedClasses
 			// install Mouse hook only if it is not installed and must be installed
 			if (hMouseHook == 0 && InstallMouseHook)
 			{
-				// Create an instance of HookProc.
+				//Create an instance of HookProc.
 				MouseHookProcedure = new HookProc(MouseHookProc);
 				//install hook
 				hMouseHook = SetWindowsHookEx(
 						WH_MOUSE_LL,
 						MouseHookProcedure,
-						Marshal.GetHINSTANCE(
-								Assembly.GetExecutingAssembly().GetModules()[0]),
+						Marshal.GetHINSTANCE(Assembly.GetExecutingAssembly().GetModules()[0]),
 						0);
 				//If SetWindowsHookEx fails.
 				if (hMouseHook == 0)
@@ -653,6 +850,10 @@ namespace SharedClasses
 			}
 		}
 
+		private bool GestureOnLeft = false;
+		private bool GestureOnMiddle = false;
+		private bool GestureOnRight = true;
+
 		DateTime lastLeftDown = DateTime.MinValue;
 		DateTime lastMiddleDown = DateTime.MinValue;
 		DateTime lastRightDown = DateTime.MinValue;
@@ -683,7 +884,7 @@ namespace SharedClasses
 		private int MouseHookProc(int nCode, int wParam, IntPtr lParam)
 		{
 			// if ok and someone listens to our events
-			if ((nCode >= 0) && (OnMouseActivity != null))
+			if ((nCode >= 0) && (OnMouseActivity != null || OnGesture != null))
 			{
 				//Marshall the data from callback.
 				MouseLLHookStruct mouseHookStruct = (MouseLLHookStruct)Marshal.PtrToStructure(lParam, typeof(MouseLLHookStruct));
@@ -695,6 +896,8 @@ namespace SharedClasses
 				switch (wParam)
 				{
 					case WM_LBUTTONDOWN:
+						if (GestureOnLeft && OnGesture != null)
+							BeginGesture();
 						button = new MoreMouseButton(MouseButtons.Left, MoreMouseButton.MoreButtonStates.Down);
 						if (now.Subtract(lastLeftDown).TotalMilliseconds <= GetDoubleClickTime())
 						{
@@ -705,6 +908,8 @@ namespace SharedClasses
 							lastLeftDown = now;
 						break;
 					case WM_LBUTTONUP:
+						if (GestureOnLeft && OnGesture != null)
+							EndGesture();
 						button = new MoreMouseButton(MouseButtons.Left, MoreMouseButton.MoreButtonStates.Up);
 						break;
 					case WM_LBUTTONDBLCLK:
@@ -712,6 +917,8 @@ namespace SharedClasses
 						//button = new MoreMouseButton(MouseButtons.Left, MoreMouseButton.MoreButtonStates.DoubleClicked);
 						break;
 					case WM_MBUTTONDOWN:
+						if (GestureOnMiddle && OnGesture != null)
+							BeginGesture();
 						button = new MoreMouseButton(MouseButtons.Middle, MoreMouseButton.MoreButtonStates.Down);
 						if (now.Subtract(lastMiddleDown).TotalMilliseconds <= GetDoubleClickTime())
 						{
@@ -722,6 +929,8 @@ namespace SharedClasses
 							lastMiddleDown = now;
 						break;
 					case WM_MBUTTONUP:
+						if (GestureOnMiddle && OnGesture != null)
+							EndGesture();
 						button = new MoreMouseButton(MouseButtons.Middle, MoreMouseButton.MoreButtonStates.Up);
 						break;
 					case WM_MBUTTONDBLCLK:
@@ -729,6 +938,8 @@ namespace SharedClasses
 						//button = new MoreMouseButton(MouseButtons.Middle, MoreMouseButton.MoreButtonStates.DoubleClicked);
 						break;
 					case WM_RBUTTONDOWN:
+						if (GestureOnRight && OnGesture != null)
+							BeginGesture();
 						button = new MoreMouseButton(MouseButtons.Right, MoreMouseButton.MoreButtonStates.Down);
 						if (now.Subtract(lastRightDown).TotalMilliseconds <= GetDoubleClickTime())
 						{
@@ -739,6 +950,8 @@ namespace SharedClasses
 							lastRightDown = now;
 						break;
 					case WM_RBUTTONUP:
+						if (GestureOnRight && OnGesture != null)
+							EndGesture();
 						button = new MoreMouseButton(MouseButtons.Right, MoreMouseButton.MoreButtonStates.Up);
 						break;
 					case WM_RBUTTONDBLCLK:
@@ -756,6 +969,10 @@ namespace SharedClasses
 						//and the low-order word is reserved. This value can be one or more of the following values. 
 						//Otherwise, mouseData is not used. 
 						break;
+					case WM_MOUSEMOVE:
+						if (OnGesture != null)
+							AddToGesture();
+						break;
 				}
 
 				//double clicks
@@ -766,17 +983,149 @@ namespace SharedClasses
 
 				//generate event 
 				MoreMouseEventArgs e = new MoreMouseEventArgs(
-																					 button,
-																					 clickCount,
-																					 mouseHookStruct.pt.x,
-																					 mouseHookStruct.pt.y,
-																					 mouseDelta);
+					button,
+					clickCount,
+					mouseHookStruct.pt.X,
+					mouseHookStruct.pt.Y,
+					mouseDelta);
 
 				//raise it
 				OnMouseActivity(this, e);
 			}
 			//call next hook
 			return CallNextHookEx(hMouseHook, nCode, wParam, lParam);
+		}
+
+		Form tmpOverlayForm;
+		private List<KeyValuePair<Point, Point>> linesDrawn = new List<KeyValuePair<Point, Point>>();//Lines drawn to screen
+		//private bool hasLinesDrawn = false;
+		private Pen GestureLinePen = new Pen(Color.FromArgb(255, 0, 120, 0), 2);//Pens.Green;
+		//private int gestureSegmentCount = 0;
+		private void BeginGesture()
+		{
+			lastGesturePoint = Cursor.Position;
+			gesture = new MouseGesture(lastGesturePoint);
+			distance = 0;
+			//hasLinesDrawn = false;
+			linesDrawn.Clear();
+			//gestureSegmentCount = 0;
+		}
+
+		private void AddToGesture()
+		{
+			if (gesture != null)
+			{
+				Point point = Cursor.Position;
+				double segmentDistance = MouseGesture.GetDistance(lastGesturePoint, point);
+				if (distance > 0 || segmentDistance > MouseGesture.mouseMoveSegmentLength)
+				{
+					//int rem;
+					//Math.DivRem(gestureSegmentCount, 3, out rem);
+					//if (rem == 0)
+					//{
+					if (tmpOverlayForm == null)
+					{
+						tmpOverlayForm = new Form();
+						tmpOverlayForm.FormClosing += (snder, evt) => { evt.Cancel = true; ((Form)snder).Hide(); };
+						tmpOverlayForm.FormBorderStyle = FormBorderStyle.None;
+						tmpOverlayForm.Opacity = 0.5;// 05;
+						tmpOverlayForm.TopMost = true;
+						tmpOverlayForm.StartPosition = FormStartPosition.Manual;
+						tmpOverlayForm.WindowState = FormWindowState.Maximized;
+						tmpOverlayForm.Paint += (snder, evt) =>
+						{ 
+							//SendRightMouseClick();
+							foreach (var lineEndpoints in linesDrawn)
+								evt.Graphics.DrawLine(GestureLinePen, lineEndpoints.Key, lineEndpoints.Value);
+						};
+					}
+					if (!tmpOverlayForm.Visible)
+					{
+						tmpOverlayForm.BringToFront();
+						tmpOverlayForm.Show();
+						Application.DoEvents();
+						tmpOverlayForm.Activate();
+					}
+					//while (tmpOverlayForm.Handle == IntPtr.Zero)
+					//    Application.DoEvents();
+
+					linesDrawn.Add(new KeyValuePair<Point, Point>(lastGesturePoint, Cursor.Position));
+					tmpOverlayForm.Invalidate();
+
+					////IntPtr desktop = Win32Api.GetDC(IntPtr.Zero);
+					//using (Graphics g = Graphics.FromHdc(tmpOverlayForm.Handle))//desktop))
+					//{
+					//    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+					//    g.DrawLine(GestureLinePen, lastGesturePoint, Cursor.Position);
+					//    //linesDrawn.Add(new KeyValuePair<Point,Point>(lastGesturePoint, Cursor.Position));
+					//    hasLinesDrawn = true;
+					//}
+					//Win32Api.ReleaseDC(tmpOverlayForm.Handle);//desktop);
+					//}
+				}
+				if (segmentDistance >= MouseGesture.mouseMoveSegmentLength)
+				{
+					gesture.AddSegment(MouseGesture.GetDirection(lastGesturePoint, point));
+					distance += segmentDistance;
+					lastGesturePoint = point;
+					//gestureSegmentCount++;
+				}
+			}
+		}
+
+		private void EndGesture()
+		{
+			//if (hasLinesDrawn)
+			if (linesDrawn.Count > 0)//Lines where drawn
+			{
+				//foreach (var lineDrawn in linesDrawn)
+				//{
+				//}
+				tmpOverlayForm.Hide();
+				//hasLinesDrawn = false;
+				linesDrawn.Clear();
+				//Win32Api.InvalidateRect(IntPtr.Zero, IntPtr.Zero, true);
+			}
+
+			//check minimal length
+			//TODO change minimal length checking  - does not work for gesture LeftRight, etc...
+			if (distance < MouseGesture.minGestureSize || gesture.Count == 0)
+			{
+				//too short for mouse gesture - send regular right mouse click
+				//mf.Enabled = false;
+				//tmpTextbox.Text += "Disabled" + Environment.NewLine;
+				//SendRightMouseClick();
+				//Application.DoEvents();
+				//mf.Enabled = true;
+				//tmpTextbox.Text += "Enabled" + Environment.NewLine;
+			}
+			else
+			{
+				GestureHandler temp = OnGesture;
+				if (temp != null)
+				{
+					temp(this, new MouseGestureEventArgs(gesture));
+					//MouseGestureEventArgs args = new MouseGestureEventArgs(gesture);
+					//tmpTextbox.Text += "Before temp" + Environment.NewLine;
+					//temp(this, args);
+					//tmpTextbox.Text += "After temp" + Environment.NewLine;
+				}
+			}
+			gesture = null;
+		}
+
+		private static void SendRightMouseClick()
+		{
+			Win32Api.INPUTMOUSE im = new Win32Api.INPUTMOUSE();
+			im.type = Win32Api.INPUTTYPE.INPUT_MOUSE;
+
+			//Sends MOUSEEVENTF_RIGHTDOWN
+			im.mi.dwFlags = Win32Api.MOUSEEVENTFLAGS.MOUSEEVENTF_RIGHTDOWN;
+			Win32Api.SendInput((uint)1, ref im, Marshal.SizeOf(im));
+
+			//Sends MOUSEEVENTF_RIGHTUP
+			im.mi.dwFlags = Win32Api.MOUSEEVENTFLAGS.MOUSEEVENTF_RIGHTUP;
+			Win32Api.SendInput((uint)1, ref im, Marshal.SizeOf(im));
 		}
 
 		/// <summary>
@@ -860,120 +1209,6 @@ namespace SharedClasses
 				return 1;
 			else
 				return CallNextHookEx(hKeyboardHook, nCode, wParam, lParam);
-		}
-
-		public class GestureMonitor
-		{
-			private UserActivityHook.MouseGestures.MouseGesture gesture;
-		}
-
-		/// <summary>
-		/// Code obtained from http://mousegestures.codeplex.com
-		/// </summary>
-		public class MouseGestures
-		{
-			/// <summary>
-			/// Enum defining gesture directions.
-			/// </summary>
-			public enum MouseGestureDirection
-			{
-				Unknown,
-				Up,
-				Right,
-				Down,
-				Left
-			}
-
-			/// <summary>
-			/// A MouseGesture is a sequence of movements
-			/// </summary>
-			public class MouseGesture
-			{
-				Point start;
-				List<MouseGestureDirection> directions;
-
-				/// <summary>
-				/// Create a empty mouse gesture
-				/// </summary>
-				/// <param name="start">The point where the gesture started</param>
-				public MouseGesture(Point point)
-				{
-					start = point;
-					directions = new List<MouseGestureDirection>();
-				}
-
-				/// <summary>
-				/// The point where the gesture started
-				/// </summary>
-				public Point Start
-				{
-					get
-					{
-						return start;
-					}
-				}
-
-				/// <summary>
-				/// Append a motion to the gesture
-				/// </summary>
-				/// <remarks>
-				/// Duplicate and unknown motions will be filtered out.
-				/// </remarks>
-				public void AddSegment(MouseGestureDirection direction)
-				{
-					if (direction != MouseGestureDirection.Unknown &&
-					  (directions.Count == 0 ||
-						direction != directions[directions.Count - 1]))
-						directions.Add(direction);
-				}
-
-				/// <summary>
-				/// The number of motions in the gesture
-				/// </summary>
-				public int Count
-				{
-					get
-					{
-						return directions.Count;
-					}
-				}
-
-				/// <summary>
-				/// Gets the performed gesture
-				/// </summary>
-				public string Motions
-				{
-					get
-					{
-						return this.ToString();
-					}
-				}
-
-				/// <summary>
-				/// A string representation of the gesture
-				/// </summary>
-				public override string ToString()
-				{
-					string s = string.Empty;
-					foreach (MouseGestureDirection d in directions)
-					{
-						switch (d)
-						{
-							case MouseGestureDirection.Left:
-								s += 'L'; break;
-							case MouseGestureDirection.Right:
-								s += 'R'; break;
-							case MouseGestureDirection.Up:
-								s += 'U'; break;
-							case MouseGestureDirection.Down:
-								s += 'D'; break;
-							case MouseGestureDirection.Unknown:
-								break;
-						}
-					}
-					return s;
-				}
-			}
 		}
 	}
 }

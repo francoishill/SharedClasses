@@ -129,7 +129,7 @@ namespace SharedClasses
 			elementRect = Rect.Inflate(elementRect, -ignoreBorderWidth, -ignoreBorderWidth);
 			var mousePos = MouseLocation.GetMousePosition();
 
-			Win32Api.Win32Point p;
+			Win32Api.POINT p;
 			if (Win32Api.GetCursorPos(out p))
 			{
 				IntPtr handleOfWindowBelowMouse = Win32Api.WindowFromPoint(p);
@@ -155,7 +155,7 @@ namespace SharedClasses
 		{
 			public static Point GetMousePosition()
 			{
-				Win32Api.Win32Point w32Mouse = new Win32Api.Win32Point();
+				Win32Api.POINT w32Mouse = new Win32Api.POINT();
 				Win32Api.GetCursorPos(out w32Mouse);
 				return new Point(w32Mouse.X, w32Mouse.Y);
 			}

@@ -12,7 +12,7 @@ namespace SharedClasses
 {
 	public class VSBuildProject_NonAbstract : VSBuildProject
 	{
-		public VSBuildProject_NonAbstract(string ApplicationName) : base(ApplicationName) { }
+		public VSBuildProject_NonAbstract(string ApplicationName, string CsprojOrSolutionFullpath = null) : base(ApplicationName, CsprojOrSolutionFullpath) { }
 	}
 
 	public abstract class VSBuildProject
@@ -26,15 +26,15 @@ namespace SharedClasses
 
 		public string SolutionFullpath { get; protected set; }
 
-		public VSBuildProject(string ApplicationName)
+		public VSBuildProject(string ApplicationName, string CsprojOrSolutionFullpath = null)
 		{
 			this.ApplicationName = Path.GetFileNameWithoutExtension(ApplicationName);
 			this.LastBuildFeedback = null;
 			this.HasFeedbackText = false;
 			this.LastBuildResult = null;
 
-			string err;
-			this.SolutionFullpath = GetSolutionPathFromApplicationName(out err);
+			string err = null;
+			this.SolutionFullpath = CsprojOrSolutionFullpath ?? GetSolutionPathFromApplicationName(out err);
 			if (err != null)
 				UserMessages.ShowErrorMessage("Error getting solution path: " + err);
 		}

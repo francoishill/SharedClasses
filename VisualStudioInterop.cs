@@ -142,7 +142,7 @@ public class VisualStudioInterop
 		bool errorOccurred = false;
 		ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 		{
-			var proj = new VSBuildProject_NonAbstract(projName);
+			var proj = new VSBuildProject_NonAbstract(projName, SolutionTrueProjectFalse ? slnFilename : csprojFilename);
 			List<string> csprojpaths;
 			string errIfNotNull;
 			if (!proj.PerformBuild(out csprojpaths, out errIfNotNull))

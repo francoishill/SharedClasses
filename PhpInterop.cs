@@ -99,7 +99,7 @@ public class PhpInterop
 				//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Post php: " + exc.Message);
 				else //LoggingClass.AddToLogList(UserMessages.MessageTypes.PostPHPremotename, exc.Message);
 					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Post php remote name: " + exc.Message);
-					//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Post php remote name: " + exc.Message);
+				//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Post php remote name: " + exc.Message);
 				//SysWinForms.MessageBox.Show("Error (092892): " + Environment.NewLine + exc.Message, "Exception error", SysWinForms.MessageBoxButtons.OK, SysWinForms.MessageBoxIcon.Error);
 			}
 		});
@@ -143,6 +143,22 @@ public class PhpInterop
 	{
 		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Sending btw text, please wait...");
 		string responsestr  = PhpInterop.PostPHP(textfeedbackSenderObject, "http://firepuma.com/btw/directadd/f/" + PhpInterop.PhpEncryption.StringToHex(btwtext), "");
+
+		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, responsestr);
+		return responsestr.ToLower().StartsWith("success:");
+		//form1.textBox1.Text = "";
+		//textBox1.Text = "";
+	}
+
+	public static bool AddJournalItemFirepuma(Object textfeedbackSenderObject, string description, string link = null, TextFeedbackEventHandler textFeedbackEvent = null)
+	{
+		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Sending journal item, please wait...");
+		string responsestr  = PhpInterop.PostPHP(
+			textfeedbackSenderObject,
+			"http://firepuma.com/journal/directadd/f"
+				+ "/" + PhpInterop.PhpEncryption.StringToHex(description)
+				+ "/" + PhpInterop.PhpEncryption.StringToHex(link),
+				"");
 
 		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, responsestr);
 		return responsestr.ToLower().StartsWith("success:");

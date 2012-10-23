@@ -25,6 +25,7 @@ namespace SharedClasses
 		public virtual bool HasFeedbackText { get; set; }
 
 		public string SolutionFullpath { get; protected set; }
+		public string GetSolutionDirectory() { return Path.GetDirectoryName(SolutionFullpath); }
 
 		public VSBuildProject(string ApplicationName, string CsprojOrSolutionFullpath = null)
 		{

@@ -1168,11 +1168,12 @@ namespace SharedClasses
 
 		private void AutoCompleteActualTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
 		{
-			//if (e.Key == Key.Enter)
-			//{
-			//	e.Handled = true;
-			//	PressEnterKeyInsideArgumentTextbox();
-			//}
+			if (e.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.Control)
+			{
+				((System.Windows.Controls.AutoCompleteBox)sender).Text += Environment.NewLine;
+				//e.Handled = true;//Just handle it so we get the newline character
+				//PressEnterKeyInsideArgumentTextbox();
+			}
 			//else if (e.Key == Key.Tab)
 			//{
 			//	//Border tmpBorder = GetEmbeddedButton();
@@ -1282,7 +1283,7 @@ namespace SharedClasses
 
 		private void MainAutoCompleteTextbox_PreviewKeyDown(object sender, KeyEventArgs e)
 		{
-			if (e.Key == Key.Enter)
+			if (e.Key == Key.Enter && Keyboard.Modifiers != ModifierKeys.Control)
 			{
 				e.Handled = true;
 				PressEnterKeyInsideArgumentTextbox();

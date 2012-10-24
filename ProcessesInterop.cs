@@ -48,7 +48,10 @@ namespace SharedClasses
 			proc.BeginErrorReadLine();
 			proc.BeginOutputReadLine();
 			if (WriteToStandardInputBeforeReadingText != null)
+			{
 				proc.StandardInput.Write(WriteToStandardInputBeforeReadingText);
+				proc.StandardInput.Close();
+			}
 			proc.WaitForExit();
 			ExitCodeIfRan = proc.ExitCode;
 			proc.Dispose();

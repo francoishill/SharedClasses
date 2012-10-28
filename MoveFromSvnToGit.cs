@@ -4,18 +4,23 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.ComponentModel;
 
 namespace SharedClasses
 {
-	public class MoveFromSvnToGit
+	public class MoveFromSvnToGit : INotifyPropertyChanged
 	{
-		public string SvnUrl;
-		public bool StandardLayout;
-		public int StartSvnRevisionNumber;
-		public string LocalGitClonedFolder;
-		public string RemoteGitRepo;
-		public bool InitGitRepo;
-		public string SvnServeDirIfRequiredToBeRun;
+		public string SvnUrl { get; private set; }
+		public bool StandardLayout { get; private set; }
+		public int StartSvnRevisionNumber { get; private set; }
+		public string LocalGitClonedFolder { get; private set; }
+		public string RemoteGitRepo { get; private set; }
+		public bool InitGitRepo { get; private set; }
+		public string SvnServeDirIfRequiredToBeRun { get; private set; }
+
+		private bool _isbuy;
+		public bool IsBusy { get { return _isbuy; } private set { _isbuy = value; OnPropertyChanged("IsBusy"); } }
+
 		public MoveFromSvnToGit(string SvnUrl, bool StandardLayout, int StartSvnRevisionNumber,
 			string LocalGitClonedFolder, string RemoteGitRepo, bool InitGitRepo,
 			string SvnServeDirIfRequiredToBeRun)
@@ -27,6 +32,7 @@ namespace SharedClasses
 			this.RemoteGitRepo = RemoteGitRepo;
 			this.InitGitRepo = InitGitRepo;
 			this.SvnServeDirIfRequiredToBeRun = SvnServeDirIfRequiredToBeRun;
+			this.IsBusy = false;
 		}
 
 		public bool ValidateAll(Action onInvalidStartSvnRevisionNumber)
@@ -106,42 +112,51 @@ namespace SharedClasses
 		{
 			Action<MoveFromSvnToGit> moveAction = (moveobj) =>
 			{
-				string remoteName = Path.GetFileNameWithoutExtension(moveobj.RemoteGitRepo);
+				this.IsBusy = true;
 
-				if (!Directory.Exists(moveobj.LocalGitClonedFolder))
-					Directory.CreateDirectory(moveobj.LocalGitClonedFolder);
-
-				if (!StartSvnServe(moveobj.SvnServeDirIfRequiredToBeRun, autoCloseSvnServeIfNeeded))
+				try
 				{
-					onAppendMessage("ERROR: Unable to start svnserve for dir: " + moveobj.SvnServeDirIfRequiredToBeRun + ", unable to use svn url: " + moveobj.SvnUrl);
-					return;
-				}
+					string remoteName = Path.GetFileNameWithoutExtension(moveobj.RemoteGitRepo);
 
-				List<string> commandListArguments = new List<string>();
+					if (!Directory.Exists(moveobj.LocalGitClonedFolder))
+						Directory.CreateDirectory(moveobj.LocalGitClonedFolder);
 
-				/*commandListArguments.Add(string.Format("svn init \"{0}\" \"{1}\"", textBoxSvnUrl.Text, textBoxLocalGitClonedFolder.Text));
-				commandListArguments.Add(string.Format("svn fetch"));*/
-
-				commandListArguments.Add(string.Format("svn clone{0} -r{1}:HEAD \"{2}\" \"{3}\"", moveobj.StandardLayout ? " -s" : "", moveobj.StartSvnRevisionNumber, moveobj.SvnUrl, moveobj.LocalGitClonedFolder));
-
-				if (moveobj.InitGitRepo)
-					commandListArguments.Add(string.Format("init --bare \"{0}\"", moveobj.RemoteGitRepo));
-				//git remote add [-t <branch>] [-m <master>] [-f] [--tags|--no-tags] [--mirror=<fetch|push>] <name> <url>
-				commandListArguments.Add(string.Format("remote add \"{0}\" \"{1}\"", remoteName, moveobj.RemoteGitRepo));
-				commandListArguments.Add(string.Format("push \"{0}\" master", remoteName));
-
-				bool allSuccess = true;
-				foreach (var args in commandListArguments)
-					if (!RunGitCommand(args, moveobj.LocalGitClonedFolder, onAppendMessage))
+					if (!StartSvnServe(moveobj.SvnServeDirIfRequiredToBeRun, autoCloseSvnServeIfNeeded))
 					{
-						allSuccess = false;
-						break;
+						onAppendMessage("ERROR: Unable to start svnserve for dir: " + moveobj.SvnServeDirIfRequiredToBeRun + ", unable to use svn url: " + moveobj.SvnUrl);
+						return;
 					}
 
-				if (allSuccess && selectClonedRepoInExplorerOnSuccess)
-					Process.Start("explorer", moveobj.LocalGitClonedFolder);
+					List<string> commandListArguments = new List<string>();
 
-				//isbusy = false;
+					/*commandListArguments.Add(string.Format("svn init \"{0}\" \"{1}\"", textBoxSvnUrl.Text, textBoxLocalGitClonedFolder.Text));
+					commandListArguments.Add(string.Format("svn fetch"));*/
+
+					commandListArguments.Add(string.Format("svn clone{0} -r{1}:HEAD \"{2}\" \"{3}\"", moveobj.StandardLayout ? " -s" : "", moveobj.StartSvnRevisionNumber, moveobj.SvnUrl, moveobj.LocalGitClonedFolder));
+
+					if (moveobj.InitGitRepo)
+						commandListArguments.Add(string.Format("init --bare \"{0}\"", moveobj.RemoteGitRepo));
+					//git remote add [-t <branch>] [-m <master>] [-f] [--tags|--no-tags] [--mirror=<fetch|push>] <name> <url>
+					commandListArguments.Add(string.Format("remote add \"{0}\" \"{1}\"", remoteName, moveobj.RemoteGitRepo));
+					commandListArguments.Add(string.Format("push \"{0}\" master", remoteName));
+
+					bool allSuccess = true;
+					foreach (var args in commandListArguments)
+						if (!RunGitCommand(args, moveobj.LocalGitClonedFolder, onAppendMessage))
+						{
+							allSuccess = false;
+							break;
+						}
+
+					if (allSuccess && selectClonedRepoInExplorerOnSuccess)
+						Process.Start("explorer", moveobj.LocalGitClonedFolder);
+
+					//isbusy = false;
+				}
+				finally
+				{
+					this.IsBusy = false;
+				}
 			};
 			if (separateThread)
 				ThreadingInterop.PerformOneArgFunctionSeperateThread<MoveFromSvnToGit>(
@@ -166,36 +181,49 @@ namespace SharedClasses
 			return result;
 		}
 
-		public static List<MoveFromSvnToGit> GetListInRootSvnDir(string rootSvnDir, string rootDirToCloneIn, string rootDirForGitRepos, bool autoCloseSvnServeIfNeeded, out List<string> skippedDirectoriesDueToHttps)
+		public static List<MoveFromSvnToGit> GetListInRootSvnDir(string rootSvnDir, string rootDirToCloneIn, string rootDirForGitRepos, bool autoCloseSvnServeIfNeeded, out List<string> skippedDirectoriesDueToHttps, Action<int> onProgress)
 		{
+			if (onProgress == null) onProgress = delegate { };
+			int totalCount = Directory.GetDirectories(rootSvnDir).Count(dir => DirIsValidSvnPath(dir));
+			onProgress(0);
+
+			int doneCount = 0;
 			List<MoveFromSvnToGit> tmplist = new List<MoveFromSvnToGit>();
 			skippedDirectoriesDueToHttps = new List<string>();
 			foreach (var subdir in Directory.GetDirectories(rootSvnDir))
 			{
 				if (!DirIsValidSvnPath(subdir))
 					continue;
-				string FolderNameOnly = Path.GetFileNameWithoutExtension(subdir);
-				string svnCheckoutPath;
-				bool isStandardLayout;
-				bool failedBecauseWasHttps;
-				string svnServeDirIfRequiredToBeRun;
-				if (!GetSvnUrlFromCheckedOutDir(subdir, out svnCheckoutPath, out isStandardLayout, out failedBecauseWasHttps, out svnServeDirIfRequiredToBeRun))
+				try
 				{
-					if (failedBecauseWasHttps)
-						skippedDirectoriesDueToHttps.Add(subdir);
-					continue;
+					string FolderNameOnly = Path.GetFileNameWithoutExtension(subdir);
+					string svnCheckoutPath;
+					bool isStandardLayout;
+					bool failedBecauseWasHttps;
+					string svnServeDirIfRequiredToBeRun;
+					if (!GetSvnUrlFromCheckedOutDir(subdir, out svnCheckoutPath, out isStandardLayout, out failedBecauseWasHttps, out svnServeDirIfRequiredToBeRun))
+					{
+						if (failedBecauseWasHttps)
+							skippedDirectoriesDueToHttps.Add(subdir);
+						continue;
+					}
+					int svnFirstRevisionNumber = GetSvnFirstRevisionNumberOfDir(subdir);
+					if (svnFirstRevisionNumber == -1)
+						continue;
+					var tmpMoveItem = new MoveFromSvnToGit(
+						svnCheckoutPath,
+						isStandardLayout,
+						1,//??,
+						Path.Combine(rootDirToCloneIn, FolderNameOnly),
+						Path.Combine(rootDirForGitRepos, FolderNameOnly),
+						true,
+						svnServeDirIfRequiredToBeRun);
+					tmplist.Add(tmpMoveItem);
 				}
-				int svnFirstRevisionNumber = GetSvnFirstRevisionNumberOfDir(subdir);
-				if (svnFirstRevisionNumber == -1)
-					continue;
-				tmplist.Add(new MoveFromSvnToGit(
-					svnCheckoutPath,
-					isStandardLayout,
-					1,//??,
-					Path.Combine(rootDirToCloneIn, FolderNameOnly),
-					Path.Combine(rootDirForGitRepos, FolderNameOnly),
-					true,
-					svnServeDirIfRequiredToBeRun));
+				finally
+				{
+					onProgress((int)Math.Truncate(100D * (double)++doneCount / (double)totalCount));
+				}
 			}
 			return tmplist;
 		}
@@ -220,7 +248,8 @@ namespace SharedClasses
 					onAppendMessage("Starting to clone all SVN checkouts (as subfolders) in dir: " + rootFolderToSearchForSvnCheckouts);
 					onAppendMessage("To destination (root folder) for git clones: " + destinationFolderForGitClones);
 					onAppendMessage("Using root folder for local repos (instead of actual remote repos) to push the clones to: " + destinationRootForGitRemoteRepos);
-					var listToMove = GetListInRootSvnDir(rootFolderToSearchForSvnCheckouts, destinationFolderForGitClones, destinationRootForGitRemoteRepos, autoCloseSvnServeIfNeeded, out skippedDirectoriesDueToHttps);
+					var listToMove = GetListInRootSvnDir(rootFolderToSearchForSvnCheckouts, destinationFolderForGitClones, destinationRootForGitRemoteRepos, autoCloseSvnServeIfNeeded, out skippedDirectoriesDueToHttps,
+						null);
 					foreach (var moveItem in listToMove)
 					{
 						if (!moveItem.ValidateAll(delegate { }))
@@ -453,5 +482,8 @@ namespace SharedClasses
 			var procToRun = Process.Start(SvnserveExePath, "--daemon --root \"" + reposRoot + "\"");
 			return procToRun != null;
 		}
+
+		public event PropertyChangedEventHandler PropertyChanged = delegate { };
+		public void OnPropertyChanged(string propertyName) { PropertyChanged(this, new PropertyChangedEventArgs(propertyName)); }
 	}
 }

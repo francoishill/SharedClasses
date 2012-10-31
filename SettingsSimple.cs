@@ -10,6 +10,7 @@ using System.Linq;
 using System.Globalization;
 using System.Configuration;
 using System.Reflection;
+using System.Diagnostics;
 
 [Obsolete("OnlineSettings was renamed to SettingsSimple, also contained in SharedClasses.SettingsSimple", true)]
 public class OnlineSettings
@@ -688,6 +689,11 @@ namespace SharedClasses
 						return new RunCommand(fullCommandLine, Path.GetFileName(fullCommandLine), PathTypes.FullPath);
 					UserMessages.ShowWarningMessage("Cannot obtain RunCommand from full Commanline: " + fullCommandLine);
 					return null;
+				}
+
+				public override string ToString()
+				{
+					return string.Format("{0}: {1} [{2}]", DisplayName, AppPath, CommandlineArguments);
 				}
 			}
 			public List<RunCommand> RunCommands { get; set; }

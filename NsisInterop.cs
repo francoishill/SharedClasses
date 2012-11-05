@@ -36,7 +36,8 @@ public class NsisInterop
 		NSISclass.DotnetFrameworkTargetedEnum DotnetFrameworkTargetedIn,
 		bool _64Only,
 		bool WriteIntoRegistryForWindowsAutostartup,
-		bool HasPlugins)
+		bool HasPlugins,
+		string customSetupFilename = null)
 	{
 		NSISclass nsis = new NSISclass(
 			ProductPublishedNameIn,
@@ -46,7 +47,7 @@ public class NsisInterop
 			ProductExeNameIn,
 			new NSISclass.Compressor(NSISclass.Compressor.CompressionModeEnum.lzma, true, true),//new NSISclass.Compressor(NSISclass.Compressor.CompressionModeEnum.bzip2, false, false),
 			64,
-			GetSetupNameForProduct(ProductPublishedNameIn, ProductVersionIn),
+			customSetupFilename == null ? GetSetupNameForProduct(ProductPublishedNameIn, ProductVersionIn) : customSetupFilename,
 			NSISclass.LanguagesEnum.English,
 			true,
 			true,
@@ -64,7 +65,7 @@ public class NsisInterop
 
 		//string rootProjDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects";
 		string subDirInProj = @"\bin\Release";
-		string PublishedDir = 
+		string binariesDir = 
 			Directory.Exists(PublishInterop.cProjectsRootDir.TrimEnd('\\') + @"\" + VsProjectName + subDirInProj)
 			? PublishInterop.cProjectsRootDir.TrimEnd('\\') + @"\" + VsProjectName + subDirInProj
 			: PublishInterop.cProjectsRootDir.TrimEnd('\\') + @"\" + VsProjectName + @"\" + VsProjectName + subDirInProj;
@@ -104,7 +105,7 @@ public class NsisInterop
 		SectionGroupLines.Add(@"  SetOverwrite on");
 		SectionGroupLines.Add(@"	SetOutPath ""$INSTDIR""");
 		SectionGroupLines.Add(@"  SetOverwrite on");
-		SectionGroupLines.Add(@"  File /a /x *.pdb /x *.application /x *.vshost.* /x *.manifest" + MainProgram_FaceDetectionNsisExclusionList() + @" """ + PublishedDir + @"\*.*""");
+		SectionGroupLines.Add(@"  File /a /x *.pdb /x *.application /x *.vshost.* /x *.manifest" + MainProgram_FaceDetectionNsisExclusionList() + @" """ + binariesDir + @"\*.*""");
 
 		//If NSISdl does not work right may be required to have inetc.dll, NSISdl is already part of NSIS installation`
 		//string inetcDllPath = Path.Combine(nsisDir, "Plugins", "inetc.dll");
@@ -274,28 +275,44 @@ public class NsisInterop
 
 		foreach (RegistryView rv in Enum.GetValues(typeof(RegistryView)))
 		{
-			if (uninstallKey != null)
-				uninstallKey.Close();
-			uninstallKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, rv)
-			 .OpenSubKey(subPath);
-			if (uninstallKey.GetSubKeyNames().Contains("NSIS", StringComparer.InvariantCultureIgnoreCase))
+			try
 			{
-				nsisKey = uninstallKey.OpenSubKey("NSIS");
-				break;
-			}
-			else
-			{
-				uninstallKey.Close();
-				uninstallKey = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, rv)
-					.OpenSubKey(subPath);
+				if (uninstallKey != null)
+					uninstallKey.Close();
+				uninstallKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, rv)
+				 .OpenSubKey(subPath);
 				if (uninstallKey.GetSubKeyNames().Contains("NSIS", StringComparer.InvariantCultureIgnoreCase))
 				{
 					nsisKey = uninstallKey.OpenSubKey("NSIS");
 					break;
 				}
+				else
+				{
+					uninstallKey.Close();
+					uninstallKey = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, rv)
+						.OpenSubKey(subPath);
+					if (uninstallKey.GetSubKeyNames().Contains("NSIS", StringComparer.InvariantCultureIgnoreCase))
+					{
+						nsisKey = uninstallKey.OpenSubKey("NSIS");
+						break;
+					}
+				}
+			}
+			catch//(Exception exc)
+			{
 			}
 		}
 		uninstallKey.Close();
+
+		if (nsisKey == null)//Could not find path in registry, some error occurred (could be because its called from apache/php which is running as a service so we are 'not logged in')
+		{
+			string progFilesDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "NSIS");
+			string progFilesX86Dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "NSIS");
+			if (Directory.Exists(progFilesDir))
+				return progFilesDir;
+			else if (Directory.Exists(progFilesX86Dir))
+				return progFilesX86Dir;
+		}
 
 		if (nsisKey != null)
 		{
@@ -866,7 +883,7 @@ public class NsisInterop
 			if (ProductWebsite != null && ProductWebsite.Length > 0) tmpList.Add(Spacer + @"CreateShortCut ""$SMPROGRAMS\$ICONS_GROUP\Website of ${PRODUCT_NAME}.lnk"" ""$INSTDIR\Website of ${PRODUCT_NAME}.url"" """" ""$WINDIR\system32\SHELL32.dll"" 14");
 			//tmpList.Add(Spacer + @"WriteIniStr ""$SMPROGRAMS\$ICONS_GROUP\${PRODUCT_NAME}.url"" ""InternetShortcut"" ""URL"" ""${PRODUCT_WEB_SITE}""");
 			//tmpList.Add(Spacer + @"CreateShortCut ""$SMPROGRAMS\$ICONS_GROUP\${PRODUCT_NAME} website.lnk"" ""$INSTDIR\${PRODUCT_NAME}.url""");
-			tmpList.Add(Spacer + @"CreateShortCut ""$SMPROGRAMS\$ICONS_GROUP\Uninstall.lnk"" ""$INSTDIR\Uninstall.exe""");
+			tmpList.Add(Spacer + @"CreateShortCut ""$SMPROGRAMS\$ICONS_GROUP\Uninstall ${PRODUCT_NAME}.lnk"" ""$INSTDIR\Uninstall ${PRODUCT_NAME}.exe""");
 			tmpList.Add(Spacer + @"!insertmacro MUI_STARTMENU_WRITE_END");
 			tmpList.Add(@"SectionEnd"); tmpList.Add("");
 
@@ -879,11 +896,11 @@ public class NsisInterop
 			tmpList.Add(Spacer + @"FileWrite $9 ""${PRODUCT_VERSION}""");
 			tmpList.Add(Spacer + @"FileClose $9 ;Closes the filled file");
 			tmpList.Add(Spacer + ";Write application information to Registry");
-			tmpList.Add(Spacer + @"WriteUninstaller ""$INSTDIR\Uninstall.exe""");
+			tmpList.Add(Spacer + @"WriteUninstaller ""$INSTDIR\Uninstall ${PRODUCT_NAME}.exe""");
 			tmpList.Add(Spacer + @"WriteRegStr HKLM ""${PRODUCT_DIR_REGKEY}"" """" ""$INSTDIR\${PRODUCT_EXE_NAME}""");
-			if (isShowNoCallbackNotification) tmpList.Add(Spacer + @"WriteRegStr HKLM ""${PRODUCT_DIR_REGKEY_NOTIFICATIONSONLY}"" """" ""$INSTDIR\${PRODUCT_EXE_NAME}""");				
+			if (isShowNoCallbackNotification) tmpList.Add(Spacer + @"WriteRegStr HKLM ""${PRODUCT_DIR_REGKEY_NOTIFICATIONSONLY}"" """" ""$INSTDIR\${PRODUCT_EXE_NAME}""");
 			tmpList.Add(Spacer + @"WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} ""${PRODUCT_UNINST_KEY}"" ""DisplayName"" ""$(^Name)""");
-			tmpList.Add(Spacer + @"WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} ""${PRODUCT_UNINST_KEY}"" ""UninstallString"" ""$INSTDIR\Uninstall.exe""");
+			tmpList.Add(Spacer + @"WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} ""${PRODUCT_UNINST_KEY}"" ""UninstallString"" ""$INSTDIR\Uninstall ${PRODUCT_NAME}.exe""");
 			tmpList.Add(Spacer + @"WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} ""${PRODUCT_UNINST_KEY}"" ""DisplayIcon"" ""$INSTDIR\${PRODUCT_EXE_NAME}""");
 			tmpList.Add(Spacer + @"WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} ""${PRODUCT_UNINST_KEY}"" ""DisplayVersion"" ""${PRODUCT_VERSION}""");
 			tmpList.Add(Spacer + @"WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} ""${PRODUCT_UNINST_KEY}"" ""URLInfoAbout"" ""${PRODUCT_WEB_SITE}""");

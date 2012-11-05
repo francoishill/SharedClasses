@@ -321,6 +321,8 @@ namespace SharedClasses
 			{
 				if (!File.Exists(SettingsFilePath)) return false;
 
+				//Console.Out.WriteLine("Using file: " + SettingsFilePath);
+				//Console.Out.Flush();
 				var fileJsondata = File.ReadAllText(SettingsFilePath);
 				try
 				{
@@ -641,12 +643,14 @@ namespace SharedClasses
 				public string AppPath { get; set; }
 				public PathTypes PathType { get; set; }
 				public string CommandlineArguments { get; set; }
+				public bool WaitForUserInput { get; set; }
 				public RunCommand() { }
-				public RunCommand(string AppPath, string DisplayName, PathTypes PathType, string CommandlineArguments = null)
+				public RunCommand(string AppPath, string DisplayName, PathTypes PathType, bool WaitForUserInput = false, string CommandlineArguments = null)
 				{
 					this.AppPath = AppPath;
 					this.DisplayName = DisplayName;
 					this.PathType = PathType;
+					this.WaitForUserInput = WaitForUserInput;
 					this.CommandlineArguments = CommandlineArguments;
 				}
 				/// <summary>
@@ -681,7 +685,7 @@ namespace SharedClasses
 							if (commandLineStartIndex < fullCommandLine.Length)
 								commandlineargs = fullCommandLine.Substring(commandLineStartIndex).Trim();
 						}
-						return new RunCommand(fullpath, displayName, PathTypes.FullPath, commandlineargs);
+						return new RunCommand(fullpath, displayName, PathTypes.FullPath, false, commandlineargs);
 					}
 					else if (File.Exists(fullCommandLine))
 						return new RunCommand(fullCommandLine, Path.GetFileName(fullCommandLine), PathTypes.FullPath);
@@ -706,8 +710,8 @@ namespace SharedClasses
 					new RunCommand("StartupTodoManager", "Startup Todo Manager", RunCommand.PathTypes.OwnApp),
 					new RunCommand("QuickAccess", "Quick Access", RunCommand.PathTypes.OwnApp),
 					new RunCommand(@"C:\Program Files (x86)\WizMouse\WizMouse.exe", "WizMouse", RunCommand.PathTypes.FullPath),
-					new RunCommand(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-						@"Google\Chrome\Application\chrome.exe"), "Google Chrome", RunCommand.PathTypes.FullPath, "-no-startup-window")
+					new RunCommand(Path.Combine(CalledFromService.Environment_GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+						@"Google\Chrome\Application\chrome.exe"), "Google Chrome", RunCommand.PathTypes.FullPath, false, "-no-startup-window")
 				};
 			}
 		}
@@ -779,6 +783,27 @@ namespace SharedClasses
 				this.PhpDownloadUrl = "http://firepuma.com/downloadownapps.php";//"http://ftpviahttp.getmyip.com/downloadownapps.php";
 				this.PhpUploadUrl = "http://firepuma.com/uploadownapps.php";//"http://ftpviahttp.getmyip.com/uploadownapps.php";
 				this.AppsPublishingRoot = "http://firepuma.com";// "http://fjh.dyndns.org";
+			}
+		}
+
+		public class SvnCredentials : BaseOnlineClass<SvnCredentials>
+		{
+			private const EncodeAndDecodeInterop.EncodingType encodingType = EncodeAndDecodeInterop.EncodingType.ASCII;
+
+			public string Username { get; set; }
+			[Browsable(false)]
+			[XmlIgnore]
+			public string Password
+			{
+				get { return EncodeAndDecodeInterop.DecodeString(this.PasswordEncrypted, encodingType); }
+				set { this.PasswordEncrypted = EncodeAndDecodeInterop.EncodeString(value, EncodeAndDecodeInterop.EncodingType.ASCII); }
+			}
+			[Browsable(false)]
+			[XmlElement("Password")]
+			public string PasswordEncrypted { get; set; }
+
+			public SvnCredentials()//Defaults
+			{
 			}
 		}
 	}

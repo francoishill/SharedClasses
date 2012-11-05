@@ -62,13 +62,13 @@ namespace SharedClasses
 			//	_style = (Style)Resources["FractalStyle"];
 			//this.Style = _style;
 
-			WindowsInterop.SetHookForSystemMenu(
+			WPFHelper.SetHookForSystemMenu(
 				this,
 				WndProc,
-				new System.Collections.Generic.List<SystemMenuItem>()
+				new System.Collections.Generic.List<WPFHelper.SystemMenuItem>()
 				{
-					new SystemMenuItem(SystemMenuItemTypeEnum.Separator),
-					new SystemMenuItem(SystemMenuItemTypeEnum.String, ShowGesturesFormMenuID, "Gestures"),
+					new WPFHelper.SystemMenuItem(WPFHelper.SystemMenuItemTypeEnum.Separator),
+					new WPFHelper.SystemMenuItem(WPFHelper.SystemMenuItemTypeEnum.String, ShowGesturesFormMenuID, "Gestures"),
 					//new SystemMenuItem(SystemMenuItemTypeEnum.String, _AboutSysMenuID, "Abou")
 				});
 		}
@@ -98,7 +98,7 @@ namespace SharedClasses
 		private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
 		{
 			// Check if a System Command has been executed
-			if (msg == WindowsInterop.WM_SYSCOMMAND)
+			if (msg == WPFHelper.WM_SYSCOMMAND)
 			{
 				// Execute the appropriate code for the System Menu item that was clicked
 				switch (wParam.ToInt32())

@@ -43,7 +43,7 @@ namespace SharedClasses
 		/// <returns></returns>
 		public static string LocalAppdataPath(string ApplicationName, string CompanyName = "FJH", bool EnsurePathExists = true)
 		{
-			string LocalAppdataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+			string LocalAppdataPath = CalledFromService.Environment_GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 			LocalAppdataPath = (LocalAppdataPath ?? "").Trim('\\');
 			ApplicationName = (ApplicationName ?? "").Trim('\\');
 			CompanyName = CompanyName.Trim('\\');

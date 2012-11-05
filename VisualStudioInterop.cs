@@ -144,13 +144,21 @@ public class VisualStudioInterop
 		{
 			var proj = new VSBuildProject_NonAbstract(projName, SolutionTrueProjectFalse ? slnFilename : csprojFilename);
 			List<string> csprojpaths;
-			string errIfNotNull;
-			if (!proj.PerformBuild(out csprojpaths, out errIfNotNull))
-				TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, errIfNotNull, TextFeedbackType.Error);
-			else
+			bool buildSuccess = proj.PerformBuild(
+				(ms, msgtype) =>
+				{
+					TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, ms,
+						msgtype == FeedbackMessageTypes.Error ? TextFeedbackType.Error
+						: msgtype == FeedbackMessageTypes.Status ? TextFeedbackType.Subtle
+						: msgtype == FeedbackMessageTypes.Success ? TextFeedbackType.Subtle
+						: msgtype == FeedbackMessageTypes.Warning ? TextFeedbackType.Noteworthy
+						: TextFeedbackType.Subtle);
+				},
+				out csprojpaths);
+			if (buildSuccess)
 				TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent,
 					"Successfully built project " + projName, TextFeedbackType.Success);
-			errorOccurred = errIfNotNull != null;
+			errorOccurred = !buildSuccess;
 		},
 		true);
 

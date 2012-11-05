@@ -98,7 +98,19 @@ namespace SharedClasses
 			}
 		}
 
-		public static bool PerformPublish(string projName, bool _64Only, bool HasPlugins, bool AutomaticallyUpdateRevision, bool InstallLocallyAfterSuccessfullNSIS, bool StartupWithWindows, bool SelectSetupIfSuccessful, out string publishedVersionString, out string publishedSetupPath, Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage)
+		public static string GetNsisExportsPath(string subFolder = null)
+		{
+			string localAppDatapath = CalledFromService.Environment_GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+			string nsisExportsPath = Path.Combine(localAppDatapath, @"FJH\NSISinstaller\NSISexports");
+			if (!string.IsNullOrWhiteSpace(subFolder))
+				return Path.Combine(nsisExportsPath, subFolder);
+			else
+				return nsisExportsPath;
+		}
+
+		public const string cTempWebfolderName = "TempWeb";
+		public static bool PerformPublish(string projName, bool _64Only, bool HasPlugins, bool AutomaticallyUpdateRevision, bool InstallLocallyAfterSuccessfullNSIS, bool StartupWithWindows, bool SelectSetupIfSuccessful, out string publishedVersionString, out string publishedSetupPath, Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage, bool placeSetupInTempWebFolder = false, string customSetupFilename = null)
 		{
 			if (!Directory.Exists(cProjectsRootDir) && !Directory.Exists(projName) && !File.Exists(projName))
 			{
@@ -120,9 +132,8 @@ namespace SharedClasses
 			var projToBuild = new VSBuildProject_NonAbstract(projName);
 			List<string> csprojPaths;
 			string errorIfNotNull;
-			if (!projToBuild.PerformBuild(out csprojPaths, out errorIfNotNull))
+			if (!projToBuild.PerformBuild(actionOnMessage, out csprojPaths))
 			{
-				actionOnMessage(errorIfNotNull, FeedbackMessageTypes.Error);
 				publishedVersionString = null;
 				publishedSetupPath = null;
 				return false;
@@ -158,14 +169,15 @@ namespace SharedClasses
 					: "Using current revision of " + projName + " (" + publishedVersionString + "), attempting to publish...",
 					FeedbackMessageTypes.Status);
 
-			string localAppDatapath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+			string tmpSubfolder = placeSetupInTempWebFolder ? cTempWebfolderName + "\\" : "";
+			string nsisExportsRoot = GetNsisExportsPath();// Path.Combine(localAppDatapath, @"FJH\NSISinstaller\NSISexports").TrimEnd('\\');
+			string nsisFileName = nsisExportsRoot + "\\" + tmpSubfolder + projName + "_" + publishedVersionString + ".nsi";
+			publishedSetupPath = Path.GetDirectoryName(nsisFileName) + "\\"
+				+ (customSetupFilename != null ? customSetupFilename : NsisInterop.GetSetupNameForProduct(projName.InsertSpacesBeforeCamelCase(), publishedVersionString));
 
-			string nsisFileName = Path.Combine(localAppDatapath, @"FJH\NSISinstaller\NSISexports\" + projName + "_" + publishedVersionString + ".nsi");
-			publishedSetupPath = Path.GetDirectoryName(nsisFileName) + "\\" + NsisInterop.GetSetupNameForProduct(projName.InsertSpacesBeforeCamelCase(), publishedVersionString);
-
-			if (!Directory.Exists(Path.Combine(localAppDatapath, @"FJH\NSISinstaller\NSISexports")))
-				Directory.CreateDirectory(Path.Combine(localAppDatapath, @"FJH\NSISinstaller\NSISexports"));
-			File.WriteAllText(Path.Combine(localAppDatapath, @"FJH\NSISinstaller\NSISexports\DotNetChecker.nsh"),
+			if (!Directory.Exists(Path.GetDirectoryName(nsisFileName)))
+				Directory.CreateDirectory(Path.GetDirectoryName(nsisFileName));
+			File.WriteAllText(Path.Combine(Path.GetDirectoryName(nsisFileName), @"DotNetChecker.nsh"),
 				NsisInterop.DotNetChecker_NSH_file);
 
 			string registryEntriesFilename = "RegistryEntries.json";
@@ -184,7 +196,8 @@ namespace SharedClasses
 					NsisInterop.NSISclass.DotnetFrameworkTargetedEnum.DotNet4client,
 					_64Only,
 					StartupWithWindows,
-					HasPlugins));
+					HasPlugins,
+					customSetupFilename));
 
 			string startMsg = "Successfully created NSIS file: ";
 			actionOnMessage(startMsg + nsisFileName, FeedbackMessageTypes.Success);
@@ -207,7 +220,7 @@ namespace SharedClasses
 					dotnetCheckerDllPath = downloadededPath;
 			}
 
-			string MakeNsisFilePath = @"C:\Program Files (x86)\NSIS\makensis.exe";
+			string MakeNsisFilePath = Path.Combine(nsisDir, "makensis.exe");//@"C:\Program Files (x86)\NSIS\makensis.exe";
 			if (!File.Exists(MakeNsisFilePath))
 				actionOnMessage("Could not find MakeNsis.exe: " + MakeNsisFilePath, FeedbackMessageTypes.Error);
 			else

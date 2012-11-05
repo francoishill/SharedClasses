@@ -25,11 +25,15 @@ namespace SharedClasses
 		public virtual bool? LastBuildResult { get; set; }
 		public virtual bool HasFeedbackText { get; set; }
 
+		public string PublishedSetupPath { get; private set; }
+
 		public string SolutionFullpath { get; protected set; }
 		public string GetSolutionDirectory() { return Path.GetDirectoryName(SolutionFullpath); }
 
-		public VSBuildProject(string ApplicationName, string CsprojOrSolutionFullpath = null)
+		public VSBuildProject(string ApplicationName, string CsprojOrSolutionFullpath = null, Action<string> actionOnError = null)
 		{
+			if (actionOnError == null) actionOnError = errms => UserMessages.ShowErrorMessage(errms);
+
 			this.ApplicationName = Path.GetFileNameWithoutExtension(ApplicationName);
 			this.LastBuildFeedback = null;
 			this.HasFeedbackText = false;
@@ -38,12 +42,17 @@ namespace SharedClasses
 			string err = null;
 			this.SolutionFullpath = CsprojOrSolutionFullpath ?? GetSolutionPathFromApplicationName(out err);
 			if (err != null)
-				UserMessages.ShowErrorMessage("Error getting solution path: " + err);
+				actionOnError(err);
 		}
 
 		public virtual string GetSolutionPathFromApplicationName(out string errorIfFailed)
 		{
 			string solutionDir = Path.Combine(RootVSprojectsDir, this.ApplicationName);
+			if (!Directory.Exists(solutionDir))
+			{
+				errorIfFailed = "Directory does not exist: " + solutionDir;
+				return null;
+			}
 			var solutionFiles = Directory.GetFiles(solutionDir, "*.sln");//Full paths
 			if (solutionFiles.Length == 0)
 			{
@@ -123,7 +132,7 @@ namespace SharedClasses
 			foreach (var app in projects)
 				errorsIfFail.Add(app, string.Empty);
 
-			Dictionary<int, VSBuildProject> submissionIDs = new Dictionary<int,VSBuildProject>();
+			Dictionary<int, VSBuildProject> submissionIDs = new Dictionary<int, VSBuildProject>();
 			Dictionary<VSBuildProject, List<string>> buildErrorsCaught = new Dictionary<VSBuildProject, List<string>>();
 			foreach (var app in projects)
 				buildErrorsCaught.Add(app, new List<string>());
@@ -318,8 +327,10 @@ namespace SharedClasses
 		/// </summary>
 		/// <param name="errorIfFail">Returns an error string if the result was FALSE</param>
 		/// <returns>Returns null if succeeded, otherwise error</returns>
-		public bool PerformBuild(out List<string> csprojectPaths, out string errorIfFail)
+		public bool PerformBuild(Action<string, FeedbackMessageTypes> onMessage, out List<string> csprojectPaths)
 		{
+			if (onMessage == null) onMessage = delegate { };
+
 			/*if (IsBusyBuilding)
 			{
 				errorIfFail = "Cannot build " + this.ApplicationName + ", another build is already in progress.";
@@ -329,7 +340,7 @@ namespace SharedClasses
 
 			if (SolutionFullpath == null)
 			{
-				errorIfFail = "SolutionFullPath is null for application " + this.ApplicationName + ", cannot build project";
+				onMessage("SolutionFullPath is null for application " + this.ApplicationName + ", cannot build project", FeedbackMessageTypes.Error);
 				csprojectPaths = null;
 				return false;
 			}
@@ -346,23 +357,24 @@ namespace SharedClasses
 				ChecksAlreadyDone = RootVSprojectsDir != null;
 			if (ChecksAlreadyDone == false)
 			{
-				errorIfFail = "Cannot find RootVisualStudio path";
+				onMessage("Cannot find RootVisualStudio path", FeedbackMessageTypes.Error);
 				csprojectPaths = null;
 				return false;
 			}
 
 			string projectFileName = this.SolutionFullpath;//@"...\ConsoleApplication3\ConsoleApplication3.sln";
 			ProjectCollection pc = new ProjectCollection();
-			Dictionary<string, string> GlobalProperty = new Dictionary<string, string>();
-			GlobalProperty.Add("Configuration", "Release");
-			GlobalProperty.Add("Platform", "Any CPU");//"x86");
+			Dictionary<string, string> buildGlobalProperties = new Dictionary<string, string>();
+			buildGlobalProperties.Add("Configuration", "Release");
+			buildGlobalProperties.Add("Platform", "Any CPU");//"x86");
 
-			BuildRequestData BuidlRequest = new BuildRequestData(projectFileName, GlobalProperty, null, new string[] { "Build" }, null);
+			BuildRequestData BuidlRequest = new BuildRequestData(projectFileName, buildGlobalProperties, null, new string[] { "Build" }, null);
 
 			List<string> csprojectPathsCaughtMatchingSolutionName = new List<string>();
 			List<string> buildErrorsCaught = new List<string>();
 			//var buildManager = new BuildManager();
-			BuildResult buildResult = BuildManager.DefaultBuildManager.Build(
+			//BuildResult buildResult = BuildManager.DefaultBuildManager.Build(
+			BuildManager.DefaultBuildManager.BeginBuild(
 				//BuildResult buildResult = buildManager.Build(
 				new BuildParameters(pc)
 				{
@@ -371,23 +383,36 @@ namespace SharedClasses
 					{
 						new MyLogger(
 							(builderr) =>
-								buildErrorsCaught.Add(
-								string.Format("Could not build '{0}',{1}Error in {2}: line {3},{1}Error message: '{4}'",
-									builderr.ProjectFile, Environment.NewLine, builderr.File, builderr.LineNumber, builderr.Message)
-								),
+							{
+								string errMsg = string.Format("Could not build '{0}',{1}Error in {2}: line {3},{1}Error message: '{4}'",
+									builderr.ProjectFile, /*Environment.NewLine*/"  ", builderr.File, builderr.LineNumber, builderr.Message);
+								onMessage(errMsg, FeedbackMessageTypes.Error);
+								buildErrorsCaught.Add(errMsg);
+							},
 							(projstarted) =>
+							{
 								csprojectPathsCaughtMatchingSolutionName.AddRange(projstarted.Items.Cast<DictionaryEntry>()
 								.Where(de => de.Key is string && (de.Key ?? "").ToString().Equals("ProjectReference", StringComparison.InvariantCultureIgnoreCase))
 								.Select(de => de.Value.ToString())
-								.Where(csprojpath => Path.GetFileNameWithoutExtension(csprojpath).Equals(Path.GetFileNameWithoutExtension(SolutionFullpath), StringComparison.InvariantCultureIgnoreCase))))
+								.Where(csprojpath => Path.GetFileNameWithoutExtension(csprojpath).Equals(Path.GetFileNameWithoutExtension(SolutionFullpath), StringComparison.InvariantCultureIgnoreCase)));
+							})
 					}
-				},
-				BuidlRequest);
+				}/*,
+				BuidlRequest*/);
 
-			if (buildResult.OverallResult == BuildResultCode.Success && csprojectPathsCaughtMatchingSolutionName.Count > 0)
+			//BuildRequestData request = new BuildRequestData(buildProject.CreateProjectInstance(), new string[0]);
+			BuildSubmission submission = BuildManager.DefaultBuildManager.PendBuildRequest(BuidlRequest);//request);
+			submission.ExecuteAsync(null, null);
+			onMessage("Project started to build", FeedbackMessageTypes.Status);
+			// Wait for the build to finish.
+			submission.WaitHandle.WaitOne();
+
+			BuildManager.DefaultBuildManager.EndBuild();
+
+			bool successFullyBuilt = submission.BuildResult.OverallResult == BuildResultCode.Success;
+			if (successFullyBuilt && csprojectPathsCaughtMatchingSolutionName.Count > 0)
 			{
 				this.HasFeedbackText = false;
-				errorIfFail = null;
 				csprojectPaths = csprojectPathsCaughtMatchingSolutionName;
 				return true;
 			}
@@ -395,14 +420,14 @@ namespace SharedClasses
 			{
 				this.HasFeedbackText = true;
 				string nowString = DateTime.Now.ToString("HH:mm:ss.fff");
-				if (csprojectPathsCaughtMatchingSolutionName.Count == 0 && buildResult.OverallResult == BuildResultCode.Success)//Build successfully but could not obtain csProject filepaths
+				if (csprojectPathsCaughtMatchingSolutionName.Count == 0 && successFullyBuilt)//Build successfully but could not obtain csProject filepaths
 					this.LastBuildFeedback = string.Format("[{0}] Build successfully but could not obtain .csproj path(s) for solution: {1}", nowString, SolutionFullpath);
 				else if (buildErrorsCaught.Count == 0)
 					this.LastBuildFeedback = string.Format("[{0}] Unknown error to build " + this.ApplicationName, nowString);
 				else
 					this.LastBuildFeedback = string.Format("[{0}] Build failed for " + this.ApplicationName, nowString)
 						+ Environment.NewLine + string.Join(Environment.NewLine, buildErrorsCaught);
-				errorIfFail = this.LastBuildFeedback;
+				onMessage(this.LastBuildFeedback, FeedbackMessageTypes.Error);
 				csprojectPaths = null;
 				return false;
 			}
@@ -413,7 +438,9 @@ namespace SharedClasses
 			//}
 		}
 
-		public bool PerformPublish(Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage)
+		public bool PerformPublish(Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage,
+			bool _64bit = false, bool autoUpdateRevision = true, bool installLocally = true,
+			bool placeSetupInTempWebFolder = false, string customSetupFilename = null)
 		{
 			int seeFollowingTodoItems;
 
@@ -421,16 +448,24 @@ namespace SharedClasses
 			string resultSetupFilename;
 			bool publishResult = PublishInterop.PerformPublish(
 				this.ApplicationName,
-				false,//TODO: What if required
+				_64bit,//TODO: What if required
 				false,//TODO: What about QuickAccess
-				true,
-				true,//TODO: Always install locally?
+				autoUpdateRevision,
+				installLocally,//TODO: Always install locally?
 				false,//Never run on startup?
 				false,
 				out outPublishedVersion,
 				out resultSetupFilename,
 				actionOnMessage,
-				actionOnProgressPercentage);
+				actionOnProgressPercentage,
+				placeSetupInTempWebFolder,
+				customSetupFilename);
+
+			if (publishResult)
+				this.PublishedSetupPath = resultSetupFilename;
+			else
+				this.PublishedSetupPath = null;
+
 			return publishResult;
 		}
 

@@ -37,6 +37,8 @@ namespace SharedClasses
 					ExitCodeIfRan = -1;
 					return false;
 				}
+				//Console.Out.WriteLine("Status check started");
+				//Console.Out.Close();
 			}
 			catch (Exception exc)
 			{
@@ -81,6 +83,8 @@ namespace SharedClasses
 		/// <returns>True (ran successfully and had no output/errors), False (Could not run), Null (ran but had output/error feedback).</returns>
 		public static bool? RunProcessCatchOutput(ProcessStartInfo startInfo, out List<string> outputs, out List<string> errors, out int ExitCodeIfRan, string WriteToStandardInputBeforeReadingText = null)
 		{
+			//Console.Out.WriteLine("Args: " + startInfo.Arguments);
+			//Console.Out.Flush();
 			List<string> tmpoutputs = new List<string>();
 			List<string> tmperrors = new List<string>();
 

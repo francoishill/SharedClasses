@@ -19,7 +19,8 @@ namespace SharedClasses
 		/// <param name="folder">The special folder chosen from the enum</param>
 		public static string Environment_GetFolderPath(Environment.SpecialFolder folder)
 		{
-			if (folder == Environment.SpecialFolder.LocalApplicationData)
+			if (folder == Environment.SpecialFolder.LocalApplicationData
+				&& Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData).StartsWith(@"C:\Windows\System32\config", StringComparison.InvariantCultureIgnoreCase))
 			{
 				string returnDir = @"c:\francois\LocalAppData";
 				if (!Directory.Exists(returnDir))

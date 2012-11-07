@@ -14,7 +14,8 @@ namespace SharedClasses
 			UpToDateExitCode = 3,
 			NewVersionAvailableExitCode = 5,
 			UnableToCheckForUpdatesErrorCode = 7,
-			SkippingBecauseIsDebugEndingWithVshostExe = 9
+			SkippingBecauseIsDebugEndingWithVshostExe = 9,
+			InstalledVersionNewerThanOnline = 11,
 		}
 
 		//private static readonly string cAutoUpdaterAppExePath =
@@ -165,6 +166,12 @@ namespace SharedClasses
 								JSON.SetDefaultJsonInstanceSettings();
 								JSON.Instance.FillObject(onlineVersionDetails, jsonStr);
 								return false;
+							}
+							else if (exitcode == (int)ExitCodes.InstalledVersionNewerThanOnline)
+							{
+								errorIfNull = "Installed version is newer than online version.";
+								onlineVersionDetails = new MockPublishDetails();
+								return null;
 							}
 							else
 							{

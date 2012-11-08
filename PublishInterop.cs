@@ -245,24 +245,7 @@ namespace SharedClasses
 								DoNotKillProcessAndInstall = true;
 
 							if (!DoNotKillProcessAndInstall)
-							{
-								//Kill process if open
-								Process[] openProcs = Process.GetProcessesByName(projName);
-								if (openProcs.Length > 1)
-								{
-									if (UserMessages.Confirm("There are " + openProcs.Length + " processes with the name '" + projName + "', manually close the correct one or click yes to close all?"))
-									{
-										actionOnMessage("Killing all open processes named " + projName, FeedbackMessageTypes.Status);
-										foreach (Process proc in openProcs)
-											proc.Kill();
-									}
-								}
-								else if (openProcs.Length == 1)
-								{
-									actionOnMessage("Killing open process named {0}".Fmt(projName), FeedbackMessageTypes.Status);
-									openProcs[0].Kill();
-								}
-							}
+								ProcessesInterop.KillProcess(projName, actionOnMessage);
 
 							if (DoNotKillProcessAndInstall)
 							{

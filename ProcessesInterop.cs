@@ -103,5 +103,31 @@ namespace SharedClasses
 				return null;//Ran successful but has outputs/errors
 			else return true;//Ran successful with no outputs/errors
 		}
+
+		public static bool KillProcess(string processName, Action<string, FeedbackMessageTypes> actionOnMessage)
+		{
+			//Kill process if open
+			Process[] openProcs = Process.GetProcessesByName(processName);
+			if (openProcs.Length > 1)
+			{
+				if (UserMessages.Confirm("There are " + openProcs.Length + " processes with the name '" + processName + "', manually close the correct one or click yes to close all?"))
+				{
+					actionOnMessage("Killing all open processes named " + processName, FeedbackMessageTypes.Status);
+					foreach (Process proc in openProcs)
+						proc.Kill();
+					return true;
+				}
+				else
+					return false;
+			}
+			else if (openProcs.Length == 1)
+			{
+				actionOnMessage(string.Format("Killing open process named {0}", processName), FeedbackMessageTypes.Status);
+				openProcs[0].Kill();
+				return true;
+			}
+			else
+				return true;//Process was not open
+		}
 	}
 }

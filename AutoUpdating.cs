@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SharedClasses
 {
@@ -87,8 +88,10 @@ namespace SharedClasses
 			}
 		}
 
-		public static void InstallLatest(string applicationName, Action<string> ActionOnError)
+		public static void InstallLatest(string applicationName, Action<string> ActionOnError, Action<string> actionOnComplete = null)
 		{
+			if (actionOnComplete == null) actionOnComplete = delegate { };
+
 			var autoupdaterFilepath = RegistryInterop.GetAppPathFromRegistry("AutoUpdater.exe");
 
 			if (autoupdaterFilepath == null)
@@ -106,13 +109,20 @@ namespace SharedClasses
 					bool? runresult = ProcessesInterop.RunProcessCatchOutput(
 						new ProcessStartInfo(
 							autoupdaterFilepath,
-							"installlatest \"" + applicationName + "\""),
+							"installlatestsilently \"" + applicationName + "\""),
+							//"installlatest \"" + applicationName + "\""),
 						out outputs,
 						out errors,
 						out exitcode);
 
+					var combinedOutputs = outputs.Concat(errors.Select(e => "ERROR: " + e)).ToList();
 					if (runresult.HasValue && runresult.Value == true)//Ran but with errors/output
-						errors.RemoveAll(s => string.IsNullOrWhiteSpace(s));
+						combinedOutputs.RemoveAll(s => string.IsNullOrWhiteSpace(s));
+
+					if (combinedOutputs.Count > 0)
+						ActionOnError(string.Join(Environment.NewLine, combinedOutputs));
+
+					actionOnComplete(applicationName);
 				},
 				false);
 			}

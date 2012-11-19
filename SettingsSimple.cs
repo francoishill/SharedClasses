@@ -638,20 +638,26 @@ namespace SharedClasses
 			[Serializable]
 			public class RunCommand
 			{
+				public const int cDefaultDelayInSeconds = 2;
+
 				public enum PathTypes { FullPath, OwnApp };
 				public string DisplayName { get; set; }
 				public string AppPath { get; set; }
 				public PathTypes PathType { get; set; }
 				public string CommandlineArguments { get; set; }
 				public bool WaitForUserInput { get; set; }
+				public int DelayAfterStartSeconds { get; set; }
+				public bool IsEnabled { get; set; }
 				public RunCommand() { }
-				public RunCommand(string AppPath, string DisplayName, PathTypes PathType, bool WaitForUserInput = false, string CommandlineArguments = null)
+				public RunCommand(string AppPath, string DisplayName, PathTypes PathType, bool WaitForUserInput = false, string CommandlineArguments = null, int DelayAfterStartSeconds = cDefaultDelayInSeconds, bool IsEnabled = true)
 				{
 					this.AppPath = AppPath;
 					this.DisplayName = DisplayName;
 					this.PathType = PathType;
 					this.WaitForUserInput = WaitForUserInput;
 					this.CommandlineArguments = CommandlineArguments;
+					this.DelayAfterStartSeconds = DelayAfterStartSeconds;
+					this.IsEnabled = IsEnabled;
 				}
 				/// <summary>
 				/// Supported formats are:

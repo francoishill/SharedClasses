@@ -188,7 +188,7 @@ namespace SharedClasses
 					projName,
 					projName.InsertSpacesBeforeCamelCase(),
 					publishedVersionString,//Should obtain (and increase) product version from csproj file
-					"http://fjh.dyndns.org/ownapplications/" + projName.ToLower(),
+					SettingsSimple.HomePcUrls.Instance.AppsPublishingRoot + "/ownapplications/" + projName.ToLower(),//"http://fjh.dyndns.org/ownapplications/" + projName.ToLower(),
 					projName + ".exe",
 					RegistryInterop.GetRegistryAssociationItemFromJsonFile(registryEntriesFilepath, actionOnMessage),
 					null,

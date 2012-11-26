@@ -19,7 +19,8 @@ namespace SharedClasses
 		private static EventHandler<InstanceCallbackEventArgs> callbackInFirstInstanceWhenAnotherStarts;
 
 		/// <summary>
-		/// NB (remember to Environment.Exit(0)) on the window closing event of WPF) The main function which defines the actions for the application 
+		/// This call should be placed inside the App.xaml.cs OnStartup for WPF app, or in the void Main of a forms/console app.
+		/// NB (remember to Environment.Exit(0)) on the window closing event of WPF) The main function which defines the actions for the application
 		/// </summary>
 		/// <param name="actionBeforeRunning">This could typically be the following for a winforms application: Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);</param>
 		/// <param name="actionToRunApplication">Typically for a winforms application: Application.Run(frm);</param>

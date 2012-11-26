@@ -812,5 +812,16 @@ namespace SharedClasses
 			{
 			}
 		}
+
+		public class WebsiteKeys : BaseOnlineClass<WebsiteKeys>
+		{
+			public string Username { get; set; }
+			public string ApiKey { get; set; }
+			public Dictionary<string, string> AppSecrets { get; set; }
+			
+			public WebsiteKeys()//Defaults
+			{
+			}
+		}
 	}
 }

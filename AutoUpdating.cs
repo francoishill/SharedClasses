@@ -25,7 +25,7 @@ namespace SharedClasses
 		private const string ifUpToDateStartString = "Up to date:";
 
 		//private static bool isUpToDate = false;
-		public static void CheckForUpdates(Action<string> ActionIfUptoDate_Versionstring = null, Action<string> ActionOnError = null, bool SeparateThreadDoNotWait = true)
+		public static void CheckForUpdates(Action<string> ActionIfUptoDate_Versionstring = null, Action<string> ActionOnError = null, bool SeparateThreadDoNotWait = true, bool autoInstallIfUpdateFound = true)
 		{
 			//If running from Visual Studio paths
 			if (Environment.GetCommandLineArgs()[0].StartsWith(@"C:\Francois\Dev\VSprojects", StringComparison.InvariantCultureIgnoreCase)
@@ -55,8 +55,9 @@ namespace SharedClasses
 					bool? runresult = ProcessesInterop.RunProcessCatchOutput(
 						new ProcessStartInfo(
 							autoupdaterFilepath,
-							"checkforupdates \"" + fullExePath + "\""
-								+ (isCheckingForAutoUpdater ? " " + cCalledItsselfThirdParameter : "")),//Pass extra commandline argument if is checking for ittsself (AutoUpdater)
+							"checkforupdatesilently \"" + fullExePath + "\""
+							+ " " + FileVersionInfo.GetVersionInfo(fullExePath).FileVersion
+							+ (isCheckingForAutoUpdater ? " " + cCalledItsselfThirdParameter : "")),//Pass extra commandline argument if is checking for ittsself (AutoUpdater)
 						out outputs,
 						out errors,
 						out exitcode);
@@ -73,7 +74,16 @@ namespace SharedClasses
 									ActionIfUptoDate_Versionstring(FileVersionInfo.GetVersionInfo(Environment.GetCommandLineArgs()[0]).FileVersion);
 								break;
 							case ExitCodes.NewVersionAvailableExitCode:
-								//A WPFNotification got shown, no need to show more
+								////A WPFNotification got shown, no need to show more
+								//NO notification shown, just install it silently
+								runresult = ProcessesInterop.RunProcessCatchOutput(
+									new ProcessStartInfo(
+										autoupdaterFilepath,
+											"installlatestsilently \"" + fullExePath + "\""
+											+ (isCheckingForAutoUpdater ? " " + cCalledItsselfThirdParameter : "")),//Pass extra commandline argument if is checking for ittsself (AutoUpdater)
+									out outputs,
+									out errors,
+									out exitcode);
 								break;
 							case ExitCodes.UnableToCheckForUpdatesErrorCode:
 								if (errors.Count > 0 && ActionOnError != null)
@@ -110,7 +120,7 @@ namespace SharedClasses
 						new ProcessStartInfo(
 							autoupdaterFilepath,
 							"installlatestsilently \"" + applicationName + "\""),
-							//"installlatest \"" + applicationName + "\""),
+						//"installlatest \"" + applicationName + "\""),
 						out outputs,
 						out errors,
 						out exitcode);
@@ -147,64 +157,64 @@ namespace SharedClasses
 				//ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 				//{
 
-					List<string> outputs;
-					List<string> errors;
-					int exitcode;
-					bool? runresult = ProcessesInterop.RunProcessCatchOutput(
-						new ProcessStartInfo(
-							autoupdaterFilepath,
-							"checkforupdatesilently \"" + ApplicationName + "\" \"" + InstalledVersion + "\""),
-						out outputs,
-						out errors,
-						out exitcode);
+				List<string> outputs;
+				List<string> errors;
+				int exitcode;
+				bool? runresult = ProcessesInterop.RunProcessCatchOutput(
+					new ProcessStartInfo(
+						autoupdaterFilepath,
+						"checkforupdatesilently \"" + ApplicationName + "\" \"" + InstalledVersion + "\""),
+					out outputs,
+					out errors,
+					out exitcode);
 
-					if (runresult != false)//Actually ran the AutoUpdater app
+				if (runresult != false)//Actually ran the AutoUpdater app
+				{
+					if (exitcode != (int)ExitCodes.UpToDateExitCode)//Application is not up to date, or has error
 					{
-						if (exitcode != (int)ExitCodes.UpToDateExitCode)//Application is not up to date, or has error
+						if (exitcode == (int)ExitCodes.UnableToCheckForUpdatesErrorCode)
 						{
-							if (exitcode == (int)ExitCodes.UnableToCheckForUpdatesErrorCode)
-							{
-								errorIfNull = string.Join(Environment.NewLine, errors.RemoveAll(s => string.IsNullOrWhiteSpace(s)));
-								onlineVersionDetails = null;
-								return null;
-							}
-							else if (exitcode == (int)ExitCodes.NewVersionAvailableExitCode)
-							{
-								errorIfNull = null;
-								onlineVersionDetails = new MockPublishDetails();
-								string jsonStr = outputs[0];
-								JSON.SetDefaultJsonInstanceSettings();
-								JSON.Instance.FillObject(onlineVersionDetails, jsonStr);
-								return false;
-							}
-							else if (exitcode == (int)ExitCodes.InstalledVersionNewerThanOnline)
-							{
-								errorIfNull = "Installed version is newer than online version.";
-								onlineVersionDetails = new MockPublishDetails();
-								return null;
-							}
-							else
-							{
-								errorIfNull = "Unknown exit code returned for checking updates for " + ApplicationName + ": " + exitcode;
-								onlineVersionDetails = null;
-								return null;
-							}
+							errorIfNull = string.Join(Environment.NewLine, errors.RemoveAll(s => string.IsNullOrWhiteSpace(s)));
+							onlineVersionDetails = null;
+							return null;
+						}
+						else if (exitcode == (int)ExitCodes.NewVersionAvailableExitCode)
+						{
+							errorIfNull = null;
+							onlineVersionDetails = new MockPublishDetails();
+							string jsonStr = outputs[0];
+							JSON.SetDefaultJsonInstanceSettings();
+							JSON.Instance.FillObject(onlineVersionDetails, jsonStr);
+							return false;
+						}
+						else if (exitcode == (int)ExitCodes.InstalledVersionNewerThanOnline)
+						{
+							errorIfNull = "Installed version is newer than online version.";
+							onlineVersionDetails = new MockPublishDetails();
+							return null;
 						}
 						else
 						{
-							errorIfNull = null;
+							errorIfNull = "Unknown exit code returned for checking updates for " + ApplicationName + ": " + exitcode;
 							onlineVersionDetails = null;
-							return true;
+							return null;
 						}
 					}
 					else
 					{
-						if (runresult.HasValue && runresult.Value == true)//Ran but with errors/output
-							errors.RemoveAll(s => string.IsNullOrWhiteSpace(s));
-						errorIfNull = string.Join(Environment.NewLine, errors);
+						errorIfNull = null;
 						onlineVersionDetails = null;
-						return null;
+						return true;
 					}
+				}
+				else
+				{
+					if (runresult.HasValue && runresult.Value == true)//Ran but with errors/output
+						errors.RemoveAll(s => string.IsNullOrWhiteSpace(s));
+					errorIfNull = string.Join(Environment.NewLine, errors);
+					onlineVersionDetails = null;
+					return null;
+				}
 				//},
 				//false);
 			}

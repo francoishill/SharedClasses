@@ -648,8 +648,10 @@ namespace SharedClasses
 				public bool WaitForUserInput { get; set; }
 				public int DelayAfterStartSeconds { get; set; }
 				public bool IsEnabled { get; set; }
+				public bool IncludeInQuickClose { get; set; }
+
 				public RunCommand() { }
-				public RunCommand(string AppPath, string DisplayName, PathTypes PathType, bool WaitForUserInput = false, string CommandlineArguments = null, int DelayAfterStartSeconds = cDefaultDelayInSeconds, bool IsEnabled = true)
+				public RunCommand(string AppPath, string DisplayName, PathTypes PathType, bool WaitForUserInput = false, string CommandlineArguments = null, int DelayAfterStartSeconds = cDefaultDelayInSeconds, bool IsEnabled = true, bool IncludeInQuickClose = false)
 				{
 					this.AppPath = AppPath;
 					this.DisplayName = DisplayName;
@@ -658,6 +660,7 @@ namespace SharedClasses
 					this.CommandlineArguments = CommandlineArguments;
 					this.DelayAfterStartSeconds = DelayAfterStartSeconds;
 					this.IsEnabled = IsEnabled;
+					this.IncludeInQuickClose = IncludeInQuickClose;
 				}
 				/// <summary>
 				/// Supported formats are:
@@ -782,6 +785,7 @@ namespace SharedClasses
 			public string PhpDownloadUrl { get; set; }
 			public string PhpUploadUrl { get; set; }
 			public string AppsPublishingRoot { get; set; }
+			public string WebappsRoot { get; set; }
 
 			public HomePcUrls()//Defaults
 			{
@@ -789,6 +793,7 @@ namespace SharedClasses
 				this.PhpDownloadUrl = "http://firepuma.com/downloadownapps.php";//"http://ftpviahttp.getmyip.com/downloadownapps.php";
 				this.PhpUploadUrl = "http://firepuma.com/uploadownapps.php";//"http://ftpviahttp.getmyip.com/uploadownapps.php";
 				this.AppsPublishingRoot = "http://firepuma.com";// "http://fjh.dyndns.org";
+				this.WebappsRoot = "http://firepuma.com";
 			}
 		}
 

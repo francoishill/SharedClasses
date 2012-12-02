@@ -93,6 +93,14 @@ public class PhpInterop
 			}
 			catch (Exception exc)
 			{
+				WebException webexc = exc as WebException;
+				if (webexc != null)
+				{
+					string responseError = new StreamReader(webexc.Response.GetResponseStream()).ReadToEnd();
+					vystup = responseError;
+					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Post php: " + responseError);
+				}
+
 				if (!exc.Message.ToUpper().StartsWith("The remote name could not be resolved:".ToUpper()))
 					TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Post php: " + exc.Message);
 				//LoggingClass.AddToLogList(UserMessages.MessageTypes.PostPHP, exc.Message);

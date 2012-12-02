@@ -95,7 +95,7 @@ namespace SharedClasses
 			return new WindowInteropHelper(window).Handle;
 		}
 
-		public static T GetVisualChild<T>(Visual parent) where T : Visual
+		public static T FindVisualChild<T>(this Visual parent) where T : Visual
 		{
 			T child = default(T);
 
@@ -106,7 +106,7 @@ namespace SharedClasses
 				child = v as T;
 				if (child == null)
 				{
-					child = GetVisualChild<T>(v);
+					child = FindVisualChild<T>(v);
 				}
 				if (child != null)
 				{

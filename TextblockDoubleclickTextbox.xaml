@@ -6,19 +6,21 @@
 			 mc:Ignorable="d"
 			 Name="root"
 			 d:DesignHeight="30"
-			 d:DesignWidth="100">
+			 d:DesignWidth="100"
+			 Cursor='Hand'>
 	<Grid>
 		<TextBlock Name="textBlockName"
 				   Text="{Binding ElementName=root, Path=Text}"
 				   Foreground="{Binding ElementName=root, Path=Foreground}"
 				   VerticalAlignment="Center"
-				   MouseDown="textBlockName_MouseDown"
+				   PreviewMouseDown='textBlockName_MouseDown'
 				   Padding='4,2'/>
 		<TextBox Name="textBoxName"
 				 Text="{Binding ElementName=root, Path=Text, UpdateSourceTrigger=PropertyChanged}"
 				 Foreground="{Binding ElementName=root, Path=Foreground}"
 				 Visibility="Collapsed"
 				 LostFocus="textBoxName_LostFocus"
-				 Padding='0' />
+				 Padding='0'
+				 KeyUp='textBoxName_KeyUp'/>
 	</Grid>
 </UserControl>

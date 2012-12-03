@@ -177,7 +177,7 @@ namespace SharedClasses
 
 	public class TodoLine : INotifyPropertyChanged
 	{
-		public static TimeSpan DurationBetweenIsDueChecks = TimeSpan.FromSeconds(1);//TimeSpan.FromMinutes(5);
+		public static TimeSpan DurationBetweenIsDueChecks = TimeSpan.FromSeconds(15);//1);//TimeSpan.FromMinutes(5);
 		private static DateTime NoDueDateValue = DateTime.MinValue;
 
 		private string _linetext;

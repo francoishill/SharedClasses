@@ -26,17 +26,39 @@ namespace SharedClasses
 
 	public class BooleanToOpacityConverter : IValueConverter
 	{
-		private const double DefaultOpacityIfFail = 0.4;
+		private const double cDefaultOpacityIfFail = 0.4;
 		public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
 		{
+			if (parameter != null && parameter.ToString().StartsWith("opposite", StringComparison.InvariantCultureIgnoreCase))
+			{
+				//The parameter starts with 'opposite', must check if it has a double value after it, like 'opposite0.2'
+				double notOpacitValue = cDefaultOpacityIfFail;
+				if (parameter.ToString().Length > "opposite".Length)
+				{
+					string possibleDoubleVal = parameter.ToString().Substring("opposite".Length);
+					double tmpdouble;
+					if (double.TryParse(possibleDoubleVal, out tmpdouble))
+						notOpacitValue = tmpdouble;
+				}
+
+				if (!(value is bool))
+					return 1;
+				if ((bool)value)
+					return notOpacitValue;
+				else
+					return 1;
+			}
+
 			if (!(value is bool))
-				return DefaultOpacityIfFail;
+				return cDefaultOpacityIfFail;
 			if ((bool)value)
 				return 1;
 
 			double tmpDouble;
 			if (parameter == null || !double.TryParse(parameter.ToString(), out tmpDouble))
-				return DefaultOpacityIfFail;
+			{
+				return cDefaultOpacityIfFail;
+			}
 
 			return tmpDouble;
 		}

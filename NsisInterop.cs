@@ -169,12 +169,13 @@ public class NsisInterop
 		SectionGroupLines.Add(@"StandaloneUploaderDownloadSkipped:");
 		SectionGroupLines.Add(@"StandaloneUploaderFound:");
 
-		if (!isAutoUpdater)
-		{
-			SectionGroupLines.Add(@"${If} $state_autostartCheckbox <> 0");
-			SectionGroupLines.Add(@"  WriteRegStr HKCU ""SOFTWARE\Microsoft\Windows\CurrentVersion\Run"" '${PRODUCT_NAME}' '$INSTDIR\${PRODUCT_EXE_NAME}'");
-			SectionGroupLines.Add(@"${EndIf}");
-		}
+		//if (!isAutoUpdater)
+		//{
+		//No always start with windows if AutoUpdater
+		if (!isAutoUpdater) SectionGroupLines.Add(@"${If} $state_autostartCheckbox <> 0");
+		SectionGroupLines.Add(@"  WriteRegStr HKCU ""SOFTWARE\Microsoft\Windows\CurrentVersion\Run"" '${PRODUCT_NAME}' '$INSTDIR\${PRODUCT_EXE_NAME}'");
+		if (!isAutoUpdater) SectionGroupLines.Add(@"${EndIf}");
+		//}
 		SectionGroupLines.Add(@"SectionEnd");
 
 		//Section "Plugins" SEC002

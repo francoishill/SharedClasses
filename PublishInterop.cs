@@ -428,13 +428,15 @@ namespace SharedClasses
 			//bool HtmlFileFound = false;
 
 			string HtmlTemplateFileName = "VisualStudioInterop (publish page).html";
-			if (!GetEmbeddedResource_FirstOneEndingWith(HtmlTemplateFileName, tempFilename))
+			byte[] bytesOfHtmlFile;
+			if (!Helpers.GetEmbeddedResource_FirstOneEndingWith(HtmlTemplateFileName, out bytesOfHtmlFile))
 			{
 				UserMessages.ShowWarningMessage("Could not find Html file in resources: " + HtmlTemplateFileName);
 				return null;
 			}
 			else
 			{
+				File.WriteAllBytes(tempFilename, bytesOfHtmlFile);
 				string textOfFile = File.ReadAllText(tempFilename);
 				textOfFile = textOfFile.Replace("{PageGeneratedDate}", DateTime.Now.ToString(@"dddd, dd MMMM yyyy \a\t HH:mm:ss"));
 				textOfFile = textOfFile.Replace("{ProjectName}", projectName);
@@ -451,39 +453,6 @@ namespace SharedClasses
 			}
 
 			return tempFilename;
-		}
-
-		public static bool GetEmbeddedResource(Predicate<string> predicateToValidateOn, string FileSaveLocation)
-		{
-			foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
-			{
-				//Assembly objAssembly = Assembly.GetExecutingAssembly();
-				try
-				{
-					string[] myResources = assembly.GetManifestResourceNames();
-					foreach (string reso in myResources)
-						if (predicateToValidateOn(reso))
-						{
-							Stream stream = assembly.GetManifestResourceStream(reso);
-							int length = (int)stream.Length;
-							byte[] bytesOfDotnetCheckerDLL = new byte[length];
-							stream.Read(bytesOfDotnetCheckerDLL, 0, length);
-							stream.Close();
-							FileStream fileStream = new FileStream(FileSaveLocation, FileMode.Create);
-							fileStream.Write(bytesOfDotnetCheckerDLL, 0, length);
-							fileStream.Close();
-							bytesOfDotnetCheckerDLL = null;
-							return true;
-						}
-				}
-				catch { }
-			}
-			return false;
-		}
-
-		public static bool GetEmbeddedResource_FirstOneEndingWith(string EndOfFilename, string FileSaveLocation)
-		{
-			return GetEmbeddedResource(reso => reso.ToLower().EndsWith(EndOfFilename.ToLower()), FileSaveLocation);
 		}
 	}
 }

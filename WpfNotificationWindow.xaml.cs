@@ -98,6 +98,7 @@ namespace SharedClasses
 				Dispatcher.Invoke((Action)delegate
 				{
 					buttonCloseAllNotifications.Visibility = notifications.Count > 1 ? Visibility.Visible : Visibility.Hidden;
+					versionStringLabel.Visibility = buttonCloseAllNotifications.Visibility;
 				});
 			};
 			InitializeTimerToCheckForNotificationTimeouts();

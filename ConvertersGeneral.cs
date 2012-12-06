@@ -12,7 +12,7 @@ namespace SharedClasses
 				return !(value is bool) || ((bool)value) == false ? Visibility.Visible : Visibility.Collapsed;
 			else
 				return !(value is bool) || ((bool)value) == false
-					? (parameter is string && parameter.ToString() == "HideInsteadOfCollapse"
+					? (parameter is string && parameter.ToString().Equals("HideInsteadOfCollapse", StringComparison.InvariantCultureIgnoreCase)
 						? Visibility.Hidden
 						: Visibility.Collapsed)
 					: Visibility.Visible;

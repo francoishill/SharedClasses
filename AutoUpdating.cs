@@ -3,6 +3,8 @@ using System.IO;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Win32;
+using System.Threading.Tasks;
 
 namespace SharedClasses
 {
@@ -24,6 +26,15 @@ namespace SharedClasses
 		//    @"Auto Updater\AutoUpdater.exe");
 		private const string ifUpToDateStartString = "Up to date:";
 
+		private static bool isCheckingForAutoUpdater()
+		{
+			string fullExePath = Environment.GetCommandLineArgs()[0];
+			string ApplicationName = FileVersionInfo.GetVersionInfo(fullExePath).ProductName;
+			if (ApplicationName != null && ApplicationName.Equals("AutoUpdater", StringComparison.InvariantCultureIgnoreCase))
+				return true;
+			return false;
+		}
+
 		//private static bool isUpToDate = false;
 		public static void CheckForUpdates(Action<string> ActionIfUptoDate_Versionstring = null, Action<string> ActionOnError = null, bool SeparateThreadDoNotWait = true, bool autoInstallIfUpdateFound = true)
 		{
@@ -32,12 +43,7 @@ namespace SharedClasses
 				|| Environment.GetCommandLineArgs()[0].StartsWith(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), @"Visual Studio 2010\Projects"), StringComparison.InvariantCultureIgnoreCase))
 				return;
 
-			bool isCheckingForAutoUpdater = false;
 			string fullExePath = Environment.GetCommandLineArgs()[0];
-			string ApplicationName = FileVersionInfo.GetVersionInfo(fullExePath).ProductName;
-			if (ApplicationName != null && ApplicationName.Equals("AutoUpdater", StringComparison.InvariantCultureIgnoreCase))
-				isCheckingForAutoUpdater = true;
-
 			var autoupdaterFilepath = RegistryInterop.GetAppPathFromRegistry("AutoUpdater.exe");
 
 			if (autoupdaterFilepath == null)
@@ -57,7 +63,7 @@ namespace SharedClasses
 							autoupdaterFilepath,
 							"checkforupdatesilently \"" + fullExePath + "\""
 							+ " " + FileVersionInfo.GetVersionInfo(fullExePath).FileVersion
-							+ (isCheckingForAutoUpdater ? " " + cCalledItsselfThirdParameter : "")),//Pass extra commandline argument if is checking for ittsself (AutoUpdater)
+							+ (isCheckingForAutoUpdater() ? " " + cCalledItsselfThirdParameter : "")),//Pass extra commandline argument if is checking for ittsself (AutoUpdater)
 						out outputs,
 						out errors,
 						out exitcode);
@@ -80,7 +86,7 @@ namespace SharedClasses
 									new ProcessStartInfo(
 										autoupdaterFilepath,
 											"installlatestsilently \"" + fullExePath + "\""
-											+ (isCheckingForAutoUpdater ? " " + cCalledItsselfThirdParameter : "")),//Pass extra commandline argument if is checking for ittsself (AutoUpdater)
+											+ (isCheckingForAutoUpdater() ? " " + cCalledItsselfThirdParameter : "")),//Pass extra commandline argument if is checking for ittsself (AutoUpdater)
 									out outputs,
 									out errors,
 									out exitcode);
@@ -98,7 +104,7 @@ namespace SharedClasses
 			}
 		}
 
-		public static void InstallLatest(string applicationName, Action<string> ActionOnError, Action<string> actionOnComplete = null)
+		public static void InstallLatest(string applicationName, Action<string> ActionOnError, Action<string> actionOnComplete = null, bool installSilently = true)
 		{
 			if (actionOnComplete == null) actionOnComplete = delegate { };
 
@@ -119,8 +125,7 @@ namespace SharedClasses
 					bool? runresult = ProcessesInterop.RunProcessCatchOutput(
 						new ProcessStartInfo(
 							autoupdaterFilepath,
-							"installlatestsilently \"" + applicationName + "\""),
-						//"installlatest \"" + applicationName + "\""),
+							(installSilently ? "installlatestsilently" : "installlatest") + " \"" + applicationName + "\""),
 						out outputs,
 						out errors,
 						out exitcode);
@@ -219,6 +224,38 @@ namespace SharedClasses
 				//false);
 			}
 		}
+
+		/*public static void CheckAllForUpdates(Action<string> onError)
+		{
+			if (onError == null) onError = delegate { };
+
+			var autoupdaterFilepath = RegistryInterop.GetAppPathFromRegistry("AutoUpdater.exe");
+
+			if (autoupdaterFilepath == null)
+			{
+				onError("AutoUpdater not installed, could not find AutoUpdater.exe in App Paths of Regsitry.");
+				return;
+			}
+			else
+			{
+				List<string> outputs;
+				List<string> errors;
+				int exitcode;
+				bool? runresult = ProcessesInterop.RunProcessCatchOutput(
+					new ProcessStartInfo(autoupdaterFilepath, "checkandupdateall" + (isCheckingForAutoUpdater() ? " " + cCalledItsselfThirdParameter : "")),
+					out outputs,
+					out errors,
+					out exitcode);
+
+				if (runresult == false)//Could not start the process
+				{
+					if (runresult.HasValue && runresult.Value == true)//Ran but with errors/output
+						errors.RemoveAll(s => string.IsNullOrWhiteSpace(s));
+					onError(string.Join(Environment.NewLine, errors));
+					return;
+				}
+			}
+		}*/
 
 		public class MockPublishDetails
 		{

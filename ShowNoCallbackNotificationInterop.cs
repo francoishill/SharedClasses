@@ -7,7 +7,20 @@ namespace SharedClasses
 	public static class ShowNoCallbackNotificationInterop
 	{
 		public enum NotificationTypes { Subtle, Info, Success, Warning, Error }
+		[Obsolete("Rather now use Notify instead", true)]
 		public static void ShowNotificationNoCallback_UsingExternalApp(Action<string> actionOnError, string message, string title = null, NotificationTypes notificationType = NotificationTypes.Info, int secondsToShow = 3)
+		{
+		}
+
+		/// <summary>
+		/// Show a notification using the external application (ShowNoCallbackNotification.exe).
+		/// </summary>
+		/// <param name="actionOnError">What to do on an error (like if application not found).</param>
+		/// <param name="message">The message of the notification.</param>
+		/// <param name="title">The title of the notification.</param>
+		/// <param name="notificationType">The type of notification (mainly determines the color).</param>
+		/// <param name="secondsToShow">The number of seconds before the notification auto closes. Use -1 or -99 for infinite.</param>
+		public static void Notify(Action<string> actionOnError, string message, string title = null, NotificationTypes notificationType = NotificationTypes.Info, int secondsToShow = 3)
 		{
 			string notifAppExe = RegistryInterop.GetAppPathFromRegistry("ShowNoCallbackNotification.exe");
 			if (notifAppExe == null)

@@ -46,11 +46,19 @@ namespace SharedClasses
 		// Using a DependencyProperty as the backing store for Text.  This enables animation, styling, binding, etc...
 		public static readonly DependencyProperty TextProperty =
         DependencyProperty.Register("Text", typeof(string), typeof(TextblockDoubleclickTextbox), new UIPropertyMetadata(OnTextPropertyChanged));
-
 		private static void OnTextPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
 		{
-			((TextblockDoubleclickTextbox)d).TextChanged_EachChange(d, e);
+			var textblockDoubleclickTextbox = (TextblockDoubleclickTextbox)d;
+			textblockDoubleclickTextbox.TextChanged_EachChange(d, e);
 		}
+
+		public Brush InnerTextboxForeground
+		{
+			get { return (Brush)GetValue(InnerTextboxForegroundProperty); }
+			set { SetValue(InnerTextboxForegroundProperty, value); }
+		}
+		public static readonly DependencyProperty InnerTextboxForegroundProperty =
+        DependencyProperty.Register("InnerTextboxForeground", typeof(Brush), typeof(TextblockDoubleclickTextbox), new UIPropertyMetadata(Brushes.Black));
 
 		public void OnGotFocus()
 		{

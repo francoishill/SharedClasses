@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Net;
 using System.IO;
 using System.Windows.Forms;
+using SharedClasses;
 
 public class PhpInterop
 {
@@ -59,7 +60,7 @@ public class PhpInterop
 		{
 			try
 			{
-				data = data.Replace("+", "[|]");
+				data = (data ?? "").Replace("+", "[|]");
 				//Our postvars
 				byte[] buffer = Encoding.ASCII.GetBytes(data);
 				//Initialisation, we use localhost, change if appliable
@@ -150,7 +151,7 @@ public class PhpInterop
 	public static bool AddBtwTextFirepuma(Object textfeedbackSenderObject, string btwtext, TextFeedbackEventHandler textFeedbackEvent)
 	{
 		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Sending btw text, please wait...");
-		string responsestr  = PhpInterop.PostPHP(textfeedbackSenderObject, "http://firepuma.com/btw/directadd/f/" + PhpInterop.PhpEncryption.StringToHex(btwtext), "");
+		string responsestr  = PhpInterop.PostPHP(textfeedbackSenderObject, "http://firepuma.com/btw/directadd/f/" + EncodeAndDecodeInterop.EncodeStringHex(btwtext, err => TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, err)), "");
 
 		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, responsestr);
 		return responsestr.ToLower().StartsWith("success:");
@@ -164,8 +165,8 @@ public class PhpInterop
 		string responsestr  = PhpInterop.PostPHP(
 			textfeedbackSenderObject,
 			"http://firepuma.com/journal/directadd/f"
-				+ "/" + PhpInterop.PhpEncryption.StringToHex(description)
-				+ "/" + PhpInterop.PhpEncryption.StringToHex(link),
+				+ "/" + EncodeAndDecodeInterop.EncodeStringHex(description, err => TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, err))
+				+ "/" + EncodeAndDecodeInterop.EncodeStringHex(link, err => TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, err)),
 				"");
 
 		TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, responsestr);
@@ -208,9 +209,9 @@ public class PhpInterop
 							ArgumentListTabSeperated += (ArgumentListTabSeperated.Length > 0 ? "\buildTask" : "") + s;
 
 						string tmpRequest = doWorkAddress + "/dotask/" +
-								PhpInterop.PhpEncryption.SimpleTripleDesEncrypt(Username, "123456789abcdefghijklmno") + "/" +
-								PhpInterop.PhpEncryption.SimpleTripleDesEncrypt(TaskName, tmpkey) + "/" +
-								PhpInterop.PhpEncryption.SimpleTripleDesEncrypt(ArgumentListTabSeperated, tmpkey);
+								EncryptionInterop.SimpleTripleDesEncrypt(Username, "123456789abcdefghijklmno") + "/" +
+								EncryptionInterop.SimpleTripleDesEncrypt(TaskName, tmpkey) + "/" +
+								EncryptionInterop.SimpleTripleDesEncrypt(ArgumentListTabSeperated, tmpkey);
 						addrequest = (HttpWebRequest)WebRequest.Create(tmpRequest);// + "/");
 						//appendLogTextbox(addrequest.RequestUri.ToString());
 						try
@@ -220,7 +221,7 @@ public class PhpInterop
 							encryptedstring = input.ReadToEnd();
 							//appendLogTextbox("Encrypted response: " + encryptedstring);
 
-							decryptedstring = PhpInterop.PhpEncryption.SimpleTripleDesDecrypt(encryptedstring, tmpkey);
+							decryptedstring = EncryptionInterop.SimpleTripleDesDecrypt(encryptedstring, tmpkey);
 							//appendLogTextbox("Decrypted response: " + decryptedstring);
 							decryptedstring = decryptedstring.Replace("\0", "").Trim();
 							//MessageBox.Show(this, decryptedstring);
@@ -247,61 +248,16 @@ public class PhpInterop
 
 	public class PhpEncryption
 	{
+		[Obsolete("Rather now use EncryptionInterop.SimpleTripleDesEncrypt", true)]
 		public static string SimpleTripleDesEncrypt(string Data, string keystring)
 		{
-			byte[] key = Encoding.ASCII.GetBytes(keystring);
-			byte[] iv = Encoding.ASCII.GetBytes("password");
-			byte[] data = Encoding.ASCII.GetBytes(Data);
-			byte[] enc = new byte[0];
-			TripleDES tdes = TripleDES.Create();
-			tdes.IV = iv;
-			tdes.Key = key;
-			tdes.Mode = CipherMode.CBC;
-			tdes.Padding = PaddingMode.Zeros;
-			ICryptoTransform ict = tdes.CreateEncryptor();
-			enc = ict.TransformFinalBlock(data, 0, data.Length);
-			return ByteArrayToString(enc);
+			return null;
 		}
 
+		[Obsolete("Rather now use EncryptionInterop.SimpleTripleDesDecrypt", true)]
 		public static string SimpleTripleDesDecrypt(string Data, string keystring)
 		{
-			byte[] key = Encoding.ASCII.GetBytes(keystring);
-			byte[] iv = Encoding.ASCII.GetBytes("password");
-			byte[] data = StringToByteArray(Data);
-			byte[] enc = new byte[0];
-			TripleDES tdes = TripleDES.Create();
-			tdes.IV = iv;
-			tdes.Key = key;
-			tdes.Mode = CipherMode.CBC;
-			tdes.Padding = PaddingMode.Zeros;
-			ICryptoTransform ict = tdes.CreateDecryptor();
-			enc = ict.TransformFinalBlock(data, 0, data.Length);
-			return Encoding.ASCII.GetString(enc);
-		}
-
-		public static string ByteArrayToString(byte[] ba)
-		{
-			string hex = BitConverter.ToString(ba);
-			return hex.Replace("-", "");
-		}
-
-		public static string StringToHex(string stringIn)
-		{
-			return PhpEncryption.ByteArrayToString(Encoding.Default.GetBytes(stringIn));
-		}
-
-		public static byte[] StringToByteArray(String hex)
-		{
-			int NumberChars = hex.Length;
-			byte[] bytes = new byte[NumberChars / 2];
-			for (int i = 0; i < NumberChars; i += 2)
-				bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
-			return bytes;
-		}
-
-		public static string HexToString(string hexIn)
-		{
-			return Encoding.Default.GetString(StringToByteArray(hexIn));
+			return null;
 		}
 	}
 }

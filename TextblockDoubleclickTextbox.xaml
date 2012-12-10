@@ -17,7 +17,7 @@
 				   Padding='4,2'/>
 		<TextBox Name="textBoxName"
 				 Text="{Binding ElementName=root, Path=Text, UpdateSourceTrigger=PropertyChanged}"
-				 Foreground="{Binding ElementName=root, Path=Foreground}"
+				 Foreground="{Binding ElementName=root, Path=InnerTextboxForeground}"
 				 Visibility="Collapsed"
 				 LostFocus="textBoxName_LostFocus"
 				 Padding='0'

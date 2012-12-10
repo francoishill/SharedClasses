@@ -109,10 +109,33 @@ namespace SharedClasses
 				return nsisExportsPath;
 		}
 
+		public static string GetPublicKeyForApplicationLicense(string applicationName, Action<string> onError)
+		{
+			string result = PhpInterop.PostPHP(null,
+					string.Format("http://fjh.dyndns.org/licensing/{0}/{1}",
+						"getpublickey",
+						EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(applicationName, LicensingInterop_Shared.cEncryptionKey), onError)),
+					null);
+			if (string.IsNullOrWhiteSpace(result))
+			{
+				onError("Could not obtain public key from server, the response from the server was empty");
+				return null;
+			}
+			else if (result.StartsWith(LicensingInterop_Shared.cPublicKeyFoundOnServerStartMessage, StringComparison.InvariantCultureIgnoreCase))
+				return result.Substring(LicensingInterop_Shared.cPublicKeyFoundOnServerStartMessage.Length);
+			else
+			{
+				onError("Unknown error obtaining Public Key from server: " + result);
+				return null;
+			}
+		}
+
 		public const string cTempWebfolderName = "TempWeb";
 		public static bool PerformPublish(string projName, bool _64Only, bool HasPlugins, bool AutomaticallyUpdateRevision, bool InstallLocallyAfterSuccessfullNSIS, bool StartupWithWindows, bool SelectSetupIfSuccessful, out string publishedVersionString, out string publishedSetupPath, Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage, bool placeSetupInTempWebFolder = false, string customSetupFilename = null)
 		{
-			if (!Directory.Exists(cProjectsRootDir) && !Directory.Exists(projName) && !File.Exists(projName))
+			if (!Directory.Exists(cProjectsRootDir)
+				&& !Directory.Exists(projName)
+				&& !File.Exists(projName))
 			{
 				actionOnMessage("Cannot find root project directory: " + cProjectsRootDir, FeedbackMessageTypes.Error);
 				publishedVersionString = null;
@@ -131,7 +154,7 @@ namespace SharedClasses
 
 			var projToBuild = new VSBuildProject_NonAbstract(projName);
 			List<string> csprojPaths;
-			string errorIfNotNull;
+			//string errorIfNotNull;
 			if (!projToBuild.PerformBuild(actionOnMessage, out csprojPaths))
 			{
 				publishedVersionString = null;
@@ -183,6 +206,15 @@ namespace SharedClasses
 			string registryEntriesFilename = "RegistryEntries.json";
 			string registryEntriesFilepath = Path.Combine(Path.GetDirectoryName(csprojFilename), "Properties", registryEntriesFilename);
 
+			string binariesDir = NsisInterop.GetBinariesDirectoryPathFromVsProjectName(projName);//Only used to get public key
+			string publicKeyForApplicationLicenseFilename = LicensingInterop_Shared.cLicensePublicKeyFilename;
+			string publicKeyFilePath = Path.Combine(binariesDir, publicKeyForApplicationLicenseFilename);
+			string publicKeyFromOnline = GetPublicKeyForApplicationLicense(
+				Path.GetFileNameWithoutExtension(csprojFilename),//Application Name
+				err => actionOnMessage(err, FeedbackMessageTypes.Error));
+			if (publicKeyFromOnline != null)//If it is null, an error would have already been logged via actionOnMessage
+				File.WriteAllText(publicKeyFilePath, publicKeyFromOnline);
+
 			File.WriteAllLines(nsisFileName,
 				NsisInterop.CreateOwnappNsis(
 					projName,
@@ -229,6 +261,15 @@ namespace SharedClasses
 					File.Delete(publishedSetupPath);
 				Process nsisCompileProc = Process.Start(MakeNsisFilePath, "\"" + nsisFileName + "\"");
 				nsisCompileProc.WaitForExit();
+
+				try
+				{
+					File.Delete(publicKeyFilePath);
+				}
+				catch (Exception exc)
+				{
+					actionOnMessage("Failed to delete Public Key file: " + exc.Message, FeedbackMessageTypes.Error);
+				}
 
 				if (File.Exists(publishedSetupPath))
 				{

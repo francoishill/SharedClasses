@@ -21,6 +21,16 @@ public class NsisInterop
 		return "Setup_" + SetupName + "_" + ProductVersion.Replace('.', '_') + ".exe";
 	}
 
+	private const string subDirInProj = @"\bin\Release";
+
+	public static string GetBinariesDirectoryPathFromVsProjectName(string vsProjectName)
+	{
+		return
+			Directory.Exists(PublishInterop.cProjectsRootDir.TrimEnd('\\') + @"\" + vsProjectName + subDirInProj)
+			? PublishInterop.cProjectsRootDir.TrimEnd('\\') + @"\" + vsProjectName + subDirInProj
+			: PublishInterop.cProjectsRootDir.TrimEnd('\\') + @"\" + vsProjectName + @"\" + vsProjectName + subDirInProj;
+	}
+
 	//public enum BuildTypeEnum { Debug, Release };
 	public static List<string> CreateOwnappNsis(
 		string VsProjectName,
@@ -64,11 +74,8 @@ public class NsisInterop
 			);
 
 		//string rootProjDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects";
-		string subDirInProj = @"\bin\Release";
-		string binariesDir = 
-			Directory.Exists(PublishInterop.cProjectsRootDir.TrimEnd('\\') + @"\" + VsProjectName + subDirInProj)
-			? PublishInterop.cProjectsRootDir.TrimEnd('\\') + @"\" + VsProjectName + subDirInProj
-			: PublishInterop.cProjectsRootDir.TrimEnd('\\') + @"\" + VsProjectName + @"\" + VsProjectName + subDirInProj;
+
+		string binariesDir = GetBinariesDirectoryPathFromVsProjectName(VsProjectName);
 		List<string> SectionGroupLines = new List<string>();
 
 		bool isAutoUpdater = ProductPublishedNameIn.Replace(" ", "").Equals("AutoUpdater", StringComparison.InvariantCultureIgnoreCase);
@@ -183,7 +190,7 @@ public class NsisInterop
 		//	SetOverwrite ifnewer
 		//	SetOutPath "$INSTDIR\Plugins"
 		//	SetOverwrite ifnewer
-		//	File /a "C:\Users\francois\Documents\Visual Studio 2010\Projects\QuickAccess\QuickAccess\bin\Release\Plugins\*.*"
+		//	File /a "C:\Users\francois\Documents\Visual Studio 2010\Projects\QuickAccess\QuickAccess" + subDirInProj + "\Plugins\*.*"
 		//SectionEnd
 		if (HasPlugins)
 		{
@@ -195,7 +202,7 @@ public class NsisInterop
 			foreach (string baseDirForEachPluginProjects in Directory.GetDirectories(SolutionBaseDir, "*Plugin"))
 			{
 				string baseFolderNameForPlugin = Path.GetFileName(baseDirForEachPluginProjects);
-				string pluginDllPath = baseDirForEachPluginProjects + @"\bin\Release";
+				string pluginDllPath = baseDirForEachPluginProjects + subDirInProj;
 				string pluginName = 
 						(baseFolderNameForPlugin.ToLower().EndsWith("plugin")
 						? baseFolderNameForPlugin.Substring(0, baseFolderNameForPlugin.Length - 6)

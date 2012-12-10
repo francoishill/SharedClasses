@@ -162,9 +162,9 @@ namespace SharedClasses
 								ArgumentListTabSeperated += (ArgumentListTabSeperated.Length > 0 ? "\t" : "") + s;
 
 							addrequest = (HttpWebRequest)WebRequest.Create(PhpInterop.doWorkAddress + "/dotask/" +
-									PhpInterop.PhpEncryption.SimpleTripleDesEncrypt(UsernameIn, "123456789abcdefghijklmno") + "/" +
-									PhpInterop.PhpEncryption.SimpleTripleDesEncrypt(TaskName, tmpkey) + "/" +
-									PhpInterop.PhpEncryption.SimpleTripleDesEncrypt(ArgumentListTabSeperated, tmpkey));// + "/");
+									EncryptionInterop.SimpleTripleDesEncrypt(UsernameIn, "123456789abcdefghijklmno") + "/" +
+									EncryptionInterop.SimpleTripleDesEncrypt(TaskName, tmpkey) + "/" +
+									EncryptionInterop.SimpleTripleDesEncrypt(ArgumentListTabSeperated, tmpkey));// + "/");
 							//appendLogTextbox(addrequest.RequestUri.ToString());
 							try
 							{
@@ -173,7 +173,7 @@ namespace SharedClasses
 								encryptedstring = input.ReadToEnd();
 								//appendLogTextbox("Encrypted response: " + encryptedstring);
 
-								decryptedstring = PhpInterop.PhpEncryption.SimpleTripleDesDecrypt(encryptedstring, tmpkey);
+								decryptedstring = EncryptionInterop.SimpleTripleDesDecrypt(encryptedstring, tmpkey);
 								//appendLogTextbox("Decrypted response: " + decryptedstring);
 								decryptedstring = decryptedstring.Replace("\0", "").Trim();
 								//MessageBox.Show(this, decryptedstring);

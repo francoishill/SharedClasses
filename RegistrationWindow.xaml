@@ -42,7 +42,9 @@
 				 HorizontalAlignment='Stretch'
 				 Margin='0 0 0 40'
 				 AcceptsReturn='True'
-				 AcceptsTab='True' />
+				 AcceptsTab='True'
+				 ScrollViewer.HorizontalScrollBarVisibility='Auto'
+				 ScrollViewer.VerticalScrollBarVisibility='Auto'/>
 		<Button Grid.Column='1'
 				Grid.Row='2'
 				HorizontalAlignment='Right'

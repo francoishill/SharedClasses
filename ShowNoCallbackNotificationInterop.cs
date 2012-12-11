@@ -7,10 +7,10 @@ namespace SharedClasses
 	public static class ShowNoCallbackNotificationInterop
 	{
 		public enum NotificationTypes { Subtle, Info, Success, Warning, Error }
-		[Obsolete("Rather now use Notify instead", true)]
+		/*[Obsolete("Rather now use Notify instead", true)]
 		public static void ShowNotificationNoCallback_UsingExternalApp(Action<string> actionOnError, string message, string title = null, NotificationTypes notificationType = NotificationTypes.Info, int secondsToShow = 3)
 		{
-		}
+		}*/
 
 		/// <summary>
 		/// Show a notification using the external application (ShowNoCallbackNotification.exe).

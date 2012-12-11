@@ -406,7 +406,7 @@ namespace SharedClasses
 					case ShowNoCallbackNotificationInterop.NotificationTypes.Warning:
 						return new SolidColorBrush(Colors.Orange);
 					case ShowNoCallbackNotificationInterop.NotificationTypes.Error:
-						return new SolidColorBrush(Colors.Red);
+						return new SolidColorBrush(Colors.Red);//Color.FromRgb(240, 60, 60));
 					default:
 						return new SolidColorBrush(Color.FromArgb(150, 200, 200, 200));
 				}

@@ -104,9 +104,12 @@
 										Foreground='#777'
 										Click='NotificationClosebutton_Click' />
 								<Label Content='{Binding Title}'
+									   FontWeight='Bold'
+									   FontSize='14'
 									   Foreground='{Binding TitleFontColor}' />
 							</DockPanel>
 							<Label Content='{Binding Message}'
+								   FontSize='20'
 								   Foreground='{Binding MessageFontColor}' />
 						</DockPanel>
 					</Border>

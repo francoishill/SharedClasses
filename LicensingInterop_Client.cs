@@ -2,12 +2,19 @@ using System;
 using System.Security.Cryptography;
 using Rhino.Licensing;
 using System.Collections.Generic;
-using System.IO;//Requires the Rhino.Licensing.dll and the log4net.dll
+using System.IO;
+using System.Linq;
+using Microsoft.Win32;
+using System.Threading;
+using System.Diagnostics;//Requires the Rhino.Licensing.dll and the log4net.dll
 
 namespace SharedClasses
 {
 	public static class LicensingInterop_Client
 	{
+		public const int cApplicationExitCodeIfLicenseFailedValidation = 77;
+		public const int cApplicationExitCodeIfOnlineLicenseConfirmationFailed = 88;
+
 		private static string _DuplicateInsertSpacesBeforeCamelCase(this string str)//Also in StringExtensions
 		{
 			if (str == null) return str;
@@ -26,8 +33,23 @@ namespace SharedClasses
 				applicationName + ".exe");
 		}
 
-		public static bool Client_ValidateLicense(string applicationName, out Dictionary<string, string> userPrivilages, Action<string> onError)//, string publicKeyXml, string licenseFilepath)
+		private static string GetApplicationName()
 		{
+			string applicationName = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
+			if (applicationName.EndsWith(".vshost", StringComparison.InvariantCultureIgnoreCase))
+				applicationName = applicationName.Substring(0, applicationName.Length - ".vshost".Length);
+			return applicationName;
+		}
+
+		private static string GetLicenseFilePath(string applicationName)
+		{
+			return SettingsInterop.GetFullFilePathInLocalAppdata("license.lic", "Licenses", applicationName);
+		}
+		
+		public static bool Client_ValidateLicense(out Dictionary<string, string> userPrivilages, Action<string> onError)//, string publicKeyXml, string licenseFilepath)
+		{
+			string applicationName = GetApplicationName();
+
 			int todoItem;
 			//TODO: Ensure that the expirationDate of a license also fails to validate if it is a Trial license and the trial period expired
 			//I would assume that this is already the case
@@ -38,9 +60,9 @@ namespace SharedClasses
 			{
 				//Public key and License should already be on computer if application was 'registered'
 				//
-				string publicKeyPath = Path.Combine(Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]), LicensingInterop_Shared.cLicensePublicKeyFilename);//SettingsInterop.GetFullFilePathInLocalAppdata(LicensingInterop_Shared.cLicensePublicKeyFilename, "Licenses", applicationName);
-				string licenseFilepath = SettingsInterop.GetFullFilePathInLocalAppdata("license.lic", "Licenses", applicationName);
+				string licenseFilepath = GetLicenseFilePath(applicationName);
 
+				string publicKeyPath = Path.Combine(Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]), LicensingInterop_Shared.cLicensePublicKeyFilename);//SettingsInterop.GetFullFilePathInLocalAppdata(LicensingInterop_Shared.cLicensePublicKeyFilename, "Licenses", applicationName);
 				if (!File.Exists(publicKeyPath)
 					&& !publicKeyPath.StartsWith(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), StringComparison.InvariantCultureIgnoreCase)
 					&& !publicKeyPath.StartsWith(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), StringComparison.InvariantCultureIgnoreCase))
@@ -90,46 +112,11 @@ namespace SharedClasses
 				var licenseValidator = new LicenseValidator(publicKey, licenseFilepath);
 				licenseValidator.AssertValidLicense();//Validates the license exists and make sure user did not tamper with license file
 
-				string result = PhpInterop.PostPHP(null,
-					string.Format("http://fjh.dyndns.org/licensing/{0}/{1}/{2}/{3}/{4}/{5}/{6}",
-						"confirmlicensewasissued",
-						EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licenseValidator.Name, LicensingInterop_Shared.cEncryptionKey), onError),
-						EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(applicationName, LicensingInterop_Shared.cEncryptionKey), onError),
-						EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licenseValidator.LicenseAttributes["machinename"], LicensingInterop_Shared.cEncryptionKey), onError),
-						EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licenseValidator.ExpirationDate.ToString(LicensingInterop_Shared.cExpirationDateFormat), LicensingInterop_Shared.cEncryptionKey), onError),
-						EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licenseValidator.UserId.ToString(), LicensingInterop_Shared.cEncryptionKey), onError),
-						EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licenseValidator.LicenseType.ToString(), LicensingInterop_Shared.cEncryptionKey), onError)),
-					null);
+				ValidateLicenseExistsOnServer_OnSeparateThread(licenseValidator, onError);
 
-				if (string.IsNullOrWhiteSpace(result))
-				{
-					onError("Could not confirm that license exists on server, the response from the server was empty");
-					userPrivilages = null;
-					return false;
-				}
-
-				result = result.Trim();
-				if (!result.StartsWith(LicensingInterop_Shared.cLicenseExistsOnServerMessage, StringComparison.InvariantCultureIgnoreCase))
-				{
-					if (result.StartsWith(LicensingInterop_Shared.cLicenseNonExistingOnServerMessage, StringComparison.InvariantCultureIgnoreCase))
-					{
-						onError("License does not exist on server");
-						userPrivilages = null;
-						return false;
-					}
-					else
-					{
-						onError("Unknown error obtaining whether the license was generated by the correct server: " + result);
-						userPrivilages = null;
-						return false;
-					}
-				}
-				else
-				{
-					userPrivilages = new Dictionary<string, string>(licenseValidator.LicenseAttributes);
-					userPrivilages.Remove("machinename");
-					return true;
-				}
+				userPrivilages = new Dictionary<string, string>(licenseValidator.LicenseAttributes);
+				userPrivilages.Remove("machinename");
+				return true;
 			}
 			catch (LicenseNotFoundException licExc)
 			{
@@ -144,6 +131,108 @@ namespace SharedClasses
 				userPrivilages = null;
 				return false;
 			}
+		}
+
+		private static void ShowServerConfirmLicenseError(string err)
+		{
+			string appname = GetApplicationName();
+			string tempfile = Path.Combine(Path.GetTempPath(), appname + " license error.txt");
+			File.WriteAllText(tempfile, 
+				"License validation error for '" + appname + "'"
+				+ Environment.NewLine
+				+ err);
+			Process.Start(tempfile);
+		}
+
+		private static Action<string> validateOnServerActionOnError = null;
+		private static void ValidateLicenseExistsOnServer_OnSeparateThread(LicenseValidator LicenseValidator, Action<string> actionOnError)
+		{
+			if (actionOnError == null) actionOnError = delegate { };
+			validateOnServerActionOnError = actionOnError;
+
+			ThreadingInterop.PerformOneArgFunctionSeperateThread<LicenseValidator>(
+				(licValidator) =>
+				{
+					Action<string> onError = validateOnServerActionOnError;
+
+					string applicationName = GetApplicationName();
+
+					//At this point we know the license is valid but now also (on separate thread) confirm it exists on the server
+					string result = PhpInterop.PostPHP(null,
+						string.Format("http://fjh.dyndns.org/licensing/{0}/{1}/{2}/{3}/{4}/{5}/{6}",
+							"confirmlicensewasissued",
+							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licValidator.Name, LicensingInterop_Shared.cEncryptionKey), onError),
+							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(applicationName, LicensingInterop_Shared.cEncryptionKey), onError),
+							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licValidator.LicenseAttributes["machinename"], LicensingInterop_Shared.cEncryptionKey), onError),
+							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licValidator.ExpirationDate.ToString(LicensingInterop_Shared.cExpirationDateFormat), LicensingInterop_Shared.cEncryptionKey), onError),
+							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licValidator.UserId.ToString(), LicensingInterop_Shared.cEncryptionKey), onError),
+							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licValidator.LicenseType.ToString(), LicensingInterop_Shared.cEncryptionKey), onError)),
+						null);
+
+					result = result ?? "";
+					using (RegistryKey appLicensesRegKey = Registry.CurrentUser.OpenOrCreateWriteableSubkey(@"SOFTWARE\FJH\Licensing\" + licValidator.UserId.ToString()))
+					{
+						const string onlineQueryFailedRegValueName = "onlinecheckfailed";
+
+						if (string.IsNullOrWhiteSpace(result))
+						{
+							int onlineFailedCount = 1;
+
+							int todoItem;
+							//TODO: Maybe add encryption to this OnlineCheckFailed registry value
+							bool foundOnlineFailedRegVal = appLicensesRegKey.GetValueNames().First(s => s.Equals(onlineQueryFailedRegValueName)) != null;
+							if (foundOnlineFailedRegVal)//Value was found, increase it
+							{
+								string onlineFailedCountValueStr = appLicensesRegKey.GetValue(onlineQueryFailedRegValueName).ToString();
+								int tmpint;
+								if (int.TryParse(onlineFailedCountValueStr, out tmpint))
+									onlineFailedCount = tmpint + 1;
+							}
+							appLicensesRegKey.SetValue(onlineQueryFailedRegValueName, onlineFailedCount.ToString());
+
+							if (onlineFailedCount >= 50)//After 50 times cannot use application anymore
+							{
+								ShowServerConfirmLicenseError("Could not confirm that license exists on server, application will now exit.");
+
+								int todoExitCodeNotReached;
+								//The application exist before it reaches this ExitCode
+								Environment.Exit(cApplicationExitCodeIfOnlineLicenseConfirmationFailed);
+							}
+							else if (onlineFailedCount >= 15)//Start annoying user after 15 times
+							{
+								//Will not break the application if no valid internet access, but just annoy the user
+
+								//TODO: Maybe suggest to check whether the domain (where the license server sits on) is accessible from this machine (for instance domain fjh.dyndns.org)
+								ShowServerConfirmLicenseError("Could not confirm that license existance on server, please ensure internet connectivity to stop showing this message.");
+							}
+						}
+						else
+						{
+							//We got a response from server
+							appLicensesRegKey.SetValue(onlineQueryFailedRegValueName, "0");
+
+							result = result.Trim();
+							if (!result.StartsWith(LicensingInterop_Shared.cLicenseExistsOnServerMessage, StringComparison.InvariantCultureIgnoreCase))
+							{
+								if (result.StartsWith(LicensingInterop_Shared.cLicenseNonExistingOnServerMessage, StringComparison.InvariantCultureIgnoreCase))
+								{
+									//License not found on server, delete the license file
+									File.Delete(GetLicenseFilePath(applicationName));
+									ShowServerConfirmLicenseError("License is not a valid issued license, please obtain a valid license. Application will now exit");
+									Environment.Exit(cApplicationExitCodeIfOnlineLicenseConfirmationFailed);
+								}
+								else
+								{
+									ShowServerConfirmLicenseError("Unknown error confirming license existance on server (application will now exit): " + result);
+									Environment.Exit(cApplicationExitCodeIfOnlineLicenseConfirmationFailed);
+								}
+							}
+							//else SUCCESS
+						}
+					}
+				},
+				LicenseValidator,
+				false);
 		}
 	}
 }

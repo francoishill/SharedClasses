@@ -45,7 +45,13 @@ namespace SharedClasses
 		{
 			return SettingsInterop.GetFullFilePathInLocalAppdata("license.lic", "Licenses", applicationName);
 		}
+
 		
+		public static string GetThisPcMachineSignature()
+		{
+			return Environment.MachineName + "/" + Environment.UserName + "/" + SettingsInterop.GetComputerGuidAsString();
+		}
+
 		public static bool Client_ValidateLicense(out Dictionary<string, string> userPrivilages, Action<string> onError)//, string publicKeyXml, string licenseFilepath)
 		{
 			string applicationName = GetApplicationName();
@@ -112,10 +118,34 @@ namespace SharedClasses
 				var licenseValidator = new LicenseValidator(publicKey, licenseFilepath);
 				licenseValidator.AssertValidLicense();//Validates the license exists and make sure user did not tamper with license file
 
-				ValidateLicenseExistsOnServer_OnSeparateThread(licenseValidator, onError);
-
 				userPrivilages = new Dictionary<string, string>(licenseValidator.LicenseAttributes);
-				userPrivilages.Remove("machinename");
+				if (!userPrivilages.ContainsKey(LicensingInterop_Shared.cMachineSignatureKeyName))
+				{
+					onError(
+						"Cannot find machinename inside the license"
+						+ "Please contact the developer, just click OK and complete the email addresses to the developer."
+						+ Environment.NewLine + Environment.NewLine
+						+ "The application will now exit.");
+					DeveloperCommunication.RunMailto();
+					userPrivilages = null;
+					return false;
+				}
+
+				if (!userPrivilages[LicensingInterop_Shared.cMachineSignatureKeyName].Equals(GetThisPcMachineSignature(), StringComparison.InvariantCultureIgnoreCase))
+				{//Machine names not the same
+					onError(
+						"Invalid license, the current hardware does not match the hardware signature for the issued license."
+						+ "Please contact the developer, just click OK and complete the email addresses to the developer."
+						+ Environment.NewLine + Environment.NewLine
+						+ "The application will now exit.");
+					DeveloperCommunication.RunMailto();
+					userPrivilages = null;
+					return false;
+				}
+				userPrivilages.Remove(LicensingInterop_Shared.cMachineSignatureKeyName);
+
+				//Query the server to see if the license was actually issued by our server
+				ValidateLicenseExistsOnServer_OnSeparateThread(licenseValidator, onError);
 				return true;
 			}
 			catch (LicenseNotFoundException licExc)
@@ -137,7 +167,7 @@ namespace SharedClasses
 		{
 			string appname = GetApplicationName();
 			string tempfile = Path.Combine(Path.GetTempPath(), appname + " license error.txt");
-			File.WriteAllText(tempfile, 
+			File.WriteAllText(tempfile,
 				"License validation error for '" + appname + "'"
 				+ Environment.NewLine
 				+ err);
@@ -161,12 +191,12 @@ namespace SharedClasses
 					string result = PhpInterop.PostPHP(null,
 						string.Format("http://fjh.dyndns.org/licensing/{0}/{1}/{2}/{3}/{4}/{5}/{6}",
 							"confirmlicensewasissued",
-							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licValidator.Name, LicensingInterop_Shared.cEncryptionKey), onError),
-							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(applicationName, LicensingInterop_Shared.cEncryptionKey), onError),
-							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licValidator.LicenseAttributes["machinename"], LicensingInterop_Shared.cEncryptionKey), onError),
-							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licValidator.ExpirationDate.ToString(LicensingInterop_Shared.cExpirationDateFormat), LicensingInterop_Shared.cEncryptionKey), onError),
-							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licValidator.UserId.ToString(), LicensingInterop_Shared.cEncryptionKey), onError),
-							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licValidator.LicenseType.ToString(), LicensingInterop_Shared.cEncryptionKey), onError)),
+							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licValidator.Name, LicensingInterop_Shared.cEncryptionKey_OnlineServerPhp), onError),
+							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(applicationName, LicensingInterop_Shared.cEncryptionKey_OnlineServerPhp), onError),
+							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licValidator.LicenseAttributes[LicensingInterop_Shared.cMachineSignatureKeyName], LicensingInterop_Shared.cEncryptionKey_OnlineServerPhp), onError),
+							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licValidator.ExpirationDate.ToString(LicensingInterop_Shared.cExpirationDateFormat), LicensingInterop_Shared.cEncryptionKey_OnlineServerPhp), onError),
+							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licValidator.UserId.ToString(), LicensingInterop_Shared.cEncryptionKey_OnlineServerPhp), onError),
+							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licValidator.LicenseType.ToString(), LicensingInterop_Shared.cEncryptionKey_OnlineServerPhp), onError)),
 						null);
 
 					result = result ?? "";
@@ -214,7 +244,8 @@ namespace SharedClasses
 							result = result.Trim();
 							if (!result.StartsWith(LicensingInterop_Shared.cLicenseExistsOnServerMessage, StringComparison.InvariantCultureIgnoreCase))
 							{
-								if (result.StartsWith(LicensingInterop_Shared.cLicenseNonExistingOnServerMessage, StringComparison.InvariantCultureIgnoreCase))
+								//Use contains, instead of StartsWith, because the string end up being [ERRORSTART]cLicenseNonExistingOnServerMessage[ERROREND]
+								if (result.IndexOf(LicensingInterop_Shared.cLicenseNonExistingOnServerMessage, StringComparison.InvariantCultureIgnoreCase) != -1)
 								{
 									//License not found on server, delete the license file
 									File.Delete(GetLicenseFilePath(applicationName));

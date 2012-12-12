@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Win32;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace SharedClasses
 {
@@ -36,12 +37,12 @@ namespace SharedClasses
 		}
 
 		//private static bool isUpToDate = false;
-		public static void CheckForUpdates(Action<string> ActionIfUptoDate_Versionstring = null, Action<string> ActionOnError = null, bool SeparateThreadDoNotWait = true, bool autoInstallIfUpdateFound = true)
+		public static Thread CheckForUpdates(Action<string> ActionIfUptoDate_Versionstring = null, Action<string> ActionOnError = null, bool SeparateThreadDoNotWait = true, bool autoInstallIfUpdateFound = true)
 		{
 			//If running from Visual Studio paths
 			if (Environment.GetCommandLineArgs()[0].StartsWith(@"C:\Francois\Dev\VSprojects", StringComparison.InvariantCultureIgnoreCase)
 				|| Environment.GetCommandLineArgs()[0].StartsWith(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), @"Visual Studio 2010\Projects"), StringComparison.InvariantCultureIgnoreCase))
-				return;
+				return null;
 
 			string fullExePath = Environment.GetCommandLineArgs()[0];
 			var autoupdaterFilepath = RegistryInterop.GetAppPathFromRegistry("AutoUpdater.exe");
@@ -50,10 +51,11 @@ namespace SharedClasses
 			{
 				if (ActionOnError != null)
 					ActionOnError("AutoUpdater not installed, could not find AutoUpdater.exe in App Paths of Regsitry.");
+				return null;
 			}
 			else
 			{
-				ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+				Thread checkForUpdatesSilentlyThread = ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 				{
 					List<string> outputs;
 					List<string> errors;
@@ -101,6 +103,7 @@ namespace SharedClasses
 					}
 				},
 				!SeparateThreadDoNotWait);
+				return checkForUpdatesSilentlyThread;
 			}
 		}
 

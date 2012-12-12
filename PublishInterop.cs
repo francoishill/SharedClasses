@@ -114,7 +114,7 @@ namespace SharedClasses
 			string result = PhpInterop.PostPHP(null,
 					string.Format("http://fjh.dyndns.org/licensing/{0}/{1}",
 						"getpublickey",
-						EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(applicationName, LicensingInterop_Shared.cEncryptionKey), onError)),
+						EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(applicationName, LicensingInterop_Shared.cEncryptionKey_OnlineServerPhp), onError)),
 					null);
 			if (string.IsNullOrWhiteSpace(result))
 			{

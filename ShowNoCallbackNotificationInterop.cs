@@ -22,12 +22,13 @@ namespace SharedClasses
 		/// <param name="secondsToShow">The number of seconds before the notification auto closes. Use -1 or -99 for infinite.</param>
 		public static void Notify(Action<string> actionOnError, string message, string title = null, NotificationTypes notificationType = NotificationTypes.Info, int secondsToShow = 3)
 		{
+			if (actionOnError == null) actionOnError = delegate { };
+			
 			string notifAppExe = RegistryInterop.GetAppPathFromRegistry("ShowNoCallbackNotification.exe");
 			if (notifAppExe == null)
 			{
 				//ShowNotification("Cannot show Notification: " + errIfFail);
-				if (actionOnError != null)
-					actionOnError("Cannot show Notification, cannot find ShowNoCallbackNotification.exe in App Paths of Regsitry.");
+				actionOnError("Cannot show Notification, cannot find ShowNoCallbackNotification.exe in App Paths of Regsitry.");
 			}
 			else
 				//c:\path\to\ShowNoCallbackNotification.exe "Title" "Message" NotificationType SecondsToShow

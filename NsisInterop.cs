@@ -13,6 +13,8 @@ using Microsoft.Win32;
 
 public class NsisInterop
 {
+	public const string cDefaultPublisherName = "Francois Hill";
+
 	//TODO: Add functionality to close (maybe with messagebox to confirm) the process being installed if its open
 	public static string GetSetupNameForProduct(string PublishedName, string ProductVersion)
 	{
@@ -52,7 +54,7 @@ public class NsisInterop
 		NSISclass nsis = new NSISclass(
 			ProductPublishedNameIn,
 			ProductVersionIn,
-			"Francois Hill",//ProductPublisherIn,
+			cDefaultPublisherName,//ProductPublisherIn,
 			ProductWebsiteIn,
 			ProductExeNameIn,
 			new NSISclass.Compressor(NSISclass.Compressor.CompressionModeEnum.lzma, true, true),//new NSISclass.Compressor(NSISclass.Compressor.CompressionModeEnum.bzip2, false, false),
@@ -67,7 +69,7 @@ public class NsisInterop
 			true,
 			ProductExeNameIn,
 			null,//No InstTypes at this stage
-			"Francois Hill",
+			cDefaultPublisherName,
 			DotnetFrameworkTargetedIn,
 			_64Only
 			//InstallForAllUsersIn: InstallForAllUsers
@@ -1586,7 +1588,7 @@ public class NsisInterop
 							tmpMainNode.Tag = new NSISclass(
 									AppNameOnly,
 									"0.0",
-									"Francois Hill",
+									cDefaultPublisherName,
 									"www.francoishill.com",
 									AppNameIncludingEXEextension,
 									new Compressor(),

@@ -165,4 +165,28 @@ namespace SharedClasses
 			throw new NotImplementedException();
 		}
 	}
+
+	public class AddToDoubleValueConverter : IValueConverter
+	{
+		public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			if (value == null || parameter == null)
+				return value;
+
+			double dblVal;
+			double parVal;
+
+			if (!double.TryParse(value.ToString(), out dblVal))
+				return value;
+			if (!double.TryParse(parameter.ToString(), out parVal))
+				return value;
+
+			return dblVal + parVal;
+		}
+
+		public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			throw new NotImplementedException();
+		}
+	}
 }

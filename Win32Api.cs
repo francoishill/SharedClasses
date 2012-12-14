@@ -714,4 +714,8 @@ public static class Win32Api
 
 	[DllImport("user32.dll")]
 	public static extern bool InvalidateRect(IntPtr hWnd, IntPtr lpRect, bool bErase);
+
+	[DllImport("kernel32.dll", SetLastError = true)]
+	static extern IntPtr BeginUpdateResource(string pFileName,
+	   [MarshalAs(UnmanagedType.Bool)]bool bDeleteExistingResources);
 }

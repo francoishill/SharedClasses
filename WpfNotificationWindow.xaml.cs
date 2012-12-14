@@ -17,6 +17,7 @@ using System.Threading;
 using System.Windows.Threading;
 using System.Diagnostics;
 using Microsoft.Win32;
+using System.ComponentModel;
 
 namespace SharedClasses
 {
@@ -110,16 +111,25 @@ namespace SharedClasses
 				new System.Threading.TimerCallback(
 					(obj) =>
 					{
+						TimeSpan donotcloseIfUserInputNotReceivedDuration = TimeSpan.FromSeconds(1);
+
 						DateTime startupTime;
-						TimeSpan idleDuration;
-						if (!Win32Api.GetLastInputInfo(out startupTime, out idleDuration)
-							|| idleDuration.TotalSeconds < TimeSpan.FromSeconds(1).TotalSeconds)
+						TimeSpan idleDuration = TimeSpan.Zero;
+						bool gotLastInputInfo = Win32Api.GetLastInputInfo(out startupTime, out idleDuration);
+						if (!gotLastInputInfo
+							|| idleDuration.TotalSeconds < donotcloseIfUserInputNotReceivedDuration.TotalSeconds)
 						{
 							DateTime now = DateTime.Now;
 							for (int i = notifications.Count - 1; i >= 0; i--)
 								if (notifications[i].TimeWhenTimedOut.HasValue && now.Subtract(notifications[i].TimeWhenTimedOut.Value).TotalSeconds > 0)
 									//Notification has timed out and will close now
 									InvokeFromSeparateThread((notif) => FadeOutAndRemoveNotificationFromBorder(GetBorderOfNotification(notif as NotificationClass), false), notifications[i]);
+						}
+						else if (gotLastInputInfo && idleDuration.TotalSeconds > donotcloseIfUserInputNotReceivedDuration.TotalSeconds)
+						{
+							//The user is away, now make notifications sticky if not already?
+							for (int i = 0; i < notifications.Count; i++)
+								notifications[i].MakeSticky();
 						}
 					}),
 				null,
@@ -370,9 +380,10 @@ namespace SharedClasses
 		}
 	}
 
-	public class NotificationClass : IDisposable
+	public class NotificationClass : IDisposable, INotifyPropertyChanged
 	{
-		public string Title { get; private set; }
+		private string _title;
+		public string Title { get { return _title; } private set { _title = value; OnPropertyChanged("Title"); } }
 		public string Message { get; private set; }
 		private ShowNoCallbackNotificationInterop.NotificationTypes NotificationType { get; set; }
 
@@ -446,6 +457,15 @@ namespace SharedClasses
 			Dispose(false);
 		}
 
+		private bool alreadyMadeSticky = false;
+		public void MakeSticky()
+		{
+			if (alreadyMadeSticky) return;
+			alreadyMadeSticky = true;
+			this.TimeWhenTimedOut = null;
+			this.Title += " (user away, now sticky)";
+		}
+
 		public void RemoveCloseCallback() { OnCloseCallback_WasClickedToCallback = null; }
 
 		private bool IsDisposed=false;
@@ -469,5 +489,8 @@ namespace SharedClasses
 			}
 			IsDisposed = true;
 		}
+
+		public event PropertyChangedEventHandler PropertyChanged = delegate { };
+		public void OnPropertyChanged(string propertyName) { PropertyChanged(this, new PropertyChangedEventArgs(propertyName)); }
 	}
 }

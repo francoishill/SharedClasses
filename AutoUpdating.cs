@@ -36,9 +36,37 @@ namespace SharedClasses
 			return false;
 		}
 
-		//private static bool isUpToDate = false;
-		public static Thread CheckForUpdates(Action<string> ActionIfUptoDate_Versionstring = null, Action<string> ActionOnError = null, bool SeparateThreadDoNotWait = true, bool autoInstallIfUpdateFound = true)
+		private static bool alreadyRegisteredUnhandledExceptionHandler = false;
+		private static void RegisterUnhandledExceptionHandler()
 		{
+			if (alreadyRegisteredUnhandledExceptionHandler) return;
+			alreadyRegisteredUnhandledExceptionHandler = true;
+			AppDomain.CurrentDomain.UnhandledException += (s, uexc) =>
+			{
+				Exception exc = uexc.ExceptionObject as Exception;
+				if (exc != null)
+					UnhandledExceptionsWindow.ShowUnHandledException(exc);
+			};
+		}
+
+		public static string GetThisAppVersionString()
+		{
+			return FileVersionInfo.GetVersionInfo(Environment.GetCommandLineArgs()[0]).FileVersion;
+		}
+
+		/// <summary>
+		/// Place this method at the topmost of the entry point of the application (static void main() for Console+Winforms apps, and in override void OnStartup() for WPF)
+		/// </summary>
+		/// <param name="ActionForVersionIfUptoDate">The action to be taken if the application is up to date, call GetThisAppVersionString() to get the version string. Note it runs on a separate thread therefore we need this.</param>
+		/// <returns></returns>
+		public static Thread CheckForUpdates_ExceptionHandler(Action ActionIfUptoDate = null)
+		{
+			if (ActionIfUptoDate == null) ActionIfUptoDate = delegate { };
+
+			//Step 1: Register event handler for UnhandledExceptions
+			RegisterUnhandledExceptionHandler();
+
+			//Step 2: Check for updates
 			//If running from Visual Studio paths
 			if (Environment.GetCommandLineArgs()[0].StartsWith(@"C:\Francois\Dev\VSprojects", StringComparison.InvariantCultureIgnoreCase)
 				|| Environment.GetCommandLineArgs()[0].StartsWith(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), @"Visual Studio 2010\Projects"), StringComparison.InvariantCultureIgnoreCase))
@@ -49,8 +77,7 @@ namespace SharedClasses
 
 			if (autoupdaterFilepath == null)
 			{
-				if (ActionOnError != null)
-					ActionOnError("AutoUpdater not installed, could not find AutoUpdater.exe in App Paths of Regsitry.");
+				AppTypeIndependant.ShowErrorMessage("AutoUpdater not installed, could not find AutoUpdater.exe in App Paths of Regsitry.");
 				return null;
 			}
 			else
@@ -78,8 +105,7 @@ namespace SharedClasses
 						switch (parsedExitCode)
 						{
 							case ExitCodes.UpToDateExitCode:
-								if (ActionIfUptoDate_Versionstring != null)
-									ActionIfUptoDate_Versionstring(FileVersionInfo.GetVersionInfo(Environment.GetCommandLineArgs()[0]).FileVersion);
+								ActionIfUptoDate();
 								break;
 							case ExitCodes.NewVersionAvailableExitCode:
 								////A WPFNotification got shown, no need to show more
@@ -94,17 +120,24 @@ namespace SharedClasses
 									out exitcode);
 								break;
 							case ExitCodes.UnableToCheckForUpdatesErrorCode:
-								if (errors.Count > 0 && ActionOnError != null)
-									ActionOnError("Could not check for updates: " + string.Join(".  ", errors));
+								if (errors.Count > 0)
+									AppTypeIndependant.ShowErrorMessage("Could not check for updates: " + string.Join(".  ", errors));
 								break;
 							default:
 								break;
 						}
 					}
 				},
-				!SeparateThreadDoNotWait);
+				false);
 				return checkForUpdatesSilentlyThread;
 			}
+		}
+
+		//private static bool isUpToDate = false;
+		[Obsolete("Method had been replaced by CheckForUpdates_ExceptionHandler", true)]
+		public static Thread CheckForUpdates(Action<string> ActionIfUptoDate_Versionstring = null, Action<string> ActionOnError = null, bool SeparateThreadDoNotWait = true, bool autoInstallIfUpdateFound = true)
+		{
+			return null;
 		}
 
 		public static void InstallLatest(string applicationName, Action<string> ActionOnError, Action<string> actionOnComplete = null, bool installSilently = true)

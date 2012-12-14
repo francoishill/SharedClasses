@@ -104,6 +104,11 @@ namespace SharedClasses
 			else return true;//Ran successful with no outputs/errors
 		}
 
+		public static bool? RunProcessCatchOutput(string fileName, string arguments, out List<string> outputs, out List<string> errors, out int ExitCodeIfRan, string WriteToStandardInputBeforeReadingText = null)
+		{
+			return RunProcessCatchOutput(new ProcessStartInfo(fileName, arguments), out outputs, out errors, out ExitCodeIfRan, WriteToStandardInputBeforeReadingText);
+		}
+
 		public static bool KillProcess(string processName, Action<string, FeedbackMessageTypes> actionOnMessage)
 		{
 			//Kill process if open

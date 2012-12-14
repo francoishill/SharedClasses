@@ -10,15 +10,15 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Windows.Interop;
 using System.Windows.Media.Animation;
 using System.Reflection;
 using System.IO;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using System.Windows.Threading;
 
-namespace UnhandledExceptions
+namespace SharedClasses
 {
 	/// <summary>
 	/// Interaction logic for UnhandledExceptionsWindow.xaml
@@ -32,22 +32,59 @@ namespace UnhandledExceptions
 			this.DataContext = exception;
 		}
 
-		public static void ShowUnHandledException(Exception exc)
+		private void UnhandledExceptionsWindow1_Loaded(object sender, RoutedEventArgs e)
 		{
-			UnhandledExceptionsWindow uew = new UnhandledExceptionsWindow(exc);
-			uew.ShowDialog();
+			this.MaxHeight = SystemParameters.WorkArea.Height - 100;
 		}
 
 		private void TextBlock_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
 		{
-			//TODO: Should still actually report error to developer here
-			System.Windows.Forms.MessageBox.Show("This function is soon to be incorporated.");
+			textblockBusySendingMessage.Visibility = System.Windows.Visibility.Visible;
+			Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { }));
+			
+			try
+			{
+				Exception exc = this.DataContext as Exception;
+				if (exc == null)
+				{
+					AppTypeIndependant.ShowErrorMessage("Unable to get the Exception from this.DataContext");
+					return;
+				}
+
+				//TODO: Should still actually report error to developer here
+				//System.Windows.Forms.MessageBox.Show("This function is soon to be incorporated.");
+				if (DeveloperCommunication.SendEmailToDeveloperViaSMTP(
+					"Testing message",
+					"Error message: " + exc.Message
+						+ Environment.NewLine
+						+ Environment.NewLine
+						+ "Method Name: " + exc.TargetSite
+						+ Environment.NewLine
+						+ Environment.NewLine
+						+ "Stack Trace:"
+						+ Environment.NewLine
+						+ exc.StackTrace,
+					false,
+					null))//No attachment
+					textblockClickToReportToDeveloper.Visibility = System.Windows.Visibility.Collapsed;
+			}
+			finally
+			{
+				textblockBusySendingMessage.Visibility = System.Windows.Visibility.Collapsed;
+			}
 		}
 
 		private void TextBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
 		{
 			if (e.ChangedButton != MouseButton.Left) return;
 			(sender as TextBox).SelectAll();
+		}
+
+		public static void ShowUnHandledException(Exception exc)
+		{
+			UnhandledExceptionsWindow uew = new UnhandledExceptionsWindow(exc);
+			uew.labelMainMessage.Content = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
+			uew.ShowDialog();
 		}
 	}
 

@@ -6,7 +6,9 @@ using System.IO;
 using System.Linq;
 using Microsoft.Win32;
 using System.Threading;
-using System.Diagnostics;//Requires the Rhino.Licensing.dll and the log4net.dll
+using System.Diagnostics;
+using System.Management;
+using System.Text;//Requires the Rhino.Licensing.dll and the log4net.dll
 
 namespace SharedClasses
 {
@@ -46,10 +48,11 @@ namespace SharedClasses
 			return SettingsInterop.GetFullFilePathInLocalAppdata("license.lic", "Licenses", applicationName);
 		}
 
-		
+
 		public static string GetThisPcMachineSignature()
 		{
-			return Environment.MachineName + "/" + Environment.UserName + "/" + SettingsInterop.GetComputerGuidAsString();
+			return MachineFingerPrint.GetFingerPrint();
+			//return Environment.MachineName + "/" + Environment.UserName + "/" + SettingsInterop.GetComputerGuidAsString();
 		}
 
 		public static bool Client_ValidateLicense(out Dictionary<string, string> userPrivilages, Action<string> onError)//, string publicKeyXml, string licenseFilepath)
@@ -264,6 +267,22 @@ namespace SharedClasses
 				},
 				LicenseValidator,
 				false);
+		}
+
+		public static string GetMotherBoardID()
+		{
+			string serial = "";
+			try
+			{
+				using (ManagementObjectSearcher mos = new ManagementObjectSearcher("SELECT SerialNumber FROM Win32_BaseBoard"))
+				using (ManagementObjectCollection moc = mos.Get())
+				{
+					foreach (ManagementObject mo in moc)
+						serial = mo["SerialNumber"].ToString();
+					return serial;
+				}
+			}
+			catch (Exception) { return serial; }
 		}
 	}
 }

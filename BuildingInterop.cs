@@ -40,61 +40,11 @@ namespace SharedClasses
 			this.LastBuildResult = null;
 
 			string err = null;
-			this.SolutionFullpath = CsprojOrSolutionFullpath ?? GetSolutionPathFromApplicationName(out err);
+			this.SolutionFullpath = CsprojOrSolutionFullpath ?? OwnAppsInterop.GetSolutionPathFromApplicationName(this.ApplicationName, out err);
 			if (err != null)
 				actionOnError(err);
 		}
 
-		public virtual string GetSolutionPathFromApplicationName(out string errorIfFailed)
-		{
-			string solutionDir = Path.Combine(RootVSprojectsDir, this.ApplicationName);
-			if (!Directory.Exists(solutionDir))
-			{
-				errorIfFailed = "Directory does not exist: " + solutionDir;
-				return null;
-			}
-			var solutionFiles = Directory.GetFiles(solutionDir, "*.sln");//Full paths
-			if (solutionFiles.Length == 0)
-			{
-				errorIfFailed = "Cannot find solution file in dir: " + solutionDir;
-				return null;
-			}
-			else
-			{
-				var solutionFilesSameNameAsApplicationName =
-						solutionFiles.Where(f => Path.GetFileNameWithoutExtension(f).Equals(this.ApplicationName)).ToArray();
-				if (solutionFiles.Length > 1 && solutionFilesSameNameAsApplicationName.Length > 1)
-				{
-					errorIfFailed = "Multiple solution files found for application "
-						+ this.ApplicationName + ", none of them having same name as application:"
-						+ Environment.NewLine
-						+ string.Join(Environment.NewLine, solutionFiles);
-					return null;
-
-				}
-				//else if (solutionFiles.Length == 1 || solutionFilesSameNameAsApplicationName.Length == 1)
-				//{
-				errorIfFailed = null;
-				return solutionFiles.Length == 1 ? solutionFiles.First() : solutionFilesSameNameAsApplicationName.First();
-			}
-		}
-		private string rootVSprojectsDir;
-		public virtual string RootVSprojectsDir
-		{
-			get
-			{
-				if (rootVSprojectsDir == null)//Checks was not done yet
-				{
-					rootVSprojectsDir = @"C:\Francois\Dev\VSprojects";
-					if (!Directory.Exists(rootVSprojectsDir))
-					{
-						UserMessages.ShowErrorMessage("Please ensure projects are in directory (dir not found): " + rootVSprojectsDir);
-						rootVSprojectsDir = null;
-					}
-				}
-				return rootVSprojectsDir;
-			}
-		}
 		private class MyLogger : ILogger
 		{
 			private Action<BuildErrorEventArgs> OnBuildError;
@@ -166,7 +116,7 @@ namespace SharedClasses
 
 				//var proj = projArray[i];
 				if (!ChecksAlreadyDone.HasValue)
-					ChecksAlreadyDone = proj.RootVSprojectsDir != null;
+					ChecksAlreadyDone = OwnAppsInterop.RootVSprojectsDir != null;
 				if (ChecksAlreadyDone == false)
 				{
 					errorsIfFail[proj] += "Cannot find RootVisualStudio path" + Environment.NewLine;
@@ -354,7 +304,7 @@ namespace SharedClasses
 			this.LastBuildResult = null;
 
 			if (!ChecksAlreadyDone.HasValue)
-				ChecksAlreadyDone = RootVSprojectsDir != null;
+				ChecksAlreadyDone = OwnAppsInterop.RootVSprojectsDir != null;
 			if (ChecksAlreadyDone == false)
 			{
 				onMessage("Cannot find RootVisualStudio path", FeedbackMessageTypes.Error);

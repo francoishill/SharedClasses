@@ -41,6 +41,12 @@ namespace SharedClasses
 			window.Activate();
 		}
 
+		public static void MakeWindowClickThrough(this Window window)
+		{
+			int initialStyle = Win32Api.GetWindowLong(window.GetWindowHandle(), Win32Api.GWL_EXSTYLE);
+			Win32Api.SetWindowLong(window.GetWindowHandle(), Win32Api.GWL_EXSTYLE, initialStyle | Win32Api.WS_EX_LAYERED | Win32Api.WS_EX_TRANSPARENT);
+		}
+
 		// Define the Win32 API methods we are going to use
 		[DllImport("user32.dll")]
 		private static extern IntPtr GetSystemMenu(IntPtr hWnd, bool bRevert);
@@ -54,7 +60,7 @@ namespace SharedClasses
 		public const Int32 MF_BYPOSITION = 0x400;
 		public const Int32 MF_STRING = 0x0;
 
-		public static IntPtr GetWindowHandle(Window window) { return new WindowInteropHelper(window).Handle; }
+		public static IntPtr GetWindowHandle(this Window window) { return new WindowInteropHelper(window).Handle; }
 
 		public static void SetHookForSystemMenu(Window window, HwndSourceHook wndProc, List<SystemMenuItem> MenuItemList)
 		{

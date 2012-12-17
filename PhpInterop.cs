@@ -95,7 +95,7 @@ public class PhpInterop
 			catch (Exception exc)
 			{
 				WebException webexc = exc as WebException;
-				if (webexc != null)
+				if (webexc != null && webexc.Response != null)
 				{
 					string responseError = new StreamReader(webexc.Response.GetResponseStream()).ReadToEnd();
 					vystup = responseError;

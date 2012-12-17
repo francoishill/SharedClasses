@@ -213,7 +213,7 @@ namespace SharedClasses
 
 							int todoItem;
 							//TODO: Maybe add encryption to this OnlineCheckFailed registry value
-							bool foundOnlineFailedRegVal = appLicensesRegKey.GetValueNames().First(s => s.Equals(onlineQueryFailedRegValueName)) != null;
+							bool foundOnlineFailedRegVal = appLicensesRegKey.GetValueNames().Count(s => s.Equals(onlineQueryFailedRegValueName)) > 0;
 							if (foundOnlineFailedRegVal)//Value was found, increase it
 							{
 								string onlineFailedCountValueStr = appLicensesRegKey.GetValue(onlineQueryFailedRegValueName).ToString();

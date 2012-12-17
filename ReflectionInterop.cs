@@ -4,11 +4,131 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Linq;
+using System.ComponentModel;
 
 namespace SharedClasses
 {
 	public static class ReflectionInterop
 	{
+		/// <summary>
+		/// Gets the Display Name for the property descriptor passed in
+		/// </summary>
+		/// <param name="descriptor"></param>
+		/// <returns></returns>
+		public static string GetPropertyDisplayName(object descriptor)
+		{
+
+			PropertyDescriptor pd = descriptor as PropertyDescriptor;
+			if (pd != null)
+			{
+				// Check for DisplayName attribute and set the column header accordingly
+				DisplayNameAttribute displayName = pd.Attributes[typeof(DisplayNameAttribute)] as DisplayNameAttribute;
+				if (displayName != null && displayName != DisplayNameAttribute.Default)
+				{
+					return displayName.DisplayName;
+				}
+
+			}
+			else
+			{
+				PropertyInfo pi = descriptor as PropertyInfo;
+				if (pi != null)
+				{
+					// Check for DisplayName attribute and set the column header accordingly
+					Object[] attributes = pi.GetCustomAttributes(typeof(DisplayNameAttribute), true);
+					for (int i = 0; i < attributes.Length; ++i)
+					{
+						DisplayNameAttribute displayName = attributes[i] as DisplayNameAttribute;
+						if (displayName != null && displayName != DisplayNameAttribute.Default)
+						{
+							return displayName.DisplayName;
+						}
+					}
+				}
+			}
+			return null;
+		}
+
+		public static string GetPropertyDescription(object descriptor)
+		{
+			PropertyDescriptor pd = descriptor as PropertyDescriptor;
+			if (pd != null)
+			{
+				// Check for DisplayName attribute and set the column header accordingly
+				DescriptionAttribute displayName = pd.Attributes[typeof(DescriptionAttribute)] as DescriptionAttribute;
+				if (displayName != null && displayName != DescriptionAttribute.Default)
+				{
+					return displayName.Description;
+				}
+
+			}
+			else
+			{
+				PropertyInfo pi = descriptor as PropertyInfo;
+				if (pi != null)
+				{
+					// Check for DisplayName attribute and set the column header accordingly
+					Object[] attributes = pi.GetCustomAttributes(typeof(DescriptionAttribute), true);
+					for (int i = 0; i < attributes.Length; ++i)
+					{
+						DescriptionAttribute displayName = attributes[i] as DescriptionAttribute;
+						if (displayName != null && displayName != DescriptionAttribute.Default)
+						{
+							return displayName.Description;
+						}
+					}
+				}
+			}
+			return null;
+		}
+
+		private static List<Type> AllUniqueSimpleTypesInCurrentAssembly = null;
+		public static List<Type> GetAllUniqueSimpleTypesInCurrentAssembly
+		{
+			get
+			{
+				if (AllUniqueSimpleTypesInCurrentAssembly != null)
+					return AllUniqueSimpleTypesInCurrentAssembly;
+				AllUniqueSimpleTypesInCurrentAssembly = new List<Type>();
+				Assembly[] appAssemblies = System.AppDomain.CurrentDomain.GetAssemblies();
+				foreach (Assembly assembly in appAssemblies)
+					foreach (Type type in assembly.GetTypes())
+						AllUniqueSimpleTypesInCurrentAssembly.Add(type);
+				return AllUniqueSimpleTypesInCurrentAssembly.OrderBy(t => t.FullName).ToList();
+			}
+		}
+		public static Type GetTypeFromSimpleString(string SimpleTypeString, bool IgnoreCase = false)
+		{
+			Type TypeIAmLookingFor = null;
+			//List<Type> typeList = GetAllUniqueSimpleTypesInCurrentAssembly;
+			foreach (Type type in GetAllUniqueSimpleTypesInCurrentAssembly)
+				if (type.ToString().Equals(SimpleTypeString) || (IgnoreCase && type.ToString().ToLower().Equals(SimpleTypeString.ToLower())))
+					TypeIAmLookingFor = type;
+			return TypeIAmLookingFor;
+		}
+
+		private static List<string> AllUniqueSimpleTypeStringsInCurrentAssembly = null;
+		public static List<string> GetAllUniqueSimpleTypeStringsInCurrentAssembly
+		{
+			get
+			{
+				if (AllUniqueSimpleTypeStringsInCurrentAssembly != null) return AllUniqueSimpleTypeStringsInCurrentAssembly;
+				List<string> tmpList = new List<string>();
+				List<string> tmpDuplicateList = new List<string>();
+				//Assembly[] appAssemblies = System.AppDomain.CurrentDomain.GetAssemblies();
+				//foreach (Assembly assembly in appAssemblies)
+				//	foreach (Type type in assembly.GetTypes())
+				foreach (Type type in GetAllUniqueSimpleTypesInCurrentAssembly)
+					if (tmpList.Contains(type.ToString())) tmpDuplicateList.Add(type.ToString());
+					else tmpList.Add(type.ToString());
+				foreach (string dup in tmpDuplicateList)
+					tmpList.RemoveAll((s) => s == dup);
+				AllUniqueSimpleTypeStringsInCurrentAssembly = tmpList;
+				AllUniqueSimpleTypeStringsInCurrentAssembly.Sort();
+				return AllUniqueSimpleTypeStringsInCurrentAssembly;
+			}
+		}
+
 		public static class DynamicTypeBuilder
 		{
 			public static void AddMethodDynamically(TypeBuilder myTypeBld,
@@ -128,53 +248,6 @@ namespace SharedClasses
 
 				propertyBuilder.SetGetMethod(getPropMthdBldr);
 				propertyBuilder.SetSetMethod(setPropMthdBldr);
-			}
-		}
-
-		private static List<Type> AllUniqueSimpleTypesInCurrentAssembly = null;
-		public static List<Type> GetAllUniqueSimpleTypesInCurrentAssembly
-		{
-			get
-			{
-				if (AllUniqueSimpleTypesInCurrentAssembly != null)
-					return AllUniqueSimpleTypesInCurrentAssembly;
-				AllUniqueSimpleTypesInCurrentAssembly = new List<Type>();
-				Assembly[] appAssemblies = System.AppDomain.CurrentDomain.GetAssemblies();
-				foreach (Assembly assembly in appAssemblies)
-					foreach (Type type in assembly.GetTypes())
-						AllUniqueSimpleTypesInCurrentAssembly.Add(type);
-				return AllUniqueSimpleTypesInCurrentAssembly.OrderBy(t => t.FullName).ToList();
-			}
-		}
-		public static Type GetTypeFromSimpleString(string SimpleTypeString, bool IgnoreCase = false)
-		{
-			Type TypeIAmLookingFor = null;
-			//List<Type> typeList = GetAllUniqueSimpleTypesInCurrentAssembly;
-			foreach (Type type in GetAllUniqueSimpleTypesInCurrentAssembly)
-				if (type.ToString().Equals(SimpleTypeString) || (IgnoreCase && type.ToString().ToLower().Equals(SimpleTypeString.ToLower())))
-					TypeIAmLookingFor = type;
-			return TypeIAmLookingFor;
-		}
-
-		private static List<string> AllUniqueSimpleTypeStringsInCurrentAssembly = null;
-		public static List<string> GetAllUniqueSimpleTypeStringsInCurrentAssembly
-		{
-			get
-			{
-				if (AllUniqueSimpleTypeStringsInCurrentAssembly != null) return AllUniqueSimpleTypeStringsInCurrentAssembly;
-				List<string> tmpList = new List<string>();
-				List<string> tmpDuplicateList = new List<string>();
-				//Assembly[] appAssemblies = System.AppDomain.CurrentDomain.GetAssemblies();
-				//foreach (Assembly assembly in appAssemblies)
-				//	foreach (Type type in assembly.GetTypes())
-				foreach (Type type in GetAllUniqueSimpleTypesInCurrentAssembly)
-					if (tmpList.Contains(type.ToString())) tmpDuplicateList.Add(type.ToString());
-					else tmpList.Add(type.ToString());
-				foreach (string dup in tmpDuplicateList)
-					tmpList.RemoveAll((s) => s == dup);
-				AllUniqueSimpleTypeStringsInCurrentAssembly = tmpList;
-				AllUniqueSimpleTypeStringsInCurrentAssembly.Sort();
-				return AllUniqueSimpleTypeStringsInCurrentAssembly;
 			}
 		}
 

@@ -340,6 +340,8 @@ public static class Win32Api
 	public static extern int AnimateWindow(IntPtr hwand, int dwTime, int dwFlags);
 
 	public const int GWL_EXSTYLE = -20;
+	public const int WS_EX_LAYERED = 0x80000;
+	public const int WS_EX_TRANSPARENT = 0x20;
 	public const int WS_EX_NOACTIVATE = 0x08000000;
 	[DllImport("user32.dll")]
 	public static extern IntPtr SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);

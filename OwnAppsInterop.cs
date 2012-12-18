@@ -94,6 +94,18 @@ namespace SharedClasses
 			}
 		}
 
+		public static string GetPathRelativeToVsRootFolder(string path, out string errorIfFailed)
+		{
+			if (!path.StartsWith(RootVSprojectsDir, StringComparison.InvariantCultureIgnoreCase))
+			{
+				errorIfFailed = string.Format("Cannot GetPathRelativeToVsRootFolder, the path = '{0}' must be inside the root folder = '{1}'.",
+					path, RootVSprojectsDir);
+				return null;
+			}
+			errorIfFailed = null;
+			return path.Substring(RootVSprojectsDir.TrimEnd('\\').Length + 1);//We do not want to include the first \\
+		}
+
 		public static string GetAppIconPath(string ApplicationName, out string errorIfFailed)
 		{
 			string tmpSolutionPath = GetSolutionPathFromApplicationName(ApplicationName, out errorIfFailed);
@@ -329,8 +341,38 @@ namespace SharedClasses
 				}
 			}
 
+			if (tmpdict.Count == 0)
+			{
+				errIfFailed = "The solution file does not reference any .csproj files: " + solutionFullPath;
+				return null;
+			}
+
 			errIfFailed = null;
 			return tmpdict;
+		}
+
+		public static KeyValuePair<string, ApplicationTypes>? GetRelativePathToCsProjWithSameFilenameAsSolution(string solutionFullPath, out string errIfFailed)
+		{
+			var allcsProjsInSolution = GetRelativePathsToCsProjsFromSolutionFile(solutionFullPath, out errIfFailed);
+			if (allcsProjsInSolution == null) return null;
+			var possibleCsProjsWithSameName = allcsProjsInSolution
+				.Where(kv => Path.GetFileNameWithoutExtension(kv.Key)
+					.Equals(Path.GetFileNameWithoutExtension(solutionFullPath), StringComparison.InvariantCultureIgnoreCase)).ToList();
+			if (possibleCsProjsWithSameName.Count == 0)
+			{
+				errIfFailed = "Could not find any .csproj file with same filename (without extension) as solution file: " + solutionFullPath;
+				return null;
+			}
+			else if (possibleCsProjsWithSameName.Count > 1)
+			{
+				errIfFailed = "Multiple .csproj files found with same filename (without extension) as solution file: " + solutionFullPath;
+				return null;
+			}
+			else
+			{
+				errIfFailed = null;
+				return possibleCsProjsWithSameName[0];
+			}
 		}
 
 		public static bool? IsAppIconImplemented(string csprojFullPath, out string AppIconRelativePath, out string errorIfFailed)
@@ -648,6 +690,120 @@ namespace SharedClasses
 			MatchCollection commentBlocks = Regex.Matches(csFileContent, cCsFileCommentsRegex, RegexOptions.Multiline);
 			for (int i = commentBlocks.Count - 1; i >= 0; i--)
 				csFileContent = csFileContent.Remove(commentBlocks[i].Index, commentBlocks[i].Length);
+		}
+
+		private static string FixRelativePath(string originalStringToBeReplace, string csprojFullpath_JustUsedInErrorMessages, out string errorIfFailed)
+		{
+			try
+			{
+				if (originalStringToBeReplace.ToLower().Contains(@"\Francois\Dev\VSprojects\".ToLower()))
+				{
+					int tmpindex = originalStringToBeReplace.IndexOf(@"\Francois\Dev\VSprojects\", StringComparison.InvariantCultureIgnoreCase);
+					tmpindex += @"\Francois\Dev\VSprojects\".Length;//We want to get just after Dev\
+					errorIfFailed = null;
+					return @"..\..\" + originalStringToBeReplace.Substring(tmpindex);
+				}
+				else if (originalStringToBeReplace.ToLower().Contains(@"\Francois\Dev\".ToLower()))
+				{
+					int tmpindex = originalStringToBeReplace.IndexOf(@"\Francois\Dev\", StringComparison.InvariantCultureIgnoreCase);
+					tmpindex += @"\Francois\Dev\".Length;//We want to get just after Dev\
+					errorIfFailed = null;
+					return @"..\..\..\" + originalStringToBeReplace.Substring(tmpindex);
+				}
+				else if (Regex.IsMatch(originalStringToBeReplace, @"^[a-zA-Z]:\\"))//Is an absolute path
+				{
+					//Already handled the next commented block by the previous if()
+					/*if (originalStringToBeReplace.ToLower().Contains(@"\Dev\DLLs\".ToLower()))
+					{
+						int tmpindex = originalStringToBeReplace.IndexOf(@"\Dev\DLLs\", StringComparison.InvariantCultureIgnoreCase);
+						tmpindex += @"\Dev\".Length;//We want to get where DLLs starts
+						errorIfFailed = null;
+						return @"..\..\..\" + originalStringToBeReplace.Substring(tmpindex);
+					}
+					else
+					{*/
+					errorIfFailed = "Cannot fix absolute path '" + originalStringToBeReplace + "' inside project '"
+						+ csprojFullpath_JustUsedInErrorMessages + "'";
+					return null;
+					/*}*/
+				}
+
+				errorIfFailed = null;
+				return originalStringToBeReplace;
+			}
+			catch (Exception exc)
+			{
+				errorIfFailed = "Exception in FixRelativePath: " + exc.Message;
+				return originalStringToBeReplace;
+			}
+		}
+
+		public static bool FixIncludeFilepathsInCsProjFile(string csprojFullpath, out string errorIfFailed, out List<string> warnings)
+		{
+			try
+			{
+				//int tmpfixcount = 0;
+				string origFileContent = File.ReadAllText(csprojFullpath);
+				List<string> warningsInRegexReplace = new List<string>();
+				string newFileContents = RegexInterop.RegexReplaceMatches(
+					ref origFileContent,
+					@"(?<=Include="")[^""]+(?="")",
+					(origString) =>
+					{
+						string tmperr;
+						string fixedRelPath = FixRelativePath(origString, csprojFullpath, out tmperr);
+
+						//if (!origString.Equals(fixedRelPath))
+						//    tmpfixcount++;
+
+						if (fixedRelPath != null && tmperr == null)
+							return fixedRelPath;
+						else
+						{
+							warningsInRegexReplace.Add(tmperr);
+							return origString;
+						}
+					},
+					out errorIfFailed);
+
+				if (warningsInRegexReplace.Count > 0)
+					warnings = warningsInRegexReplace;
+				else
+					warnings = null;
+
+				if (newFileContents == null)
+					return false;//errorIfFailed already set
+
+				string cThisAppName = "AnalyseProjects";
+				if (!origFileContent.Equals(newFileContents))
+				{
+					string backupFilePath = SettingsInterop.GetFullFilePathInLocalAppdata(
+						DateTime.Now.ToString("yyyy_MM_dd__HH_MM_ss") + " " + Path.GetFileName(csprojFullpath),
+						cThisAppName,
+						"BackupsOfChangedCsProjFiles\\" + Path.GetFileNameWithoutExtension(csprojFullpath));
+					File.WriteAllText(backupFilePath, origFileContent);
+
+					File.WriteAllText(@"C:\Francois\Other\tmp\tmpRel\" + Path.GetFileName(csprojFullpath), newFileContents);
+					//File.WriteAllText(csprojFullpath, newFileContents);
+
+					string tmpwarnmsg = "Some relative paths were fixed in csproject (via method FixIncludeFilepathsInCsProjFile)"
+						+ " '" + csprojFullpath + "' and a backup was made in file"
+						+ " '" + backupFilePath + "'";
+
+					if (warnings == null)
+						warnings = new List<string>();
+					warnings.Add(tmpwarnmsg);
+					Logging.LogWarningToFile(tmpwarnmsg, Logging.ReportingFrequencies.Daily, cThisAppName, "Logs");
+				}
+
+				return true;
+			}
+			catch (Exception exc)
+			{
+				warnings = null;
+				errorIfFailed = "Exception in FixIncludeFilepathsInCsProjFile: " + exc.Message;
+				return false;
+			}
 		}
 
 		private static string rootVSprojectsDir;

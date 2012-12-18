@@ -678,11 +678,12 @@ namespace SharedClasses
 		/// <remarks>
 		/// To create an instance without installing hooks call new UserActivityHook(false, false)
 		/// </remarks>
-		public UserActivityHook(bool InstallMouseHook, bool InstallKeyboardHook, bool GestureOnLeft = false, bool GestureOnMiddle = false, bool GestureOnRight = false)
+		public UserActivityHook(bool InstallMouseHook, bool InstallKeyboardHook, bool GestureOnLeft = false, bool GestureOnMiddle = false, bool GestureOnRight = false, bool GesturesRequireAltKeyDown = false)
 		{
 			this.GestureOnLeft = GestureOnLeft;
 			this.GestureOnMiddle = GestureOnMiddle;
 			this.GestureOnRight = GestureOnRight;
+			this.GesturesRequireAltKeyDown = GesturesRequireAltKeyDown;
 			Start(InstallMouseHook, InstallKeyboardHook);
 		}
 
@@ -853,6 +854,7 @@ namespace SharedClasses
 		private bool GestureOnLeft = false;
 		private bool GestureOnMiddle = false;
 		private bool GestureOnRight = true;
+		private bool GesturesRequireAltKeyDown = false;
 
 		DateTime lastLeftDown = DateTime.MinValue;
 		DateTime lastMiddleDown = DateTime.MinValue;
@@ -1003,6 +1005,10 @@ namespace SharedClasses
 		//private int gestureSegmentCount = 0;
 		private void BeginGesture()
 		{
+			if (this.GesturesRequireAltKeyDown
+				&& System.Windows.Input.Keyboard.Modifiers != System.Windows.Input.ModifierKeys.Alt)
+				return;
+
 			lastGesturePoint = Cursor.Position;
 			gesture = new MouseGesture(lastGesturePoint);
 			distance = 0;

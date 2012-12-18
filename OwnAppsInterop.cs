@@ -6,7 +6,7 @@ using System.IO;
 using System.Xml;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Xml.Linq;
+//using System.Xml.Linq;
 
 namespace SharedClasses
 {
@@ -778,13 +778,11 @@ namespace SharedClasses
 				if (!origFileContent.Equals(newFileContents))
 				{
 					string backupFilePath = SettingsInterop.GetFullFilePathInLocalAppdata(
-						DateTime.Now.ToString("yyyy_MM_dd__HH_MM_ss") + " " + Path.GetFileName(csprojFullpath),
+						DateTime.Now.ToString("yyyy_MM_dd__HH_mm_ss") + " " + Path.GetFileName(csprojFullpath),
 						cThisAppName,
 						"BackupsOfChangedCsProjFiles\\" + Path.GetFileNameWithoutExtension(csprojFullpath));
 					File.WriteAllText(backupFilePath, origFileContent);
-
-					File.WriteAllText(@"C:\Francois\Other\tmp\tmpRel\" + Path.GetFileName(csprojFullpath), newFileContents);
-					//File.WriteAllText(csprojFullpath, newFileContents);
+					File.WriteAllText(csprojFullpath, newFileContents);
 
 					string tmpwarnmsg = "Some relative paths were fixed in csproject (via method FixIncludeFilepathsInCsProjFile)"
 						+ " '" + csprojFullpath + "' and a backup was made in file"

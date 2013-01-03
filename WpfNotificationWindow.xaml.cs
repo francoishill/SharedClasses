@@ -26,6 +26,8 @@ namespace SharedClasses
 	/// </summary>
 	public partial class WpfNotificationWindow : Window
 	{
+		public static Action actionToShowAboutWindow = delegate { };//This gets set in the App.xaml.cs override OnStartup, the actual code for AboutWindow has to exist inside the MainWindow to make the AnalaseProjects app succeed for ShowNoCallbackNotifications
+
 		private static ObservableCollection<NotificationClass> _notifications;// = new ObservableCollection<NotificationClass>();
 		private static ObservableCollection<NotificationClass> notifications
 		{
@@ -255,7 +257,7 @@ namespace SharedClasses
 			if (notifBorder == null) return;
 
 			NotificationClass notif1 = notifBorder.DataContext as NotificationClass;
-			
+
 			//TODO: This was removed, otherwise close callback does not fire when clicked on the Notification itsself
 			//if (notif1 != null)
 			//    notif1.RemoveCloseCallback();
@@ -338,7 +340,7 @@ namespace SharedClasses
 
 			busy = true;
 			Environment.Exit(0);//Application.Current.Shutdown(0);
-			
+
 			int cnt = notifications.Count;
 			for (int i = 0; i < cnt; i++)
 			{
@@ -377,6 +379,12 @@ namespace SharedClasses
 				}
 			}
 			return null;
+		}
+
+		private void labelAbout_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+		{
+			e.Handled = true;
+			actionToShowAboutWindow();
 		}
 	}
 

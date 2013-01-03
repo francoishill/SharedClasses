@@ -59,6 +59,8 @@ namespace SharedClasses
 
 		public static void ShowAboutWindow(ObservableCollection<DisplayItem> ItemsToDisplay, bool showmodal = true, Window owner = null)
 		{
+			string thisAppname = System.IO.Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
+			ItemsToDisplay.Insert(0, new DisplayItem("Application name", thisAppname));
 			var win = new AboutWindow2(ItemsToDisplay)
 			{
 				Owner = owner
@@ -67,6 +69,12 @@ namespace SharedClasses
 				win.ShowDialog();
 			else
 				win.Show();
+		}
+
+		private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+		{
+			if (e.Key == Key.Escape)
+				this.Close();
 		}
 	}
 

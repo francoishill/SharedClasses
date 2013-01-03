@@ -4,6 +4,7 @@ using System.Net;
 using System.Text;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace SharedClasses
 {
@@ -264,6 +265,22 @@ namespace SharedClasses
 				errorStringIfFailElseJsonString = response;
 				return false;
 			}
+		}
+
+		public static bool IsValidUri(string url)
+		{
+			string regexPattern = @"^(http(?:s)?\:\/\/[a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)*\.[a-zA-Z]{2,6}(?:\/?|(?:\/[\w\-]+)*)(?:\/?|\/\w+\.[a-zA-Z]{2,4}(?:\?[\w]+\=[\w\-]+)?)?(?:\&[\w]+\=[\w\-]+)*)$";
+			return Regex.IsMatch(url, regexPattern);
+		}
+
+		public static string GetFaviconUrlFromFullUrl(string url)
+		{
+			string regexPattern = @"^(http(?:s)?\:\/\/[a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)*\.[a-zA-Z]{2,6}(?:\/?))";
+			Match match = Regex.Match(url, regexPattern);
+			if (match == null || !match.Success)
+				return null;
+			else
+				return match.ToString().Trim('/') + "/favicon.ico";
 		}
 	}
 }

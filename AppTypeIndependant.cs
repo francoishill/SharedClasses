@@ -8,6 +8,9 @@ namespace SharedClasses
 {
 	public static class AppTypeIndependant
 	{
+		/* Additional dependencies for this file:
+			Class: ReflectionInterop*/
+
 		public enum ApplicationType { Console, WinForm, WPF };
 		public static ApplicationType GetApplicationType(bool PreventCallFromWinformsFormConstructor = false)
 		{

@@ -11,6 +11,12 @@ namespace SharedClasses
 {
 	public class PublishDetails
 	{
+		/* Additional dependencies for this file:
+			Full framework
+			Class: BuildingInterop
+			Class: SharedClassesSettings
+			Assembly: System.Web*/
+
 		public const string OnlineJsonCategory = "Own Applications";
 		public const string LastestVersionJsonNamePostfix = " - latest";
 

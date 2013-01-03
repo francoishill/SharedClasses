@@ -25,6 +25,15 @@ namespace SharedClasses
 	/// </summary>
 	public partial class UnhandledExceptionsWindow : Window
 	{
+		/*	Additional dependencies for this file:
+			Class: AppTypeIndependant
+			Class: DeveloperCommunication
+			Class: ReflectionInterop
+			Assembly: WindowsBase
+			Assembly: PresentationCore
+			Assembly: PresentationFramework
+			Assembly: System.Xaml*/
+
 		public UnhandledExceptionsWindow(Exception exception)
 		{
 			InitializeComponent();

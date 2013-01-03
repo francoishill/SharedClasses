@@ -24,6 +24,9 @@ using System.Collections;
 
 namespace SharedClasses
 {
+	/* Additional dependencies for this file:
+			WPF: Window: InputBoxWPF*/
+
 #if NOTUSEINTERCEPTOR
 	public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable, new()
 	{

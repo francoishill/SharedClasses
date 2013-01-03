@@ -102,6 +102,27 @@ namespace SharedClasses
 
 	public static class SettingsSimple
 	{
+		//Use these 'On..Override' events to override the default behaviour of when stuff happens
+		public static event ErrorEventHandler OnErrorOverrideShowingUsermessage = null;
+		public static event ErrorEventHandler OnWarningOverrideShowingUsermessage = null;
+		public static event EventHandler OnOnlineSettingsSavedSuccessfully = delegate { };
+
+		private static void ShowErrorMessage(string errmsg)
+		{
+			if (OnErrorOverrideShowingUsermessage == null)
+				UserMessages.ShowErrorMessage(errmsg);
+			else
+				OnErrorOverrideShowingUsermessage(null, new ErrorEventArgs(new Exception(errmsg)));
+		}
+
+		private static void ShowWarningMessage(string warnmsg)
+		{
+			if (OnWarningOverrideShowingUsermessage == null)
+				UserMessages.ShowErrorMessage(warnmsg);
+			else
+				OnWarningOverrideShowingUsermessage(null, new ErrorEventArgs(new Exception(warnmsg)));
+		}
+
 		public class GuidAsCategoryPrefixAttribute : Attribute { }
 
 		public class PropertyInterceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable, new()
@@ -144,7 +165,7 @@ namespace SharedClasses
 							////TODO: Only handles string
 							//if (result != null && result.ReturnValue != null && result.ReturnValue.GetType().Name == typeof(List<string>).Name)// result.GetType().Name == typeof(List2<>).Name)
 							//{
-							//	//UserMessages.ShowWarningMessage(string.Format("Property {0} is of type List<string> and will not be saved when items are added"));
+							//	//ShowWarningMessage(string.Format("Property {0} is of type List<string> and will not be saved when items are added"));
 							//	PropertyInfo pi = target.GetType().GetProperty(propName);
 							//	List2<string> list = new List2<string>(result.ReturnValue as List<string>, propName);
 							//	list.PropertyChanged += (s, e) => { target.OnPropertySet(e.PropertyName); };
@@ -240,7 +261,7 @@ namespace SharedClasses
 					}
 					else
 					{
-						UserMessages.ShowErrorMessage("Error reading object online: " + errIfFail);
+						ShowErrorMessage("Error reading object online: " + errIfFail);
 						return false;
 					}
 				}
@@ -292,12 +313,13 @@ namespace SharedClasses
 				{
 					string errIfFail;
 					if (!WebInterop.SaveObjectOnline(SettingsCategory, SettingName, this, out errIfFail))
-						UserMessages.ShowErrorMessage("Error while saving online: " + errIfFail);
+						ShowErrorMessage("Error while saving online: " + errIfFail);
 					else
 					{
 						//UserMessages.ShowInfoMessage("Successfully saved online.");
 						GetOnlineModifiedDate();
 						SaveToLocalCache();
+						OnOnlineSettingsSavedSuccessfully(this, new EventArgs());
 						return true;
 					}
 					return false;
@@ -393,9 +415,7 @@ namespace SharedClasses
 							this.SaveToLocalCache();
 					}
 					else if (populatedFromOnline == false)//Error occurred, not internet, etc
-					{
-						UserMessages.ShowWarningMessage("Warning: could not get cached NOR local settings, using defaults.");
-					}
+						ShowWarningMessage("Warning: could not get cached NOR local settings, using defaults.");
 				}
 			}
 
@@ -471,20 +491,20 @@ namespace SharedClasses
 					switch (compareResult)
 					{
 						case ComparisonResult.NullValue:
-							UserMessages.ShowWarningMessage(string.Format("Cannot compare values, one/both null values. Obj1 = '{0}', Obj2 = '{1}'", (tmpobj == null ? "[NULL]" : tmpobj.ToString()), (tmpobj2 == null ? "[NULL]" : tmpobj2.ToString())));
+							ShowWarningMessage(string.Format("Cannot compare values, one/both null values. Obj1 = '{0}', Obj2 = '{1}'", (tmpobj == null ? "[NULL]" : tmpobj.ToString()), (tmpobj2 == null ? "[NULL]" : tmpobj2.ToString())));
 							break;
 						case ComparisonResult.DifferentTypes:
-							UserMessages.ShowWarningMessage(string.Format("Cannot compare different types of '{0}' and '{1}'", tmpobj.GetType().ToString(), tmpobj2.GetType().ToString()));
+							ShowWarningMessage(string.Format("Cannot compare different types of '{0}' and '{1}'", tmpobj.GetType().ToString(), tmpobj2.GetType().ToString()));
 							break;
 						case ComparisonResult.Equal:
-							//UserMessages.ShowInfoMessage("Equal");
+							//ShowInfoMessage("Equal");
 							break;
 						case ComparisonResult.NotEqual:
-							//UserMessages.ShowWarningMessage("Changed: " + prop.Name);
+							//ShowWarningMessage("Changed: " + prop.Name);
 							keys[i].OnPropertySet(prop.Name);
 							break;
 						case ComparisonResult.UnsupportedType:
-							UserMessages.ShowWarningMessage(
+							ShowWarningMessage(
 								string.Format("Type unsupported for comparison, either Obj1 = '{0}' or Obj2 = '{1}', error message:{2}{3}",
 									tmpobj.GetType().ToString(),
 									tmpobj2.GetType().ToString(),
@@ -700,7 +720,7 @@ namespace SharedClasses
 						return new RunCommand(fullCommandLine, Path.GetFileName(fullCommandLine), PathTypes.FullPath);
 					else if (Directory.Exists(fullCommandLine))
 						return new RunCommand(fullCommandLine, Path.GetFileName(fullCommandLine), PathTypes.FullPath);
-					UserMessages.ShowWarningMessage("Cannot obtain RunCommand from full Commanline: " + fullCommandLine);
+					ShowWarningMessage("Cannot obtain RunCommand from full Commanline: " + fullCommandLine);
 					return null;
 				}
 
@@ -739,7 +759,7 @@ namespace SharedClasses
 					"MonitorSystem",
 					"QuickAccess",
 					"GenericTextFunctions",
-					"AForgeMotionDetector",
+					//"AForgeMotionDetector",
 					"TestingMonitorSubversion",
 					"StartupTodoManager",
 					"ApplicationManager",
@@ -759,7 +779,9 @@ namespace SharedClasses
 					"ShowNoCallbackNotification",
 					"StandaloneUploader",
 					"BuildTestSystem",
-					"CompareCSVs"
+					"CompareCSVs",
+					"MoveSvnToGitWPF",
+					"TaskbarShortcuts"
 				};
 			}
 			public static void EnsureDefaultItemsInList()
@@ -774,8 +796,55 @@ namespace SharedClasses
 						tmpInstanceList.Add(app);
 					}
 				allthere = false;
+				tmpInstanceList.Remove("AForgeMotionDetector");
+
 				if (!allthere)
+				{
+					tmpInstanceList.Sort();
 					BuildTestSystemSettings.Instance.ListOfApplicationsToBuild = tmpInstanceList;
+				}
+			}
+		}
+
+		public class AnalyseProjectsSettings : BaseOnlineClass<AnalyseProjectsSettings>
+		{
+			public List<string> ListOfApplicationsToAnalyse { get; set; }
+			public AnalyseProjectsSettings()//Defaults
+			{
+				ListOfApplicationsToAnalyse = new List<string>()
+				{
+					"AddDependenciesCSharp",
+					"AnalyseProjects",
+					"AutoUpdater",
+					"AutoUploadChangesToFtp",
+					"BuildTestSystem",
+					"CodeSnippets",
+					"CompareCSVs",
+					"FileOperations",
+					"GenericTextFunctions",
+					"InstantMessengerClient",
+					"InstantMessengerServer",
+					"KillWadiso6",
+					"MiniPopupTasks",
+					"MonitorClipboardDebugAssertions",
+					"MonitorSystem",
+					"MoveSvnToGitWPF",
+					"PublishFromCommandline",
+					"PublishOwnApps",
+					"QuickAccess",
+					"SettingsInterop",
+					"ShoppingList",
+					"ShowNoCallbackNotification",
+					"StandaloneUploader",
+					"StartupTodoManager",
+					"StickyNotes",
+					"TaskbarShortcuts",
+					"TestHoursWorkedCalculator",
+					"TestingByteArrayDiff",
+					"TestingMonitorSubversion",
+					"TopmostSearchBox",
+					"WindowsStartupManager",
+				};
 			}
 		}
 
@@ -823,7 +892,7 @@ namespace SharedClasses
 			public string Username { get; set; }
 			public string ApiKey { get; set; }
 			public Dictionary<string, string> AppSecrets { get; set; }
-			
+
 			public WebsiteKeys()//Defaults
 			{
 			}

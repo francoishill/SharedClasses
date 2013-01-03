@@ -6,7 +6,8 @@
 		Width="500"
 		Loaded='Window_Loaded'
 		WindowStartupLocation='CenterScreen'
-		SizeToContent='WidthAndHeight'>
+		SizeToContent='WidthAndHeight'
+		PreviewKeyDown='Window_PreviewKeyDown'>
 	<Grid>
 		<Image Name='imageIcon'
 			   Width='32'

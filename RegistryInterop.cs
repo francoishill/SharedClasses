@@ -12,6 +12,11 @@ namespace SharedClasses
 
 	public class RegistryInterop
 	{
+		/* Additional dependencies for this file:
+			Minimum winforms
+			Class: fastJSON
+			Class: FeedbackMessageTypes*/
+
 		//TODO: Need to place this next couple of functions in their own class (and file)
 		[DllImport("kernel32.dll", CharSet = CharSet.Auto)]
 		public extern static IntPtr GetProcAddress(IntPtr hModule, string methodName);

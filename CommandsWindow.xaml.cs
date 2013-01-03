@@ -12,6 +12,8 @@ namespace SharedClasses
 	/// </summary>
 	public partial class CommandsWindow : Window
 	{
+		public static Action actionForShowingAboutWindow = delegate { };//We assign this action inside the MainForm of QuickAccess, this is just so we can get the AnalyseProjects app to pass the AboutBox checkbox for QuickAccess
+
 		System.Windows.Forms.Form MainFormUsedForShuttingDownServers;
 		public CommandsUsercontrol GetCommandsUsercontrol() { return commandsUsercontrol1; }
 
@@ -106,7 +108,7 @@ namespace SharedClasses
 					case ShowGesturesFormMenuID:
 						handled = true;
 						if (MouseClickedRequestToOpenOverlayWindow != null)
-							MouseClickedRequestToOpenOverlayWindow(this, new  OverlayRibbon.RequestToOpenWindowEventArgs(true));
+							MouseClickedRequestToOpenOverlayWindow(this, new OverlayRibbon.RequestToOpenWindowEventArgs(true));
 						break;
 					//case _AboutSysMenuID:
 					//	MessageBox.Show("\"About\" was clicked");
@@ -180,8 +182,14 @@ namespace SharedClasses
 			if (this.WindowState == System.Windows.WindowState.Minimized)
 			{
 				this.WindowState = System.Windows.WindowState.Normal;
-				this.Hide();				
+				this.Hide();
 			}
+		}
+
+		private void labelAbout_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+		{
+			e.Handled = true;
+			actionForShowingAboutWindow();
 		}
 	}
 }

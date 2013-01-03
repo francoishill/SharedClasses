@@ -7,6 +7,11 @@ namespace SharedClasses
 {
 	public class ProcessesInterop
 	{
+		/* Additional dependencies for this file:
+			Minimum winforms
+			Class: FeedbackMessageTypes
+			Winforms: Form: UserMessages*/
+
 		private static Process GetRedirectingProcess(ProcessStartInfo startInfo, Action<object, string> onOutput, Action<object, string> onError, string WriteToStandardInputBeforeReadingText)
 		{
 			Process proc = new Process();

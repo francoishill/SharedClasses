@@ -7,6 +7,9 @@ using System.Windows.Media;
 /// </summary>
 public partial class InputBoxWPF : Window
 {
+	/*	Additional dependencies for this file:
+		Class: WPFdraggableCanvas*/
+
 	public static string Prompt(string PromptMessage, string Title = "Prompt", bool IsPassword = false)
 	{
 		InputBoxWPF inputBoxWPF = new InputBoxWPF(PromptMessage, Title, IsPassword);

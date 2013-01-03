@@ -11,6 +11,20 @@ namespace SharedClasses
 {
 	public static class AutoUpdating
 	{
+		/*	Additional dependencies for this file:
+			//Forms required for ThreadingInterop
+			Minimum winforms
+			Class: AppTypeIndependant
+			Class: fastJSON
+			Class: ProcessesInterop
+			Class: RegistryInterop
+			Class: ThreadingInterop
+			WPF: Window: UnhandledExceptionsWindow
+			Assembly: WindowsBase
+			Assembly: PresentationCore
+			Assembly: PresentationFramework
+			Assembly: System.Xaml*/
+
 		public const string cCalledItsselfThirdParameter = "calleditsself";
 
 		public enum ExitCodes
@@ -134,11 +148,11 @@ namespace SharedClasses
 		}
 
 		//private static bool isUpToDate = false;
-		[Obsolete("Method had been replaced by CheckForUpdates_ExceptionHandler", true)]
+		/*[Obsolete("Method had been replaced by CheckForUpdates_ExceptionHandler", true)]
 		public static Thread CheckForUpdates(Action<string> ActionIfUptoDate_Versionstring = null, Action<string> ActionOnError = null, bool SeparateThreadDoNotWait = true, bool autoInstallIfUpdateFound = true)
 		{
 			return null;
-		}
+		}*/
 
 		public static void InstallLatest(string applicationName, Action<string> ActionOnError, Action<string> actionOnComplete = null, bool installSilently = true)
 		{

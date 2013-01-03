@@ -18,6 +18,11 @@ namespace SharedClasses
 
 	public abstract class VSBuildProject
 	{
+		/* Additional dependencies for this file:
+			Class: SharedClassesSettings
+			Assembly: Microsoft.Build
+			Assembly: Microsoft.Build.Framework*/
+
 		private static bool? ChecksAlreadyDone = null;
 
 		public virtual string ApplicationName { get; set; }

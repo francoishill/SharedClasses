@@ -11,9 +11,19 @@ namespace SharedClasses
 {
 	public class CSharpDependencies
 	{
+		private static string[] IgnoredFiles = new string[]
+		{
+			"WPFcanvasArrows.xaml",
+		};
+
 		public static FullPathAndDisplayName[] GetSharedClasses()
 		{
-			return Directory.GetFiles(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments).TrimEnd('\\') + "\\" + @"Visual Studio 2010\Projects\SharedClasses")
+			//Function to determine whether a file must be included
+			Func<string, bool> shouldFileBeIncludedCheck = new Func<string,bool>(
+				filepath => IgnoredFiles.Count(ignfilename => ignfilename.Equals(Path.GetFileName(filepath), StringComparison.InvariantCultureIgnoreCase)) == 0);
+
+			return Directory.GetFiles(@"C:\Francois\Dev\VSprojects\SharedClasses")
+				.Where(shouldFileBeIncludedCheck)
 				.Where(f =>
 					(f.EndsWith(".cs", StringComparison.InvariantCultureIgnoreCase) || f.EndsWith(".xaml", StringComparison.InvariantCultureIgnoreCase))
 					&& (!f.EndsWith(".xaml.cs", StringComparison.InvariantCultureIgnoreCase))
@@ -38,7 +48,7 @@ namespace SharedClasses
 
 		public static string GetAbsolutePath(string basePath, string destinationRelativePath)
 		{
-			Uri baseUri = new Uri(Uri.EscapeUriString(basePath));
+			Uri baseUri = new Uri(Uri.EscapeUriString(basePath.Replace('\\', '/')));
 			Uri relativeUri = new Uri(baseUri, Uri.EscapeUriString(destinationRelativePath));
 			return relativeUri.AbsoluteUri.ToString().Replace('/', '\\').Replace(@"file:\\\", "");
 		}
@@ -349,10 +359,14 @@ namespace SharedClasses
 					additionalLineFound = true;
 				else if (additionalLineFound)//So that the same line is not used
 				{
-					if (isWpfProject_FalseWinforms && line.Trim().StartsWith("Winforms:", StringComparison.InvariantCultureIgnoreCase))
+					while (line.EndsWith("*/"))
+						line = line.Substring(0, line.Length - 2);
+
+					//Why was the following required, means we do not use 'Winforms:' lines if it's a WPF app, and vica versa??
+					/*if (isWpfProject_FalseWinforms && line.Trim().StartsWith("Winforms:", StringComparison.InvariantCultureIgnoreCase))
 						continue;
 					if (!isWpfProject_FalseWinforms && line.Trim().StartsWith("WPF:", StringComparison.InvariantCultureIgnoreCase))
-						continue;
+						continue;*/
 
 					if (line.Trim().StartsWith("Winforms:", StringComparison.InvariantCultureIgnoreCase))
 						line = line.Replace("Winforms:", "");
@@ -418,18 +432,22 @@ namespace SharedClasses
 						EnsureCsProjectHasFrancoisOtherDllsReference(ref csProject, ownReferenceName);
 					}
 
-					//Minimum winforms
-					//Full framework
-					//Class: SharedClassesSettings
-					//File: GoogleAPIs\Google.Apis.Tasks.v1.cs
-					//File: GoogleAPIs\Google.Apis.Plus.v1.cs
-					//The following assemblies should be located in c:\francois\other\dlls\GoogleApis:
-					//Assembly: System.Security
-					//Assembly own: DotNetOpenAuth
-					//Assembly own: Google.Apis.Authentication.OAuth2
-					//Assembly own: Google.Apis
-					//Assembly own: Google.Apis.Samples.Helper
-					//Assembly own: Newtonsoft.JSon.Net35
+					/*	Example of a cumbersome usage (note that some lines are just normal comments
+						Additional dependencies and sample code:
+						Minimum winforms
+						Full framework
+						Class: EncodeAndDecodeInterop
+						Winforms: Form: InputBox
+						WPF: Window: InputBoxWPF
+						WPF: Class: WPFdraggableCanvas
+						File: GoogleAPIs\Google.Apis.Tasks.v1.cs
+						The following assemblies should be located in c:\francois\other\dlls\GoogleApis:
+						Assembly: System.Security
+						Assembly own: DotNetOpenAuth
+						Assembly own: Google.Apis.Authentication.OAuth2
+						Assembly own: Google.Apis
+						Assembly own: Google.Apis.Samples.Helper
+						Assembly own: Newtonsoft.JSon.Net35*/
 				}
 
 				if (additionalLineFound && blockCommentNestedCount == 0)

@@ -1,0 +1,164 @@
+﻿<Window x:Class='SharedClasses.SearchWindow'
+		xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
+		xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
+		xmlns:sharedclasses='clr-namespace:SharedClasses'
+		Title='Search Window'
+		Name='SearchWindow1'
+		WindowStartupLocation='CenterScreen'
+		Width='1138'
+		Height='470'
+		Loaded='SearchWindow1_Loaded'
+		Activated='SearchWindow1_Activated'
+		Deactivated='SearchWindow1_Deactivated'
+		WindowState='Maximized'
+		SizeChanged='SearchWindow1_SizeChanged'>
+	<Window.Resources>
+		<sharedclasses:AddToDoubleValueConverter x:Key='addToDoubleValueConverter' />
+	</Window.Resources>
+	<Grid Margin='20'>
+		<Grid.RowDefinitions>
+			<RowDefinition Height='30' />
+			<RowDefinition Height='40' />
+			<RowDefinition />
+			<RowDefinition Height='20' />
+			<RowDefinition Height='20' />
+		</Grid.RowDefinitions>
+		<TextBlock Name='textblockRootDirectoryForSearching'
+				   Text='dir...'
+				   Foreground='Gray'
+				   MouseLeftButtonDown='textblockRootDirectoryForSearching_MouseLeftButtonDown' />
+		<DockPanel Grid.Row='1'
+				   VerticalAlignment='Top'
+				   LastChildFill='True'>
+			<Button Name='buttonSearchAgain'
+					DockPanel.Dock='Right'
+					Content='_Search again'
+					VerticalAlignment='Center'
+					Margin='40 0 0 0'
+					Click='buttonSearchAgain_Click' />
+			<TextBox Name='textboxTextToSearchFor'
+					 Height='auto'
+					 TextChanged='textboxTextToSearchFor_TextChanged'
+					 KeyDown='textboxTextToSearchFor_KeyDown' />
+		</DockPanel>
+		<Grid Grid.Row='2'>
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width='1*' />
+				<ColumnDefinition Width='3*' />
+			</Grid.ColumnDefinitions>
+			<Grid.RowDefinitions>
+				<RowDefinition Height='40' />
+				<RowDefinition />
+			</Grid.RowDefinitions>
+			<ListBox Name='listboxFoundInFiles'
+					 Grid.RowSpan='2'
+					 SelectionChanged='listboxFoundInFiles_SelectedItemChanged'
+					 IsTextSearchEnabled='True'
+					 VirtualizingStackPanel.IsVirtualizing='True'
+					 VirtualizingStackPanel.VirtualizationMode='Recycling'>
+				<ListBox.Background>
+					<LinearGradientBrush EndPoint='0.5,1'
+										 StartPoint='0.5,0'
+										 Opacity='0.3'>
+						<GradientStop Color='#FF54DAFC'
+									  Offset='0' />
+						<GradientStop Color='#FF58DAFF'
+									  Offset='1' />
+						<GradientStop Color='#FF03637C'
+									  Offset='0.5' />
+					</LinearGradientBrush>
+				</ListBox.Background>
+				<ListBox.ItemTemplate>
+					<DataTemplate>
+						<Border ToolTip='{Binding FullFilepath}'
+								MouseLeftButtonDown='borderItemMain_MouseLeftButtonDown'
+								Visibility='{Binding CurrentVisibility}'>
+							<TextBlock Text='{Binding DisplayFilepath}' />
+						</Border>
+					</DataTemplate>
+				</ListBox.ItemTemplate>
+			</ListBox>
+			<GridSplitter Grid.Column='1'
+						  Grid.RowSpan='2'
+						  Width='5'
+						  HorizontalAlignment='Left' />
+			<DockPanel Grid.Column='1'
+					   LastChildFill='True'
+					   Margin='5 0 0 0'>
+				<Button Name='buttonNextInFile'
+						DockPanel.Dock='Right'
+						VerticalAlignment='Center'
+						HorizontalAlignment='Right'
+						Content='_Next in file' />
+				<StackPanel Orientation='Vertical'
+							DockPanel.Dock='Left'
+							VerticalAlignment='Center'
+							Margin='5 0 10 0'>
+					<TextBlock Text='Enabled extensions'
+							   Foreground='Gray' />
+					<StackPanel Orientation='Horizontal'>
+						<TextBlock Text='All'
+								   Foreground='LightGray'
+								   Margin='10 0'
+								   Cursor='Hand'
+								   MouseLeftButtonDown='enabledExtensionsSelectAll_MouseLeftButtonDown'><TextBlock.TextDecorations><TextDecoration /></TextBlock.TextDecorations></TextBlock>
+						<TextBlock Text='None'
+								   Foreground='LightGray'
+								   Cursor='Hand'
+								   MouseLeftButtonDown='enabledExtensionsSelectNone_MouseLeftButtonDown'><TextBlock.TextDecorations><TextDecoration /></TextBlock.TextDecorations></TextBlock>
+					</StackPanel>
+				</StackPanel>
+				<ListBox Name='listboxFoundFileExtensionsToBeIgnored'
+						 VerticalAlignment='Center'
+						 HorizontalAlignment='Left'
+						 MinWidth='200'
+						 ScrollViewer.CanContentScroll='False'
+						 ScrollViewer.VerticalScrollBarVisibility='Auto'
+						 ScrollViewer.HorizontalScrollBarVisibility='Auto'>
+					<ListBox.ItemsPanel>
+						<ItemsPanelTemplate>
+							<WrapPanel IsItemsHost='True'
+									   Width='{Binding (FrameworkElement.ActualWidth), RelativeSource={RelativeSource AncestorType=DockPanel}, 
+									   Converter={StaticResource addToDoubleValueConverter}, ConverterParameter=-220}' />
+						</ItemsPanelTemplate>
+					</ListBox.ItemsPanel>
+					<ListBox.ItemTemplate>
+						<DataTemplate>
+							<Border BorderBrush='#333'
+									BorderThickness='1'
+									CornerRadius='3'
+									Padding='5 3'>
+								<StackPanel Orientation='Horizontal'>
+									<CheckBox IsChecked='{Binding IsEnabled}'
+											  Checked='checkboxExtensionsEnabled_Checked'
+											  Unchecked='checkboxExtensionsEnabled_Unchecked' />
+									<TextBlock Text='{Binding ExtensionString}' />
+								</StackPanel>
+							</Border>
+						</DataTemplate>
+					</ListBox.ItemTemplate>
+				</ListBox>
+			</DockPanel>
+			<RichTextBox Name='richTextBoxFileContents'
+						 Grid.Column='1'
+						 Grid.Row='1'
+						 Margin='5 0 0 0'
+						 Background='#eee'
+						 Foreground='#eee'
+						 AcceptsReturn='True'
+						 AcceptsTab='True'
+						 IsReadOnly='True'
+						 IsReadOnlyCaretVisible='True'
+						 ScrollViewer.HorizontalScrollBarVisibility='Auto'
+						 ScrollViewer.VerticalScrollBarVisibility='Auto' />
+		</Grid>
+		<TextBlock Name='textblockStatus'
+				   Grid.Row='3'
+				   Foreground='LightGray'
+				   Text='status...' />
+		<ProgressBar Name='progressBar'
+					 Grid.Row='4'
+					 Height='10'
+					 Maximum='100' />
+	</Grid>
+</Window>

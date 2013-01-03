@@ -88,7 +88,7 @@ namespace SharedClasses
 			{
 				ActionsInterop.DoAllActionsAndHandleError(
 					err => UserMessages.ShowErrorMessage(err),
-					delegate { File.Delete(FullFilePath); });
+					delegate { if (File.Exists(FullFilePath)) File.Delete(FullFilePath); });
 			}
 			if (createdTodoFiles.Contains(this))
 				createdTodoFiles.Remove(this);
@@ -99,7 +99,7 @@ namespace SharedClasses
 			string backupFilePath = GetDateFilenameNow();
 			bool saveSuccess = ActionsInterop.DoAllActionsAndHandleError(
 				(err) => UserMessages.ShowErrorMessage("Cannot save file: " + err),
-				delegate { File.WriteAllText(backupFilePath, File.ReadAllText(FullFilePath)); },
+				delegate { File.WriteAllText(backupFilePath, File.Exists(FullFilePath) ? File.ReadAllText(FullFilePath) : ""); },
 				//new FileInfo(FullFilePath).Compress(backupFilePath);
 				delegate { File.SetAttributes(backupFilePath, FileAttributes.System | FileAttributes.Hidden); },
 				delegate { File.WriteAllText(FullFilePath, _filecontent); });
@@ -168,6 +168,8 @@ namespace SharedClasses
 
 		public void Purge()
 		{
+			if (!File.Exists(FullFilePath))
+				return;
 			File.Move(FullFilePath, GetDateFilenameNow());
 		}
 

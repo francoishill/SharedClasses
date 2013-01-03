@@ -12,6 +12,41 @@ namespace SharedClasses
 {
 	public static class OwnAppsInterop
 	{
+		/* Additional dependencies for this file:
+			Class: EncryptionInterop
+			Class: Helpers
+			Class: LicensingInterop_Shared
+			Class: Logging
+			Class: NetworkInteropSimple
+			Class: NsisInterop
+			Class: PhpInterop
+			Class: PublishInterop
+			Class: RegexInterop
+			Class: StandaloneUploaderInterop
+			Class: UploadingProtocolTypesEnum
+			Assembly: WindowsBase
+			Assembly: PresentationCore
+			Assembly: PresentationFramework
+			Assembly: System.Xaml*/
+
+		public static int StringIndexOfIgnoreInsideStringOrChar(this string haystack, string needle, int startIndex = 0, StringComparison comparisonType = StringComparison.InvariantCultureIgnoreCase)
+		{//Does not currently ignore char (altough method name states it)
+			int currentIndexOf = haystack.IndexOf(needle, startIndex, comparisonType);
+
+			while (IsIndexInsideString(StringTypes.Both, ref haystack, currentIndexOf, needle.Length))
+			{
+				startIndex = currentIndexOf + needle.Length;//Skip this char as it part of a string @"..." or "..."
+				//startIndex += currentIndexOf + needle.Length;//Skip this char as it part of a string @"..." or "..."
+				currentIndexOf = haystack.IndexOf(needle, startIndex);
+			}
+			return currentIndexOf;
+		}
+
+		public static int StringIndexOfIgnoreInsideStringOrChar(this string haystack, char needle, int startIndex = 0, StringComparison comparisonType = StringComparison.InvariantCultureIgnoreCase)
+		{
+			return StringIndexOfIgnoreInsideStringOrChar(haystack, needle.ToString(), startIndex, comparisonType);
+		}
+
 		public enum ApplicationTypes { WPF, Winforms, Console, DLL }
 
 		public static Dictionary<string, string> GetListOfInstalledApplications()
@@ -433,9 +468,11 @@ namespace SharedClasses
 					case ApplicationTypes.WPF:
 						XmlNode tmpAppDefxmlnode;
 						bool? gotAppDefXmlNode = GetApplicationDefinitionXmlNode(ref xmlDoc, ref nsmgr, nsmgrPrefix, csprojFullPath, out tmpAppDefxmlnode, out errorIfFailed);
-						if (gotAppDefXmlNode == null) return null;
+						if (gotAppDefXmlNode != true) return null;
 						string appXamlFileRelativePath = tmpAppDefxmlnode.Attributes["Include"].Value;
 						string appXamlStartupBlock = GetOverrideOnStartupBlockInAppXamlOfWpfApplication_RemoveComments(Path.Combine(Path.GetDirectoryName(csprojFullPath), appXamlFileRelativePath), out errorIfFailed);
+						if (appXamlStartupBlock == null)
+							return null;//errorIfFailed already set
 						return appXamlStartupBlock;
 					case ApplicationTypes.Winforms://Winforms and Console almost the same, Console only has a parameter to the void main method
 					case ApplicationTypes.Console:
@@ -443,13 +480,36 @@ namespace SharedClasses
 						bool? gotCompileNodes = GetCompileProgramCsNode(ref xmlDoc, ref nsmgr, nsmgrPrefix, csprojFullPath, out programNode, out errorIfFailed);
 						if (gotCompileNodes == null) return null;
 						string programCsFileRelativePath = programNode.Attributes["Include"].Value;
-						string expectedMethodStartString =
+
+						string[] expectedOneOfMethodStartStrings =
 							appType == ApplicationTypes.Winforms
-							? "static void Main("
-							: "static void Main(string[]";
-						string programCsVoidMainBlock = ExtractMethodBlockFromSourcecodeFile(Path.Combine(Path.GetDirectoryName(csprojFullPath), programCsFileRelativePath), expectedMethodStartString, out errorIfFailed);
+							? new string[] { "static void Main(" }
+							: new string[] { "static void Main(string[]", "static int Main(string[]" };
+
+						string programCsVoidMainBlock = null;
+						List<string> tmpErrors = new List<string>();
+						foreach (var expBlock in expectedOneOfMethodStartStrings)
+						{
+							string tmpCodeBlock = ExtractMethodBlockFromSourcecodeFile(Path.Combine(Path.GetDirectoryName(csprojFullPath), programCsFileRelativePath), expBlock, out errorIfFailed);
+							if (tmpCodeBlock == null)
+								tmpErrors.Add(errorIfFailed);
+							if (!string.IsNullOrEmpty(tmpCodeBlock))
+							{
+								programCsVoidMainBlock = tmpCodeBlock;
+								break;
+							}
+						}
+						if (programCsVoidMainBlock == null)
+						{
+							errorIfFailed = "Unable to 'GetAppMainEntryPointCodeBlock'"
+								+ (tmpErrors.Count > 0
+									? ", the following errors were recorded: " + string.Join("|", tmpErrors)
+									: "");
+							return null;
+						}
 						return programCsVoidMainBlock;
 					case ApplicationTypes.DLL:
+						errorIfFailed = "Application type DLL does not support GetAppMainEntryPointCodeBlock.";
 						return null;
 					default:
 						errorIfFailed = "GetAppMainEntryPointCodeBlock is not implemented for enum ApplicationTypes = " + appType.ToString();
@@ -473,12 +533,12 @@ namespace SharedClasses
 					if (mainEntryPointCodeBlock == null) return null;
 					if (string.IsNullOrWhiteSpace(mainEntryPointCodeBlock)) return false;
 					//Comments are already removed not check that we have
-					return StringIndexOfIgnoreInsideStringOrChar(ref mainEntryPointCodeBlock, expectedStringInCode) != -1;
+					return mainEntryPointCodeBlock.StringIndexOfIgnoreInsideStringOrChar(expectedStringInCode) != -1;
 				case ApplicationTypes.Winforms:
 				case ApplicationTypes.Console:
 					if (mainEntryPointCodeBlock == null) return null;
 					if (string.IsNullOrWhiteSpace(mainEntryPointCodeBlock)) return false;
-					return StringIndexOfIgnoreInsideStringOrChar(ref mainEntryPointCodeBlock, expectedStringInCode) != -1;
+					return mainEntryPointCodeBlock.StringIndexOfIgnoreInsideStringOrChar(expectedStringInCode) != -1;
 				case ApplicationTypes.DLL:
 					return false;
 				default:
@@ -486,22 +546,33 @@ namespace SharedClasses
 			}
 		}
 
-		public static bool? IsAutoUpdatingImplemented(string csprojFullPath, ApplicationTypes appType, out string errorIfFailed)
+		public static bool? IsAutoUpdatingImplemented_AndNotUsingOwnUnhandledExceptionHandler(string csprojFullPath, ApplicationTypes appType, out string errorIfFailed)
 		{
 			string expectedStringInCode = "AutoUpdating.CheckForUpdates_ExceptionHandler(";
+			string notAllowedStringInCode = "AppDomain.CurrentDomain.UnhandledException";
 			string mainEntryPointCodeBlock = GetAppMainEntryPointCodeBlock(csprojFullPath, appType, out errorIfFailed);
 			switch (appType)
 			{
 				case ApplicationTypes.WPF:
 					if (mainEntryPointCodeBlock == null) return null;
-					if (string.IsNullOrWhiteSpace(mainEntryPointCodeBlock)) return false;
+					if (string.IsNullOrWhiteSpace(mainEntryPointCodeBlock)) return false;//Main entry point found but no code inside it
+					if (mainEntryPointCodeBlock.StringIndexOfIgnoreInsideStringOrChar(notAllowedStringInCode) != -1)
+					{
+						errorIfFailed = "Not allowed to handle UnhandledExceptions by own handler, supposed to use CheckForUpdates_ExceptionHandler. This code may not be inside main entry point: '" + notAllowedStringInCode + "'";
+						return null;
+					}
 					//Comments are already removed not check that we have
-					return StringIndexOfIgnoreInsideStringOrChar(ref mainEntryPointCodeBlock, expectedStringInCode) != -1;
+					return mainEntryPointCodeBlock.StringIndexOfIgnoreInsideStringOrChar(expectedStringInCode) != -1;
 				case ApplicationTypes.Winforms:
 				case ApplicationTypes.Console:
 					if (mainEntryPointCodeBlock == null) return null;
-					if (string.IsNullOrWhiteSpace(mainEntryPointCodeBlock)) return false;
-					return StringIndexOfIgnoreInsideStringOrChar(ref mainEntryPointCodeBlock, expectedStringInCode) != -1;
+					if (string.IsNullOrWhiteSpace(mainEntryPointCodeBlock)) return false;//Main entry point found but no code inside it
+					if (mainEntryPointCodeBlock.StringIndexOfIgnoreInsideStringOrChar(notAllowedStringInCode) != -1)
+					{
+						errorIfFailed = "Not allowed to handle UnhandledExceptions by own handler, supposed to use CheckForUpdates_ExceptionHandler. This code may not be inside main entry point: '" + notAllowedStringInCode + "'";
+						return null;
+					}
+					return mainEntryPointCodeBlock.StringIndexOfIgnoreInsideStringOrChar(expectedStringInCode) != -1;
 				case ApplicationTypes.DLL:
 					return false;
 				default:
@@ -519,12 +590,12 @@ namespace SharedClasses
 					if (mainEntryPointCodeBlock == null) return null;
 					if (string.IsNullOrWhiteSpace(mainEntryPointCodeBlock)) return false;
 					//Comments are already removed not check that we have
-					return StringIndexOfIgnoreInsideStringOrChar(ref mainEntryPointCodeBlock, expectedStringInCode) != -1;
+					return mainEntryPointCodeBlock.StringIndexOfIgnoreInsideStringOrChar(expectedStringInCode) != -1;
 				case ApplicationTypes.Winforms:
 				case ApplicationTypes.Console:
 					if (mainEntryPointCodeBlock == null) return null;
 					if (string.IsNullOrWhiteSpace(mainEntryPointCodeBlock)) return false;
-					return StringIndexOfIgnoreInsideStringOrChar(ref mainEntryPointCodeBlock, expectedStringInCode) != -1;
+					return mainEntryPointCodeBlock.StringIndexOfIgnoreInsideStringOrChar(expectedStringInCode) != -1;
 				case ApplicationTypes.DLL:
 					return false;
 				default:
@@ -532,60 +603,74 @@ namespace SharedClasses
 			}
 		}
 
-		private static bool IsIndexInsideStringMultilineLiteral(ref string haystack, int needleIndex, int needleLength, int startIndex = 0)
+		private static bool _isIndexInsideNormalSingleLineString(ref string haystack, int needleIndex, int needleLength)
 		{
-			int indexOfLiteralStart = haystack.IndexOf("@\"", startIndex);
-			if (indexOfLiteralStart == -1)
-				return false;
-			int indexOfLiteralEnd = haystack.IndexOf("\"", indexOfLiteralStart + 1);
-			if (indexOfLiteralEnd == -1) indexOfLiteralEnd = haystack.Length - 1;
-			if (indexOfLiteralEnd > 0 && haystack[indexOfLiteralEnd - 1] == '"')//If we escaped the " by using two quotes like ""
-				return IsIndexInsideNormalSingleLineString(ref haystack, needleIndex, needleLength, indexOfLiteralEnd + 1);
-			if (indexOfLiteralEnd < needleIndex)
-				return IsIndexInsideStringMultilineLiteral(ref haystack, needleIndex, needleLength, indexOfLiteralEnd + 1);
-			return indexOfLiteralStart < needleIndex && indexOfLiteralEnd > needleIndex + needleLength;
-		}
+			var singlelineStringMatches = Regex.Matches(haystack, "([\"'])(?<q>.+?)\\1");
+			for (int i = 0; i < singlelineStringMatches.Count; i++)
+				if (singlelineStringMatches[i].Index < needleIndex
+					&& singlelineStringMatches[i].Index + singlelineStringMatches[i].Length > needleIndex + needleLength)
+					return true;
+			
+			return false;
 
-		private static bool IsIndexInsideNormalSingleLineString(ref string haystack, int needleIndex, int needleLength, int startIndex = 0)
-		{
-			int indexOfNormalStringStart = haystack.IndexOf("\"", startIndex);
+			/*int indexOfNormalStringStart = haystack.IndexOf("\"", startIndex);
 			if (indexOfNormalStringStart == -1)
 				return false;
 			int indexOfStringEnd = haystack.IndexOf("\"", indexOfNormalStringStart + 1);
-			if (indexOfStringEnd == -1) indexOfStringEnd = haystack.Length - 1;
+			if (indexOfStringEnd == -1) return true;//indexOfStringEnd = haystack.Length - 1;
 			if (indexOfStringEnd > 0 && haystack[indexOfStringEnd - 1] == '\\')//If we escaped the " by using \"
 				return IsIndexInsideNormalSingleLineString(ref haystack, needleIndex, needleLength, indexOfStringEnd + 1);
 			if (indexOfStringEnd < needleIndex)
-				return IsIndexInsideStringMultilineLiteral(ref haystack, needleIndex, needleLength, indexOfStringEnd + 1);
-			return indexOfNormalStringStart < needleIndex && indexOfStringEnd > needleIndex + needleLength;
+				return IsIndexInsideNormalSingleLineString(ref haystack, needleIndex, needleLength, indexOfStringEnd + 1);
+			return indexOfNormalStringStart < needleIndex && indexOfStringEnd > needleIndex + needleLength;*/
 		}
 
-		private static int StringIndexOfIgnoreInsideStringOrChar(ref string haystack, string needle, int startIndex = 0)
-		{//Does not currently ignore char (altough method name states it)
-			int currentIndexOf = haystack.IndexOf(needle, startIndex);
-
-			while (IsIndexInsideStringMultilineLiteral(ref haystack, currentIndexOf, needle.Length, startIndex)
-				|| IsIndexInsideNormalSingleLineString(ref haystack, currentIndexOf, needle.Length, startIndex))
-			{
-				startIndex += currentIndexOf + needle.Length;//Skip this char as it part of a string @"..." or "..."
-				currentIndexOf = haystack.IndexOf(needle, startIndex);
-			}
-			return currentIndexOf;
-		}
-
-		private static int StringIndexOfIgnoreInsideStringOrChar(ref string haystack, char needle, int startIndex = 0)
+		private static bool _isIndexInsideStringMultilineLiteral(ref string haystack, int needleIndex, int needleLength)
 		{
-			return StringIndexOfIgnoreInsideStringOrChar(ref haystack, needle.ToString(), startIndex);
+			//Original regex for multiline strings, obtained from http://go4answers.webhost4life.com/Example/find-multiline-string-literals-bla-99482.aspx
+			//var matches = Regex.Matches(fileContent, @"(@""(?:[^""]+|"""")*""(?!""))|(@""(?:[^""]+|"""")*)");
+			var multilineLiteralMatches = Regex.Matches(haystack, @"(@""(?:[^""]*|"""")*""(?!""))|(@""(?:[^""]*|"""")*)");
+			for (int i = 0; i < multilineLiteralMatches.Count; i++)
+				if (multilineLiteralMatches[i].Index < needleIndex
+					&& multilineLiteralMatches[i].Index + multilineLiteralMatches[i].Length > needleIndex + needleLength)
+					return true;
+
+			return false;
+
+			/*int indexOfLiteralStart = haystack.IndexOf("@\"", startIndex);
+			if (indexOfLiteralStart == -1)
+				return false;
+			int indexOfLiteralEnd = haystack.IndexOf("\"", indexOfLiteralStart + 1);
+			if (indexOfLiteralEnd == -1) return true;//indexOfLiteralEnd = haystack.Length - 1;
+			if (indexOfLiteralEnd > 0 && haystack[indexOfLiteralEnd - 1] == '"')//If we escaped the " by using two quotes like ""
+				return IsIndexInsideStringMultilineLiteral(ref haystack, needleIndex, needleLength, indexOfLiteralEnd + 1);
+			if (indexOfLiteralEnd < needleIndex)
+				return IsIndexInsideStringMultilineLiteral(ref haystack, needleIndex, needleLength, indexOfLiteralEnd + 1);
+			return indexOfLiteralStart < needleIndex && indexOfLiteralEnd > needleIndex + needleLength;*/
 		}
 
-		private static string ExtractMethodBlockFromSourcecodeFile(string sourceFilepath, string expectedMethodStartString, out string errorIfFailed)
+		public enum StringTypes { SinglelineString, MultilineLiteral, Both };
+		public static bool IsIndexInsideString(StringTypes stringTypes, ref string haystack, int needleIndex, int needleLength)
+		{
+			if (stringTypes == StringTypes.SinglelineString
+				|| stringTypes == StringTypes.Both)
+				if (_isIndexInsideNormalSingleLineString(ref haystack, needleIndex, needleLength))
+					return true;
+			if (stringTypes == StringTypes.MultilineLiteral
+				|| stringTypes == StringTypes.Both)
+				if (_isIndexInsideStringMultilineLiteral(ref haystack, needleIndex, needleLength))
+					return true;
+			return false;
+		}
+
+		public static string ExtractMethodBlockFromSourcecodeFile(string sourceFilepath, string expectedMethodStartString, out string errorIfFailed)
 		{
 			try
 			{
 				string csContent = File.ReadAllText(sourceFilepath);
 				RemoveCommentsInCsFile(ref csContent);
 
-				int startOfOverrideOnStartup = StringIndexOfIgnoreInsideStringOrChar(ref csContent, expectedMethodStartString);
+				int startOfOverrideOnStartup = csContent.StringIndexOfIgnoreInsideStringOrChar(expectedMethodStartString);
 				if (startOfOverrideOnStartup == -1)//We did not find the override OnStartup method
 				{
 					errorIfFailed = null;
@@ -593,10 +678,10 @@ namespace SharedClasses
 				}
 				else
 				{
-					int indexFirstOpenCurly = StringIndexOfIgnoreInsideStringOrChar(ref csContent, '{', startOfOverrideOnStartup + expectedMethodStartString.Length);
+					int indexFirstOpenCurly = csContent.StringIndexOfIgnoreInsideStringOrChar('{', startOfOverrideOnStartup + expectedMethodStartString.Length);
 
-					int tmpindexNextOpenCurly = StringIndexOfIgnoreInsideStringOrChar(ref csContent, '{', indexFirstOpenCurly + 1);
-					int tmpindexNextCloseCurly = StringIndexOfIgnoreInsideStringOrChar(ref csContent, '}', (tmpindexNextOpenCurly == -1 ? 0 : indexFirstOpenCurly + 1));
+					int tmpindexNextOpenCurly = csContent.StringIndexOfIgnoreInsideStringOrChar('{', indexFirstOpenCurly + 1);
+					int tmpindexNextCloseCurly = csContent.StringIndexOfIgnoreInsideStringOrChar('}', (tmpindexNextOpenCurly == -1 ? indexFirstOpenCurly + 1 : indexFirstOpenCurly + 1));
 					if (tmpindexNextOpenCurly == -1)
 						tmpindexNextOpenCurly = csContent.Length - 1;
 					else
@@ -616,16 +701,16 @@ namespace SharedClasses
 							if (tmpindexNextCloseCurly > tmpindexNextOpenCurly)
 							{
 								openCount++;
-								tmpindexNextCloseCurly = StringIndexOfIgnoreInsideStringOrChar(ref csContent, '}', tmpindexNextOpenCurly + 1);//This must happen before next line (as we set tmpindexNextOpenCurly again)
-								tmpindexNextOpenCurly = StringIndexOfIgnoreInsideStringOrChar(ref csContent, '{', tmpindexNextOpenCurly + 1);
+								tmpindexNextCloseCurly = csContent.StringIndexOfIgnoreInsideStringOrChar('}', tmpindexNextOpenCurly + 1);//This must happen before next line (as we set tmpindexNextOpenCurly again)
+								tmpindexNextOpenCurly = csContent.StringIndexOfIgnoreInsideStringOrChar('{', tmpindexNextOpenCurly + 1);
 							}
 							else if (tmpindexNextCloseCurly < tmpindexNextOpenCurly)
 							{
 								openCount--;
 								if (openCount == 0)
 									break;
-								tmpindexNextOpenCurly = StringIndexOfIgnoreInsideStringOrChar(ref csContent, '{', tmpindexNextCloseCurly + 1);
-								tmpindexNextCloseCurly = StringIndexOfIgnoreInsideStringOrChar(ref csContent, '}', tmpindexNextCloseCurly + 1);
+								tmpindexNextOpenCurly = csContent.StringIndexOfIgnoreInsideStringOrChar('{', tmpindexNextCloseCurly + 1);
+								tmpindexNextCloseCurly = csContent.StringIndexOfIgnoreInsideStringOrChar('}', tmpindexNextCloseCurly + 1);
 							}
 							else
 								break;
@@ -684,13 +769,22 @@ namespace SharedClasses
 			//string xamlCSfileContent = File.ReadAllText(csPath);*/
 		}
 
-		private const string cCsFileCommentsRegex = @"(/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+/)|(//.*)";//Multiline
-		private static void RemoveCommentsInCsFile(ref string csFileContent)
+		public static void RemoveCommentsInCsFile(ref string code)
 		{
+			//Obtained from http://stackoverflow.com/questions/3524317/regex-to-strip-line-comments-from-c-sharp/3524689#3524689
+			var re = @"(@(?:""[^""]*"")+|""(?:[^""\n\\]+|\\.)*""|'(?:[^'\n\\]+|\\.)*')|//.*|/\*(?s:.*?)\*/";
+			code = Regex.Replace(code, re, "$1");
+		}
+		//private const string cCsFileCommentsRegex = @"(/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+/)|(//.*)";//Multiline
+		/*private static void RemoveCommentsInCsFile(ref string csFileContent)
+		{
+			StripComments(ref csFileContent);
 			MatchCollection commentBlocks = Regex.Matches(csFileContent, cCsFileCommentsRegex, RegexOptions.Multiline);
 			for (int i = commentBlocks.Count - 1; i >= 0; i--)
-				csFileContent = csFileContent.Remove(commentBlocks[i].Index, commentBlocks[i].Length);
-		}
+				if (!IsIndexInsideNormalSingleLineString(ref csFileContent, commentBlocks[i].Index, 2)//we use length=2 as it might be // or /*
+					&& !IsIndexInsideStringMultilineLiteral(ref csFileContent, commentBlocks[i].Index, 2))
+					csFileContent = csFileContent.Remove(commentBlocks[i].Index, commentBlocks[i].Length);
+		}*/
 
 		private static string FixRelativePath(string originalStringToBeReplace, string csprojFullpath_JustUsedInErrorMessages, out string errorIfFailed)
 		{
@@ -800,6 +894,175 @@ namespace SharedClasses
 			{
 				warnings = null;
 				errorIfFailed = "Exception in FixIncludeFilepathsInCsProjFile: " + exc.Message;
+				return false;
+			}
+		}
+
+		private static bool WpfEnsureAppXamlDoesNotHaveStartupUri(string csprojFullpath, out string errorIfFailed)
+		{
+			try
+			{
+				string nsPrefix = "NS:";
+				XmlNamespaceManager nsmgr;
+				XmlDocument xmlDoc =
+				OpenCsprojAsXmlDocument(csprojFullpath, ref nsPrefix, out nsmgr, out errorIfFailed);
+				if (xmlDoc == null)
+					return false;//errorIfFailed already set
+				XmlNode appdefXmlNode;
+				bool? getAppDefXmlNodeSuccess = GetApplicationDefinitionXmlNode(ref xmlDoc, ref nsmgr, nsPrefix,
+					csprojFullpath, out appdefXmlNode, out errorIfFailed);
+				if (getAppDefXmlNodeSuccess != true)//We do not have ApplicationDefinition node or another error occurred
+					return false;
+
+				string appXamlRelativePath = appdefXmlNode.Attributes["Include"].Value;
+				string appXamlFullpath = Path.Combine(Path.GetDirectoryName(csprojFullpath), appXamlRelativePath);
+				string contentsOfAppXaml = File.ReadAllText(appXamlFullpath);
+				if (contentsOfAppXaml.Contains("StartupUri="))
+				{
+					errorIfFailed = "String 'StartupUri=' was found inside '" + appXamlRelativePath + "' of csproj: " + csprojFullpath;
+					return false;
+				}
+				else
+				{
+					errorIfFailed = null;
+					return true;
+				}
+			}
+			catch (Exception exc)
+			{
+				errorIfFailed = "Exception in : WpfEnsureAppXamlDoesNotHaveStartupUri" + exc.Message;
+				return false;
+			}
+		}
+
+		public static bool? IsMainWindowOrFormImplementedInAppMainEntryPoint(string csprojFullpath, ApplicationTypes appType, out string errorIfFailed)
+		{
+			string[] expectedOneOfStringsInCode = null;
+
+			int todoCheckWpfMainWindowImplemented;
+			//TODO: by checking for "new MainWindow(" for WPF does not tell us that it is implemented, it can be inside a block
+			//which for instance makes use of commandline-arguments or if statements, like for example
+			//if (args.Count > 3 && args[2] == "showwindow") { MainWindow mw = new MainWindow(); mw.ShowDialog(); }
+			if (appType == ApplicationTypes.WPF)
+			{
+				if (!WpfEnsureAppXamlDoesNotHaveStartupUri(csprojFullpath, out errorIfFailed))
+					return null;//Make sure the App.xaml file does not have StartupUri= inside it (we want it to be implemented in the override OnStartup block)
+				expectedOneOfStringsInCode = new string[]
+				{
+					"SingleInstanceApplicationManager<MainWindow>.CheckIfAlreadyRunningElseCreateNew",//Because this will automatically create and show MainWindow
+					"new MainWindow("
+				};
+			}
+			else if (appType == ApplicationTypes.Winforms)
+			{
+				expectedOneOfStringsInCode = new string[]
+				{
+					"SingleInstanceApplicationManager<MainForm>.CheckIfAlreadyRunningElseCreateNew",
+					"Application.Run(new MainForm(",
+					"new MainForm("
+				};
+			}
+			else if (appType != ApplicationTypes.WPF && appType != ApplicationTypes.Winforms)
+			{
+				errorIfFailed = "Method IsMainWindowOrFormImplementedInAppMainEntryPoint only currently supports WPF and Winforms application types";
+				return null;
+			}
+
+			string mainEntryPointCodeBlock = GetAppMainEntryPointCodeBlock(csprojFullpath, appType, out errorIfFailed);
+			if (mainEntryPointCodeBlock == null) return null;
+			if (string.IsNullOrWhiteSpace(mainEntryPointCodeBlock)) return false;
+			foreach (var expec in expectedOneOfStringsInCode)
+				if (mainEntryPointCodeBlock.StringIndexOfIgnoreInsideStringOrChar(expec) != -1)
+					return true;
+			//We did not find any of the expected Strings in Main Entrypoint of app
+			errorIfFailed = "We could not find expected Strings in Main Entry point of application '" +
+				csprojFullpath + "', expected one of the following: " + string.Join("|", expectedOneOfStringsInCode);
+			return false;
+		}
+
+		public static bool? CheckIfCsprojHasMainWinOrFormAndIfItsImplemented(string csprojFullpath, ApplicationTypes projApplicationType, out string mainWinOrFormCodebehindRelativePathToCsproj, out string errorIfFailed)
+		{
+			string fileContent = File.ReadAllText(csprojFullpath);
+
+			switch (projApplicationType)
+			{
+				case OwnAppsInterop.ApplicationTypes.WPF:
+					bool hasPageIncludeMainWindowXaml
+						= Regex.IsMatch(fileContent, @"<Page[^>]+Include=""MainWindow.xaml""[^>]*>");//<Page Include="MainWindow.xaml">
+					if (hasPageIncludeMainWindowXaml == false)
+					{
+						errorIfFailed = null;
+						mainWinOrFormCodebehindRelativePathToCsproj = null;
+						return false;
+					}
+					bool hasCompileIncludeMainWindowXamlCs = 
+						Regex.IsMatch(fileContent, @"<Compile[^>]+Include=""MainWindow.xaml.cs""[^>]*>");//<Compile Include="MainWindow.xaml.cs">
+					if (hasCompileIncludeMainWindowXamlCs == false)
+					{
+						errorIfFailed = null;
+						mainWinOrFormCodebehindRelativePathToCsproj = null;
+						return false;
+					}
+
+					mainWinOrFormCodebehindRelativePathToCsproj = "MainWindow.xaml.cs";
+					return IsMainWindowOrFormImplementedInAppMainEntryPoint(csprojFullpath, projApplicationType, out errorIfFailed);
+				case OwnAppsInterop.ApplicationTypes.Winforms:
+					bool hasCompileIncludeMainFormCs
+						= Regex.IsMatch(fileContent, @"<Compile[^>]+Include=""MainForm.cs""[^>]*>");//<Compile Include="MainForm.cs">
+					if (hasCompileIncludeMainFormCs == false)
+					{
+						errorIfFailed = null;
+						mainWinOrFormCodebehindRelativePathToCsproj = null;
+						return false;
+					}
+					bool hasCompileIncludeMainFormDesignerCs = 
+						Regex.IsMatch(fileContent, @"<Compile[^>]+Include=""MainForm.Designer.cs""[^>]*>");//<Compile Include="MainForm.Designer.cs">
+					if (hasCompileIncludeMainFormDesignerCs == false)
+					{
+						errorIfFailed = null;
+						mainWinOrFormCodebehindRelativePathToCsproj = null;
+						return false;
+					}
+
+					mainWinOrFormCodebehindRelativePathToCsproj = "MainForm.cs";
+					return IsMainWindowOrFormImplementedInAppMainEntryPoint(csprojFullpath, projApplicationType, out errorIfFailed);
+				default:
+					errorIfFailed = "Method 'CheckIfCsprojHasMainWinOrFormAndIfItsImplemented' does not currently support application of type: " + projApplicationType;
+					mainWinOrFormCodebehindRelativePathToCsproj = null;
+					return null;
+				/*case OwnAppsInterop.ApplicationTypes.Console:
+				case OwnAppsInterop.ApplicationTypes.DLL:
+				default:*/
+			}
+
+			//errorIfFailed = "Unknown error in CheckIfCsprojHasMainWinOrFormAndIfItsImplemented";
+			//return null;
+		}
+
+		public static bool GetAllIncludedSourceFilesInCsproj(string csprojFullpath, out Dictionary<string, string> includeRelativePathsAndXmlTagnames, out string errorIfFailed)
+		{
+			try
+			{
+				string fileContent = File.ReadAllText(csprojFullpath);
+				MatchCollection includeTagMatches = Regex.Matches(fileContent, @"<[^>]+Include=""[^""]+""[^>]*>");
+				includeRelativePathsAndXmlTagnames = new Dictionary<string, string>();
+				foreach (Match match in includeTagMatches)
+				{
+					string xmltagstring = fileContent.Substring(match.Index, match.Length);
+					int firstSpacePos = xmltagstring.IndexOf(' ');
+					string tagname = xmltagstring.Substring(1, firstSpacePos - 1);//We also skip first character '<'
+					int posOfPathStart = xmltagstring.IndexOf("Include=\"") + "Include=\"".Length;
+					int posOfPathEnd = xmltagstring.IndexOf("\"", posOfPathStart) - 1;
+					string relpathIncluded = xmltagstring.Substring(posOfPathStart, posOfPathEnd - posOfPathStart + 1);
+					includeRelativePathsAndXmlTagnames.Add(relpathIncluded, tagname);
+				}
+				errorIfFailed = null;
+				return true;
+			}
+			catch (Exception exc)
+			{
+				includeRelativePathsAndXmlTagnames = null;
+				errorIfFailed = "Exception in GetAllIncludedSourceFilesInCsproj: " + exc.Message;
 				return false;
 			}
 		}

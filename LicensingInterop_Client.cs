@@ -225,7 +225,7 @@ namespace SharedClasses
 
 							if (onlineFailedCount >= 50)//After 50 times cannot use application anymore
 							{
-								ShowServerConfirmLicenseError("Could not confirm that license exists on server, application will now exit.");
+								ShowServerConfirmLicenseError("Could not confirm that license exists on server (empty response from server), application will now exit.");
 
 								int todoExitCodeNotReached;
 								//The application exist before it reaches this ExitCode
@@ -236,7 +236,7 @@ namespace SharedClasses
 								//Will not break the application if no valid internet access, but just annoy the user
 
 								//TODO: Maybe suggest to check whether the domain (where the license server sits on) is accessible from this machine (for instance domain fjh.dyndns.org)
-								ShowServerConfirmLicenseError("Could not confirm that license existance on server, please ensure internet connectivity to stop showing this message.");
+								ShowServerConfirmLicenseError("Could not confirm that license existance on server (empty response from server), please ensure internet connectivity to stop showing this message.");
 							}
 						}
 						else

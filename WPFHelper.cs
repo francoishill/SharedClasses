@@ -62,6 +62,62 @@ namespace SharedClasses
 
 		public static IntPtr GetWindowHandle(this Window window) { return new WindowInteropHelper(window).Handle; }
 
+		private static string GetLastWindowPositionFilename(string applicationName, string subfolderName = null)
+		{
+			return SettingsInterop.GetFullFilePathInLocalAppdata("LastWindowPos.fjset", applicationName, subfolderName);
+		}
+		public static bool LoadLastWindowPosition(this Window window, string applicationName, string subfolderName = null)
+		{
+			try
+			{
+				string LastWindowPositionFilename = GetLastWindowPositionFilename(applicationName, subfolderName);
+				if (!File.Exists(LastWindowPositionFilename))
+					return false;
+
+				string[] fileLines = File.ReadAllLines(LastWindowPositionFilename)
+					.Where(l => !string.IsNullOrWhiteSpace(l)).ToArray();
+
+				//We expect double values in this order on separate lines: Left, Top, ActualWidth, ActualHeight
+				if (fileLines.Length != 4)
+					return false;
+				double tmpdouble;
+				if (fileLines.Count(l => !double.TryParse(l, out tmpdouble)) > 0)
+					return false;//We failed to cast one of the items to a double
+
+				window.Left = double.Parse(fileLines[0]);
+				window.Top = double.Parse(fileLines[1]);
+				window.Width = double.Parse(fileLines[2]);
+				window.Height = double.Parse(fileLines[3]);
+				return true;
+			}
+			catch (Exception exc)
+			{
+				UserMessages.ShowWarningMessage("Failed loading last window position from file: " + exc.Message);
+				return false;
+			}
+		}
+
+		public static bool SaveLastWindowPosition(this Window window, string applicationName, string subfolderName = null)
+		{
+			try
+			{
+				string LastWindowPositionFilename = GetLastWindowPositionFilename(applicationName, subfolderName);
+				File.WriteAllLines(LastWindowPositionFilename, new string[]
+				{ 
+					window.Left.ToString(),
+					window.Top.ToString(),
+					window.ActualWidth.ToString(),
+					window.ActualHeight.ToString()
+				});
+				return true;
+			}
+			catch (Exception exc)
+			{
+				UserMessages.ShowWarningMessage("Failed saving last window position from file: " + exc.Message);
+				return false;
+			}
+		}
+
 		public static void SetHookForSystemMenu(Window window, HwndSourceHook wndProc, List<SystemMenuItem> MenuItemList)
 		{
 			if (

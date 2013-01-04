@@ -169,6 +169,7 @@ namespace SharedClasses
 			private const uint SHGFI_ICON = 0x100;
 			private const uint SHGFI_LARGEICON = 0x0;
 			private const uint SHGFI_SMALLICON = 0x1;
+			private const uint SHGFI_SYSICONINDEX = 0x000004000;
 
 			[StructLayout(LayoutKind.Sequential)]
 			private struct SHFILEINFO
@@ -185,22 +186,28 @@ namespace SharedClasses
 			[DllImport("shell32.dll")]
 			private static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbSizeFileInfo, uint uFlags);
 
+			[DllImport("shell32.dll", CharSet = CharSet.Auto)]
+			private static extern uint ExtractIconEx(string szFileName, int nIconIndex, IntPtr[] phiconLarge, IntPtr[] phiconSmall, uint nIcons);
+			[DllImport("user32.dll", EntryPoint = "DestroyIcon", SetLastError = true)]
+			private static unsafe extern int DestroyIcon(IntPtr hIcon);
+
 			public IconExtractor()
 			{
 			}
 
-			public static System.Drawing.Icon Extract(string File, IconSize Size)
+			/*public static System.Drawing.Icon Extract(string File, IconSize Size)
 			{
 				IntPtr hIcon;
 				SHFILEINFO shinfo = new SHFILEINFO();
+				shinfo.iIcon = new IntPtr(3);
 
 				if (Size == IconSize.Large)
 				{
-					hIcon = SHGetFileInfo(File, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ICON | SHGFI_LARGEICON);
+					hIcon = SHGetFileInfo(File, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ICON | SHGFI_LARGEICON | SHGFI_SYSICONINDEX);
 				}
 				else
 				{
-					hIcon = SHGetFileInfo(File, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ICON | SHGFI_SMALLICON);
+					hIcon = SHGetFileInfo(File, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ICON | SHGFI_SMALLICON | SHGFI_SYSICONINDEX);
 				}
 
 				return System.Drawing.Icon.FromHandle(shinfo.hIcon);
@@ -209,6 +216,52 @@ namespace SharedClasses
 			public static System.Drawing.Icon Extract(string File)
 			{
 				return Extract(File, IconSize.Small);
+			}*/
+
+			public static Icon Extract(string file, IconSize Size = IconSize.Small, int iconIndex = 0)
+			{
+				unsafe
+				{
+					uint readIconCount = 0;
+					IntPtr[] hDummy  = new IntPtr[1] { IntPtr.Zero };
+					IntPtr[] hIconEx = new IntPtr[1] { IntPtr.Zero };
+
+					try
+					{
+						if (Size == IconSize.Large)
+							readIconCount = ExtractIconEx(file, iconIndex, hIconEx, hDummy, 1);
+						else
+							readIconCount = ExtractIconEx(file, iconIndex, hDummy, hIconEx, 1);
+
+						if (readIconCount > 0 && hIconEx[0] != IntPtr.Zero)
+						{
+							// GET FIRST EXTRACTED ICON
+							Icon extractedIcon = (Icon)Icon.FromHandle(hIconEx[0]).Clone();
+
+							return extractedIcon;
+						}
+						else // NO ICONS READ
+							return null;
+					}
+					catch (Exception ex)
+					{
+						/* EXTRACT ICON ERROR */
+
+						// BUBBLE UP
+						throw new ApplicationException("Could not extract icon", ex);
+					}
+					finally
+					{
+						// RELEASE RESOURCES
+						foreach (IntPtr ptr in hIconEx)
+							if (ptr != IntPtr.Zero)
+								DestroyIcon(ptr);
+
+						foreach (IntPtr ptr in hDummy)
+							if (ptr != IntPtr.Zero)
+								DestroyIcon(ptr);
+					}
+				}
 			}
 		}
 	}

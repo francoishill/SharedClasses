@@ -67,7 +67,7 @@ namespace SharedClasses
 			{//Possible to be: C:\Windows\calc.exe --scientific | C:\Windows\notepad.exe "c:\program files\my text file.txt" --arg2
 				int indexOfSpace = originalString.IndexOf(' ');
 				command_orErrorIfFailed = originalString.Substring(0, indexOfSpace);
-				arguments = originalString.Substring(indexOfSpace + 1);
+				arguments = originalString.Substring(indexOfSpace + 1).Trim(' ');
 				return true;
 			}
 			else//We do not have quotes nor a space character, so the string is the command only (no arguments)

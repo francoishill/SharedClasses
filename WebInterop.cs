@@ -19,12 +19,12 @@ namespace SharedClasses
 			System.Net.ServicePointManager.ServerCertificateValidationCallback +=
 				((sender, certificate, chain, sslPolicyErrors) => true);
 
-		//    // trust sender
-		//    System.Net.ServicePointManager.ServerCertificateValidationCallback
-		//                    = ((sender, cert, chain, errors) => cert.Subject.Contains("YourServerName"));
+			//    // trust sender
+			//    System.Net.ServicePointManager.ServerCertificateValidationCallback
+			//                    = ((sender, cert, chain, errors) => cert.Subject.Contains("YourServerName"));
 
-		//    // validate cert by calling a function
-		//    ServicePointManager.ServerCertificateValidationCallback += new RemoteCertificateValidationCallback(ValidateRemoteCertificate);
+			//    // validate cert by calling a function
+			//    ServicePointManager.ServerCertificateValidationCallback += new RemoteCertificateValidationCallback(ValidateRemoteCertificate);
 		}
 
 		public static void EnsureHttpsTrustAll()
@@ -275,12 +275,19 @@ namespace SharedClasses
 
 		public static string GetFaviconUrlFromFullUrl(string url)
 		{
+			//This pattern should work for all normal web urls
 			string regexPattern = @"^(http(?:s)?\:\/\/[a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)*\.[a-zA-Z]{2,6}(?:\/?))";
 			Match match = Regex.Match(url, regexPattern);
 			if (match == null || !match.Success)
-				return null;
-			else
-				return match.ToString().Trim('/') + "/favicon.ico";
+			{
+				//This pattern should work for example with http://build:8080
+				regexPattern = @"^(http(?:s)?\:\/\/[a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)*(\.[a-zA-Z]{2,6})?(?:\:[0-9]{1,5})(?:\/?))";
+				match = Regex.Match(url, regexPattern);
+				if (match == null || !match.Success)
+					return null;
+			}
+
+			return match.ToString().Trim('/') + "/favicon.ico";
 		}
 	}
 }

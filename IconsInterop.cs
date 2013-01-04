@@ -169,7 +169,6 @@ namespace SharedClasses
 			private const uint SHGFI_ICON = 0x100;
 			private const uint SHGFI_LARGEICON = 0x0;
 			private const uint SHGFI_SMALLICON = 0x1;
-			private const uint SHGFI_SYSICONINDEX = 0x000004000;
 
 			[StructLayout(LayoutKind.Sequential)]
 			private struct SHFILEINFO
@@ -195,27 +194,21 @@ namespace SharedClasses
 			{
 			}
 
-			/*public static System.Drawing.Icon Extract(string File, IconSize Size)
+			/*public static System.Drawing.Icon Extract(string File, IconSize Size = IconSize.Large)
 			{
 				IntPtr hIcon;
 				SHFILEINFO shinfo = new SHFILEINFO();
-				shinfo.iIcon = new IntPtr(3);
 
 				if (Size == IconSize.Large)
 				{
-					hIcon = SHGetFileInfo(File, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ICON | SHGFI_LARGEICON | SHGFI_SYSICONINDEX);
+					hIcon = SHGetFileInfo(File, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ICON | SHGFI_LARGEICON);
 				}
 				else
 				{
-					hIcon = SHGetFileInfo(File, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ICON | SHGFI_SMALLICON | SHGFI_SYSICONINDEX);
+					hIcon = SHGetFileInfo(File, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ICON | SHGFI_SMALLICON);
 				}
 
 				return System.Drawing.Icon.FromHandle(shinfo.hIcon);
-			}
-
-			public static System.Drawing.Icon Extract(string File)
-			{
-				return Extract(File, IconSize.Small);
 			}*/
 
 			public static Icon Extract(string file, IconSize Size = IconSize.Small, int iconIndex = 0)

@@ -289,5 +289,44 @@ namespace SharedClasses
 
 			return match.ToString().Trim('/') + "/favicon.ico";
 		}
+
+		public static string GetFaviconUrlFromWebpageShortcutIconLink(string url, out string errorIfFailed, CookieContainer cookieContainer = null)
+		{//Download the webpage and extract the href inside <link href="http://.../tmpicon.ico" rel="shorcut icon" />
+			try
+			{
+				HttpWebRequest req = (HttpWebRequest)HttpWebRequest.Create(url);
+				if (cookieContainer != null) req.CookieContainer = cookieContainer;
+				var resp = req.GetResponse();
+				string response = new StreamReader(resp.GetResponseStream()).ReadToEnd();
+
+				Match findShorcutUrnInHtml = Regex.Match(response.ToLower(), @"<link [^>]*rel=""shortcut icon""[^>]*/?>");
+				if (!findShorcutUrnInHtml.Success)
+				{
+					errorIfFailed = "Unable to find <link href=\"\" rel=\"shorcut icon\" /> inside webpage source: " + url;
+					return null;
+				}
+				Match hrefInLink = Regex.Match(findShorcutUrnInHtml.ToString(), @"(?<=href="")[^""]*(?="")");
+				if (!hrefInLink.Success)
+				{
+					errorIfFailed = "Unable to find href=\"...\" inside <link href=\"\" rel=\"shorcut icon\" /> inside webpage source: " + url;
+					return null;
+				}
+
+				errorIfFailed = null;
+				return hrefInLink.ToString();
+			}
+			catch (Exception exc)
+			{
+				errorIfFailed = "Error getting favicon from <link ... rel=\"shorcut icon\".../> (website = '" + url + "', error: " + exc.Message;
+				return null;
+			}
+		}
+
+		private static void DownloadShortcutIconFromWebpage(string webpageUrl)
+		{
+			WebRequest req = HttpWebRequest.Create(webpageUrl);
+			var resp = req.GetResponse();
+			new StreamReader(resp.GetResponseStream()).ReadToEnd();
+		}
 	}
 }

@@ -154,7 +154,9 @@ namespace SharedClasses
 
 		public static IntPtr GetHandle(this Window window)
 		{
-			return new WindowInteropHelper(window).Handle;
+			var windowInteropHelper = new WindowInteropHelper(window);
+			windowInteropHelper.EnsureHandle();
+			return windowInteropHelper.Handle;
 		}
 
 		public static T FindVisualChild<T>(this Visual parent) where T : Visual

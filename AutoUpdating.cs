@@ -59,7 +59,15 @@ namespace SharedClasses
 			{
 				Exception exc = uexc.ExceptionObject as Exception;
 				if (exc != null)
+				{
+					Logging.LogExceptionToFile(
+						exc,
+						Logging.ReportingFrequencies.Secondly,
+						Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]),
+						"Unhandled Exceptions");
+
 					UnhandledExceptionsWindow.ShowUnHandledException(exc);
+				}
 			};
 		}
 

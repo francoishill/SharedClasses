@@ -29,6 +29,17 @@ namespace SharedClasses
 			Assembly: PresentationFramework
 			Assembly: System.Xaml*/
 
+		private const string cRegistryEntriesFilename = "RegistryEntries.json";
+		//private const string cPolicies  ||||   Implement this
+
+		public static string GetRegistryEntriesFullfilepath(string applicationName, out string errorIfFailed)
+		{
+			int implementthisAbove;
+			KeyValuePair<string, ApplicationTypes>? csprojFullpathAndApptype = GetCsprojFullpathFromApplicationName(applicationName, out errorIfFailed);
+			if (!csprojFullpathAndApptype.HasValue) return null;
+			return Path.Combine(Path.GetDirectoryName(csprojFullpathAndApptype.Value.Key), "Properties", cRegistryEntriesFilename);
+		}
+
 		public static int StringIndexOfIgnoreInsideStringOrChar(this string haystack, string needle, int startIndex = 0, StringComparison comparisonType = StringComparison.InvariantCultureIgnoreCase)
 		{//Does not currently ignore char (altough method name states it)
 			int currentIndexOf = haystack.IndexOf(needle, startIndex, comparisonType);
@@ -410,6 +421,16 @@ namespace SharedClasses
 			}
 		}
 
+		public static KeyValuePair<string, ApplicationTypes>? GetCsprojFullpathFromApplicationName(string applicationName, out string errorIfFailed)
+		{
+			string solutionPath = GetSolutionPathFromApplicationName(applicationName, out errorIfFailed);
+			if (solutionPath == null) return null;
+			KeyValuePair<string, ApplicationTypes>? csprojRelativePathAndApptype = GetRelativePathToCsProjWithSameFilenameAsSolution(solutionPath, out errorIfFailed);
+			if (!csprojRelativePathAndApptype.HasValue) return null;
+			string csprojFullpath = Path.Combine(Path.GetDirectoryName(solutionPath), csprojRelativePathAndApptype.Value.Key);
+			return new KeyValuePair<string, ApplicationTypes>(csprojFullpath, csprojRelativePathAndApptype.Value.Value);
+		}
+
 		public static bool? IsAppIconImplemented(string csprojFullPath, out string AppIconRelativePath, out string errorIfFailed)
 		{
 			try
@@ -601,6 +622,11 @@ namespace SharedClasses
 				default:
 					return null;//The errorIfFailed will be populated with an error message inside above called method GetAppMainEntryPointCodeBlock
 			}
+		}
+
+		public static bool? ArePoliciesImplemented(string csprojFullPath, ApplicationTypes appType, out string errorIfFailed)
+		{
+			int implementthis; errorIfFailed = null; return null;
 		}
 
 		private static bool _isIndexInsideNormalSingleLineString(ref string haystack, int needleIndex, int needleLength)

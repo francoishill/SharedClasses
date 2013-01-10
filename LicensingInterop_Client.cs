@@ -16,6 +16,7 @@ namespace SharedClasses
 	{
 		public const int cApplicationExitCodeIfLicenseFailedValidation = 77;
 		public const int cApplicationExitCodeIfOnlineLicenseConfirmationFailed = 88;
+		public const int cApplicationExitCodeIfCachedFingerprintChanged = 99;
 
 		private static string _DuplicateInsertSpacesBeforeCamelCase(this string str)//Also in StringExtensions
 		{
@@ -48,13 +49,101 @@ namespace SharedClasses
 			return SettingsInterop.GetFullFilePathInLocalAppdata("license.lic", "Licenses", applicationName);
 		}
 
+		private static string GetPublicKeyFilePath(string applicationName)
+		{
+			return SettingsInterop.GetFullFilePathInLocalAppdata("public.key", "Licenses", applicationName);
+		}
 
+		private static string GetCachedMachineSignatureFilePath()
+		{
+			return SettingsInterop.GetFullFilePathInLocalAppdata("machinesignature", "Licenses");
+		}
 		public static string GetThisPcMachineSignature()
 		{
-			return MachineFingerPrint.GetFingerPrint();
+			//We cache the signature because it can delay the app startup time as it
+			//takes a short while to obtain the machine fingerprint
+
+			string tmpcachedSignaturePath = GetCachedMachineSignatureFilePath();
+			FileAttributes fileAttributes = FileAttributes.Hidden | FileAttributes.System | FileAttributes.ReadOnly;
+			if (File.Exists(tmpcachedSignaturePath))
+			{
+				//On seperate thread ensure the cached signature was not tampered with
+				ThreadingInterop.DoAction(delegate
+				{
+					string fingerPrint = MachineFingerPrint.GetFingerPrint();
+					if (!fingerPrint.Equals(File.ReadAllText(tmpcachedSignaturePath)))
+					{
+						File.SetAttributes(tmpcachedSignaturePath, FileAttributes.Normal);
+						File.WriteAllText(tmpcachedSignaturePath, fingerPrint);
+						File.SetAttributes(tmpcachedSignaturePath, fileAttributes);
+						string appname = GetApplicationName();
+						string tempfile = Path.Combine(Path.GetTempPath(), appname + " fingerprint error.txt");
+						File.WriteAllText(tempfile,
+							"Fingerprint error for '" + appname + "'"
+							+ Environment.NewLine
+							+ "The cached machine signature is different to the actual signature, file regenerated with actual signature."
+							+ Environment.NewLine + Environment.NewLine
+							+ "Application has exited.");
+						Process.Start(tempfile);
+						Environment.Exit(cApplicationExitCodeIfCachedFingerprintChanged);
+					}
+				},
+				false);
+				return File.ReadAllText(tmpcachedSignaturePath);
+			}
+			else
+			{
+				string fingerPrint = MachineFingerPrint.GetFingerPrint();
+				File.WriteAllText(tmpcachedSignaturePath, fingerPrint);
+				File.SetAttributes(tmpcachedSignaturePath, fileAttributes);
+				return fingerPrint;
+			}
 			//return Environment.MachineName + "/" + Environment.UserName + "/" + SettingsInterop.GetComputerGuidAsString();
 		}
 
+		public static bool GetLicenseAndPublicKeyFromLicenseServer(string uniqueSignature, out string licenseKeyOrError, out string publicKey)
+		{
+			string result = PhpInterop.PostPHP(null,
+				"http://fjh.dyndns.org/licensing/getlicense",
+				"uniquesignature=" + LicensingInterop_Shared.EncryptStringForPhpServer(uniqueSignature, err => UserMessages.ShowErrorMessage(err)));
+
+			if (string.IsNullOrWhiteSpace(result))
+			{
+				licenseKeyOrError = "Could not get license from server, response from server was empty";
+				publicKey = null;
+				return false;
+			}
+			else if (result.IndexOf(LicensingInterop_Shared.cErrorMessagePrefix) != -1
+				|| result.IndexOf(LicensingInterop_Shared.cErrorMessagePostfix) != -1)
+			{
+				licenseKeyOrError = result
+					.Replace(LicensingInterop_Shared.cErrorMessagePrefix, "")
+					.Replace(LicensingInterop_Shared.cErrorMessagePostfix, "");
+				publicKey = null;
+				return false;
+			}
+			else if (result.IndexOf("<license", StringComparison.InvariantCultureIgnoreCase) == -1)//Invalid error
+			{
+				licenseKeyOrError = "Could not get license from server, unrecognized error received: " + result;
+				publicKey = null;
+				return false;
+			}
+			else//success
+			{
+				string[] splitted = result.Split(new string[] { LicensingInterop_Shared.cSplitBetweenLicenseAndPublicKey }, StringSplitOptions.RemoveEmptyEntries);
+				if (splitted.Length != 2)
+				{
+					licenseKeyOrError = "Could not obtain license from server, unable to parse result from server";
+					publicKey = null;
+					return false;
+				}
+				licenseKeyOrError = splitted[0];
+				publicKey = splitted[1];
+				return true;
+			}
+		}
+
+		private static bool registrationSucceeded = false;
 		public static bool Client_ValidateLicense(out Dictionary<string, string> userPrivilages, Action<string> onError)//, string publicKeyXml, string licenseFilepath)
 		{
 			string applicationName = GetApplicationName();
@@ -71,7 +160,7 @@ namespace SharedClasses
 				//
 				string licenseFilepath = GetLicenseFilePath(applicationName);
 
-				string publicKeyPath = Path.Combine(Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]), LicensingInterop_Shared.cLicensePublicKeyFilename);//SettingsInterop.GetFullFilePathInLocalAppdata(LicensingInterop_Shared.cLicensePublicKeyFilename, "Licenses", applicationName);
+				/*string publicKeyPath = Path.Combine(Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]), LicensingInterop_Shared.cLicensePublicKeyFilename);//SettingsInterop.GetFullFilePathInLocalAppdata(LicensingInterop_Shared.cLicensePublicKeyFilename, "Licenses", applicationName);
 				if (!File.Exists(publicKeyPath)
 					&& !publicKeyPath.StartsWith(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), StringComparison.InvariantCultureIgnoreCase)
 					&& !publicKeyPath.StartsWith(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), StringComparison.InvariantCultureIgnoreCase))
@@ -104,18 +193,64 @@ namespace SharedClasses
 					return false;
 				}
 
-				string publicKey = File.ReadAllText(publicKeyPath).Trim();
+				string publicKey = File.ReadAllText(publicKeyPath).Trim();*/
+
+				string publicKeyPath = GetPublicKeyFilePath(applicationName);//Path.Combine(Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]), LicensingInterop_Shared.cLicensePublicKeyFilename);
+				string publicKey;//Not in file anymore but now
 				if (!File.Exists(licenseFilepath))
 				{
-					string outLicenseXmlText;
-					if (!RegistrationWindow.RegisterApplication(applicationName, publicKey, out outLicenseXmlText))
+					registrationSucceeded = false;
+					publicKey = null;//We have to set it otherwise code does not compile
+					//We need to run this on a STA thread, otherwise our MainWindow cannot
+					//open after successfully registered (we still wait for the thread to finish)
+					Thread registerApplicationThread = new Thread(new ParameterizedThreadStart(delegate
+					{
+						string outLicenseXmlText;
+						string outPublicKey;
+						if (RegistrationWindow.RegisterApplication(applicationName, out outLicenseXmlText, out outPublicKey))
+						{
+							registrationSucceeded = true;
+							File.WriteAllText(licenseFilepath, outLicenseXmlText);
+							File.WriteAllText(publicKeyPath, outPublicKey);
+						}
+						publicKey = outPublicKey;
+					}));
+					registerApplicationThread.SetApartmentState(ApartmentState.STA);
+					registerApplicationThread.Start();
+					while (registerApplicationThread.IsAlive) { }
+
+					if (!registrationSucceeded)
 					{
 						onError("Application did not register successfully.");
 						userPrivilages = null;
 						return false;
 					}
+				}
+				else
+				{
+					if (File.Exists(publicKeyPath) && new FileInfo(publicKeyPath).Length == 0)
+						File.Delete(publicKeyPath);//If it so happens that the public key is an empty file
+
+					//License file exists, check if public key file exists
+					if (File.Exists(publicKeyPath))
+						publicKey = File.ReadAllText(publicKeyPath);
 					else
-						File.WriteAllText(licenseFilepath, outLicenseXmlText);
+					{
+						string userOrderCodeReversed = InputBoxWPF.Prompt("Public key is missing on local machine, enter the OrderCode here (check email inbox) to retrieve the public key from the server again.", "Public key missing");
+						if (string.IsNullOrWhiteSpace(userOrderCodeReversed))
+							throw new Exception("Unable to validate license, public key is missing.");
+						else
+						{
+							string tmppubkeyOrError, tmpPrivKey;
+							if (LicensingInterop_Shared.GetPublicAndPrivateKey(userOrderCodeReversed, LicensingInterop_Client.GetThisPcMachineSignature(), out tmppubkeyOrError, out tmpPrivKey))
+							{
+								File.WriteAllText(publicKeyPath, tmppubkeyOrError);
+								publicKey = tmppubkeyOrError;
+							}
+							else
+								throw new Exception("Unable to retrieve public key from server (cannot validate license): " + tmppubkeyOrError);
+						}
+					}
 				}
 
 				var licenseValidator = new LicenseValidator(publicKey, licenseFilepath);
@@ -188,18 +323,19 @@ namespace SharedClasses
 				{
 					Action<string> onError = validateOnServerActionOnError;
 
-					string applicationName = GetApplicationName();
+					string applicationName = GetApplicationName()._DuplicateInsertSpacesBeforeCamelCase();
+					string ownerEmail = licValidator.LicenseAttributes[LicensingInterop_Shared.cOwnerEmailKeyName];
+					string ordernumberReversed = licValidator.LicenseAttributes[LicensingInterop_Shared.cOrderCodeKeyName];
+					string machineSignature = licValidator.LicenseAttributes[LicensingInterop_Shared.cMachineSignatureKeyName];
 
 					//At this point we know the license is valid but now also (on separate thread) confirm it exists on the server
 					string result = PhpInterop.PostPHP(null,
-						string.Format("http://fjh.dyndns.org/licensing/{0}/{1}/{2}/{3}/{4}/{5}/{6}",
-							"confirmlicensewasissued",
-							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licValidator.Name, LicensingInterop_Shared.cEncryptionKey_OnlineServerPhp), onError),
-							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(applicationName, LicensingInterop_Shared.cEncryptionKey_OnlineServerPhp), onError),
-							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licValidator.LicenseAttributes[LicensingInterop_Shared.cMachineSignatureKeyName], LicensingInterop_Shared.cEncryptionKey_OnlineServerPhp), onError),
-							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licValidator.ExpirationDate.ToString(LicensingInterop_Shared.cExpirationDateFormat), LicensingInterop_Shared.cEncryptionKey_OnlineServerPhp), onError),
-							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licValidator.UserId.ToString(), LicensingInterop_Shared.cEncryptionKey_OnlineServerPhp), onError),
-							EncodeAndDecodeInterop.EncodeStringHex(EncryptionInterop.SimpleTripleDesEncrypt(licValidator.LicenseType.ToString(), LicensingInterop_Shared.cEncryptionKey_OnlineServerPhp), onError)),
+						string.Format("http://firepuma.com/licensing/{0}/{1}/{2}/{3}/{4}",
+							"confirmlicenseisindb",
+							LicensingInterop_Shared.EncryptStringForPhpServer(applicationName, onError),
+							LicensingInterop_Shared.EncryptStringForPhpServer(ownerEmail, onError),
+							LicensingInterop_Shared.EncryptStringForPhpServer(ordernumberReversed, onError),
+							LicensingInterop_Shared.EncryptStringForPhpServer(machineSignature, onError)),
 						null);
 
 					result = result ?? "";

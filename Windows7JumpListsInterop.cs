@@ -25,10 +25,10 @@ namespace SharedClasses
 			}
 		}
 
-		public static void RepopulateAndRefreshJumpList(List<KeyValuePair<string, IEnumerable<JumplistItem>>> jumpListGroupsWithItems)
+		public static JumpList RepopulateAndRefreshJumpList(List<KeyValuePair<string, IEnumerable<JumplistItem>>> jumpListGroupsWithItems)
 		{
 			var _jumpList = JumpList.CreateJumpList();
-			_jumpList.ClearAllUserTasks();
+			//_jumpList.ClearAllUserTasks();
 
 			foreach (var groupWithItems in jumpListGroupsWithItems)
 			{
@@ -37,9 +37,17 @@ namespace SharedClasses
 				//string thisAssemblyFullPath = Assembly.GetEntryAssembly().Location;
 				foreach (var item in groupWithItems.Value)
 				{
-					JumpListLink tmpAction = new JumpListLink(item.ExePath, item.DisplayName);
+					string exePath = Environment.GetCommandLineArgs()[0];// item.ExePath;
+					if (Path.GetFileName(exePath).IndexOf(".vshost.") != -1)
+						exePath = item.ExePath;//We run the command via our app unless we are running in Debug mode, then we run it through the relevant app (like if it is chrome.exe)
+					JumpListLink tmpAction = new JumpListLink(exePath, item.DisplayName);
+
+					tmpAction.WorkingDirectory = Path.GetDirectoryName(item.ExePath);
+					//Our exe path is this application, then the arguments are the FULL commandline of the app/file/folder we have a shortcut for
+					tmpAction.Arguments = "\"" + item.ExePath.Trim('"', '\'') + "\"";
 					if (item.Arguments != null)
-						tmpAction.Arguments = item.Arguments;
+						tmpAction.Arguments += " " + item.Arguments;
+
 					if (File.Exists(item.ExePath))
 						tmpAction.IconReference = new Microsoft.WindowsAPICodePack.Shell.IconReference(item.IconPath, 0);
 					else if (Directory.Exists(item.ExePath))
@@ -52,8 +60,11 @@ namespace SharedClasses
 						string.Format("The taskbar jumplist has {0} maximum slots but the list is {1}, the extra items will be truncated", _jumpList.MaxSlotsInList, groupWithItems.Value.Count()));
 
 				_jumpList.AddCustomCategories(userActionsCategory);
+
 			}
 			_jumpList.Refresh();
+
+			return _jumpList;
 		}
 	}
 }

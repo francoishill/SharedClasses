@@ -110,6 +110,15 @@ namespace SharedClasses
 			return bmp;
 		}
 
+		public static BitmapSource ToBitmapSource(this Bitmap source)
+		{
+			return Imaging.CreateBitmapSourceFromHBitmap(
+			   source.GetHbitmap(),
+			   IntPtr.Zero,
+			   Int32Rect.Empty,
+			   BitmapSizeOptions.FromWidthAndHeight(source.Width, source.Height));
+		}
+
 		public static Icon ToIcon(this BitmapSource source)
 		{
 			return Icon.FromHandle(ToBitmap(source).GetHbitmap());

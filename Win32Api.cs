@@ -42,12 +42,22 @@ public static class Win32Api
 	[DllImport("user32.dll")]
 	public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
+	public const int SW_HIDE = 0;
+	public const int SW_SHOWNORMAL = 1;
+	public const int SW_SHOWMINIMIZED = 2;
+	public const int SW_SHOWMAXIMIZED = 3;
+	public const int SW_SHOWNOACTIVATE = 4;
+	public static readonly int SW_SHOW = 5;
+	public static readonly int SW_MINIMIZE = 6;
+	public const int SW_RESTORE = 9;
+	public const int SW_SHOWDEFAULT = 10;
+
 	// Activate or minimize a window
 	[DllImportAttribute("User32.DLL")]
 	public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-	public static readonly int SW_SHOW = 5;
-	public static readonly int SW_MINIMIZE = 6;
-	public static readonly int SW_RESTORE = 9;
+
+	[DllImport("user32.dll")]
+	public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
 
 	public static readonly int HWND_TOPMOST = -1;
 	[DllImport("user32.dll", EntryPoint = "SetWindowPos")]
@@ -89,7 +99,6 @@ public static class Win32Api
 	[DllImport("user32.dll")]
 	public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, uint dwExtraInfo);
 
-	public static readonly int SW_SHOWNOACTIVATE = 4;
 	public static readonly uint SWP_NOACTIVATE = 0x0010;
 
 	[DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]

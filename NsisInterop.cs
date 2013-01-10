@@ -41,7 +41,7 @@ public class NsisInterop
 		//string ProductPublisherIn,
 		string ProductWebsiteIn,
 		string ProductExeNameIn,
-		RegistryInterop.MainContextMenuItem contextMenuItems,
+		RegistryInterop.MainContextMenuItem explorerContextMenuItems,
 		NSISclass.LicensePageDetails LicenseDetails,
 		//List<NSISclass.SectionGroupClass.SectionClass> sections,
 		bool InstallForAllUsers,
@@ -274,7 +274,7 @@ public class NsisInterop
 			null,
 			WriteIntoRegistryForWindowsAutostartup,
 			HasPlugins,
-			contextMenuItems);//SectionDescriptions);
+			explorerContextMenuItems);//SectionDescriptions);
 	}
 
 	public static string GetNsisInstallDirectory()
@@ -703,7 +703,7 @@ public class NsisInterop
 			}
 		}
 
-		public List<string> GetAllLinesForNSISfile(List<string> AllSectionGroupLines, List<string> AllSectionAndGroupDescriptions, bool UninstallWillDeleteProgramAutoRunInRegistry_CurrentUser, bool HasPlugins, RegistryInterop.MainContextMenuItem contextMenuItems)
+		public List<string> GetAllLinesForNSISfile(List<string> AllSectionGroupLines, List<string> AllSectionAndGroupDescriptions, bool UninstallWillDeleteProgramAutoRunInRegistry_CurrentUser, bool HasPlugins, RegistryInterop.MainContextMenuItem explorerContextMenuItems)
 		{
 			List<string> tmpList = new List<string>();
 
@@ -916,8 +916,8 @@ public class NsisInterop
 			tmpList.Add(Spacer + @"WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} ""${PRODUCT_UNINST_KEY}"" ""URLInfoAbout"" ""${PRODUCT_WEB_SITE}""");
 			tmpList.Add(Spacer + @"WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} ""${PRODUCT_UNINST_KEY}"" ""Publisher"" ""${PRODUCT_PUBLISHER}""");
 
-			if (contextMenuItems != null)
-				foreach (var regAssociatedRegistryline in contextMenuItems.GetRegistryAssociationNsisLines((err) => UserMessages.ShowErrorMessage(err)))
+			if (explorerContextMenuItems != null)
+				foreach (var regAssociatedRegistryline in explorerContextMenuItems.GetRegistryAssociationNsisLines((err) => UserMessages.ShowErrorMessage(err)))
 					tmpList.Add(Spacer + regAssociatedRegistryline.Replace("((EXEPATH))", "$INSTDIR\\${PRODUCT_EXE_NAME}"));
 
 			tmpList.Add(@"SectionEnd"); tmpList.Add("");
@@ -1004,8 +1004,8 @@ public class NsisInterop
 			//if (UninstallWillDeleteProgramAutoRunInRegistry_CurrentUser)
 			tmpList.Add(Spacer + @"DeleteRegValue HKCU ""SOFTWARE\Microsoft\Windows\CurrentVersion\Run"" '${PRODUCT_NAME}'");
 
-			if (contextMenuItems != null)
-				foreach (var regUnassociatedRegistryline in contextMenuItems.GetRegistryUnassociationNsisLines())
+			if (explorerContextMenuItems != null)
+				foreach (var regUnassociatedRegistryline in explorerContextMenuItems.GetRegistryUnassociationNsisLines())
 					tmpList.Add(Spacer + regUnassociatedRegistryline);
 
 			tmpList.Add(Spacer + @"SetAutoClose true");

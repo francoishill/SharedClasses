@@ -209,17 +209,24 @@ namespace SharedClasses
 			File.WriteAllText(Path.Combine(Path.GetDirectoryName(nsisFileName), @"DotNetChecker.nsh"),
 				NsisInterop.DotNetChecker_NSH_file);
 
-			string registryEntriesFilename = "RegistryEntries.json";
-			string registryEntriesFilepath = Path.Combine(Path.GetDirectoryName(csprojFilename), "Properties", registryEntriesFilename);
+			string errorIfFailed;
+			string registryEntriesFilepath = OwnAppsInterop.GetRegistryEntriesFullfilepath(projName, out errorIfFailed);
+			if (registryEntriesFilepath == null)//This means an error occurred, not that the file does not exist
+				actionOnMessage("Error occurred obtaining path to RegistryEntries: " + errorIfFailed, FeedbackMessageTypes.Error);
+			if (!File.Exists(registryEntriesFilepath))
+				registryEntriesFilepath = null;//We now set it to NULL if the file does not exist (do not throw error)
 
+			/*
+			We do not distribute the public key with the installation anymore, each license has its own public/private keys
 			string binariesDir = NsisInterop.GetBinariesDirectoryPathFromVsProjectName(projName);//Only used to get public key
 			string publicKeyForApplicationLicenseFilename = LicensingInterop_Shared.cLicensePublicKeyFilename;
 			string publicKeyFilePath = Path.Combine(binariesDir, publicKeyForApplicationLicenseFilename);
+			actionOnMessage("Obtaining public key for application, please be patient...", FeedbackMessageTypes.Status);
 			string publicKeyFromOnline = GetPublicKeyForApplicationLicense(
 				Path.GetFileNameWithoutExtension(csprojFilename),//Application Name
 				err => actionOnMessage(err, FeedbackMessageTypes.Error));
 			if (publicKeyFromOnline != null)//If it is null, an error would have already been logged via actionOnMessage
-				File.WriteAllText(publicKeyFilePath, publicKeyFromOnline);
+				File.WriteAllText(publicKeyFilePath, publicKeyFromOnline);*/
 
 			File.WriteAllLines(nsisFileName,
 				NsisInterop.CreateOwnappNsis(
@@ -268,14 +275,14 @@ namespace SharedClasses
 				Process nsisCompileProc = Process.Start(MakeNsisFilePath, "\"" + nsisFileName + "\"");
 				nsisCompileProc.WaitForExit();
 
-				try
+				/*try
 				{
 					File.Delete(publicKeyFilePath);
 				}
 				catch (Exception exc)
 				{
 					actionOnMessage("Failed to delete Public Key file: " + exc.Message, FeedbackMessageTypes.Error);
-				}
+				}*/
 
 				if (File.Exists(publishedSetupPath))
 				{

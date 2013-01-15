@@ -45,6 +45,8 @@ public class ThreadingInterop
 			//th.Join();Cannot use this, makes QuickAccess not work (window does not want to show when clicking on tray icon)
 			th.Abort();
 			th = null;
+			GC.Collect();
+			GC.WaitForPendingFinalizers();
 			return null;
 		}
 		else
@@ -170,12 +172,32 @@ public class ThreadingInterop
 
 	public static void ActionAfterDelay(Action action, TimeSpan delay, Action<string> actionOnError)
 	{
-		new System.Threading.Timer(
-			(state) =>
+		var timer = new System.Windows.Forms.Timer();
+		timer.Interval = (int)delay.TotalMilliseconds;
+		timer.Tag = action;
+		timer.Tick += (snder, evt) =>
+		{
+			try
+			{
+				var snderAsTimer = snder as System.Windows.Forms.Timer;
+				snderAsTimer.Stop();//Because we must only fire this once
+				((Action)snderAsTimer.Tag)();
+				snderAsTimer.Dispose();
+				snderAsTimer = null;
+			}
+			catch (Exception exc)
+			{
+				actionOnError(exc.Message);
+			}
+		};
+		timer.Start();
+
+		/*new System.Threading.Timer(
+			(actionPassedAsState) =>
 			{
 				try
 				{
-					((Action)state)();
+					((Action)actionPassedAsState)();
 				}
 				catch (Exception exc)
 				{
@@ -184,6 +206,6 @@ public class ThreadingInterop
 			},
 			action,
 			delay,
-			TimeSpan.FromMilliseconds(-1));
+			TimeSpan.FromMilliseconds(-1));*/
 	}
 }

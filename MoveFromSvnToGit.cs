@@ -138,6 +138,7 @@ namespace SharedClasses
 						commandListArguments.Add(string.Format("init --bare \"{0}\"", moveobj.RemoteGitRepo));
 					//git remote add [-t <branch>] [-m <master>] [-f] [--tags|--no-tags] [--mirror=<fetch|push>] <name> <url>
 					commandListArguments.Add(string.Format("remote add \"{0}\" \"{1}\"", remoteName, moveobj.RemoteGitRepo));
+					commandListArguments.Add("commit -m 'initial commit'");
 					commandListArguments.Add(string.Format("push \"{0}\" master", remoteName));
 
 					bool allSuccess = true;

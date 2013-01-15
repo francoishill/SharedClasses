@@ -626,7 +626,8 @@ namespace SharedClasses
 
 		public static bool? ArePoliciesImplemented(string csprojFullPath, ApplicationTypes appType, out string errorIfFailed)
 		{
-			int implementthis; errorIfFailed = null; return null;
+			int implementthis;
+			errorIfFailed = null; return null;
 		}
 
 		private static bool _isIndexInsideNormalSingleLineString(ref string haystack, int needleIndex, int needleLength)

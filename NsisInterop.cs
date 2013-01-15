@@ -13,6 +13,10 @@ using Microsoft.Win32;
 
 public class NsisInterop
 {
+	/* Additional dependencies for this file:
+			Class: RegistryInterop
+			*/
+
 	public const string cDefaultPublisherName = "Francois Hill";
 
 	//TODO: Add functionality to close (maybe with messagebox to confirm) the process being installed if its open

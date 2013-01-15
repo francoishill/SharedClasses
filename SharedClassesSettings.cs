@@ -25,7 +25,24 @@ using System.Collections;
 namespace SharedClasses
 {
 	/* Additional dependencies for this file:
-			WPF: Window: InputBoxWPF*/
+			WPF: Window: InputBoxWPF
+			Class: EncodeAndDecodeInterop
+			Class: SettingsInterop
+			Minimum winforms
+			Full framework
+			Class: EncodeAndDecodeInterop
+			Winforms: Form: InputBox
+			WPF: Window: InputBoxWPF
+			WPF: Class: WPFdraggableCanvas
+			File: GoogleAPIs\Google.Apis.Tasks.v1.cs
+			Assembly: System.Security
+			//The following assemblies (own) should be located in C:\Francois\Dev\DLLs\GoogleApis:
+			Assembly own: DotNetOpenAuth
+			Assembly own: Google.Apis.Authentication.OAuth2
+			Assembly own: Google.Apis
+			Assembly own: Google.Apis.Samples.Helper
+			Assembly own: Newtonsoft.JSon.Net35
+	*/
 
 #if NOTUSEINTERCEPTOR
 	public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable, new()

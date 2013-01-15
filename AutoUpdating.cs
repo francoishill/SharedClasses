@@ -63,7 +63,7 @@ namespace SharedClasses
 					Logging.LogExceptionToFile(
 						exc,
 						Logging.ReportingFrequencies.Secondly,
-						Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]),
+						Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]).Replace(".vshost.", ""),
 						"Unhandled Exceptions");
 
 					UnhandledExceptionsWindow.ShowUnHandledException(exc);

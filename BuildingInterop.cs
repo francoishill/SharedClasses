@@ -321,7 +321,10 @@ namespace SharedClasses
 			ProjectCollection pc = new ProjectCollection();
 			Dictionary<string, string> buildGlobalProperties = new Dictionary<string, string>();
 			buildGlobalProperties.Add("Configuration", "Release");
-			buildGlobalProperties.Add("Platform", "Any CPU");//"x86");
+			buildGlobalProperties.Add("Platform", "x86");//"Any CPU");
+			onMessage("Publishing in 32bit (x86) mode only", FeedbackMessageTypes.Warning);
+			int whatIfWeNeedToRunInAnyCPUmode;
+			//TODO: NB, what if we need to publish in Any CPU mode??
 
 			BuildRequestData BuidlRequest = new BuildRequestData(projectFileName, buildGlobalProperties, null, new string[] { "Build" }, null);
 

@@ -29,6 +29,12 @@ namespace SharedClasses
 
 			listBox1.ItemsSource = VisibleBalloonTipForms;
 
+			this.Top = SystemParameters.WorkArea.Top;
+			this.Left = SystemParameters.WorkArea.Left;
+
+			this.Height = SystemParameters.WorkArea.Height;// +7;
+			this.Width = SystemParameters.WorkArea.Width;// +7;
+
 			//System.Windows.Forms.Application.ApplicationExit += delegate
 			//Application.Current.Exit += delegate
 			//{
@@ -94,12 +100,12 @@ namespace SharedClasses
 			public string Title { get; set; }
 			public string Message { get; set; }
 			public ImageSource Icon { get; set; }
-			public int Duration { get; set; }
+			public TimeSpan Duration { get; set; }
 			public SimpleDelegateWithSender OnClickCallback { get; set; }
 			public bool OnClickCallbackOnSeparateThread { get; set; }
 			public Transform LayoutTransformation { get; set; }
 			//public bool IsMouseInside { get; set; }
-			public CustomBalloonTipClass(string Title, string Message, ImageSource Icon, int Duration, SimpleDelegateWithSender OnClickCallback, bool OnClickCallbackOnSeparateThread, Transform LayoutTransformation = null)
+			public CustomBalloonTipClass(string Title, string Message, ImageSource Icon, TimeSpan Duration, SimpleDelegateWithSender OnClickCallback, bool OnClickCallbackOnSeparateThread, Transform LayoutTransformation = null)
 			{
 				this.Title = Title;
 				this.Message = Message;
@@ -113,51 +119,59 @@ namespace SharedClasses
 			}
 		}
 
-		public void StartTimerToRemoveItem(CustomBalloonTipClass item)
+		public void RemoveVisibleItem(CustomBalloonTipClass item)
 		{
-			System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
-			timer.Interval = item.Duration;
-			timer.Tick += (snder, evtargs) =>
+			VisibleBalloonTipForms.Remove(item);
+			if (visibleBalloonTipForms.Count == 0)
 			{
-				(snder as System.Windows.Forms.Timer).Stop();
-				(snder as System.Windows.Forms.Timer).Dispose();
+				StaticInstance.Close();
+				StaticInstance = null;
+			}
+		}
 
-				//ListBoxItem lbi = listBox1.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
-				//while (lbi != null && lbi.IsMouseOver)
-				//while (item != null && item.IsMouseInside)
-				//Will loop (and process messages) while the mouse is over one of the items (which are inside the wrappanel)
-				ItemsPresenter itemsPresenter = FindVisualChild<ItemsPresenter>(listBox1);
-				WrapPanel itemsPanelWrapPanel = FindVisualChild<WrapPanel>(itemsPresenter);
-				while (itemsPanelWrapPanel.IsMouseOver)
-					System.Windows.Forms.Application.DoEvents();
-
-				ListBoxItem lbi = listBox1.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
-				ContentPresenter myContentPresenter = FindVisualChild<ContentPresenter>(lbi);
-
-				// Finding textBlock from the DataTemplate that is set on that ContentPresenter
-				if (myContentPresenter == null)
-					VisibleBalloonTipForms.Remove(item);
-				else
+		public void StartTimerToRemoveItemOnlyIfHasTimeout(CustomBalloonTipClass item)
+		{
+			if (item.Duration.TotalMilliseconds > 0)//0 means we do not timeout
+			{
+				System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
+				timer.Interval = (int)item.Duration.TotalMilliseconds;
+				timer.Tick += (snder, evtargs) =>
 				{
-					DataTemplate myDataTemplate = myContentPresenter.ContentTemplate;
-					Border myBorder = (Border)myDataTemplate.FindName("ItemMainBorder", myContentPresenter);
+					(snder as System.Windows.Forms.Timer).Stop();
+					(snder as System.Windows.Forms.Timer).Dispose();
 
-					FadeItemStoryboadAndPerformOnComplete(myBorder, delegate
-					{
+					//ListBoxItem lbi = listBox1.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
+					//while (lbi != null && lbi.IsMouseOver)
+					//while (item != null && item.IsMouseInside)
+					//Will loop (and process messages) while the mouse is over one of the items (which are inside the wrappanel)
+					ItemsPresenter itemsPresenter = FindVisualChild<ItemsPresenter>(listBox1);
+					WrapPanel itemsPanelWrapPanel = FindVisualChild<WrapPanel>(itemsPresenter);
+					while (itemsPanelWrapPanel.IsMouseOver)
+						System.Windows.Forms.Application.DoEvents();
+
+					ListBoxItem lbi = listBox1.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
+					ContentPresenter myContentPresenter = FindVisualChild<ContentPresenter>(lbi);
+
+					// Finding textBlock from the DataTemplate that is set on that ContentPresenter
+					if (myContentPresenter == null)
 						VisibleBalloonTipForms.Remove(item);
-						if (visibleBalloonTipForms.Count == 0)
+					else
+					{
+						DataTemplate myDataTemplate = myContentPresenter.ContentTemplate;
+						Border myBorder = (Border)myDataTemplate.FindName("ItemMainBorder", myContentPresenter);
+
+						FadeItemStoryboadAndPerformOnComplete(myBorder, delegate
 						{
-							StaticInstance.Close();
-							StaticInstance = null;
-						}
-					});
-				}
+							RemoveVisibleItem(item);
+						});
+					}
 
-				AllowToClose = true;
+					AllowToClose = true;
 
-				//VisibleBalloonTipForms.Remove(item);
-			};
-			timer.Start();
+					//VisibleBalloonTipForms.Remove(item);
+				};
+				timer.Start();
+			}
 		}
 
 		public void FadeItemStoryboadAndPerformOnComplete(FrameworkElement frameworkElement, SimpleDelegateWithSender actionWithSender)
@@ -210,7 +224,7 @@ namespace SharedClasses
 		public static CustomBalloonTipwpf StaticInstance;
 		private ObservableCollection<CustomBalloonTipClass> visibleBalloonTipForms;
 		public ObservableCollection<CustomBalloonTipClass> VisibleBalloonTipForms { get { if (visibleBalloonTipForms == null) visibleBalloonTipForms = new ObservableCollection<CustomBalloonTipClass>(); return visibleBalloonTipForms; } set { visibleBalloonTipForms = value; } }
-		public static void ShowCustomBalloonTip(string Title, string Message, int Duration, IconTypes iconType, SimpleDelegateWithSender OnClickCallback = null, string keyForForm = null, bool CallbackOnSeparateThread = false, double Scaling = 1)
+		public static void ShowCustomBalloonTip(string Title, string Message, TimeSpan Duration, IconTypes iconType, SimpleDelegateWithSender OnClickCallback = null, string keyForForm = null, bool CallbackOnSeparateThread = false, double Scaling = 1)
 		{
 			if (StaticInstance == null)
 				StaticInstance = new CustomBalloonTipwpf();//"", "", 0, IconTypes.Warning, null);
@@ -231,7 +245,7 @@ namespace SharedClasses
 			StaticInstance.Activate();
 			StaticInstance.BringIntoView();
 
-			StaticInstance.StartTimerToRemoveItem(cbt);
+			StaticInstance.StartTimerToRemoveItemOnlyIfHasTimeout(cbt);
 
 			////DONE: Also think about moving all these notifications into usercontrols in one MAIN window
 			//CustomBalloonTipwpf cbt = new CustomBalloonTipwpf(Title, Message, Duration, iconType, OnClickCallback, CallbackOnSeparateThread);
@@ -286,9 +300,10 @@ namespace SharedClasses
 			if ((sender is Border) && (sender as Border).DataContext is CustomBalloonTipClass)
 			{
 				CustomBalloonTipClass bt = (sender as Border).DataContext as CustomBalloonTipClass;
+				RemoveVisibleItem(bt);
 				if (bt.OnClickCallback != null)
 				{
-					VisibleBalloonTipForms.Remove(bt);
+					//RemoveVisibleItem(bt);
 					if (bt.OnClickCallbackOnSeparateThread)
 						ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 						{

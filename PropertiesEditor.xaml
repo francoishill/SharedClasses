@@ -8,7 +8,7 @@
 	xmlns:extToolkit="http://schemas.xceed.com/wpf/xaml/toolkit"
 	x:Class="SharedClasses.PropertiesEditor"
 	Title="PropertiesEditor"
-	Height="400"
+	Height='601'
 	Width="1000"
 	WindowStartupLocation='CenterScreen'>
 	<Window.Resources>
@@ -168,7 +168,7 @@
 									</Border.Background>
 									<TextBlock
 										x:Name='listboxitemTextBlock'
-										FontSize='20'
+										FontSize='14'
 										Foreground='#333'
 										Text='{Binding}' />
 								</Border>

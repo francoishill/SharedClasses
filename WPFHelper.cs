@@ -152,9 +152,14 @@ namespace SharedClasses
 
 		#region GetVisualChild
 
+		public static WindowInteropHelper GetInteropHelper(this Window window)
+		{
+			return new WindowInteropHelper(window);
+		}
+
 		public static IntPtr GetHandle(this Window window)
 		{
-			var windowInteropHelper = new WindowInteropHelper(window);
+			var windowInteropHelper = window.GetInteropHelper();
 			windowInteropHelper.EnsureHandle();
 			return windowInteropHelper.Handle;
 		}
@@ -247,20 +252,38 @@ namespace SharedClasses
 				IntPtr handleOfWindowBelowMouse = Win32Api.WindowFromPoint(p);
 				if (handleOfWindowBelowMouse != IntPtr.Zero)
 				{
-					var window = WPFHelper.FindVisualParent<Window>(frameworkElement);
-					if (window != null)
-					{
-						IntPtr windowHandle = window.GetHandle();
-						if (elementRect.Contains(mousePos))
-							Console.WriteLine("TRUE (type=" + frameworkElement.GetType().ToString() + "): Mousepos: " + mousePos.ToString() + ", elementRect: " + elementRect.ToString());
-						else
-							Console.WriteLine("FALSE (type=" + frameworkElement.GetType().ToString() + "): Mousepos: " + mousePos.ToString() + ", elementRect: " + elementRect.ToString());
-						return windowHandle == handleOfWindowBelowMouse || elementRect.Contains(mousePos);
-					}
+					//var window = WPFHelper.FindVisualParent<Window>(frameworkElement);
+					//if (window != null)
+					//{
+					//IntPtr windowHandle = window.GetHandle();
+					if (elementRect.Contains(mousePos))
+						Console.WriteLine("TRUE (type=" + frameworkElement.GetType().ToString() + "): Mousepos: " + mousePos.ToString() + ", elementRect: " + elementRect.ToString());
+					else
+						Console.WriteLine("FALSE (type=" + frameworkElement.GetType().ToString() + "): Mousepos: " + mousePos.ToString() + ", elementRect: " + elementRect.ToString());
+					return /*windowHandle == handleOfWindowBelowMouse || */elementRect.Contains(mousePos);
+					//}
 				}
 			}
 
 			return elementRect.Contains(mousePos);
+		}
+
+		public static FrameworkElement GetFrameworkElementFromObjectSender(object sender)
+		{
+			return sender as FrameworkElement;
+		}
+
+		public static T GetFromObjectSender<T>(object sender) where T : class
+		{
+			FrameworkElement fe = GetFrameworkElementFromObjectSender(sender);
+			if (fe == null) return null;
+			return fe.DataContext as T;
+		}
+		public static void DoActionIfObtainedItemFromObjectSender<T>(object sender, Action<T> action) where T : class
+		{
+			T item = GetFromObjectSender<T>(sender);
+			if (item == null) return;
+			action(item);
 		}
 
 		public static class MouseLocation

@@ -436,6 +436,11 @@ namespace SharedClasses
 			{
 				//Nothing needs to happen here
 			}
+
+			public override string ToString()
+			{
+				return this.SettingName;
+			}
 		}
 
 		public static bool GetListOfOnlineSettings(out List<object> outList, out Dictionary<IInterceptorNotifiable, Dictionary<PropertyInfo, object>> outPropertyList)
@@ -472,6 +477,24 @@ namespace SharedClasses
 				outPropertyList = null;
 				return false;
 			}
+		}
+
+		public static bool UseOnlineListAndSaveIfChanged(Action<List<object>> actionOnList, bool sortOnToString = true)
+		{
+			List<object> objList;
+			Dictionary<IInterceptorNotifiable, Dictionary<PropertyInfo, object>> objectsAndPropertyValues;
+			if (!SettingsSimple.GetListOfOnlineSettings(out objList, out objectsAndPropertyValues))
+				return false;//Exit if could not get list
+
+			if (sortOnToString)
+				objList = objList.OrderBy(o => o.ToString()).ToList();
+
+			actionOnList(objList);
+			objList.Clear();
+			objList = null;
+
+			SettingsSimple.ProcessPropertyCompareToPrevious(objectsAndPropertyValues);
+			return true;
 		}
 
 		public static void ProcessPropertyCompareToPrevious(Dictionary<IInterceptorNotifiable, Dictionary<PropertyInfo, object>> objectsAndPropertyValues)

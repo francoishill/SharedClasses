@@ -71,13 +71,16 @@ public partial class UserMessages : Form
 	}
 
 	private static bool VisualStylesAlreadyEnabled = false;
-	public static DialogResult ShowUserMessage(IWin32Window owner, string Message, string Title, MessageBoxIcon icon, bool AlwaysOnTop)
+	public static DialogResult ShowUserMessage(IWin32Window owner, string Message, string Title, MessageBoxIcon icon, bool AlwaysOnTop, params string[] argumentsIfMessageStringIsFormatted)
 	{
 		if (!VisualStylesAlreadyEnabled)
 		{
 			Application.EnableVisualStyles();
 			VisualStylesAlreadyEnabled = true;
 		}
+
+		if (argumentsIfMessageStringIsFormatted.Length > 0)
+			Message = string.Format(Message, argumentsIfMessageStringIsFormatted);
 
 		if (ListOfShowingMessages.ContainsKey(Message))
 		{
@@ -150,7 +153,7 @@ public partial class UserMessages : Form
 	}
 
 
-	#if CONSOLE
+#if CONSOLE
 	public static void ShowWarningMessage(string message)
 	{
 		Console.WriteLine(string.Format("Warning: {0}", message));
@@ -160,10 +163,10 @@ public partial class UserMessages : Form
 
 	/*All methods to show messages that is of type boolean (except Confirm) will return true
 	Reason being is that it makes it easy to show a message in a method which would should exit when the message is shown*/
-	private static bool ShowMsg(IWin32Window owner, string Message, string Title, MessageBoxIcon icon, bool AlwaysOnTop)
+	private static bool ShowMsg(IWin32Window owner, string Message, string Title, MessageBoxIcon icon, bool AlwaysOnTop, params string[] argumentsIfMessageStringIsFormatted)
 	{
 		//AlwayOnTop is currently broken if no owner assigned
-		UserMessages.ShowUserMessage(owner, Message, Title, icon, AlwaysOnTop);
+		UserMessages.ShowUserMessage(owner, Message, Title, icon, AlwaysOnTop, argumentsIfMessageStringIsFormatted);
 		return true;
 		/*if (owner == null && Form.ActiveForm != null && AlwaysOnTop) owner = Form.ActiveForm;
 		bool useTempForm = false;
@@ -198,57 +201,57 @@ public partial class UserMessages : Form
 		return true;*/
 	}
 
-	public static bool ShowErrorMessage(string Message, string Title = "Error", bool AlwaysOnTop = true)
+	public static bool ShowErrorMessage(string Message, string Title = "Error", bool AlwaysOnTop = true, params string[] argumentsIfMessageStringIsFormatted)
 	{
-		ShowErrorMessage(null, Message, Title, AlwaysOnTop);
+		ShowErrorMessage(null, Message, Title, AlwaysOnTop, argumentsIfMessageStringIsFormatted);
 		return true;
 	}
-	public static bool ShowErrorMessage(IWin32Window owner, string Message, string Title = "Error", bool AlwaysOnTop = true)
+	public static bool ShowErrorMessage(IWin32Window owner, string Message, string Title = "Error", bool AlwaysOnTop = true, params string[] argumentsIfMessageStringIsFormatted)
 	{
-		ShowMsg(owner, Message, Title, MessageBoxIcon.Error, AlwaysOnTop);
-		return true;
-	}
-
-	public static bool ShowWarningMessage(string Message, string Title = "Warning", bool AlwaysOnTop = true)
-	{
-		ShowWarningMessage(null, Message, Title, AlwaysOnTop);
-		return true;
-	}
-	public static bool ShowWarningMessage(IWin32Window owner, string Message, string Title = "Warning", bool AlwaysOnTop = true)
-	{
-		ShowMsg(owner, Message, Title, MessageBoxIcon.Warning, AlwaysOnTop);
+		ShowMsg(owner, Message, Title, MessageBoxIcon.Error, AlwaysOnTop, argumentsIfMessageStringIsFormatted);
 		return true;
 	}
 
-	public static bool ShowInfoMessage(string Message, string Title = "Warning", bool AlwaysOnTop = true)
+	public static bool ShowWarningMessage(string Message, string Title = "Warning", bool AlwaysOnTop = true, params string[] argumentsIfMessageStringIsFormatted)
 	{
-		ShowInfoMessage(null, Message, Title, AlwaysOnTop);
+		ShowWarningMessage(null, Message, Title, AlwaysOnTop, argumentsIfMessageStringIsFormatted);
 		return true;
 	}
-	public static bool ShowInfoMessage(IWin32Window owner, string Message, string Title = "Warning", bool AlwaysOnTop = true)
+	public static bool ShowWarningMessage(IWin32Window owner, string Message, string Title = "Warning", bool AlwaysOnTop = true, params string[] argumentsIfMessageStringIsFormatted)
 	{
-		ShowMsg(owner, Message, Title, MessageBoxIcon.Information, AlwaysOnTop);
-		return true;
-	}
-
-	public static bool ShowMessage(string Message, string Title = "Warning", bool AlwaysOnTop = true)
-	{
-		ShowMessage(null, Message, Title, AlwaysOnTop);
-		return true;
-	}
-	public static bool ShowMessage(IWin32Window owner, string Message, string Title = "Warning", bool AlwaysOnTop = true)
-	{
-		ShowMsg(owner, Message, Title, MessageBoxIcon.None, AlwaysOnTop);
+		ShowMsg(owner, Message, Title, MessageBoxIcon.Warning, AlwaysOnTop, argumentsIfMessageStringIsFormatted);
 		return true;
 	}
 
-	public static bool Confirm(string Message, string Title = "Confirm", bool DefaultYesButton = false, bool AlwaysOnTop = true)
+	public static bool ShowInfoMessage(string Message, string Title = "Warning", bool AlwaysOnTop = true, params string[] argumentsIfMessageStringIsFormatted)
 	{
-		return Confirm(null, Message, Title, DefaultYesButton, AlwaysOnTop);
+		ShowInfoMessage(null, Message, Title, AlwaysOnTop, argumentsIfMessageStringIsFormatted);
+		return true;
 	}
-	public static bool Confirm(IWin32Window owner, string Message, string Title = "Confirm", bool DefaultYesButton = false, bool AlwaysOnTop = true)
+	public static bool ShowInfoMessage(IWin32Window owner, string Message, string Title = "Warning", bool AlwaysOnTop = true, params string[] argumentsIfMessageStringIsFormatted)
 	{
-		return ConfirmNullable(owner, Message, Title, DefaultYesButton, AlwaysOnTop, false) == true;
+		ShowMsg(owner, Message, Title, MessageBoxIcon.Information, AlwaysOnTop, argumentsIfMessageStringIsFormatted);
+		return true;
+	}
+
+	public static bool ShowMessage(string Message, string Title = "Warning", bool AlwaysOnTop = true, params string[] argumentsIfMessageStringIsFormatted)
+	{
+		ShowMessage(null, Message, Title, AlwaysOnTop, argumentsIfMessageStringIsFormatted);
+		return true;
+	}
+	public static bool ShowMessage(IWin32Window owner, string Message, string Title = "Warning", bool AlwaysOnTop = true, params string[] argumentsIfMessageStringIsFormatted)
+	{
+		ShowMsg(owner, Message, Title, MessageBoxIcon.None, AlwaysOnTop, argumentsIfMessageStringIsFormatted);
+		return true;
+	}
+
+	public static bool Confirm(string Message, string Title = "Confirm", bool DefaultYesButton = false, bool AlwaysOnTop = true, params string[] argumentsIfMessageStringIsFormatted)
+	{
+		return Confirm(null, Message, Title, DefaultYesButton, AlwaysOnTop, argumentsIfMessageStringIsFormatted);
+	}
+	public static bool Confirm(IWin32Window owner, string Message, string Title = "Confirm", bool DefaultYesButton = false, bool AlwaysOnTop = true, params string[] argumentsIfMessageStringIsFormatted)
+	{
+		return ConfirmNullable(owner, Message, Title, DefaultYesButton, AlwaysOnTop, false, argumentsIfMessageStringIsFormatted) == true;
 		////DialogResult result = MessageBox.Show(topmostForm, Message, Title, MessageBoxButtons.YesNo, MessageBoxIcon.Question, DefaultYesButton ? MessageBoxDefaultButton.Button1 : MessageBoxDefaultButton.Button2);
 		////topmostForm.Dispose(); // clean it up all the way
 
@@ -280,13 +283,13 @@ public partial class UserMessages : Form
 		//return result;
 	}
 
-	public static bool? ConfirmNullable(string Message, string Title = "Confirm", bool DefaultYesButton = false, bool AlwaysOnTop = true, bool AnswerIsNullable = true)
+	public static bool? ConfirmNullable(string Message, string Title = "Confirm", bool DefaultYesButton = false, bool AlwaysOnTop = true, bool AnswerIsNullable = true, params string[] argumentsIfMessageStringIsFormatted)
 	{
-		return ConfirmNullable(null, Message, Title, DefaultYesButton, AlwaysOnTop, AnswerIsNullable);
+		return ConfirmNullable(null, Message, Title, DefaultYesButton, AlwaysOnTop, AnswerIsNullable, argumentsIfMessageStringIsFormatted);
 	}
 
 	delegate void Action();
-	public static bool? ConfirmNullable(IWin32Window owner, string Message, string Title = "Confirm", bool DefaultYesButton = false, bool AlwaysOnTop = true, bool AnswerIsNullable = true)
+	public static bool? ConfirmNullable(IWin32Window owner, string Message, string Title = "Confirm", bool DefaultYesButton = false, bool AlwaysOnTop = true, bool AnswerIsNullable = true, params string[] argumentsIfMessageStringIsFormatted)
 	{
 		//DialogResult result = MessageBox.Show(topmostForm, Message, Title, MessageBoxButtons.YesNo, MessageBoxIcon.Question, DefaultYesButton ? MessageBoxDefaultButton.Button1 : MessageBoxDefaultButton.Button2);
 		//topmostForm.Dispose(); // clean it up all the way
@@ -308,7 +311,12 @@ public partial class UserMessages : Form
 		{
 			bool ownerOriginalTopmostState = ((Form)owner).TopMost;
 			((Form)owner).TopMost = AlwaysOnTop;
-			DialogResult tmpDialogResult = MessageBox.Show(owner, Message, Title, AnswerIsNullable ? MessageBoxButtons.YesNoCancel : MessageBoxButtons.YesNo, MessageBoxIcon.Question, DefaultYesButton ? MessageBoxDefaultButton.Button1 : MessageBoxDefaultButton.Button2);
+			DialogResult tmpDialogResult = MessageBox.Show(
+				owner,
+				argumentsIfMessageStringIsFormatted.Length > 0 ? string.Format(Message, argumentsIfMessageStringIsFormatted) : Message,
+				Title,
+				AnswerIsNullable ? MessageBoxButtons.YesNoCancel : MessageBoxButtons.YesNo,
+				MessageBoxIcon.Question, DefaultYesButton ? MessageBoxDefaultButton.Button1 : MessageBoxDefaultButton.Button2);
 			if (tmpDialogResult == DialogResult.Yes)
 				result = true;
 			else if (tmpDialogResult == DialogResult.No)
@@ -379,3 +387,11 @@ public partial class UserMessages : Form
 	}
 #endif
 }
+
+/*public static class UserMessagesExtensions
+{
+	public static void ShowErr(this System.Windows.Window window, string err)
+	{
+		UserMessages.ShowErrorMessage(err);
+	}
+}*/

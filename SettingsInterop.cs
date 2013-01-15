@@ -58,12 +58,28 @@ namespace SharedClasses
 			SubfolderNameInApplication = (SubfolderNameInApplication ?? "").Trim('\\');
 			fileName = (fileName ?? "").Trim('\\');
 			CompanyName = (CompanyName ?? "").Trim('\\');
-			bool isSubfolderDefined = SubfolderNameInApplication != null && SubfolderNameInApplication.Trim().Length > 0;
-			string folderOfFile =
-			LocalAppdataPath(ApplicationName, CompanyName, EnsurePathExists) +
-				(isSubfolderDefined ? "\\" + SubfolderNameInApplication : "");
-			if (EnsurePathExists && !Directory.Exists(folderOfFile)) Directory.CreateDirectory(folderOfFile);
-			return folderOfFile + "\\" + fileName;
+			bool isSubfolderDefined = !string.IsNullOrWhiteSpace(SubfolderNameInApplication);
+			string fileParentFolderPath =
+				LocalAppdataPath(ApplicationName, CompanyName, EnsurePathExists)
+					+ (isSubfolderDefined ? "\\" + SubfolderNameInApplication : "");
+			if (EnsurePathExists && !Directory.Exists(fileParentFolderPath)) Directory.CreateDirectory(fileParentFolderPath);
+			return fileParentFolderPath + "\\" + fileName;
+		}
+
+		public static string GetFullFolderPathInLocalAppdata(string folderName, string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH", bool EnsurePathExists = true)
+		{
+			ApplicationName = (ApplicationName ?? "").Trim('\\');
+			SubfolderNameInApplication = (SubfolderNameInApplication ?? "").Trim('\\');
+			folderName = (folderName ?? "").Trim('\\');
+			CompanyName = (CompanyName ?? "").Trim('\\');
+			bool isSubfolderDefined = !string.IsNullOrWhiteSpace(SubfolderNameInApplication);
+			string folderPath =
+				LocalAppdataPath(ApplicationName, CompanyName, EnsurePathExists)
+					+ (isSubfolderDefined ? "\\" + SubfolderNameInApplication : "")
+					+ "\\" + folderName;
+			if (EnsurePathExists && !Directory.Exists(folderPath))
+				Directory.CreateDirectory(folderPath);
+			return folderPath;
 		}
 
 		public static void FlushSettings<T>(T settingsObject, string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH")

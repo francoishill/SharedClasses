@@ -28,6 +28,7 @@ namespace SharedClasses
 	{
 		public static Action actionToShowAboutWindow = delegate { };//This gets set in the App.xaml.cs override OnStartup, the actual code for AboutWindow has to exist inside the MainWindow to make the AnalaseProjects app succeed for ShowNoCallbackNotifications
 
+		private static bool collectionChangedEventBusy = false;
 		private static ObservableCollection<NotificationClass> _notifications;// = new ObservableCollection<NotificationClass>();
 		private static ObservableCollection<NotificationClass> notifications
 		{
@@ -98,11 +99,13 @@ namespace SharedClasses
 
 			notifications.CollectionChanged += delegate
 			{
-				Dispatcher.Invoke((Action)delegate
+				collectionChangedEventBusy = true;
+				Dispatcher.BeginInvoke((Action)delegate
 				{
 					buttonCloseAllNotifications.Visibility = notifications.Count > 1 ? Visibility.Visible : Visibility.Hidden;
 					versionStringLabel.Visibility = buttonCloseAllNotifications.Visibility;
 				});
+				collectionChangedEventBusy = false;
 			};
 			InitializeTimerToCheckForNotificationTimeouts();
 		}
@@ -149,16 +152,23 @@ namespace SharedClasses
 			Action<object> middleClickCallback, object middleClickCallbackArgument,
 			Action<object, bool> onCloseCallback_WasClickedToCallback, object onCloseCallbackArgument)
 		{
+			bool justcreated = false;
+			if (notificationWindow == null)
+			{
+				notificationWindow = new WpfNotificationWindow();
+				justcreated = true;
+			}
+
 			thread = new Thread(() =>
 			{
-				bool justcreated = false;
-				if (notificationWindow == null)
+				if (CurrentVersionString != null)
+					SetCurrentVersionDisplayed(CurrentVersionString);
+				
+				while (notificationWindow == null)
 				{
-					justcreated = true;
-					notificationWindow = new WpfNotificationWindow();
-					if (CurrentVersionString != null)
-						SetCurrentVersionDisplayed(CurrentVersionString);
-				}
+					Dispatcher.CurrentDispatcher.BeginInvoke((Action)delegate { }, DispatcherPriority.Background);
+				}//Just do this as it may take some time to create the notificationWindow
+
 				notificationWindow.Dispatcher.Invoke(
 					(Action)delegate
 					{
@@ -179,12 +189,17 @@ namespace SharedClasses
 							notificationWindow.BringIntoView();
 							notificationWindow.Topmost = !notificationWindow.Topmost;
 							notificationWindow.Topmost = !notificationWindow.Topmost;
-							notifications.Insert(0, notif);
+
+							while (collectionChangedEventBusy) { }
+
+							if (!notifications.Contains(notif))
+								notifications.Insert(0, notif);
 							if (!notificationWindow.IsVisible)
 								notificationWindow.ShowDialog();
 						}
-						catch
+						catch (Exception exc)
 						{
+							Console.WriteLine("ERROR: " + exc.Message);
 						}
 					});
 
@@ -417,21 +432,21 @@ namespace SharedClasses
 				switch (NotificationType)
 				{
 					case ShowNoCallbackNotificationInterop.NotificationTypes.Subtle:
-						return new SolidColorBrush(Color.FromArgb(150, 200, 200, 200));
+						return new SolidColorBrush(Color.FromArgb(150, 50, 50, 50));
 					case ShowNoCallbackNotificationInterop.NotificationTypes.Info:
-						return new SolidColorBrush(Colors.Yellow);
+						return new SolidColorBrush(Colors.Blue);//Color.FromArgb(255, 100, 100, 0));//Colors.Yellow);
 					case ShowNoCallbackNotificationInterop.NotificationTypes.Success:
-						return new SolidColorBrush(Color.FromRgb(40, 200, 40));
+						return new SolidColorBrush(Colors.Green);//Color.FromRgb(40, 200, 40));
 					case ShowNoCallbackNotificationInterop.NotificationTypes.Warning:
 						return new SolidColorBrush(Colors.Orange);
 					case ShowNoCallbackNotificationInterop.NotificationTypes.Error:
-						return new SolidColorBrush(Colors.Red);//Color.FromRgb(240, 60, 60));
+						return new SolidColorBrush(Color.FromArgb(255, 170, 50, 50));//Color.FromRgb(240, 60, 60));
 					default:
 						return new SolidColorBrush(Color.FromArgb(150, 200, 200, 200));
 				}
 			}
 		}
-		public SolidColorBrush MessageFontColor { get { return new SolidColorBrush(Colors.White); } }
+		public SolidColorBrush MessageFontColor { get { return new SolidColorBrush(Colors.Black); } }//.White); } }
 
 		public NotificationClass(
 			string Title, string Message,

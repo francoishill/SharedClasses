@@ -4,7 +4,7 @@
     <title></title>
     <link href="/css/prettify.css" rel="stylesheet" />
     <script src="/js/prettify.js"></script>
-    <style>
+    <style>		
         html, body
         {
             height: 100%;
@@ -76,6 +76,37 @@
         {
             color: #333;
         }
+		
+		#buylicensemessage {
+			display: none;
+			font-size:20px;
+			color:cadetblue;
+		}
+		
+		#downloadlink {
+			float: left;
+		}
+		
+		#paypalbuttondiv {
+			border:#555 solid 2px;
+			border-radius:15px;
+			padding:10px;
+			float:right;
+		}
+		
+		form * {
+			line-height: 100%;
+		}
+		
+		form tr {
+			font-size: 2px;//Otherwise the rows take up space
+		}
+		
+		#licensetypetextspan { 
+			font-size: 16px;
+			color : gray;
+		}
+		
     </style>
 </head>
 <body onload='prettyPrint();'>
@@ -115,8 +146,26 @@
     </div>
 
     <br />
-    <div class='headingvaluepair'>
+    <div id='downloadlink' class='headingvaluepair'>
         <a href='{SetupFilename}' class='downloadlink'>Download</a>
     </div>
+
+	<div id='paypalbuttondiv'></div>
+
+	<script src="/js/jquery_newest/jquery.min.js"></script>
+	<script>
+		$(function(){
+			$.ajax({
+			url:'/paypalbuttons/getbutton/{ProjectNameSmallCaps}',
+			cache:false
+			})
+			.success(function(succ) {
+				$('#paypalbuttondiv').html(succ.replace(">License type<", "><span id='licensetypetextspan'>License type</span><"));
+			})
+			.error(function (res) {
+				alert('An error occurred loading the PayPal button: ' + res.responseText);
+			});
+		});
+	</script>
 </body>
 </html>

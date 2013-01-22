@@ -28,13 +28,15 @@
 									Margin='10 10 10 0'>
 							<Label Content='{Binding Name}'
 								   Foreground='#FF239C45'
+								   Width='200'
 								   Margin='0'
 								   Padding='0' />
-							<Label Content=': '
+							<!--<Label Content=': '
 								   Margin='0'
-								   Padding='0' />
+								   Padding='0' />-->
 							<Label Content='{Binding DisplayText}'
 								   Foreground='#FF239CF5'
+								   Width='200'
 								   Margin='0'
 								   Padding='0'
 								   Cursor='{Binding CurrentCursor}' />

@@ -25,7 +25,7 @@ namespace SharedClasses
 			string LocalGitClonedFolder, string RemoteGitRepo, bool InitGitRepo,
 			string SvnServeDirIfRequiredToBeRun)
 		{
-			this.SvnUrl = SvnUrl;
+			this.SvnUrl = SvnUrl.Replace('\\', '/');
 			this.StandardLayout = StandardLayout;
 			this.StartSvnRevisionNumber = StartSvnRevisionNumber;
 			this.LocalGitClonedFolder = LocalGitClonedFolder;

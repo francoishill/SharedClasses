@@ -7,7 +7,7 @@ using System.Linq;
 using Microsoft.Win32;
 using System.Threading;
 using System.Diagnostics;
-using System.Management;
+using System.Management;//Requires System.Management.dll
 using System.Text;//Requires the Rhino.Licensing.dll and the log4net.dll
 
 namespace SharedClasses

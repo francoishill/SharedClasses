@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
@@ -233,7 +234,7 @@ namespace SharedClasses
 					projName,
 					projName.InsertSpacesBeforeCamelCase(),
 					publishedVersionString,//Should obtain (and increase) product version from csproj file
-					SettingsSimple.HomePcUrls.Instance.AppsPublishingRoot + "/ownapplications/" + projName.ToLower(),//"http://fjh.dyndns.org/ownapplications/" + projName.ToLower(),
+					AutoUpdating.GetApplicationOnlineUrl(projName),
 					projName + ".exe",
 					RegistryInterop.GetRegistryAssociationItemFromJsonFile(registryEntriesFilepath, actionOnMessage),
 					null,
@@ -324,6 +325,11 @@ namespace SharedClasses
 			return false;
 		}
 
+		private static string GetValidatedUrlsectionForProjname(string projName)
+		{
+			return HttpUtility.UrlPathEncode(projName).ToLower();
+		}
+
 		public static bool PerformPublishOnline(string projName, bool _64Only, bool HasPlugins, bool AutomaticallyUpdateRevision, bool InstallLocallyAfterSuccessfullNSIS, bool StartupWithWindows, bool SelectSetupIfSuccessful, bool OpenWebsite, out string publishedVersionString, out string publishedSetupPath, Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage)
 		{
 			List<string> BugsFixed = null;
@@ -347,17 +353,17 @@ namespace SharedClasses
 
 			if (!successPublish)
 				return false;
-			
-			string validatedUrlsectionForProjname = HttpUtility.UrlPathEncode(projName).ToLower();
 
-			int changedTheFollowing;
+			string validatedUrlsectionForProjname = GetValidatedUrlsectionForProjname(projName);
 
+			//int changedTheFollowing;
+			//DONE: The following was changed
 			string relativeUrl = "/downloadownapps.php?relativepath=" + validatedUrlsectionForProjname;
 
 			//string rootFtpUri = GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForVsPublishing() + "/" + validatedUrlsectionForProjname;
 			//string rootFtpUri = WebInterop.RootFtpUrlForAppsUploading.TrimEnd('/') + relativeUrl;
 			string rootDownloadHttpUri = SharedClasses.SettingsSimple.HomePcUrls.Instance.AppsPublishingRoot.TrimEnd('/') + relativeUrl.TrimEnd('/');
-			
+
 			PublishDetails publishDetails = new PublishDetails(
 					projName,
 					publishedVersionString,
@@ -395,32 +401,33 @@ namespace SharedClasses
 			actionOnMessage("Attempting Ftp Uploading of Setup file and index file for " + projName, FeedbackMessageTypes.Status);
 			string uriAfterUploading = GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForAFTERvspublishing() + "/" + validatedUrlsectionForProjname;
 
+			//DONE: We removed the other apps from auto downloading (while NSIS installing) if not installed yet, just left AutoUpdater to remain
 			bool isAutoUpdater = projName.Replace(" ", "").Equals("AutoUpdater", StringComparison.InvariantCultureIgnoreCase);
-			bool isShowNoCallbackNotification = projName.Replace(" ", "").Equals("ShowNoCallbackNotification", StringComparison.InvariantCultureIgnoreCase);
-			bool isStandaloneUploader = projName.Replace(" ", "").Equals("StandaloneUploader", StringComparison.InvariantCultureIgnoreCase);
+			/*bool isShowNoCallbackNotification = projName.Replace(" ", "").Equals("ShowNoCallbackNotification", StringComparison.InvariantCultureIgnoreCase);
+			bool isStandaloneUploader = projName.Replace(" ", "").Equals("StandaloneUploader", StringComparison.InvariantCultureIgnoreCase);*/
 			string clonedSetupFilepathIfAutoUpdater = 
 					//Do not change this name, it is used in NSIS for downloading AutoUpdater if not installed yet
 					Path.Combine(Path.GetDirectoryName(publishedSetupPath), "AutoUpdater_SetupLatest.exe");
-			string clonedSetupFilepathIfShowNoCallbackNotification =
+			/*string clonedSetupFilepathIfShowNoCallbackNotification =
 					//Do not change this name, it is used in NSIS for downloading AutoUpdater if not installed yet
 					Path.Combine(Path.GetDirectoryName(publishedSetupPath), "ShowNoCallbackNotification_SetupLatest.exe");
 			string clonedSetupFilepathIfStandaloneUploader =
 					//Do not change this name, it is used in NSIS for downloading AutoUpdater if not installed yet
-					Path.Combine(Path.GetDirectoryName(publishedSetupPath), "StandaloneUploader_SetupLatest.exe");
+					Path.Combine(Path.GetDirectoryName(publishedSetupPath), "StandaloneUploader_SetupLatest.exe");*/
 
 			if (isAutoUpdater)
 				File.Copy(publishedSetupPath, clonedSetupFilepathIfAutoUpdater, true);
-			if (isShowNoCallbackNotification)
+			/*if (isShowNoCallbackNotification)
 				File.Copy(publishedSetupPath, clonedSetupFilepathIfShowNoCallbackNotification, true);
 			if (isStandaloneUploader)
-				File.Copy(publishedSetupPath, clonedSetupFilepathIfStandaloneUploader, true);
+				-File.Copy(publishedSetupPath, clonedSetupFilepathIfStandaloneUploader, true);*/
 
 			Dictionary<string, string> localFiles_DisplaynameFirst = new Dictionary<string, string>();
 			localFiles_DisplaynameFirst.Add("Setup path for " + projName, publishedSetupPath);
 			localFiles_DisplaynameFirst.Add("index.html for " + projName, htmlFilePath);
 			if (isAutoUpdater) localFiles_DisplaynameFirst.Add("Newest AutoUpdater setup", clonedSetupFilepathIfAutoUpdater);
-			if (isShowNoCallbackNotification) localFiles_DisplaynameFirst.Add("Newest ShowNoCallbackNotification", clonedSetupFilepathIfShowNoCallbackNotification);
-			if (isStandaloneUploader) localFiles_DisplaynameFirst.Add("Newest StandaloneUploader", clonedSetupFilepathIfStandaloneUploader);
+			/*if (isShowNoCallbackNotification) localFiles_DisplaynameFirst.Add("Newest ShowNoCallbackNotification", clonedSetupFilepathIfShowNoCallbackNotification);
+			if (isStandaloneUploader) localFiles_DisplaynameFirst.Add("Newest StandaloneUploader", clonedSetupFilepathIfStandaloneUploader);*/
 
 			//bool uploaded = true;
 			bool uploadsQueued = true;
@@ -467,9 +474,105 @@ namespace SharedClasses
 			return File.Exists(appExePath);
 		}
 
+		private static string[] GetAllImageFilesInDirectory(string dirPath)
+		{
+			if (!Directory.Exists(dirPath))
+				return new string[0];
+			return Directory.GetFiles(dirPath, "*.*")//Not searching sub directories too
+				.Where(
+					s => s.EndsWith(".jpeg", StringComparison.InvariantCultureIgnoreCase)
+					|| s.EndsWith(".jpg", StringComparison.InvariantCultureIgnoreCase)
+					|| s.EndsWith(".bmp", StringComparison.InvariantCultureIgnoreCase))
+				.ToArray();
+		}
+
+		private static bool QueueFileToUpload(string projName, string displayName, string localFilepath, string onlineFilenameOnly = null)
+		{
+			if (onlineFilenameOnly == null)
+				onlineFilenameOnly = Path.GetFileName(localFilepath);
+
+			return StandaloneUploaderInterop.UploadVia_StandaloneUploader_UsingExternalApp(
+					err => UserMessages.ShowErrorMessage(err),
+					displayName,
+					UploadingProtocolTypes.Ownapps,
+					localFilepath,
+					GetValidatedUrlsectionForProjname(projName) + "/" + onlineFilenameOnly,
+					SettingsSimple.OnlineAppsSettings.Instance.AppsUploadFtpUsername,
+					SettingsSimple.OnlineAppsSettings.Instance.AppsUploadFtpPassword,
+					true);
+		}
+
+		private static string InsertScreenshotsIntoHtmlAndAlsoUpload(string projectName, string originalHtmlText)
+		{
+			string tmpHtmlAfterReplace = originalHtmlText;
+
+			string tmperr;
+			var tmpCsprojAndAppType = OwnAppsInterop.GetCsprojFullpathFromApplicationName(projectName, out tmperr);
+			if (tmperr != null)
+			{
+				UserMessages.ShowWarningMessage(tmperr);
+				return projectName;
+			}
+			string csprojPath = tmpCsprojAndAppType.Value.Key;
+			string screenshotsDirPath = Path.Combine(Path.GetDirectoryName(csprojPath), "ScreenShots");
+			string[] screenshotsImagePaths = GetAllImageFilesInDirectory(screenshotsDirPath);
+			bool hasScreenShots = screenshotsImagePaths != null && screenshotsImagePaths.Length > 0;
+			if (hasScreenShots)
+			{
+				//tmpHtmlAfterReplace = tmpHtmlAfterReplace.Replace("{ScreenshotsCssDisplay}", "block");
+				List<string> listOfTabnames = new List<string>();
+				List<string> listOfImages = new List<string>();
+				int cnt = 1;
+				foreach (var ss in screenshotsImagePaths)
+				{
+					//Each screenshot will be uploaded in 'Screenshots' subfolder of app, like QuickAccess/Screenshots/
+					string ssFilenamOnly = Path.GetFileName(ss);
+					listOfTabnames.Add(string.Format("<li><a href='#tabs-{0}'>{1}</a></li>", cnt, Path.GetFileNameWithoutExtension(ss)));
+					listOfImages.Add(string.Format("<div id='tabs-{0}'><a href='Screenshots/{1}' class='preview' title='Click thumbnail to view full-size image'><img src='Screenshots/{1}' alt='{2}' /></a></div>", cnt, ssFilenamOnly, Path.GetFileNameWithoutExtension(ss)));
+					//Upload image file
+					QueueFileToUpload(projectName, Path.GetFileNameWithoutExtension(ss), ss, "Screenshots/" + ssFilenamOnly);
+					cnt++;
+				}
+				tmpHtmlAfterReplace = tmpHtmlAfterReplace.Replace(
+					"{ListOfScreenshotTabNames}", string.Join(Environment.NewLine, listOfTabnames));
+				tmpHtmlAfterReplace = tmpHtmlAfterReplace.Replace(
+					"{ListOfScreenShotImages}", string.Join(Environment.NewLine, listOfImages));
+			}
+			else
+			{
+				//tmpHtmlAfterReplace = tmpHtmlAfterReplace.Replace("{ScreenshotsCssDisplay}", "none");
+				tmpHtmlAfterReplace = tmpHtmlAfterReplace.Replace("{ListOfScreenshotTabNames}", "There are no screenshots available for this application.");//So the {..} does not remain
+				tmpHtmlAfterReplace = tmpHtmlAfterReplace.Replace("{ListOfScreenShotImages}", "");
+			}
+			return tmpHtmlAfterReplace;
+		}
+
+		private static string GetAppIconFullPath(string projectName)
+		{
+			string tmperr;
+			var tmpCsprojAndAppType = OwnAppsInterop.GetCsprojFullpathFromApplicationName(projectName, out tmperr);
+			if (tmperr != null)
+			{
+				UserMessages.ShowWarningMessage(tmperr);
+				return null;
+			}
+			string csprojPath = tmpCsprojAndAppType.Value.Key;
+			return Path.Combine(Path.GetDirectoryName(csprojPath), "app.ico");
+		}
+
+		private static void UploadIconAsFaviconIfExists(string projectName)
+		{
+			string appIconPath = GetAppIconFullPath(projectName);
+			if (File.Exists(appIconPath))
+				QueueFileToUpload(projectName, "Favicon for " + projectName, appIconPath, "favicon.ico");
+		}
+
 		public static string CreateHtmlPageReturnFilename(string projectName, string projectVersion, string setupFilename, List<string> BugsFixed, List<string> Improvements, List<string> NewFeatures, PublishDetails publishDetails = null)
 		{
-			string tempFilename = Path.GetTempPath() + "index.html";
+			string thisappTempFolder = Path.Combine(Path.GetTempPath(), "TempWebpagesBeforeUploading", projectName);
+			if (!Directory.Exists(thisappTempFolder))
+				Directory.CreateDirectory(thisappTempFolder);
+			string tempFilename = Path.Combine(thisappTempFolder, "index.html");
 
 			//string description = "";// "This is the description for " + projectName + ".";
 			string bugsfixed = "";
@@ -492,17 +595,41 @@ namespace SharedClasses
 			{
 				File.WriteAllBytes(tempFilename, bytesOfHtmlFile);
 				string textOfFile = File.ReadAllText(tempFilename);
+
+				string appIconPath = GetAppIconFullPath(projectName);
+				if (appIconPath != null)
+					textOfFile = textOfFile.Replace("{ShortcutIconIfExists}", "<link rel='SHORTCUT ICON' href='favicon.ico'/>");
+				textOfFile = textOfFile.Replace("{WebpageTitle}", projectName.InsertSpacesBeforeCamelCase());
+
 				textOfFile = textOfFile.Replace("{PageGeneratedDate}", DateTime.Now.ToString(@"dddd, dd MMMM yyyy \a\t HH:mm:ss"));
-				textOfFile = textOfFile.Replace("{ProjectName}", projectName);
+				textOfFile = textOfFile.Replace("{ProjectName}", projectName.InsertSpacesBeforeCamelCase());
+				textOfFile = textOfFile.Replace("{ProjectNameSmallCaps}", projectName.ToLower());
 				textOfFile = textOfFile.Replace("{ProjectVersion}", projectVersion);
 				//textOfFile = textOfFile.Replace("{SetupFilename}", Path.GetFileName(setupFilename));
 				textOfFile = textOfFile.Replace("{SetupFilename}", "/downloadownapps.php?relativepath=" + projectName + "/" + Path.GetFileName(setupFilename));
 				//textOfFile = textOfFile.Replace("{DescriptionLiElements}", description);
-				textOfFile = textOfFile.Replace("{BugsFixedList}", bugsfixed);
-				textOfFile = textOfFile.Replace("{ImprovementList}", improvements);
-				textOfFile = textOfFile.Replace("{NewFeaturesList}", newfeatures);
+				if (!string.IsNullOrWhiteSpace(bugsfixed) && !string.IsNullOrWhiteSpace(improvements) && !string.IsNullOrWhiteSpace(newfeatures))
+				{
+					//textOfFile = textOfFile.Replace("{ChangelistCssDisplay}", "block");
+					textOfFile = textOfFile.Replace("{BugsFixedList}", bugsfixed);
+					textOfFile = textOfFile.Replace("{ImprovementList}", improvements);
+					textOfFile = textOfFile.Replace("{NewFeaturesList}", newfeatures);
+				}
+				else
+				{
+					//textOfFile = textOfFile.Replace("{ChangelistCssDisplay}", "none");
+					textOfFile = textOfFile.Replace("{BugsFixedList}", "");//So the {..} does not remain
+					textOfFile = textOfFile.Replace("{ImprovementList}", "There are no changes recorded for this release.");
+					textOfFile = textOfFile.Replace("{NewFeaturesList}", "");//So the {..} does not remain
+				}
 				if (publishDetails != null)
 					textOfFile = textOfFile.Replace("{JsonText}", publishDetails.GetJsonString());
+				else
+					textOfFile = textOfFile.Replace("{JsonText}", "Could not obtain extra info from online database.");
+
+				textOfFile = InsertScreenshotsIntoHtmlAndAlsoUpload(projectName, textOfFile);
+				UploadIconAsFaviconIfExists(projectName);
+
 				File.WriteAllText(tempFilename, textOfFile);
 			}
 

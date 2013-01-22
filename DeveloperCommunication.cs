@@ -23,8 +23,10 @@ namespace SharedClasses
 
 		private static string cDeveloperGmailAddress_FromAddress = "devhillapps@gmail.com";
 		private static string cDeveloperEmailAddress_ToAddress = "developer@firepuma.com";
-		public static bool SendEmailToDeveloperViaSMTP(string subject, string body, bool bodyIsHtml = true, string attachmentFilepath = null)
+		public static bool SendEmailToDeveloperViaSMTP(string subject, string body, bool bodyIsHtml = true, string attachmentFilepath = null, Action<string> onError = null)
 		{
+			if (onError == null) onError = delegate { };
+
 			SmtpClient client = new SmtpClient("smtp.gmail.com", 587);//465
 			client.EnableSsl = true;
 			client.Timeout = 10000;
@@ -58,8 +60,7 @@ namespace SharedClasses
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine("Exception caught in CreateMessageWithAttachment(): {0}",
-					  ex.ToString());
+				onError(ex.Message);
 				return false;
 			}
 			finally

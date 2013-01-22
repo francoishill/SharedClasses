@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using ICommandWithHandler = InlineCommandToolkit.InlineCommands.ICommandWithHandler;
+using SharedClasses;
 //using OverrideToStringClass = InlineCommandToolkit.InlineCommands.OverrideToStringClass;
 
 namespace InlineCommandToolkit

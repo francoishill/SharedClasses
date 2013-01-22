@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
+using System.Windows.Media.Imaging;
 
 namespace SharedClasses
 {
@@ -369,6 +370,34 @@ namespace SharedClasses
 			}
 
 			return foundCodec;
-		} 
+		}
+
+		public static void SaveBitmapSourceToFile(BitmapSource bitmapSource, string filePath)
+		{
+			using (var fileStream = new FileStream(filePath, FileMode.Create))
+			{
+				BitmapEncoder encoder = new PngBitmapEncoder();
+				encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
+				encoder.Save(fileStream);
+			}
+		}
+
+		public static void SaveClipboardImageToFile(string filePath)
+		{
+			var image = System.Windows.Clipboard.GetImage();
+			SaveBitmapSourceToFile(image, filePath);
+		}
+
+		public static BitmapImage GetImageFromFile(string filePath)
+		{
+			BitmapImage image = new BitmapImage();
+			if (File.Exists(filePath))
+			{
+				image.BeginInit();
+				image.UriSource = new Uri(filePath, UriKind.Absolute);
+				image.EndInit();
+			}
+			return image;
+		}
 	}
 }

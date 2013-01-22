@@ -8,6 +8,7 @@ using InlineCommandToolkit;
 //using InterfaceForQuickAccessPlugin;
 using ICommandWithHandler = InlineCommandToolkit.InlineCommands.ICommandWithHandler;
 using OverrideToStringClass = InlineCommandToolkit.InlineCommands.OverrideToStringClass;
+using SharedClasses;
 
 namespace DynamicDLLsInterop
 {

@@ -1,160 +1,100 @@
 ﻿<!DOCTYPE HTML>
 <html>
 <head>
-    <title></title>
+    <title>{WebpageTitle}</title>
+	{ShortcutIconIfExists}<!--This must be the full <link rel='SHORTCUT ICON'... link tag-->
     <link href="/css/prettify.css" rel="stylesheet" />
+	<link rel='stylesheet' href='/css/ownapps/publishingstyles.css'>
+	<link rel='stylesheet' href='/css/jquery_newest/jquery-ui.min.css'>
     <script src="/js/prettify.js"></script>
-    <style>		
-        html, body
-        {
-            height: 100%;
-        }
-
-        body
-        {
-            background-color: #111;
-            /*background-image: -webkit-gradient(linear, 0% 100%, 0% 0%, from(#111), to(#333));
-		    background-image: -moz-linear-gradient(bottom, #111, 50%, #333);*/
-            font-size: 44px;
-        }
-
-        .pagegenerateddate
-        {
-            font-size: 14px;
-            color: #555;
-        }
-
-        .headingvaluepair
-        {
-        }
-
-        .heading
-        {
-            color: #777;
-        }
-
-        .value
-        {
-            color: #ddd;
-        }
-
-        .description
-        {
-            font-size: 20px;
-            text-indent: 120px;
-        }
-
-        .bugsfixedlist
-        {
-            color: #f00;
-        }
-
-        .improvementslist
-        {
-            color: #0af;
-            
-        }
-
-        .newfeatureslist
-        {
-            color: #3f0;
-            
-        }
-
-        .jsonText
-        {
-            font-size: 10pt;
-        }
-
-        .downloadlink
-        {
-            font-size: 36px;
-            color: #f51;
-        }
-
-        .graycolor
-        {
-            color: #333;
-        }
-		
-		#buylicensemessage {
-			display: none;
-			font-size:20px;
-			color:cadetblue;
-		}
-		
-		#downloadlink {
-			float: left;
-		}
-		
-		#paypalbuttondiv {
-			border:#555 solid 2px;
-			border-radius:15px;
-			padding:10px;
-			float:right;
-		}
-		
-		form * {
-			line-height: 100%;
-		}
-		
-		form tr {
-			font-size: 2px;//Otherwise the rows take up space
-		}
-		
-		#licensetypetextspan { 
-			font-size: 16px;
-			color : gray;
-		}
-		
-    </style>
-</head>
-<body onload='prettyPrint();'>
-    <div class='pagegenerateddate'>
-    <label>Page was generated on {PageGeneratedDate}</label>
-    </div>
-    <div class='headingvaluepair'>
-        <label class='heading'>
-            Project:
-        </label>
-        <label class='value'>
-            {ProjectName}</label>
-    </div>
-    <div class='headingvaluepair'>
-        <label class='heading'>
-            Version:
-        </label>
-        <label class='value'>
-            {ProjectVersion}</label>
-    </div>
-    <br />
-    <div class='description'>
-        <ol class='bugsfixedlist'>
-            {BugsFixedList}
-        </ol>
-        <ol class='improvementslist'>
-            {ImprovementList}
-        </ol>
-        <ol class='newfeatureslist'>
-            {NewFeaturesList}
-        </ol>
-    </div>
-    <br />
-
-    <div class="jsonText">
-        <pre><code class='prettyprint'>{JsonText}</code></pre>
-    </div>
-
-    <br />
-    <div id='downloadlink' class='headingvaluepair'>
-        <a href='{SetupFilename}' class='downloadlink'>Download</a>
-    </div>
-
-	<div id='paypalbuttondiv'></div>
-
 	<script src="/js/jquery_newest/jquery.min.js"></script>
+	<script src="/js/jquery_newest/jquery-ui.min.js"></script>
+	<script src="/js/ownapps/imagepreviewscript.js"></script>
+	<!--<script>
+		function toggleExtraInfo() {
+			$('#extrainfodiv').toggle();//Standard jQuery function to show/hide element
+		}
+		function toggleScreenShots() {
+			$('#screenshots').toggle();//Standard jQuery function to show/hide element
+		}
+	</script>-->
+</head>
+<body>
+	<div id='maindiv'>
+		<div class='headingvaluepair projectname'>
+			<label class='heading'>
+				Project:
+			</label>
+			<label class='value'>
+				{ProjectName}</label>
+		</div>
+		<div class='headingvaluepair projectversion'>
+			<label class='heading'>
+				Version:
+			</label>
+			<label class='value'>
+				{ProjectVersion}</label>
+		</div>
+		
+		<br />
+		<div id='downloadlink' class='headingvaluepair'>
+			<a href='{SetupFilename}' class='downloadlink'>Download</a>
+		</div>
+		
+		<div id="accordion">
+			<h3>Purchase</h3>
+			<div>
+				<div id='paypalbuttondiv'></div>
+			</div>
+			<h3>Screenshots</h3>
+			<div>
+				<!--<a id='togglescreenshots' href='javascript:void();' onclick='toggleScreenShots();' >Show/hide screenshots</a>-->
+				<div id="screenshots">
+					<ul>
+						{ListOfScreenshotTabNames} <!--See next three lines for example, unlimited number allowed-->
+						<!--
+						<li><a href="#tabs-1">First</a></li>
+						<li><a href="#tabs-2">Second</a></li>-->
+					</ul>
+					{ListOfScreenShotImages}
+					<!--
+					<div id="tabs-1"><a href="img1.bmp" class="preview" title="Click thumbnail to view full-size image"><img src="img1.bmp" alt="gallery thumbnail" /></a></div>
+					<div id="tabs-2"><a href="img1.bmp" class="preview" title="Click thumbnail to view full-size image"><img src="img1.bmp" alt="gallery thumbnail" /></a></div>-->
+				</div>
+			</div>
+			<h3>Change list</h3>
+			<div>
+				<div class='description'><!--style='display:{ChangelistCssDisplay}'-->
+					<ol class='bugsfixedlist'>
+						{BugsFixedList}
+					</ol>
+					<ol class='improvementslist'>
+						{ImprovementList}
+					</ol>
+					<ol class='newfeatureslist'>
+						{NewFeaturesList}
+					</ol>
+				</div>
+			</div>
+			<h3>Extra info</h3>
+			<div>
+				<!--<a id='toggleextrainfo' href='javascript:void();' onclick='toggleExtraInfo();' >Show/hide extra info</a>-->
+				<div id='extrainfodiv'>
+					<div class='pagegenerateddate'>
+						<label title='This page was generated on {PageGeneratedDate}'>Page was generated on {PageGeneratedDate}</label>
+					</div>
+					<div class="jsonText">
+						<pre><code class='prettyprint'>{JsonText}</code></pre>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
 	<script>
 		$(function(){
+			prettyPrint();
+		
 			$.ajax({
 			url:'/paypalbuttons/getbutton/{ProjectNameSmallCaps}',
 			cache:false
@@ -165,6 +105,11 @@
 			.error(function (res) {
 				alert('An error occurred loading the PayPal button: ' + res.responseText);
 			});
+			
+			$( "#screenshots" ).tabs();
+			imagePreview(50, 200);
+			$( "#accordion" ).accordion( { 'heightStyle': 'content' });
+			//$('#ui-accordion-accordion-header-1').click(); //Expand the second accordion item
 		});
 	</script>
 </body>

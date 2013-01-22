@@ -59,8 +59,20 @@ namespace SharedClasses
 
 		public static void ShowAboutWindow(ObservableCollection<DisplayItem> ItemsToDisplay, bool showmodal = true, Window owner = null)
 		{
+			int aboutWindowAddApplicationUrl;
+			//Add the application's url to the AboutWindow2, like http://firepuma.com/ownapplication/quickaccess
+
+			List<DisplayItem> forcedItemsToDisplay = new List<DisplayItem>();
 			string thisAppname = System.IO.Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
-			ItemsToDisplay.Insert(0, new DisplayItem("Application name", thisAppname));
+			//If AutoUpdater is not installed, mention this in the AboutWindow2 and give user link to download it
+			if (!AutoUpdating.IsAutoUpdaterInstalled())
+				forcedItemsToDisplay.Add(new DisplayItem("Not keeping up to date", "Click to download AutoUpdater", AutoUpdating.GetDownloadlinkForLatestAutoUpdater()));
+			forcedItemsToDisplay.Add(new DisplayItem("Application name", thisAppname));
+			forcedItemsToDisplay.Add(new DisplayItem("Check out the website", "Click to open website", AutoUpdating.GetApplicationOnlineUrl(thisAppname)));
+
+			for (int i = forcedItemsToDisplay.Count - 1; i >= 0; i--)
+				ItemsToDisplay.Insert(0, forcedItemsToDisplay[i]);
+
 			var win = new AboutWindow2(ItemsToDisplay)
 			{
 				Owner = owner

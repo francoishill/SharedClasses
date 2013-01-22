@@ -6,13 +6,14 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-#if WPF
+//#if WPF
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-#endif
+//#endif
 using System.ComponentModel;
 using System.Drawing.Imaging;
+using System.IO;
 
 namespace SharedClasses
 {
@@ -80,7 +81,7 @@ namespace SharedClasses
 			return System.Drawing.Icon.FromHandle(bmp.GetHicon());
 		}
 
-#if WPF
+//#if WPF
 		public static ImageSource IconToImageSource(this Icon icon)
 		{
 			ImageSource imageSource = Imaging.CreateBitmapSourceFromHIcon(
@@ -123,7 +124,28 @@ namespace SharedClasses
 		{
 			return Icon.FromHandle(ToBitmap(source).GetHbitmap());
 		}
-#endif
+//#endif
+
+		public static ImageSource GetIconFromFilePath(string filePath)
+		{
+			IconsInterop.IconExtractor.IconSize iconSize = IconsInterop.IconExtractor.IconSize.Large;
+			var icon = IconsInterop.IconExtractor.Extract(filePath, iconSize);
+			if (icon == null)
+			{
+				int tmpIconIndex;
+				if (filePath.Contains(",") && int.TryParse(filePath.Split(',')[1], out tmpIconIndex))
+					filePath = filePath.Split(',')[0];
+				else
+					tmpIconIndex = 0;
+				//icon = IconsInterop.IconExtractor.Extract(filePath.Split(',')[0], iconSize, tmpIconIndex);
+
+				if (Directory.Exists(filePath))
+					icon = IconsInterop.IconExtractor.Extract("shell32.dll", iconSize, 3);
+				if (icon == null)
+					return null;
+			}
+			return icon.IconToImageSource();
+		}
 
 		/// <summary>
 		/// Shows a notification originalIcon in the system tray, for the given duration then removes it.

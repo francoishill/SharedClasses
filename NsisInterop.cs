@@ -89,7 +89,15 @@ public class NsisInterop
 		SectionGroupLines.Add("Function .onInit");
 		if (!isAutoUpdater)
 			if (WriteIntoRegistryForWindowsAutostartup)
-				SectionGroupLines.Add("StrCpy $state_autostartCheckbox 1");
+				SectionGroupLines.Add("StrCpy $lastState_autostartCheckbox 1");
+
+		SectionGroupLines.Add("");
+		SectionGroupLines.Add(";Ensure these match up with the default values in, we basically set the defaults for when it is in silent mode");
+        SectionGroupLines.Add("IfSilent 0 SkipDefaultsIfNotSilent");
+		SectionGroupLines.AddRange(NSISclass.cDefaultNsisValues);
+		SectionGroupLines.Add("SkipDefaultsIfNotSilent:");
+
+		SectionGroupLines.Add("");
 		SectionGroupLines.Add("	!include \"x64.nsh\"");
 		SectionGroupLines.Add("	; This checks if nsis is running under wow64 (since nsis is only 32bit)");
 		SectionGroupLines.Add("	; hopefully this will be dependable in the future too...");
@@ -127,34 +135,44 @@ public class NsisInterop
 		if (!File.Exists(NsisUrlLibDllPath))
 			UserMessages.ShowErrorMessage("NSIS will not compile, missing plugin: " + NsisUrlLibDllPath);
 
-		SectionGroupLines.Add(@"IfFileExists ""$PROGRAMFILES\Auto Updater\AutoUpdater.exe"" AutoUpdaterFound");
-		SectionGroupLines.Add(@"	  RetryDownload:");
-		SectionGroupLines.Add(@"	  ;All following lines removed, gave error when trying to read content from a URL");
-		SectionGroupLines.Add(@"	  ;NsisUrlLib::UrlOpen /NOUNLOAD """ + SharedClasses.SettingsSimple.HomePcUrls.Instance.AppsPublishingRoot + @"/json/getautoupdaterlatest"" ;Get content of this page (it returns the URL of newest setup package of AutoUpdater");
-		SectionGroupLines.Add(@"	  ;Pop $7");
-		SectionGroupLines.Add(@"	  ;MessageBox MB_OK $7");
-		SectionGroupLines.Add(@"	  ;NsisUrlLib::IterateLine /NOUNLOAD ;Read the first line (which is the URL)");
-		SectionGroupLines.Add(@"	  ;Pop $7 ;Place the URL read into variable $7");
-		SectionGroupLines.Add(@"	  ;MessageBox MB_OK ""$7""");
-		SectionGroupLines.Add(@"	  ;NSISdl::download ""$7"" tmpAutoUpdater_SetupLatest.exe ;Download the file at this URL");
-		SectionGroupLines.Add(@"	  NSISdl::download """ + SharedClasses.SettingsSimple.HomePcUrls.Instance.AppsPublishingRoot + @"/downloadownapps.php?relativepath=autoupdater/AutoUpdater_SetupLatest.exe"" tmpAutoUpdater_SetupLatest.exe ; Download latest AutoUpdater Setup");
-		SectionGroupLines.Add(@"	  Pop $R4 ;Read the result of the download");
-		SectionGroupLines.Add(@"	  StrCmp $R4 ""success"" SuccessfullyDownloadedAutoUpdater");
-		SectionGroupLines.Add(@"	  ;StrCmp $R4 ""cancel"" DownloadCanceled");
-		SectionGroupLines.Add(@"	  ;IntCmp $R5 $R0 NoSuccess");
-		SectionGroupLines.Add(@"	  ;;DetailPrint ""Download failed (error $R4)"" ;, trying with other mirror");
-		SectionGroupLines.Add(@"	  MessageBox MB_RETRYCANCEL ""Download failed, retry download?"" IDRETRY RetryDownload");
-		SectionGroupLines.Add(@"	  	DetailPrint ""Download unsuccessful for AutoUpdater (reason = $R4), ${PRODUCT_NAME} will not automatically be updated""");
-		SectionGroupLines.Add(@"	  	;Abort ; causes installer to quit.");
-		SectionGroupLines.Add(@"	  	goto AutoUpdaterDownloadSkipped");
-		SectionGroupLines.Add(@"	  SuccessfullyDownloadedAutoUpdater:");
-		SectionGroupLines.Add(@"	  ExecWait ""tmpAutoUpdater_SetupLatest.exe /S""");
-		SectionGroupLines.Add(@"	  Delete tmpAutoUpdater_SetupLatest.exe");
-		SectionGroupLines.Add(@"	  ;nsExec::Exec tmpAutoUpdater_SetupLatest.exe /S ;Install AutoUpdater silently");
-		SectionGroupLines.Add(@"AutoUpdaterDownloadSkipped:");
-		SectionGroupLines.Add(@"AutoUpdaterFound:");
+		if (!isAutoUpdater)
+		{
+			SectionGroupLines.Add("");
+			SectionGroupLines.Add("${If} $lastState_autoInstallAutoUpdater <> 1");
+			SectionGroupLines.Add("  goto AutoUpdaterDownloadSkipped");
+			SectionGroupLines.Add("${EndIf}");
 
-		SectionGroupLines.Add(@"IfFileExists ""$PROGRAMFILES\Show No Callback Notification\ShowNoCallbackNotification.exe"" ShowNoCallbackNotificationFound");
+			SectionGroupLines.Add("");
+			SectionGroupLines.Add(@"IfFileExists ""$PROGRAMFILES\Auto Updater\AutoUpdater.exe"" AutoUpdaterFound");
+			SectionGroupLines.Add(@"	  RetryDownload:");
+			SectionGroupLines.Add(@"	  ;All following lines removed, gave error when trying to read content from a URL");
+			SectionGroupLines.Add(@"	  ;NsisUrlLib::UrlOpen /NOUNLOAD """ + SharedClasses.SettingsSimple.HomePcUrls.Instance.AppsPublishingRoot + @"/json/getautoupdaterlatest"" ;Get content of this page (it returns the URL of newest setup package of AutoUpdater");
+			SectionGroupLines.Add(@"	  ;Pop $7");
+			SectionGroupLines.Add(@"	  ;MessageBox MB_OK $7");
+			SectionGroupLines.Add(@"	  ;NsisUrlLib::IterateLine /NOUNLOAD ;Read the first line (which is the URL)");
+			SectionGroupLines.Add(@"	  ;Pop $7 ;Place the URL read into variable $7");
+			SectionGroupLines.Add(@"	  ;MessageBox MB_OK ""$7""");
+			SectionGroupLines.Add(@"	  ;NSISdl::download ""$7"" tmpAutoUpdater_SetupLatest.exe ;Download the file at this URL");
+			SectionGroupLines.Add(@"	  NSISdl::download """ + AutoUpdating.GetDownloadlinkForLatestAutoUpdater() + @""" tmpAutoUpdater_SetupLatest.exe ; Download latest AutoUpdater Setup");
+			SectionGroupLines.Add(@"	  Pop $R4 ;Read the result of the download");
+			SectionGroupLines.Add(@"	  StrCmp $R4 ""success"" SuccessfullyDownloadedAutoUpdater");
+			SectionGroupLines.Add(@"	  ;StrCmp $R4 ""cancel"" DownloadCanceled");
+			SectionGroupLines.Add(@"	  ;IntCmp $R5 $R0 NoSuccess");
+			SectionGroupLines.Add(@"	  ;;DetailPrint ""Download failed (error $R4)"" ;, trying with other mirror");
+			SectionGroupLines.Add(@"	  MessageBox MB_RETRYCANCEL ""Download failed, retry download?"" IDRETRY RetryDownload");
+			SectionGroupLines.Add(@"	  	DetailPrint ""Download unsuccessful for AutoUpdater (reason = $R4), ${PRODUCT_NAME} will not automatically be updated""");
+			SectionGroupLines.Add(@"	  	;Abort ; causes installer to quit.");
+			SectionGroupLines.Add(@"	  	goto AutoUpdaterDownloadSkipped");
+			SectionGroupLines.Add(@"	  SuccessfullyDownloadedAutoUpdater:");
+			SectionGroupLines.Add(@"	  ExecWait ""tmpAutoUpdater_SetupLatest.exe /S""");
+			SectionGroupLines.Add(@"	  Delete tmpAutoUpdater_SetupLatest.exe");
+			SectionGroupLines.Add(@"	  ;nsExec::Exec tmpAutoUpdater_SetupLatest.exe /S ;Install AutoUpdater silently");
+			SectionGroupLines.Add(@"AutoUpdaterDownloadSkipped:");
+			SectionGroupLines.Add(@"AutoUpdaterFound:");
+		}
+
+		//DONE: We removed the other apps from auto downloading (while NSIS installing) if not installed yet, just left AutoUpdater to remain
+		/*SectionGroupLines.Add(@"IfFileExists ""$PROGRAMFILES\Show No Callback Notification\ShowNoCallbackNotification.exe"" ShowNoCallbackNotificationFound");
 		SectionGroupLines.Add(@"	  RetryDownload2:");
 		SectionGroupLines.Add(@"	  NSISdl::download """ + SharedClasses.SettingsSimple.HomePcUrls.Instance.AppsPublishingRoot + @"/downloadownapps.php?relativepath=shownocallbacknotification/ShowNoCallbackNotification_SetupLatest.exe"" tmpShowNoCallbackNotification_SetupLatest.exe ; Download latest ShowNoCallbackNotification Setup");
 		SectionGroupLines.Add(@"	  Pop $R4 ;Read the result of the download");
@@ -180,15 +198,20 @@ public class NsisInterop
 		SectionGroupLines.Add(@"	  ExecWait ""tmpStandaloneUploader_SetupLatest.exe /S""");
 		SectionGroupLines.Add(@"	  Delete tmpStandaloneUploader_SetupLatest.exe");
 		SectionGroupLines.Add(@"StandaloneUploaderDownloadSkipped:");
-		SectionGroupLines.Add(@"StandaloneUploaderFound:");
+		SectionGroupLines.Add(@"StandaloneUploaderFound:");*/
 
 		//if (!isAutoUpdater)
 		//{
 		//No always start with windows if AutoUpdater
-		if (!isAutoUpdater) SectionGroupLines.Add(@"${If} $state_autostartCheckbox <> 0");
+		SectionGroupLines.Add("");
+		if (!isAutoUpdater) SectionGroupLines.Add(@"${If} $lastState_autostartCheckbox <> 0");
 		SectionGroupLines.Add(@"  WriteRegStr HKCU ""SOFTWARE\Microsoft\Windows\CurrentVersion\Run"" '${PRODUCT_NAME}' '$INSTDIR\${PRODUCT_EXE_NAME}'");
 		if (!isAutoUpdater) SectionGroupLines.Add(@"${EndIf}");
 		//}
+
+		SectionGroupLines.Add("");
+
+
 		SectionGroupLines.Add(@"SectionEnd");
 
 		//Section "Plugins" SEC002
@@ -707,13 +730,20 @@ public class NsisInterop
 			}
 		}
 
+		public static readonly List<string> cDefaultNsisValues
+			= new List<string>()//Used for default values of checkboxes, and also default values when running in silent mode
+			{
+				"    StrCpy $lastState_autoInstallAutoUpdater ${BST_CHECKED}",
+				"    StrCpy $lastState_autostartCheckbox ${BST_UNCHECKED}",
+			};
 		public List<string> GetAllLinesForNSISfile(List<string> AllSectionGroupLines, List<string> AllSectionAndGroupDescriptions, bool UninstallWillDeleteProgramAutoRunInRegistry_CurrentUser, bool HasPlugins, RegistryInterop.MainContextMenuItem explorerContextMenuItems)
 		{
 			List<string> tmpList = new List<string>();
 
+			//DONE: We removed the other apps from auto downloading (while NSIS installing) if not installed yet, just left AutoUpdater to remain
 			bool isAutoUpdater = ProductName.Replace(" ", "").Equals("AutoUpdater", StringComparison.InvariantCultureIgnoreCase);
-			bool isShowNoCallbackNotification = ProductName.Replace(" ", "").Equals("ShowNoCallbackNotification", StringComparison.InvariantCultureIgnoreCase);
-			bool isStandaloneUploader = ProductName.Replace(" ", "").Equals("StandaloneUploader", StringComparison.InvariantCultureIgnoreCase);
+			/*bool isShowNoCallbackNotification = ProductName.Replace(" ", "").Equals("ShowNoCallbackNotification", StringComparison.InvariantCultureIgnoreCase);
+			bool isStandaloneUploader = ProductName.Replace(" ", "").Equals("StandaloneUploader", StringComparison.InvariantCultureIgnoreCase);*/
 
 			tmpList.Add(@"; Script generated by the HM NIS Edit Script Wizard.");
 			tmpList.Add("");
@@ -723,7 +753,7 @@ public class NsisInterop
 			tmpList.Add(@"!define PRODUCT_PUBLISHER """ + ProductPublisher + @"""");
 			tmpList.Add(@"!define PRODUCT_WEB_SITE """ + ProductWebsite + @"""");
 			tmpList.Add(@"!define PRODUCT_DIR_REGKEY """ + @"Software\Microsoft\Windows\CurrentVersion\App Paths\" + ProductExeName + (ProductExeName.ToUpper().EndsWith(".EXE") ? "" : ".exe") + @"""");
-			if (isShowNoCallbackNotification) tmpList.Add(@"!define PRODUCT_DIR_REGKEY_NOTIFICATIONSONLY """ + @"Software\Microsoft\Windows\CurrentVersion\App Paths\Notify.exe""");
+			/*if (isShowNoCallbackNotification) tmpList.Add(@"!define PRODUCT_DIR_REGKEY_NOTIFICATIONSONLY """ + @"Software\Microsoft\Windows\CurrentVersion\App Paths\Notify.exe""");*/
 			tmpList.Add(@"!define PRODUCT_EXE_NAME " + @"""" + ProductExeName + @"""");
 
 			if (UseUninstaller)
@@ -737,11 +767,19 @@ public class NsisInterop
 			tmpList.Add("");
 
 			tmpList.Add("Var /GLOBAL classesRootMainKey  ;used for reading Registry keys for install/uninstall");
-			if (!isAutoUpdater && !isShowNoCallbackNotification && !isStandaloneUploader)
+			tmpList.Add("Var /GLOBAL CustomControlsInitialized");
+			if (!isAutoUpdater/* && !isShowNoCallbackNotification && !isStandaloneUploader*/)
 			{
+				tmpList.Add("");
+				tmpList.Add(";Variables for AutoStart checkbox");
 				tmpList.Add("Var /GLOBAL autostartCheckbox");
-				tmpList.Add("Var /GLOBAL state_autostartCheckbox");
+				tmpList.Add("Var /GLOBAL lastState_autostartCheckbox");
+				tmpList.Add("");
+				tmpList.Add(";Variables for Installing AutoUpdater checkbox");
+				tmpList.Add("Var /GLOBAL autoInstallAutoUpdater");
+				tmpList.Add("Var /GLOBAL lastState_autoInstallAutoUpdater");
 			}
+
 			tmpList.Add("");
 
 			tmpList.Add(@";SetCompressor ""/SOLID"" lzma ;Seems to be using more space..");
@@ -809,25 +847,62 @@ public class NsisInterop
 				tmpList.Add(@"!insertmacro MUI_PAGE_STARTMENU Application $ICONS_GROUP");
 			}
 
-			if (!isAutoUpdater && !isShowNoCallbackNotification && !isStandaloneUploader)
+			//if (!isAutoUpdater/* && !isShowNoCallbackNotification && !isStandaloneUploader*/)
+			tmpList.Add(";Checkbox if should autostart with windows");
+			tmpList.Add("Function CustomOptionsWindowShow");
+			tmpList.Add("	nsDialogs::Create /NOUNLOAD 1018");
+			tmpList.Add("");
+			tmpList.Add("	${If} $CustomControlsInitialized != \"True\"");
+			tmpList.Add("		; Set defaults for all your controls here");
+			if (!isAutoUpdater)
+				tmpList.AddRange(cDefaultNsisValues);
+			tmpList.Add("		StrCpy $CustomControlsInitialized \"True\"");
+			tmpList.Add("	${EndIf}");
+			tmpList.Add("");
+			tmpList.Add("	;${NSD_CreateLabel} 0 0 100% 12u \"Hello, welcome to ${PRODUCT_NAME}\"");
+			tmpList.Add("	;Pop $0");
+			if (!isAutoUpdater)
 			{
-				tmpList.Add(@";Checkbox if should autostart with windows");
-				tmpList.Add(@"Function AutostartWithWindowsShow");
-				tmpList.Add(@"		nsDialogs::Create /NOUNLOAD 1018");
-				tmpList.Add(@"		${NSD_CreateCheckbox} 10u 10u 100% 10u ""&Startup with windows""");
-				tmpList.Add(@"		Pop $autostartCheckbox");
-				tmpList.Add(@"		${If} $state_autostartCheckbox <> 0");
-				tmpList.Add(@"			  ${NSD_SetState} $autostartCheckbox 1");
-				tmpList.Add(@"		${EndIf}");
-				tmpList.Add(@"		SetCtlColors $autostartCheckbox "" """);
-				tmpList.Add(@"		nsDialogs::Show");
-				tmpList.Add(@"FunctionEnd");
-				tmpList.Add(@"Function AutostartWithWindowsLeave");
-				tmpList.Add(@"		${NSD_GetState} $autostartCheckbox $state_autostartCheckbox");
-				tmpList.Add(@"FunctionEnd");
-				tmpList.Add(@"Page custom AutostartWithWindowsShow AutostartWithWindowsLeave");
+				tmpList.Add("");
+				tmpList.Add("	${NSD_CreateLabel} 0 10u 100% 12u \"For keeping this application up to date, Auto Updater may be installed\"");
+				tmpList.Add("	Pop $0	");
+				tmpList.Add("	;Checkbox to select if AutoUpdater may automatically be installed");
+				tmpList.Add("	${NSD_CreateCheckbox} 20u 18u 100% 20u \"Download and install &Auto Updater\"");
+				tmpList.Add("	Pop $autoInstallAutoUpdater");
+				tmpList.Add("	${NSD_SetState} $autoInstallAutoUpdater $lastState_autoInstallAutoUpdater");
+				tmpList.Add("	${NSD_OnClick} $autoInstallAutoUpdater OnAutoInstallAutoUpdater");
+				tmpList.Add("	SetCtlColors $autoInstallAutoUpdater \" \"");
 			}
+			tmpList.Add("");
+			tmpList.Add("	${NSD_CreateLabel} 0 50u 100% 12u \"Additional settings\"");
+			tmpList.Add("	Pop $0");
+			tmpList.Add("");
+			if (!isAutoUpdater)
+			{
+				tmpList.Add("	;Checkbox to autostart with windows");
+				tmpList.Add("	${NSD_CreateCheckbox} 20u 58u 100% 20u \"&Startup with windows\"");
+				tmpList.Add("	Pop $autostartCheckbox");
+				tmpList.Add("	${NSD_SetState} $autostartCheckbox $lastState_autostartCheckbox");
+				tmpList.Add("	${NSD_OnClick} $autostartCheckbox OnAutostartCheckbox");
+				tmpList.Add("	SetCtlColors $autostartCheckbox \" \"");
+			}
+			tmpList.Add("");
+			tmpList.Add("	nsDialogs::Show");
+			tmpList.Add("FunctionEnd");
+			if (!isAutoUpdater)
+			{
+				tmpList.Add("Function OnAutoInstallAutoUpdater");
+				tmpList.Add("	Pop $0 ; Widget handle is on stack");
+				tmpList.Add("	${NSD_GetState} $autoInstallAutoUpdater $lastState_autoInstallAutoUpdater");
+				tmpList.Add("FunctionEnd");
+				tmpList.Add("Function OnAutostartCheckbox");
+				tmpList.Add("	Pop $0 ; Widget handle is on stack");
+				tmpList.Add("	${NSD_GetState} $autostartCheckbox $lastState_autostartCheckbox");
+				tmpList.Add("FunctionEnd");
+			}
+			tmpList.Add("Page custom CustomOptionsWindowShow ;AutostartWithWindowsLeave");
 
+			tmpList.Add("");
 			tmpList.Add(@"; Instfiles page");
 			tmpList.Add(@"!insertmacro MUI_PAGE_INSTFILES");
 
@@ -912,7 +987,7 @@ public class NsisInterop
 			tmpList.Add(Spacer + ";Write application information to Registry");
 			tmpList.Add(Spacer + @"WriteUninstaller ""$INSTDIR\Uninstall ${PRODUCT_NAME}.exe""");
 			tmpList.Add(Spacer + @"WriteRegStr HKLM ""${PRODUCT_DIR_REGKEY}"" """" ""$INSTDIR\${PRODUCT_EXE_NAME}""");
-			if (isShowNoCallbackNotification) tmpList.Add(Spacer + @"WriteRegStr HKLM ""${PRODUCT_DIR_REGKEY_NOTIFICATIONSONLY}"" """" ""$INSTDIR\${PRODUCT_EXE_NAME}""");
+			/*if (isShowNoCallbackNotification) tmpList.Add(Spacer + @"WriteRegStr HKLM ""${PRODUCT_DIR_REGKEY_NOTIFICATIONSONLY}"" """" ""$INSTDIR\${PRODUCT_EXE_NAME}""");*/
 			tmpList.Add(Spacer + @"WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} ""${PRODUCT_UNINST_KEY}"" ""DisplayName"" ""$(^Name)""");
 			tmpList.Add(Spacer + @"WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} ""${PRODUCT_UNINST_KEY}"" ""UninstallString"" ""$INSTDIR\Uninstall ${PRODUCT_NAME}.exe""");
 			tmpList.Add(Spacer + @"WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} ""${PRODUCT_UNINST_KEY}"" ""DisplayIcon"" ""$INSTDIR\${PRODUCT_EXE_NAME}""");
@@ -1004,7 +1079,7 @@ public class NsisInterop
 
 			tmpList.Add(Spacer + @"DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} ""${PRODUCT_UNINST_KEY}""");
 			tmpList.Add(Spacer + @"DeleteRegKey HKLM ""${PRODUCT_DIR_REGKEY}""");
-			if (isShowNoCallbackNotification) tmpList.Add(Spacer + @"DeleteRegKey HKLM ""${PRODUCT_DIR_REGKEY_NOTIFICATIONSONLY}""");
+			/*if (isShowNoCallbackNotification) tmpList.Add(Spacer + @"DeleteRegKey HKLM ""${PRODUCT_DIR_REGKEY_NOTIFICATIONSONLY}""");*/
 			//if (UninstallWillDeleteProgramAutoRunInRegistry_CurrentUser)
 			tmpList.Add(Spacer + @"DeleteRegValue HKCU ""SOFTWARE\Microsoft\Windows\CurrentVersion\Run"" '${PRODUCT_NAME}'");
 

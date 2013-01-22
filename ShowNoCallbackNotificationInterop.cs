@@ -24,6 +24,11 @@ namespace SharedClasses
 		{
 			if (actionOnError == null) actionOnError = delegate { };
 			
+
+			//Incorporate actual code here to notify withouth running external process
+
+			/*
+			We do not use external process anymore, otherwise we must auto install it on each user's machine 
 			string notifAppExe = RegistryInterop.GetAppPathFromRegistry("ShowNoCallbackNotification.exe");
 			if (notifAppExe == null)
 			{
@@ -38,7 +43,7 @@ namespace SharedClasses
 						(title ?? GetAppNameForTitle()).Trim('\"'),
 						message.Trim('\"'),
 						notificationType.ToString(),
-						secondsToShow));
+						secondsToShow));*/
 		}
 		private static string GetAppNameForTitle() { return System.IO.Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]); }
 	}

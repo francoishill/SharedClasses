@@ -44,20 +44,29 @@ namespace SharedClasses
 					actionOnError("Error qeueing for upload: " + exc.Message);
 					return false;
 				}
-				if (WaitForExit)
-					proc.WaitForExit();
-				else
+
+				try
 				{
-					bool found = false;
-					while (!found)
+					if (WaitForExit)
+						proc.WaitForExit();
+					else
 					{
-						var procs = Process.GetProcessesByName(proc.ProcessName);
-						if (procs.Length > 0)
-							found = true;
-						Thread.Sleep(500);
+						bool found = false;
+						while (!found)
+						{
+							var procs = Process.GetProcessesByName(proc.ProcessName);
+							if (procs.Length > 0)
+								found = true;
+							Thread.Sleep(500);
+						}
 					}
+					return true;
 				}
-				return true;
+				catch (Exception exc)
+				{
+					actionOnError("An error occurred after starting process to upload files: " + exc.Message);
+					return true;//We still return true because we assume the process actually started
+				}
 			}
 
 		}

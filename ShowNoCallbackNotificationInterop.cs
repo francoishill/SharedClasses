@@ -23,9 +23,6 @@ namespace SharedClasses
 		public static void Notify(Action<string> actionOnError, string message, string title = null, NotificationTypes notificationType = NotificationTypes.Info, int secondsToShow = 3)
 		{
 			if (actionOnError == null) actionOnError = delegate { };
-			
-
-			//Incorporate actual code here to notify withouth running external process
 
 			/*
 			We do not use external process anymore, otherwise we must auto install it on each user's machine 

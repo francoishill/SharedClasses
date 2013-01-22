@@ -966,10 +966,6 @@ namespace SharedClasses
 		{
 			string[] expectedOneOfStringsInCode = null;
 
-			int todoCheckWpfMainWindowImplemented;
-			//TODO: by checking for "new MainWindow(" for WPF does not tell us that it is implemented, it can be inside a block
-			//which for instance makes use of commandline-arguments or if statements, like for example
-			//if (args.Count > 3 && args[2] == "showwindow") { MainWindow mw = new MainWindow(); mw.ShowDialog(); }
 			if (appType == ApplicationTypes.WPF)
 			{
 				if (!WpfEnsureAppXamlDoesNotHaveStartupUri(csprojFullpath, out errorIfFailed))

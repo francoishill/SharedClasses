@@ -93,8 +93,6 @@ namespace SharedClasses
 					while (!isComplete)
 					{ }// Application.DoEvents();
 
-					//int tmptodo;
-					//TODO: Checking file length = 0? What if its a blank/empty file??
 					if (retryCount <= maxRetries && (!File.Exists(localFilepath) || new FileInfo(localFilepath).Length == 0))
 					{
 						if (File.Exists(localFilepath) && new FileInfo(localFilepath).Length == 0)

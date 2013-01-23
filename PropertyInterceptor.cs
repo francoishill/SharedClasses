@@ -268,7 +268,7 @@ public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable
 									}
 								}
 								/*
-								//TODO: This works but when flushing to file (serializing), it fails as it is a custom dictionary
+								//This works but when flushing to file (serializing), it fails as it is a custom dictionary
 								else if (IsOfTypeOrNullableType(pi.PropertyType, typeof(Dictionary<string, List<GlobalSettings.MouseGesturesSettings.GestureDirection>>)))
 								{
 									string tmpString;

@@ -25,7 +25,6 @@ public class PublishDetails
 	public string MD5Hash;
 	public DateTime PublishedDate;
 	public string FtpUrl;
-	//TODO: May want to add TracUrl here
 	public PublishDetails() { }
 	public PublishDetails(string ApplicationName, string ApplicationVersion, long SetupSize, string MD5Hash, DateTime PublishedDate, string FtpUrl)
 	{
@@ -43,8 +42,6 @@ public class VisualStudioInterop
 {
 	public static readonly string cProjectsRootDir = @"C:\Francois\Dev\VSprojects";
 
-	//TODO: Make it easy to add todo item to a specific c# file if visual studio is not open
-	//Maybe for instance popup with a prompt window and the user chooses the file and then types the description of the todo item.
 	private static bool FindMsbuildPath4(out string msbuildpathOrerror)
 	{
 		msbuildpathOrerror = "";
@@ -52,7 +49,7 @@ public class VisualStudioInterop
 		if (!Directory.Exists(rootfolder)) msbuildpathOrerror = "Dir not found for msbuild: " + rootfolder;
 		else
 		{
-			//TODO: Should eventually make this code to look for newest version (not only 4)
+			//Should eventually make this code to look for newest version (not only 4)
 			//string newestdir = "";
 			foreach (string dir in Directory.GetDirectories(rootfolder))
 				if (dir.Split('\\')[dir.Split('\\').Length - 1].ToLower().StartsWith("v4.") && dir.Split('\\')[dir.Split('\\').Length - 1].Contains('.'))
@@ -272,7 +269,7 @@ public class VisualStudioInterop
 					string registryEntriesFilename = "RegistryEntries.json";
 					string registryEntriesFilepath = Path.Combine(Path.GetDirectoryName(csprojFileName), "Properties", registryEntriesFilename);
 
-					//TODO: This is awesome, after installing with NSIS you can type appname in RUN and it will open
+					//DONE: This is awesome, after installing with NSIS you can type appname in RUN and it will open
 					List<string> list = NsisInterop.CreateOwnappNsis(
 						projName,
 						InsertSpacesBeforeCamelCase(projName),
@@ -307,7 +304,7 @@ public class VisualStudioInterop
 							HyperlinkRangeIn: new Range(startMsg.Length, nsisFileName.Length, Range.LinkTypes.ExplorerSelect));
 				}
 
-				//DONE TODO: Must make provision if pc (to do building and compiling of NSIS scripts), does not have the DotNetChecker.dll plugin for NSIS
+				//DONE: Must make provision if pc (to do building and compiling of NSIS scripts), does not have the DotNetChecker.dll plugin for NSIS
 				//bool DotNetCheckerDllFileFound = false;
 				//string DotNetCheckerFilenameEndswith = "DotNetChecker.dll";
 				//string dotnetCheckerDllPath = @"C:\Program Files (x86)\NSIS\Plugins\" + DotNetCheckerFilenameEndswith;
@@ -455,7 +452,7 @@ public class VisualStudioInterop
 		List<string> Improvements = null;
 		List<string> NewFeatures = null;
 
-		//TODO: this (ServicePointManager.DefaultConnectionLimit) is actually very annoying, is there no other workaround?
+		//this (ServicePointManager.DefaultConnectionLimit) is actually very annoying, is there no other workaround?
 		ServicePointManager.DefaultConnectionLimit = 10000;
 
 		//ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
@@ -473,7 +470,7 @@ public class VisualStudioInterop
 		//			//bool ThereIsNoProperItemsForBugsFixedEtcInNextFunction;
 		//			//#pragma warning restore
 
-		//			//TODO: When pulling buglist/improvement etc from Trac repository for a project, must also check in the project's .csproj file whether it uses/references SharedClasses. Then it must also pull the changes from the SharedClasses Trac repository.
+		//			//When pulling buglist/improvement etc from Trac repository for a project, must also check in the project's .csproj file whether it uses/references SharedClasses. Then it must also pull the changes from the SharedClasses Trac repository.
 		//			GetChangeLogs(textfeedbackSenderObject, projName, out BugsFixed, out Improvements, out NewFeatures,
 		//				textFeedbackEvent: textFeedbackEvent);
 		//		});
@@ -641,7 +638,7 @@ public class VisualStudioInterop
 				List<TracXmlRpcInterop.ChangeLogStruct> changelogs = TracXmlRpcInterop.ChangeLogs(i, ProjectXmlRpcTracUri);
 				foreach (TracXmlRpcInterop.ChangeLogStruct cl in changelogs)
 					if (cl.Field == "comment" && !string.IsNullOrWhiteSpace(cl.NewValue))
-						//TODO: This can be greatly improved
+						//This can be greatly improved
 						if (tmpIdsAndDescriptionsAndTicketTypes[i].TicketType == TracXmlRpcInterop.TicketTypeEnum.Bug)
 							tmpBugsFixed.Add("<e class='graycolor'>Ticket #" + i + ":</e> " + cl.NewValue + " <e class='graycolor'>[" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + "]</e>");
 						else if (tmpIdsAndDescriptionsAndTicketTypes[i].TicketType == TracXmlRpcInterop.TicketTypeEnum.Improvement)
@@ -665,7 +662,7 @@ public class VisualStudioInterop
 				List<TracXmlRpcInterop.ChangeLogStruct> changelogs = TracXmlRpcInterop.ChangeLogs(i, ProjectXmlRpcTracUri);
 				foreach (TracXmlRpcInterop.ChangeLogStruct cl in changelogs)
 						if (cl.Field == "comment" && !string.IsNullOrWhiteSpace(cl.NewValue))
-								//TODO: This can be greatly improved
+								//This can be greatly improved
 								if (tmpIdsAndDescriptionsAndTicketTypes[i].TicketType == TracXmlRpcInterop.TicketTypeEnum.Bug)
 										BugsFixed.Add("Ticket #" + i + ": " + cl.NewValue + "  (" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + ")");
 								else if (tmpIdsAndDescriptionsAndTicketTypes[i].TicketType == TracXmlRpcInterop.TicketTypeEnum.Improvement)

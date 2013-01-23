@@ -50,13 +50,13 @@ namespace SharedClasses
 	//            }
 	//            else
 	//            {
-	//                //TODO: What should happen here if v4.0. folder not found?,
+	//                //What should happen here if v4.0. folder not found?,
 	//                //It is required for RegAsm which registers the Preview Handlers in windows vista/7
 	//            }
 	//        }
 	//        else
 	//        {
-	//            //TODO: What should happen here if v4.0. folder not found?,
+	//            //What should happen here if v4.0. folder not found?,
 	//            //It is required for RegAsm which registers the Preview Handlers in windows vista/7
 	//        }
 	//    }

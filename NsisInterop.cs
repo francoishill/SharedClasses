@@ -19,7 +19,6 @@ public class NsisInterop
 
 	public const string cDefaultPublisherName = "Francois Hill";
 
-	//TODO: Add functionality to close (maybe with messagebox to confirm) the process being installed if its open
 	public static string GetSetupNameForProduct(string PublishedName, string ProductVersion)
 	{
 		string SetupName = PublishedName;
@@ -1021,7 +1020,6 @@ public class NsisInterop
 				tmpList.Add(@"SectionEnd"); tmpList.Add("");
 			}
 
-			//TODO: Should look at incorporating the kill process plugin to ask user weather to kill process or quit
 			tmpList.Add(";Section -CheckMutexOpen");
 			tmpList.Add(Spacer + ";System::Call 'kernel32::OpenMutex(i 0x100000, b 0, buildTask \"QuickAccess-{6EBAC5AC-BCF2-4263-A82C-F189930AEA30}\") i .R0'");
 			tmpList.Add(Spacer + ";IntCmp $R0 0 notRunning");

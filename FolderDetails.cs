@@ -18,10 +18,10 @@ namespace SharedClasses
 		public string FtpPassword;*/
 		public FileDetails[] Files;
 
+		//Add support for excluded files
+		//public List<string> ExcludedFiles;
 		public List<string> ExcludedRelativeFolders;
 		private NetworkCredential CredentailsIfRequired;
-		//TODO: Add support for excluded files
-		//public List<string> ExcludedFiles;
 
 		public FolderDetails() { }
 		public FolderDetails(string LocalRootDirectory, List<string> ExcludedRelativeFolders = null, NetworkCredential CredentailsIfRequired = null)
@@ -55,7 +55,7 @@ namespace SharedClasses
 			string pathNoSlash = LocalRootDirectory;
 			foreach (var f in Directory.GetFiles(pathNoSlash, "*", SearchOption.AllDirectories))
 			{
-				//TODO: Must maybe give user option to ignore .svn or not
+				//Must maybe give user option to ignore .svn or not
 				if (f.IndexOf(".svn", StringComparison.InvariantCultureIgnoreCase) == -1
 					&& !MustPathBeExcluded(FileDetails.GetRelativePath(pathNoSlash, f)))
 					files.Add(new FileDetails(pathNoSlash, f));

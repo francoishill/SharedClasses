@@ -88,7 +88,7 @@ namespace SharedClasses
 
 							//If we reached this point in the foreach loop, this application is one of our own, now make sure the EXE also exists
 							object displayIcon = appkey.GetValue("DisplayIcon");
-							//TODO: For now we use the DisplayIcon, is this the best way, what if DisplayIcon is different from EXE
+							//For now we use the DisplayIcon, is this the best way, what if DisplayIcon is different from EXE
 							if (displayIcon == null)
 								continue;//We need the DisplayIcon value, it contains the full path of the EXE
 							if (!File.Exists(displayIcon.ToString()))

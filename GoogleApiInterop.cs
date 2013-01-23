@@ -279,7 +279,7 @@ namespace SharedClasses
 				string msg = String.Join(Environment.NewLine, errors.ToArray());
 				//CommandLine.WriteError(msg);
 				GoogleApiInterop.OnError(null, new ErrorEventArgs(new Exception(msg)));
-				//TODO: Show message to enter credentials
+				//Show message to enter credentials
 				//MessageBox.Show(msg, "Please enter your credentials!", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				Environment.Exit(0);
 			}

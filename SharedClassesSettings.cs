@@ -299,7 +299,7 @@ namespace SharedClasses
 
 		public static string Encrypt(string OriginalString, string PropertyName)
 		{
-			//TODO: Later on looking at using more secure encoding/encryption
+			//Later on looking at using more secure encoding/encryption
 			return EncodeAndDecodeInterop.EncodeString(OriginalString, GenericSettings.EncodingType);
 		}
 
@@ -314,8 +314,6 @@ namespace SharedClasses
 			//}
 			//else
 			{
-				//TODO: Removed face detection for now, has too many dependencies
-
 				//string manualPasswordEnterd;
 				//bool? confirmedFaceDetection = ConfirmUsingFaceDetection.ConfirmUsingFacedetection(GlobalSettings.FaceDetectionInteropSettings.Instance.FaceName, "Face detection for '" + PropertyName + "'", TimeOutSeconds_nullIfNever: GlobalSettings.FaceDetectionInteropSettings.Instance.TimeOutSecondsBeforeAutoFailing, PasswordFromTextbox: out manualPasswordEnterd);
 				//if (confirmedFaceDetection == true)//Face was confirmed
@@ -456,7 +454,7 @@ namespace SharedClasses
 		}
 #endif
 
-		//TODO: Have a look at Lazy<> in c#, being able to initialize an object the first time it is used.
+		//Have a look at Lazy<> in c#, being able to initialize an object the first time it is used.
 		public abstract void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH");
 
 		public abstract void FlushToFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH");
@@ -571,7 +569,7 @@ namespace SharedClasses
 			}
 		}
 
-		//TODO: Check out INotifyPropertyChanged (in System.ComponentModel)
+		//Check out INotifyPropertyChanged (in System.ComponentModel)
 		[Serializable]
 		public sealed class FaceDetectionInteropSettings : GenericSettings
 		{
@@ -598,7 +596,7 @@ namespace SharedClasses
 			}
 
 			[Description("The name required for face detection (this is used to decrypt the encrypted passwords).")]
-			//TODO: This must be greatly improved in the sense that the face "pictures" and their names are stored online for instance
+			//This must be greatly improved in the sense that the face "pictures" and their names are stored online for instance
 			[Setting("Please enter the face name used for facial recognition to decrypt passwords")]
 			public string FaceName { get; set; }
 
@@ -708,9 +706,8 @@ namespace SharedClasses
 				}
 			}
 
-			//TODO: Inside the InputBox (dialogs shown to enter passwords, etc), must have a link for the user to click to "update" all unset properties of the settings.
 			//DONE: User must be able to have a look at all settings used and change them (passwords must not be shown, only allow user to change it).
-			//TODO: Must allow user to change the passords for the current application instance (not show them)
+			//Must allow user to change the passords for the current application instance (not show them)
 			public enum UriProtocol { Http, Ftp }
 
 			[Category("My temp category")]
@@ -736,8 +733,7 @@ namespace SharedClasses
 
 			[Browsable(false)]
 			[Setting("Please enter ftp password user for Visual Studio publishing", true, true, false, "FtpPasswordEncrypted")]
-			[XmlIgnore]//TODO: Must explicitly set the attribute as [XmlIgnore] otherwise if ANOTHER property is changed and the settings are flushed, the password will also be saved
-			//TODO: Now does not use facedetection/password to get decrypted value
+			[XmlIgnore]//Must explicitly set the attribute as [XmlIgnore] otherwise if ANOTHER property is changed and the settings are flushed, the password will also be saved
 			public string FtpPassword { get { return Decrypt(FtpPasswordEncrypted, "", true); } set { FtpPasswordEncrypted = Encrypt(value, ""); } }//{ get; set; }
 			[Browsable(false)]
 			[Setting(null, true, false, true, null, true)]
@@ -873,18 +869,18 @@ namespace SharedClasses
 			[Setting("Please enter ftp username for Trac XmlRpc")]
 			public string Username { get; set; }
 
-			//TODO: Implement Username in UserPrompt message [Setting("Please enter ftp password for Trac XmlRpc, username " + Username)]
+			//Implement Username in UserPrompt message [Setting("Please enter ftp password for Trac XmlRpc, username " + Username)]
 			[Browsable(false)]
 			[Setting("Please enter ftp password for Trac XmlRpc, username ", true, true, false, "PasswordEncrypted")]
 			[XmlIgnore]
-			//TODO: Now does not use facedetection/password to get decrypted value
+			//Now does not use facedetection/password to get decrypted value
 			public string Password { get { return Decrypt(PasswordEncrypted, "", true); } set { PasswordEncrypted = Encrypt(value, ""); } }
 			[Browsable(false)]
 			[Setting(null, true, false, true, null, true)]
 			[XmlElement("Password")]
 			public string PasswordEncrypted { get; set; }//{ get { return Encrypt(Password); } set { Password = Decrypt(value); } }
 
-			//TODO: Check out Attribute = [NotifyParentProperty]
+			//Check out Attribute = [NotifyParentProperty]
 			[Description("The base url of the Dynamic Invoking server (example: http://localhost or http://mywebsite). It must not end with a slash.")]
 			[Setting("Please enter the Base url of the Dynamic Invoking Server")]
 			public string DynamicInvokationServer_BasePath { get; set; }
@@ -905,7 +901,7 @@ namespace SharedClasses
 			[Setting("Please enter the Port number for connecting to the Dynamic Invoking Server")]
 			public int? ClientProxyBypass_PortNumber { get; set; }
 
-			//TODO: Sort out how this tasklist to string will work inside the PropertyInterceptor
+			//Sort out how this tasklist to string will work inside the PropertyInterceptor
 			private List<string> listedXmlRpcUrls;
 			[Description("A tasklist of XmlRpc urls used for obtaining Trac ticketing information when publishing an application.")]
 			public string ListedXmlRpcUrls
@@ -1075,7 +1071,7 @@ GlobalSettings.ReadConsole(
 				}
 			}
 
-			//TODO: add custom types to XAML: http://blogs.msdn.com/b/mikehillberg/archive/2006/10/06/limitedgenericssupportinxaml.aspx
+			//add custom types to XAML: http://blogs.msdn.com/b/mikehillberg/archive/2006/10/06/limitedgenericssupportinxaml.aspx
 			private List<string> listOfMonitoredSubversionDirectories;
 			[Description("The tasklist of subversion directories to automatically check for any changes/updates.")]
 			public string ListOfMonitoredSubversionDirectories

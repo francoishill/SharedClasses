@@ -162,7 +162,7 @@ namespace SharedClasses
 						{
 							string propName = call.MethodName.Substring(4);
 
-							////TODO: Only handles string
+							////Only handles string??
 							//if (result != null && result.ReturnValue != null && result.ReturnValue.GetType().Name == typeof(List<string>).Name)// result.GetType().Name == typeof(List2<>).Name)
 							//{
 							//	//ShowWarningMessage(string.Format("Property {0} is of type List<string> and will not be saved when items are added"));

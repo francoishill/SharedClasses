@@ -323,8 +323,7 @@ namespace SharedClasses
 			buildGlobalProperties.Add("Configuration", "Release");
 			buildGlobalProperties.Add("Platform", "x86");//"Any CPU");
 			onMessage("Publishing in 32bit (x86) mode only", FeedbackMessageTypes.Warning);
-			int whatIfWeNeedToRunInAnyCPUmode;
-			//TODO: NB, what if we need to publish in Any CPU mode??
+			//NB, what if we need to publish in Any CPU mode??
 
 			BuildRequestData BuidlRequest = new BuildRequestData(projectFileName, buildGlobalProperties, null, new string[] { "Build" }, null);
 
@@ -400,16 +399,14 @@ namespace SharedClasses
 			bool _64bit = false, bool autoUpdateRevision = true, bool installLocally = true,
 			bool placeSetupInTempWebFolder = false, string customSetupFilename = null)
 		{
-			int seeFollowingTodoItems;
-
 			string outPublishedVersion;
 			string resultSetupFilename;
 			bool publishResult = PublishInterop.PerformPublish(
 				this.ApplicationName,
-				_64bit,//TODO: What if required
-				false,//TODO: What about QuickAccess
+				_64bit,//What if required
+				false,//What about QuickAccess
 				autoUpdateRevision,
-				installLocally,//TODO: Always install locally?
+				installLocally,
 				false,//Never run on startup?
 				false,
 				out outPublishedVersion,
@@ -433,10 +430,10 @@ namespace SharedClasses
 			string resultSetupFilename;
 			bool publishResult = PublishInterop.PerformPublishOnline(
 				this.ApplicationName,
-				false,//TODO: What if required
-				false,//TODO: What about QuickAccess
+				false,//What if required
+				false,//What about QuickAccess
 				true,
-				true,//TODO: Always install locally?
+				true,
 				false,//Never run on startup?
 				false,
 				false,

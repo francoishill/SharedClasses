@@ -12,9 +12,6 @@ using System.Windows.Forms;
 using SharedClasses;
 using System.Text.RegularExpressions;
 
-//TODO: Check out extension functions (a static class with methods which uses this as one of the parameters)
-//TODO: Check out BeforeFieldInit and NotBeforeFieldInit for static initializers: http://geekswithblogs.net/BlackRabbitCoder/archive/2010/09/02/c.net-five-more-little-wonders-that-make-code-better-2.aspx
-//TODO: Check out cross-calling constructors: http://geekswithblogs.net/BlackRabbitCoder/archive/2010/12/16/c.net-little-wonders-ndash-cross-calling-constructors.aspx
 public static class StringExtensions
 {
 	//public static bool IsFrancois(this string str, bool CaseSensitive)
@@ -685,7 +682,7 @@ public class NetworkInterop
 				if (handler == null) continue;
 				DateTime timeTransferStarted = DateTime.Now;
 
-				//TODO: receiving speed decreases over time quite hectically
+				//receiving speed decreases over time quite hectically
 				long totalBytesProcessed = 0;
 				byte[] firstConstantBytesForGuidInfoandFilesize = new byte[lengthOfFirstConstantBuffer];
 				Guid receivedGuid = Guid.Empty;
@@ -705,8 +702,6 @@ public class NetworkInterop
 					int actualReceivedLength = handler.Receive(receivedBytes);
 
 					EnsureFirstConstantBufferIsFullyPopulated(totalBytesProcessed, ref firstConstantBytesForGuidInfoandFilesize, ref receivedBytes, actualReceivedLength);
-					//DONE TODO: Fix this
-					//string tryingToSendDataToClientCrashesIt;//Assuming it has to do with client needs to be reset if bytes received as defined in infolength
 					if (totalBytesProcessed >= lengthOfFirstConstantBuffer && totalFileSizeToRead != -1 && totalInfoSizeToRead != -1)
 					{
 						double totalSecondCurrently = new TimeSpan(DateTime.Now.Ticks - timeTransferStarted.Ticks).TotalSeconds;
@@ -869,7 +864,7 @@ public class NetworkInterop
 				while (numberReadBytes > 0);
 
 			RestartReceivingLoop:
-				//TODO: For memory management all these objects (timeTransferStarted, receivedGuid, etc) must still be destroyd later
+				//DONE: For memory management all these objects (timeTransferStarted, receivedGuid, etc) must still be destroyd later
 				DateTime timeTransferStarted = DateTime.Now;
 				long totalBytesProcessed = 0;
 				byte[] firstConstantBytesForGuidInfoandFilesize = new byte[lengthOfFirstConstantBuffer];
@@ -1288,8 +1283,6 @@ public class NetworkInterop
 
 				//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackHandler, "Successfully downloaded " + onlineFileUrl);
 
-				//int tmptodo;
-				//TODO: Checking file length = 0? What if its a blank/empty file??
 				if (retryCount <= maxRetries && (!File.Exists(localFilepath) || new FileInfo(localFilepath).Length == 0))
 				{
 					if (File.Exists(localFilepath) && new FileInfo(localFilepath).Length == 0)

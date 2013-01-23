@@ -187,7 +187,7 @@ namespace DynamicDLLsInterop
 
         //public void Test()
         //{
-        //	//TODO: Check out dynamic unloading assemblies using another AppDomain (http://www.codeproject.com/KB/cs/DotNet.aspx)
+        //	//
         //	// Construct and initialize settings for a second AppDomain.
         //	AppDomainSetup ads = new AppDomainSetup ();
         //	ads.ApplicationBase = System.Environment.CurrentDirectory; ads.DisallowBindingRedirects = false;

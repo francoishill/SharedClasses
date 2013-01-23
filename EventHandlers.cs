@@ -66,7 +66,7 @@ public class TextFeedbackSection
 	public string Text;
 	public DisplayTypeEnum DisplayType;
 	public Action<object> ActionOnDoubleClick;
-	//TODO: Currently the user must set an ActionTag to transfer information into the Action, is there not a better way?
+	//Currently the user must set an ActionTag to transfer information into the Action, is there not a better way?
 	public object ActionTag;
 	public TextFeedbackSection(string Text, DisplayTypeEnum DisplayType = DisplayTypeEnum.Normal)
 	{
@@ -96,7 +96,7 @@ public class TextFeedbackEventArgs_MultiObjects : TextFeedbackEventArgs
 		this.AutoSeparateWithSpaces = AutoSeparateWithSpaces;
 	}
 
-	//TODO: What did I try to do here (by making it obsolute error)
+	//What did I try to do here (by making it obsolute error)
 	[Obsolete("This member is hidden in the inherited class, rather use the other overload which takes a List<string> instead of one string. To use the single string method it use the base class TextFeedbackEventArgs.", false)]//true)]
 	public static void RaiseTextFeedbackEvent_Ifnotnull(object SenderObject, TextFeedbackEventHandler textFeedbackEvent, List<TextFeedbackSection> MessagesList, TextFeedbackType FeedbackTypeIn = TextFeedbackType.Subtle, bool AutoSeparateWithSpaces = true)
 	{

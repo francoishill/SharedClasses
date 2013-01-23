@@ -27,7 +27,6 @@ namespace SharedClasses
 		public string MD5Hash;
 		public DateTime PublishedDate;
 		public string FtpUrl;
-		//TODO: May want to add TracUrl here
 		public PublishDetails() { }
 		public PublishDetails(string ApplicationName, string ApplicationVersion, long SetupSize, string MD5Hash, DateTime PublishedDate, string FtpUrl)
 		{
@@ -46,8 +45,6 @@ namespace SharedClasses
 		//public const string RootUrlForApps = "http://fjh.dyndns.org";//http://apps.getmyip.com
 		//public const string RootUrlForApps = "https://fjh.dyndns.org";
 		//public const string RootFtpUrlForAppsUploading = "ftp://fjh.dyndns.org";
-		//TODO: Url (apps.getmyip.com) blocked at work, as IT to whitelist
-		static int seeAboveTODOatRootUrlsForApps;
 
 		public static readonly string cProjectsRootDir = @"C:\Francois\Dev\VSprojects";
 

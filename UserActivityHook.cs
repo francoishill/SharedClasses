@@ -47,12 +47,12 @@ namespace SharedClasses
 		public class MouseGesture
 		{
 			#region Constants
-			//TODO consider moving the hardcoded value to a property
+			//consider moving the hardcoded value to a property
 			public const int minGestureSize = 30;
 			/// <summary>
 			/// Minimal length of MouseMoveSegment
 			/// </summary>
-			//TODO consider moving the hardcoded value to a property
+			//consider moving the hardcoded value to a property
 			public const uint mouseMoveSegmentLength = 8;
 			/// <summary>
 			/// Defines maximum angle error in degrees. If the angle error is greater then
@@ -61,7 +61,7 @@ namespace SharedClasses
 			/// <remarks>
 			/// It must be positive number lesser then 45
 			/// </remarks>
-			//TODO: consider moving the hardcoded value to a propery
+			//consider moving the hardcoded value to a propery
 			private const double maxAngleError = 30;
 			#endregion Constants
 
@@ -965,7 +965,7 @@ namespace SharedClasses
 						//One wheel click is defined as WHEEL_DELTA, which is 120. 
 						//(value >> 16) & 0xffff; retrieves the high-order word from the given 32-bit value
 						mouseDelta = (short)((mouseHookStruct.mouseData >> 16) & 0xffff);
-						//UNKNOWN TODO: X BUTTONS (I havent them so was unable to test)
+						//X BUTTONS (I havent them so was unable to test)
 						//If the message is WM_XBUTTONDOWN, WM_XBUTTONUP, WM_XBUTTONDBLCLK, WM_NCXBUTTONDOWN, WM_NCXBUTTONUP, 
 						//or WM_NCXBUTTONDBLCLK, the high-order word specifies which X button was pressed or released, 
 						//and the low-order word is reserved. This value can be one or more of the following values. 
@@ -1094,7 +1094,7 @@ namespace SharedClasses
 			}
 
 			//check minimal length
-			//TODO change minimal length checking  - does not work for gesture LeftRight, etc...
+			//change minimal length checking  - does not work for gesture LeftRight, etc...
 			if (distance < MouseGesture.minGestureSize || gesture.Count == 0)
 			{
 				//too short for mouse gesture - send regular right mouse click

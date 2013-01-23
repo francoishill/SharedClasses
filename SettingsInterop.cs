@@ -170,7 +170,10 @@ namespace SharedClasses
 		{
 			lock (LockObject)
 			{
-				//TODO: Never change this serializer to binary for instance, otherwise properties with XmlIgnore attribute will not work as they should
+				///NB!!!
+				///Never change this serializer to binary for instance, otherwise properties with XmlIgnore attribute will not work as they should
+				///
+
 				XmlSerializer xs = new XmlSerializer(settingsObject.GetType());
 				StreamWriter writer = File.CreateText(file);
 				xs.Serialize(writer, settingsObject);

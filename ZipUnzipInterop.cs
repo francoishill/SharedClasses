@@ -51,7 +51,7 @@ namespace SharedClasses
 
 		public static bool UnzipFile(string zipfilePath, string unzipFolderpath, out string errorIfFailed, Action<int, double> onProgress_Percentage_BytesPerSec)
 		{
-			//TODO: Does not dynamically download the 7z.exe and 7z.dll, will just inform user to install it
+			//Does not dynamically download the 7z.exe and 7z.dll, will just inform user to install it
 
 			//List<string> feedback;
 			//if (!Ensure7zipDllExists(out feedback, onProgress_Percentage_BytesPerSec))

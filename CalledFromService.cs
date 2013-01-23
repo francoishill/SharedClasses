@@ -12,7 +12,7 @@ namespace SharedClasses
 			+ Environment.NewLine + @"It will fail to compile the exe file as makensis will say file not found"
 			+ Environment.NewLine + @"This is weird but its how it is";
 
-		//TODO: Weird behaviour of Environment.GetFolderPath when called from a service
+		//Weird behaviour of Environment.GetFolderPath when called from a service
 		/// <summary>
 		/// See constant above 'ReasonForThisUsage' 
 		/// </summary>

@@ -48,7 +48,7 @@ namespace SharedClasses
 		public static bool MustIgnoreFile(string fullPath)
 		{
 
-			//TODO: Word temp files excluded starting with ~$w or in format ~W...tmp
+			//Word temp files excluded starting with ~$w or in format ~W...tmp
 			string filename = Path.GetFileName(fullPath);
 			return
 				(filename.StartsWith("~$w", StringComparison.InvariantCultureIgnoreCase) && filename.EndsWith(".docx", StringComparison.InvariantCultureIgnoreCase))
@@ -149,7 +149,7 @@ namespace SharedClasses
 					if (retrycount++ < retrymax)
 						goto retryhere;
 
-					//TODO: Obviously this is super Unuserfriendly
+					//Obviously this is super Unuserfriendly
 					if (exc.Message.IndexOf("being used by another process", StringComparison.InvariantCultureIgnoreCase) == -1)
 					{
 						UserMessages.ShowErrorMessage("Cannot obtain file MD5Hash, please solve the problem and then click OK: " + exc.Message);
@@ -235,7 +235,7 @@ namespace SharedClasses
 
 			private void folderWatcher_Changed_Created_Deleted(object sender, FileSystemEventArgs e)
 			{
-				//TODO: Be very careful here, this event gets fired 3 times on when a file is modified/changed
+				//Be very careful here, this event gets fired 3 times on when a file is modified/changed
 				if (MustPathBeIgnored(e.FullPath))
 					return;
 				if (MustIgnoreFile(e.FullPath)
@@ -319,7 +319,7 @@ namespace SharedClasses
 				string err;
 				if (!FileSystemInterop.CanOpenFileForReading(absolutepath, out err))
 				{
-					//TODO: Removed the user message for now
+					//Removed the user message for now
 					//TextFeedbackEventArgs.RaiseSimple(textFeedbackHandler, "[CopyToTemp]" + err, TextFeedbackType.Noteworthy);
 					return false;
 				}
@@ -393,7 +393,7 @@ namespace SharedClasses
 					{
 						if (!listRelativeUncopyableFiles.Contains(tmpFileMeta.RelativePath, StringComparer.InvariantCultureIgnoreCase))
 							listRelativeUncopyableFiles.Add(tmpFileMeta.RelativePath);
-						//TODO: If cannot copy successfully (file could have openened in between), it marks it as 'ignore', is this correct?
+						//If cannot copy successfully (file could have openened in between), it marks it as 'ignore', is this correct?
 						tmpFileMeta.SetTempIgnoreCannotRead(true);
 					}
 					//Remove it from the uncopyable files list if successfully copied
@@ -642,7 +642,7 @@ namespace SharedClasses
 				if (cachedMetadata != null)
 				{
 					foreach (var cf in cachedMetadata)
-						//TODO: Why are there sometimes duplicates and we have to check for them here?
+						//Why are there sometimes duplicates and we have to check for them here?
 						if (!tmpdict.ContainsKey(cf.RelativePath))
 							tmpdict.Add(cf.RelativePath, cf);
 					return tmpdict;
@@ -656,7 +656,7 @@ namespace SharedClasses
 				if (FilesData != null)
 				{
 					foreach (var lf in FilesData)
-						//TODO: Why are there sometimes duplicates and we have to check for them here?
+						// Why are there sometimes duplicates and we have to check for them here?
 						if (!tmpdict.ContainsKey(lf.RelativePath))
 							tmpdict.Add(lf.RelativePath, lf);
 					return tmpdict;
@@ -673,7 +673,7 @@ namespace SharedClasses
 				var tmpcacheddict = GetTempCachedFileAndMetadataDictionary(textFeedbackHandler);
 
 				if (this.FilesData == null)
-					return false;//TODO: No local changes if no local metadata file yet?
+					return false;//No local changes if no local metadata file yet?
 
 				if (tmpcacheddict == null)
 				{
@@ -697,7 +697,7 @@ namespace SharedClasses
 				for (int i = 0; i < this.FilesData.Count; i++)
 				{
 					var f = this.FilesData[i];
-					//TODO: Is this the best?
+					//Is this the best?
 					if (f.GetTempIgnoreCannotRead())
 					{
 						if (tmpcacheddict.ContainsKey(f.RelativePath))
@@ -805,8 +805,7 @@ namespace SharedClasses
 							return false;
 						}
 
-						//TODO: Works better with making the HasPatch true even for added files
-						f.HasPatch = true;
+						f.HasPatch = true;//Works better with making the HasPatch true even for added files
 						if (tmpcacheddict.ContainsKey(f.RelativePath))
 						{
 							//f.HasPatch = true;
@@ -917,7 +916,7 @@ namespace SharedClasses
 					string tmpFilePath = Path.GetTempPath().TrimEnd('\\') + "\\" + cServerLockFilename;
 					byte[] guidBytes = Guid.NewGuid().ToByteArray();
 					File.WriteAllBytes(tmpFilePath, guidBytes);
-					//TODO: FtpUploadFiles returns boolean, is this returned value trustworthy? See steps in upload method itsself
+					//FtpUploadFiles returns boolean, is this returned value trustworthy? See steps in upload method itsself
 					if (!NetworkInterop.FtpUploadFiles(null, NetworkInterop.InsertPortNumberIntoUrl(ServerRootUri/*GetRootUserfolderUri()*/, AutoSyncFtpPortToUse), FtpUsername, FtpPassword, new string[] { tmpFilePath }, (err) => UserMessages.ShowErrorMessage(err)))
 						return false;
 					if (!DownloadFile(Path.GetDirectoryName(tmpFilePath), /*GetRootUserfolderUri()*/ServerRootUri + "//" + cServerLockFilename, textFeedbackHandler))
@@ -1073,7 +1072,7 @@ namespace SharedClasses
 				{
 					File.Delete(GetLocalOriginalFilePath(rf));
 
-					//TODO: It might be dangerous to delete a file from the server?
+					//It might be dangerous to delete a file from the server?
 					//Rather move it to "deleted" folder on the server???
 					/*if (!NetworkInterop.DeleteFTPfile(
 						null,
@@ -1231,7 +1230,7 @@ namespace SharedClasses
 			}
 			public UploadPatchesResult UploadChangesToServer(TextFeedbackEventHandler textFeedbackHandler)
 			{
-				//TODO: Build in statistics of operations, like how many files processed, average size, average time, etc
+				//Build in statistics of operations, like how many files processed, average size, average time, etc
 
 				List<string> localChangesRelativePaths;
 				List<string> localAddedRelativePaths;
@@ -1336,7 +1335,7 @@ namespace SharedClasses
 								}
 								else if (localAddedRelativePaths.Contains(relpath))
 								{
-									//TODO: There is an add conflict and the user chose to not discard the local file, what now?
+									//There is an add conflict and the user chose to not discard the local file, what now?
 								}
 							}
 							/*else
@@ -1421,7 +1420,7 @@ namespace SharedClasses
 							if (!localAddedRelativePaths.Contains(af.RelativePath)
 								|| UserMessages.Confirm("Local file added and online file added with same name, replace local with online?" + Environment.NewLine + GetAbsolutePath(af)))
 							{
-								//TODO: Must log if unable to add(download) file, if user chose to not replace, what happens with online new file?
+								//Must log if unable to add(download) file, if user chose to not replace, what happens with online new file?
 								if (!DownloadFile(Path.GetDirectoryName(GetAbsolutePath(af)), GetAboluteServerUri(af), textFeedbackHandler))
 								{
 									//UserMessages.ShowErrorMessage("Unable to download added file from server: " + GetAboluteServerUri(af));
@@ -1437,10 +1436,10 @@ namespace SharedClasses
 							}
 						foreach (var rf in tempVersionMetadata.RemovedFiles ?? new List<FileMetaData>())
 						{
-							//TODO: Must log if unable to remove file
+							//Must log if unable to remove file
 							File.Delete(GetAbsolutePath(rf));
 							affectedUpdatedFiles.Add(rf.RelativePath);
-							//TODO: Is this really the safest way, should it not be moved to "deleted" folder?
+							//Is this really the safest way, should it not be moved to "deleted" folder?
 							File.Delete(GetLocalOriginalFilePath(rf));
 						}
 
@@ -1478,7 +1477,7 @@ namespace SharedClasses
 								if (!DownloadFile(Path.GetDirectoryName(patchfilepath), GetServerVersionFolderUri(i) + "/" + f.RelativePath.Replace("\\", "/") + cPatchFileExtension, textFeedbackHandler))
 									return UploadPatchesResult.FailedDownloadFromServer;//UploadPatchesResult.FailedToUpdateLocalVersion;
 								if (!ApplyPatch(GetLocalOriginalFilePath(f), patchfilepath, destinationPath, textFeedbackHandler))
-									//TODO: Must check feedback of xDelta3, it might have an error...
+									//Must check feedback of xDelta3, it might have an error...
 									return UploadPatchesResult.FailedToApplyPatchLocally;//FailedToUpdateLocalVersion;
 								else if (!isconflict)//Conflicts are not updated??
 								{

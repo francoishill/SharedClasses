@@ -4,7 +4,7 @@ using System.Windows.Forms;
 using System.Threading;
 public class QueueingActionsInterop
 {
-	//TODO: Maybe later on have a look at thread queueing (System.Threading.ThreadPool.QueueUserWorkItem()) or even WaitHandle in System.Threading
+	//Maybe later on have a look at thread queueing (System.Threading.ThreadPool.QueueUserWorkItem()) or even WaitHandle in System.Threading
 
 	private class CustomQueue : Queue<Action>
 	{

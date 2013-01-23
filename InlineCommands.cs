@@ -33,7 +33,7 @@ namespace InlineCommandToolkit
 			if (!command.PerformAndLogCommand(out errorMsg, textfeedbackEvent, progresschangedEvent, arguments)
 				&& UserMessages.ShowWarningMessage("Cannot perform command: " + errorMsg))
 				return false;
-			//TODO: For some reason (maybe not using async/await) this "Successfully performed command" message gets through before the PerformPublishOnline step is finished
+			//For some reason (maybe not using async/await) this "Successfully performed command" message gets through before the PerformPublishOnline step is finished
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(command, textfeedbackEvent, "Successfully performed command: " + command.DisplayName + " (" + command.Description + ")", TextFeedbackType.Success);
 			return true;
 		}

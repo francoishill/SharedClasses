@@ -263,7 +263,6 @@ namespace SharedClasses
 					//foreach (IQuickAccessPluginInterface qai in DynamicDLLs.PluginList)
 					//	if (qai.GetType().GetInterface(typeof(ICommandWithHandler).Name) != null)
 					//		tmpCommand = (ICommandWithHandler)qai.GetType().GetConstructor(new Type[0]).Invoke(new object[0]);
-					//TODO: There is some issue with the second time a file is sent (on the server side).
 					NetworkInterop.StartServer_FileStream(
 						null,//tmpCommand,
 						out listeningSocket,
@@ -276,7 +275,7 @@ namespace SharedClasses
 				//XmlRpcInterop.SampleServer();
 				XmlRpcInterop.StartDynamicCodeInvokingServer_XmlRpc();
 
-				//TODO:Taken out the monitoring of subversion, it's redundant because TestingMonitorSubversion application already does that
+				//Taken out the monitoring of subversion, it's redundant because TestingMonitorSubversion application already does that
 				/*foreach (IQuickAccessPluginInterface iqa in DynamicDLLsInterop.DynamicDLLs.PluginList)
 					if (iqa is ICommandWithHandler)
 					{
@@ -300,7 +299,7 @@ namespace SharedClasses
 				//if (this.Resources.MergedDictionaries[0] is GeneralResourceDictionary)
 					//System.Windows.Forms.MessageBox.Show(this.Resources.MergedDictionaries[0].GetType().Name);
 
-				//TODO: Facedetection disabled for now
+				//Facedetection disabled for now
 				//FaceDetectionInterop.InitializeFaceDetection();
 				GenericSettings.EnsureAllSettingsAreInitialized();
 
@@ -1615,7 +1614,7 @@ namespace SharedClasses
 			if (Mouse.LeftButton == MouseButtonState.Pressed)
 			{
 				(sender as AutoCompleteBox).IsDropDownOpen = false;
-				//TODO: Figure out why this next commented line does not focus next argument when selecting a dropdownitem with the mouse
+				//Figure out why this next commented line does not focus next argument when selecting a dropdownitem with the mouse
 				//FocusNextCommandArgument();
 			}
 			//BindingExpression be = (sender as AutoCompleteBox).GetBindingExpression(AutoCompleteBox.TextProperty);

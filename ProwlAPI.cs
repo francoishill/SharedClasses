@@ -75,8 +75,8 @@ namespace SharedClasses
 			{
 				//ListOfSentNotificationsWaitingForResponse.Add(tmpFilename);
 				ListOfSentNotificationsWaitingForResponse.Add(uniqueName);
-				//TODO: Add support here for checking if was successful
-				PostPHP("http://fjh.dyndns.org/csharp/createwaitresponse/" + uniqueName, "");
+				//Add support here for checking if was successful
+				string createdWaitResponse = PostPHP("http://fjh.dyndns.org/csharp/createwaitresponse/" + uniqueName, "");
 				//if (!File.Exists(tmpFilename))
 				//	File.Create(tmpFilename).Close();
 

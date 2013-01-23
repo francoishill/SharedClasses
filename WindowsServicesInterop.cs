@@ -71,7 +71,7 @@ namespace SharedClasses
 			});
 			threadWaitingForExit.Start();
 
-			//TODO: It will probably never be that additional arguments will be passed if invoked via service??
+			//It will probably never be that additional arguments will be passed if invoked via service??
 			base.OnStart(args);
 		}
 		Thread threadWaitingForExit;
@@ -160,7 +160,7 @@ namespace SharedClasses
 					output.Replace("\r\n", "<br/>").Replace("\r", "<br/>").Replace("\n", "<br/>").Replace("<br/><br/>", "<br/")),
 					Logging.ReportingFrequencies.Daily,
 					"WindowsServicesInterop");
-			//TODO: Use the above logs to determine how to interpret all outputs
+			//Use the above logs to determine how to interpret all outputs
 			return output;
 		}
 

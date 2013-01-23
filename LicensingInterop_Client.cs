@@ -148,8 +148,7 @@ namespace SharedClasses
 		{
 			string applicationName = GetApplicationName();
 
-			int todoItem;
-			//TODO: Ensure that the expirationDate of a license also fails to validate if it is a Trial license and the trial period expired
+			//Ensure that the expirationDate of a license also fails to validate if it is a Trial license and the trial period expired
 			//I would assume that this is already the case
 
 			if (onError == null) onError = delegate { };
@@ -347,8 +346,7 @@ namespace SharedClasses
 						{
 							int onlineFailedCount = 1;
 
-							int todoItem;
-							//TODO: Maybe add encryption to this OnlineCheckFailed registry value
+							//Maybe add encryption to this OnlineCheckFailed registry value
 							bool foundOnlineFailedRegVal = appLicensesRegKey.GetValueNames().Count(s => s.Equals(onlineQueryFailedRegValueName)) > 0;
 							if (foundOnlineFailedRegVal)//Value was found, increase it
 							{
@@ -363,15 +361,14 @@ namespace SharedClasses
 							{
 								ShowServerConfirmLicenseError("Could not confirm that license exists on server (empty response from server), application will now exit.");
 
-								int todoExitCodeNotReached;
-								//The application exist before it reaches this ExitCode
+								//The application exits before it reaches this ExitCode
 								Environment.Exit(cApplicationExitCodeIfOnlineLicenseConfirmationFailed);
 							}
 							else if (onlineFailedCount >= 15)//Start annoying user after 15 times
 							{
 								//Will not break the application if no valid internet access, but just annoy the user
 
-								//TODO: Maybe suggest to check whether the domain (where the license server sits on) is accessible from this machine (for instance domain fjh.dyndns.org)
+								//Maybe suggest to check whether the domain (where the license server sits on) is accessible from this machine (for instance domain fjh.dyndns.org)
 								ShowServerConfirmLicenseError("Could not confirm that license existance on server (empty response from server), please ensure internet connectivity to stop showing this message.");
 							}
 						}

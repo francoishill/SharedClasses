@@ -6,7 +6,7 @@ using System.Text;
 using System.Xml;
 public class SerializationInterop
 {
-	//TODO: Check uit and use the code snippet indexer
+	//Check uit and use the code snippet indexer
 	/// <summary>
 	/// Xml or Binary format (xml generally uses 10x more bytes but it also stores the name of each field with the value, binary only stores the value).
 	/// </summary>
@@ -229,7 +229,7 @@ public class SerializationInterop
 	/// <param name="serializationFormat">Xml or Binary format (xml generally uses 10x more bytes but it also stores the name of each field with the value, binary only stores the value).</param>
 	public static void SerializeCustomObjectToStream(Object objectToSerialize, Stream streamToSerializeTo, bool CloseStream = true, SerializationFormat serializationFormat = SerializationFormat.Binary)//, Hashtable HashTableIn)
 	{
-		//DONE TODO: Maybe later look at also serializing/deserializing public properties, and not the fields only
+		//DONE: Maybe later look at also serializing/deserializing public properties, and not the fields only
 		try
 		{
 			BinaryWriter binaryWriter = serializationFormat == SerializationFormat.Binary ? new BinaryWriter(streamToSerializeTo) : null;

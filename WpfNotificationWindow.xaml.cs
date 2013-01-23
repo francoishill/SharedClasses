@@ -273,7 +273,7 @@ namespace SharedClasses
 
 			NotificationClass notif1 = notifBorder.DataContext as NotificationClass;
 
-			//TODO: This was removed, otherwise close callback does not fire when clicked on the Notification itsself
+			//This was removed, otherwise close callback does not fire when clicked on the Notification itsself
 			//if (notif1 != null)
 			//    notif1.RemoveCloseCallback();
 

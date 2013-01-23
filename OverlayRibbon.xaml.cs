@@ -72,7 +72,7 @@ public partial class OverlayRibbon : Window
 		CallEvent_MouseClickedRequestToOpenOverlayWindow(false);
 	}
 
-	//TODO: Read up a bit more on MeasureOverride and ArrangeOverride, see following line for website
+	//Read up a bit more on MeasureOverride and ArrangeOverride, see following line for website
 	//http://www.dotnetfunda.com/articles/article900-wpf-tutorial--layoutpanelscontainers--layout-transformation-2-.aspx
 	//protected override Size MeasureOverride(Size availableSize)
 	//{

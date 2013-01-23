@@ -58,7 +58,7 @@ namespace SharedClasses
 
 			commandsUsercontrol1.UpdateTaskbarOverlayIconForUnreadMessages();
 
-			//TODO: Have a look at the commented out code for the WindowChrome
+			//Have a look at the commented out code for the WindowChrome
 			//Style _style = null;
 			//if (Microsoft.Windows.Shell.SystemParameters2.Current.IsGlassEnabled == true)
 			//	_style = (Style)Resources["FractalStyle"];

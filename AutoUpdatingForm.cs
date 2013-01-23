@@ -298,7 +298,6 @@ namespace SharedClasses
 	//    public string MD5Hash;
 	//    public DateTime PublishedDate;
 	//    public string FtpUrl;
-	//    //TODO: May want to add TracUrl here
 	//    public PublishDetails() { }
 	//    public PublishDetails(string ApplicationName, string ApplicationVersion, long SetupSize, string MD5Hash, DateTime PublishedDate, string FtpUrl)
 	//    {

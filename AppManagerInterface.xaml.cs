@@ -31,7 +31,7 @@ namespace SharedClasses
 
 			this.Hide();
 
-			//TODO: This form is critically important, becuase this form has ShowInTaskbar=false, an additional form is required with ShowInTaskbar=true.
+			//This form is critically important, becuase this form has ShowInTaskbar=false, an additional form is required with ShowInTaskbar=true.
 			tempForm = new TempFormAppManager();
 			tempForm.Show();
 			tempForm.Hide();

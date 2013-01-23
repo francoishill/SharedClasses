@@ -107,7 +107,7 @@ public partial class OverlayWindow : Window
 			this.currentElement.InputElement = (IInputElement)s;
 			SetFocusToNewUsercontrol(usercontrol);
 			Console.WriteLine("CommandUsercontrol MouseLeftButtonDown");
-			//DONE TODO: DragMove to be implemented for usercontrol because its not window anymore
+			//DONE: DragMove to be implemented for usercontrol because its not window anymore
 		};
 	}
 
@@ -286,7 +286,7 @@ public partial class OverlayWindow : Window
 	{
 		if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
 		{
-			//TODO: Had to comment out this code after refactoring, did not have time to have a look at it to refactor it aswell
+			//Had to comment out this code after refactoring, did not have time to have a look at it to refactor it aswell
 			/*string commandName = "";
 			if (sender is CommandUserControl)
 				commandName = (sender as CommandUserControl).labelTitle.Content.ToString();
@@ -331,7 +331,7 @@ public partial class OverlayWindow : Window
 	{
 		usercontrol.treeViewPredefinedArguments.SelectedItemChanged += (sendr, evtargs) =>
 		{
-			//TODO: Last continue here...
+			//Last continue here...
 			//(((sendr as TreeView).SelectedItem as TreeViewItem).Tag as object[])[0]
 		};
 	}

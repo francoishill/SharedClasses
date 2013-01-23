@@ -30,7 +30,7 @@ namespace SharedClasses
 		private long maximumBytes;
 		private long currentCompleteByteCount;
 		private Stopwatch _stopwatchrunning;
-		private Stopwatch StopwatchRunning//TODO: Not thread safe yet...
+		private Stopwatch StopwatchRunning//Not thread safe yet...
 		{
 			get { if (_stopwatchrunning == null) _stopwatchrunning = new Stopwatch(); return _stopwatchrunning; }
 		}
@@ -82,7 +82,7 @@ namespace SharedClasses
 		}
 	}
 
-	//TODO: Requires timeout support
+	//Requires timeout support
 	public abstract class FileTransferProtocols<T> where T : new()
 	{
 		private static T instance;
@@ -132,7 +132,7 @@ namespace SharedClasses
 		/// <returns>True if succeeded, False if error, Null if file does not exist.</returns>
 		public override bool? DownloadFile(string fullLocalDestinationPath, string onlineFullUrl, Action<string, FeedbackMessageTypes> actionOnMessage = null, Action<int, double> actionOnProgress = null, DownloadRange? rangeToDownload = null, NetworkCredential credentials = null)
 		{
-			//TODO: Support queueing of downloads inside this method
+			//Support queueing of downloads inside this method
 			if (actionOnMessage == null) actionOnMessage = delegate { };
 			if (actionOnProgress == null) actionOnProgress = delegate { };
 
@@ -166,7 +166,7 @@ namespace SharedClasses
 
 					string localFilepath
 						//= localRootFolder.TrimEnd('\\') + "\\" + Path.GetFileName(onlineFileUrl.Replace("ftp://", "").Replace("/", "\\"));
-						= fullLocalDestinationPath;//TODO: this changed from FtpDownloadFile
+						= fullLocalDestinationPath;//this changed from FtpDownloadFile
 
 					using (var transferMonitor = new TransferMonitoring())
 					{
@@ -189,8 +189,6 @@ namespace SharedClasses
 						while (client.IsBusy)// !transferMonitor.transferIsComplete)
 						{ }//{ Thread.Sleep(10); }// System.Windows.Forms.Application.DoEvents();
 
-						//int tmptodo;
-						//TODO: Checking file length = 0? What if its a blank/empty file??
 						if (retryCount <= maxRetries && (!File.Exists(localFilepath) || new FileInfo(localFilepath).Length == 0))
 						{
 							if (File.Exists(localFilepath) && new FileInfo(localFilepath).Length == 0)
@@ -329,7 +327,6 @@ namespace SharedClasses
 
 			try
 			{
-				//TODO: How to handle certificate validation??
 				ServicePointManager.ServerCertificateValidationCallback += (snder, certif, chain, sslPolicyErrors)
 					=> true;//actionOnSSLcertificateValidation(snder, certif, chain, sslPolicyErrors);
 				NameValueCollection inputs = new NameValueCollection();
@@ -388,7 +385,7 @@ namespace SharedClasses
 				else
 					rangeStringForLogging = "0-" + (totalBytesToDownload - 1) + "/" + actualFilesize;
 
-				//TODO: Not logging anymore?
+				//Not logging anymore?
 				/*Logging.LogInfoToFile(
 					string.Format("Download duration for file '{0}' is {1:0.###} seconds ({2:0.###} kB/s) to download {3} bytes, range = {4}",
 						localDestinationFilePath,
@@ -452,7 +449,6 @@ namespace SharedClasses
 		{
 			if (actionOnMessage == null) actionOnMessage = delegate { };
 
-			//TODO: How to handle certificate validation??
 			ServicePointManager.ServerCertificateValidationCallback += (snder, certif, chain, sslPolicyErrors)
 				=> true;//=> actionOnSSLcertificateValidation(snder, certif, chain, sslPolicyErrors);
 			try

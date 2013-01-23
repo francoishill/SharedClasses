@@ -7,7 +7,7 @@ public class ThreadingInterop
 	public static bool ForceExitAllTreads = false;
 
 	private static bool AlreadyAttachedToApplicationExitEvent = false;
-	//TODO: Have a look at this function (automatically queues to a thread) - System.Threading.ThreadPool.QueueUserWorkItem()
+	//Have a look at this function (automatically queues to a thread) - System.Threading.ThreadPool.QueueUserWorkItem()
 	//PerformVoidFunctionSeperateThread(() => { MessageBox.Show("Test"); MessageBox.Show("Test1"); });
 	public static Thread PerformOneArgFunctionSeperateThread(Action<object> action, object arg, bool WaitUntilFinish = true, string ThreadName = "UnknownName", bool CheckInvokeRequired = false, Control controlToCheckInvokeRequired = null, bool AttachForceExitToFormClose = true, ApartmentState? apartmentState = null)
 	{

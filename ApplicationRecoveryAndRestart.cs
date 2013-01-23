@@ -174,7 +174,7 @@ namespace SharedClasses
 		public static void RegisterForRecoveryAndRestart(Action actionToBackupOnCrash, Action actionOnRestarted, Action actionOnRestartReady)
 		{
 			int unregisterAutomatically;
-			//TODO: Later look at Unregistering automatically on application exit, use Reflection because WPF/winforms will differ
+			//Later look at Unregistering automatically on application exit, use Reflection because WPF/winforms will differ
 
 			if (Environment.OSVersion.Version.Major < 6)//Not at least Vista (only supported from Vista)
 			{

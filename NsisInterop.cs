@@ -44,6 +44,7 @@ public class NsisInterop
 		//string ProductPublisherIn,
 		string ProductWebsiteIn,
 		string ProductExeNameIn,
+		DateTime PublishedDate,
 		RegistryInterop.MainContextMenuItem explorerContextMenuItems,
 		NSISclass.LicensePageDetails LicenseDetails,
 		//List<NSISclass.SectionGroupClass.SectionClass> sections,
@@ -60,6 +61,7 @@ public class NsisInterop
 			cDefaultPublisherName,//ProductPublisherIn,
 			ProductWebsiteIn,
 			ProductExeNameIn,
+			PublishedDate,
 			new NSISclass.Compressor(NSISclass.Compressor.CompressionModeEnum.lzma, true, true),//new NSISclass.Compressor(NSISclass.Compressor.CompressionModeEnum.bzip2, false, false),
 			64,
 			customSetupFilename == null ? GetSetupNameForProduct(ProductPublishedNameIn, ProductVersionIn) : customSetupFilename,
@@ -537,6 +539,7 @@ public class NsisInterop
 		public string ProductPublisher;
 		public string ProductWebsite;
 		public string ProductExeName;
+		public DateTime PublishedDate;
 
 		public Compressor CompressorUsed;
 		public int? CompressorDictSizeMegabytes;
@@ -571,6 +574,7 @@ public class NsisInterop
 				string ProductPublisherIn,
 				string ProductWebsiteIn,
 				string ProductExeNameIn,
+				DateTime PublishedDateIn,
 				Compressor CompressorUsedIn,
 				int? CompressorDictSizeMegabytesIn,
 				string SetupFileNameIn,
@@ -596,6 +600,7 @@ public class NsisInterop
 			ProductPublisher = ProductPublisherIn;
 			ProductWebsite = ProductWebsiteIn;
 			ProductExeName = ProductExeNameIn;
+			PublishedDate = PublishedDateIn;
 			CompressorUsed = CompressorUsedIn;
 			CompressorDictSizeMegabytes = CompressorDictSizeMegabytesIn;
 			SetupFileName = SetupFileNameIn;
@@ -793,7 +798,8 @@ public class NsisInterop
 			tmpList.Add("BrandingText \"${PRODUCT_NAME} v${PRODUCT_VERSION} (NSIS 2.46)\"");
 			tmpList.Add("");
 			tmpList.Add(@"; MUI 1.67 compatible ------");
-			tmpList.Add(@"!include ""MUI.nsh""");
+			tmpList.Add(@"; !include ""MUI.nsh""");
+			tmpList.Add(@"!include ""MUI2.nsh""");
 			tmpList.Add("");
 			tmpList.Add(@"; DotNetChecker checks and downloads dotnet version");
 			tmpList.Add(@"!include ""DotNetChecker.nsh""");
@@ -811,6 +817,7 @@ public class NsisInterop
 
 			if (ShowWelcomePage)
 			{
+				tmpList.Add(@"!define MUI_PAGE_CUSTOMFUNCTION_SHOW MyWelcomeShowCallback");
 				tmpList.Add(@"; Welcome page");
 				tmpList.Add(@"!insertmacro MUI_PAGE_WELCOME");
 			}
@@ -847,6 +854,13 @@ public class NsisInterop
 				tmpList.Add(@"!define MUI_STARTMENUPAGE_REGISTRY_KEY ""${PRODUCT_UNINST_KEY}""");
 				tmpList.Add(@"!define MUI_STARTMENUPAGE_REGISTRY_VALUENAME ""${PRODUCT_STARTMENU_REGVAL}""");
 				tmpList.Add(@"!insertmacro MUI_PAGE_STARTMENU Application $ICONS_GROUP");
+			}
+
+			if (ShowWelcomePage)
+			{
+				tmpList.Add(@"Function MyWelcomeShowCallback");
+				tmpList.Add(@"    SendMessage $mui.WelcomePage.Text ${WM_SETTEXT} 0 ""STR:$(MUI_TEXT_WELCOME_INFO_TEXT)$\n$\n$\n$\nPublished date: " + PublishedDate.ToString("yyyy-MM-dd"/*"yyyy-MM-dd HH\\hmm"*/) + @".""");
+				tmpList.Add(@"FunctionEnd");
 			}
 
 			//if (!isAutoUpdater/* && !isShowNoCallbackNotification && !isStandaloneUploader*/)
@@ -1671,6 +1685,7 @@ public class NsisInterop
 									cDefaultPublisherName,
 									"www.francoishill.com",
 									AppNameIncludingEXEextension,
+									DateTime.Now,
 									new Compressor(),
 									64,
 									AppNameOnly + "_Setup_0.0.exe",//" 1_0_0_0 setup.exe",

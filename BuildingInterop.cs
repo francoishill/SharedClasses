@@ -408,6 +408,7 @@ namespace SharedClasses
 		{
 			string outPublishedVersion;
 			string resultSetupFilename;
+			DateTime outPublishDate;
 			bool publishResult = PublishInterop.PerformPublish(
 				this.ApplicationName,
 				_64bit,//What if required
@@ -418,6 +419,7 @@ namespace SharedClasses
 				false,
 				out outPublishedVersion,
 				out resultSetupFilename,
+				out outPublishDate,
 				actionOnMessage,
 				actionOnProgressPercentage,
 				placeSetupInTempWebFolder,
@@ -435,6 +437,7 @@ namespace SharedClasses
 		{
 			string outPublishedVersion;
 			string resultSetupFilename;
+			DateTime outPublishDate;
 			bool publishResult = PublishInterop.PerformPublishOnline(
 				this.ApplicationName,
 				false,//What if required
@@ -446,6 +449,7 @@ namespace SharedClasses
 				false,
 				out outPublishedVersion,
 				out resultSetupFilename,
+				out outPublishDate,
 				actionOnMessage,
 				actionOnProgressPercentage);
 			return publishResult;

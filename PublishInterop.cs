@@ -139,7 +139,7 @@ namespace SharedClasses
 		}
 
 		public const string cTempWebfolderName = "TempWeb";
-		public static bool PerformPublish(string projName, bool _64Only, bool HasPlugins, bool AutomaticallyUpdateRevision, bool InstallLocallyAfterSuccessfullNSIS, bool StartupWithWindows, bool SelectSetupIfSuccessful, out string publishedVersionString, out string publishedSetupPath, Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage, bool placeSetupInTempWebFolder = false, string customSetupFilename = null)
+		public static bool PerformPublish(string projName, bool _64Only, bool HasPlugins, bool AutomaticallyUpdateRevision, bool InstallLocallyAfterSuccessfullNSIS, bool StartupWithWindows, bool SelectSetupIfSuccessful, out string publishedVersionString, out string publishedSetupPath, out DateTime publishDate, Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage, bool placeSetupInTempWebFolder = false, string customSetupFilename = null)
 		{
 			if (!Directory.Exists(cProjectsRootDir)
 				&& !Directory.Exists(projName)
@@ -148,6 +148,7 @@ namespace SharedClasses
 				actionOnMessage("Cannot find root project directory: " + cProjectsRootDir, FeedbackMessageTypes.Error);
 				publishedVersionString = null;
 				publishedSetupPath = null;
+				publishDate = DateTime.MinValue;
 				return false;
 			}
 
@@ -167,6 +168,7 @@ namespace SharedClasses
 			{
 				publishedVersionString = null;
 				publishedSetupPath = null;
+				publishDate = DateTime.MinValue;
 				return false;
 			}
 
@@ -177,6 +179,7 @@ namespace SharedClasses
 					+ Environment.NewLine + string.Join(Environment.NewLine, csprojPaths), FeedbackMessageTypes.Error);
 				publishedVersionString = null;
 				publishedSetupPath = null;
+				publishDate = DateTime.MinValue;
 				return false;
 			}
 
@@ -190,6 +193,7 @@ namespace SharedClasses
 				actionOnMessage(errifNull, FeedbackMessageTypes.Error);
 				publishedVersionString = null;
 				publishedSetupPath = null;
+				publishDate = DateTime.MinValue;
 				return false;
 			}
 			publishedVersionString = outCurrentVersion;
@@ -230,6 +234,8 @@ namespace SharedClasses
 			if (publicKeyFromOnline != null)//If it is null, an error would have already been logged via actionOnMessage
 				File.WriteAllText(publicKeyFilePath, publicKeyFromOnline);*/
 
+			publishDate = DateTime.Now;
+
 			File.WriteAllLines(nsisFileName,
 				NsisInterop.CreateOwnappNsis(
 					projName,
@@ -237,6 +243,7 @@ namespace SharedClasses
 					publishedVersionString,//Should obtain (and increase) product version from csproj file
 					AutoUpdating.GetApplicationOnlineUrl(projName),
 					projName + ".exe",
+					publishDate,
 					RegistryInterop.GetRegistryAssociationItemFromJsonFile(registryEntriesFilepath, actionOnMessage),
 					null,
 					true,
@@ -331,7 +338,7 @@ namespace SharedClasses
 			return HttpUtility.UrlPathEncode(projName).ToLower();
 		}
 
-		public static bool PerformPublishOnline(string projName, bool _64Only, bool HasPlugins, bool AutomaticallyUpdateRevision, bool InstallLocallyAfterSuccessfullNSIS, bool StartupWithWindows, bool SelectSetupIfSuccessful, bool OpenWebsite, out string publishedVersionString, out string publishedSetupPath, Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage)
+		public static bool PerformPublishOnline(string projName, bool _64Only, bool HasPlugins, bool AutomaticallyUpdateRevision, bool InstallLocallyAfterSuccessfullNSIS, bool StartupWithWindows, bool SelectSetupIfSuccessful, bool OpenWebsite, out string publishedVersionString, out string publishedSetupPath, out DateTime publishDate, Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage)
 		{
 			/*List<string> BugsFixed = null;
 			List<string> Improvements = null;
@@ -349,6 +356,7 @@ namespace SharedClasses
 				SelectSetupIfSuccessful,
 				out publishedVersionString,
 				out publishedSetupPath,
+				out publishDate,
 				actionOnMessage,
 				actionOnProgressPercentage);
 
@@ -365,7 +373,7 @@ namespace SharedClasses
 			//string rootFtpUri = WebInterop.RootFtpUrlForAppsUploading.TrimEnd('/') + relativeUrl;
 			string rootDownloadHttpUri = SharedClasses.SettingsSimple.HomePcUrls.Instance.AppsPublishingRoot.TrimEnd('/') + relativeUrl.TrimEnd('/');
 
-			DateTime now = DateTime.Now;
+			//DateTime publishDate = DateTime.Now;
 
 			DateTime? tracTicketsSinceDate;//Use previous published version's publishedDate as the 'sinceDate' for trac tickets
 			if (!ObtainPreviouslyPublishedDate(projName, actionOnMessage, out tracTicketsSinceDate))
@@ -376,7 +384,7 @@ namespace SharedClasses
 					publishedVersionString,
 					new FileInfo(publishedSetupPath).Length,
 					publishedSetupPath.FileToMD5Hash(),
-					now,
+					publishDate,
 					rootDownloadHttpUri + "/" + (new FileInfo(publishedSetupPath).Name),
 					tracTicketsSinceDate.HasValue ? tracTicketsSinceDate : DateTime.MinValue);
 			string errorStringIfFailElseJsonString;

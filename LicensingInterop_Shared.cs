@@ -59,7 +59,7 @@ namespace SharedClasses
 				}
 				applicationName = pipeSplitted[0].Trim();
 
-				int maybeWeShouldValidateTheEmailAddress;
+				//Maybe we should validate the owner email address?
 				ownerEmail = pipeSplitted[1].Trim();
 				orderCodeReversed = pipeSplitted[2].Trim();
 				machineSignature = pipeSplitted[3].Trim().Trim('\0');

@@ -38,7 +38,7 @@
 		
 		<br />
 		<div id='downloadlink' class='headingvaluepair'>
-			<a href='{SetupFilename}' class='downloadlink'>Download</a>
+			<a href='{SetupFilename}' class='downloadlink'>Download</a><label class='downloadsize'> ({DownloadSize})</label>
 		</div>
 		
 		<div id="accordion">
@@ -65,13 +65,13 @@
 			<h3>Change list</h3>
 			<div>
 				<div class='description'><!--style='display:{ChangelistCssDisplay}'-->
-					<ol class='bugsfixedlist'>
+					<ol class='bugsfixedlist'>Bugs fixed:
 						{BugsFixedList}
 					</ol>
-					<ol class='improvementslist'>
+					<ol class='improvementslist'>Improvements:
 						{ImprovementList}
 					</ol>
-					<ol class='newfeatureslist'>
+					<ol class='newfeatureslist'>New features:
 						{NewFeaturesList}
 					</ol>
 				</div>

@@ -173,7 +173,6 @@ namespace SharedClasses
 		/// <param name="actionOnRestartReady">The action to be performed when the application is restart ready, this occurs after 60 seconds (1 minute).</param>
 		public static void RegisterForRecoveryAndRestart(Action actionToBackupOnCrash, Action actionOnRestarted, Action actionOnRestartReady)
 		{
-			int unregisterAutomatically;
 			//Later look at Unregistering automatically on application exit, use Reflection because WPF/winforms will differ
 
 			if (Environment.OSVersion.Version.Major < 6)//Not at least Vista (only supported from Vista)

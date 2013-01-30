@@ -44,7 +44,6 @@ namespace SharedClasses
 			Assembly own: Newtonsoft.JSon.Net35
 	*/
 
-#if NOTUSEINTERCEPTOR
 	public class Interceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable, new()
 	{
 		public static T Create(T instance = null)
@@ -54,7 +53,6 @@ namespace SharedClasses
 			return instance;
 		}
 	}
-#endif
 
 	//Already in SettingsSimple.cs
 	//[AttributeUsage(AttributeTargets.Property)]
@@ -910,14 +908,7 @@ namespace SharedClasses
 				{
 					if (listedXmlRpcUrls == null || listedXmlRpcUrls.Count == 0)
 						listedXmlRpcUrls = new List<string>(
-#if WPF
-InputBoxWPF.Prompt(
-#elif WINFORMS
-DialogBoxStuff.InputDialog(
-#elif CONSOLE
-GlobalSettings.ReadConsole(
-#endif
-"Please enter a tasklist of XmlRpc urls (comma separated)").Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries));
+InputBoxWPF.Prompt("Please enter a tasklist of XmlRpc urls (comma separated)").Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries));
 					return listedXmlRpcUrls == null ? null : string.Join("|", listedXmlRpcUrls);
 				}
 				set { listedXmlRpcUrls = value == null ? null : new List<string>(value.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)); }
@@ -1079,18 +1070,9 @@ GlobalSettings.ReadConsole(
 				get
 				{
 					if (listOfMonitoredSubversionDirectories == null || listOfMonitoredSubversionDirectories.Count == 0)
-#if WPF
 						listOfMonitoredSubversionDirectories =
 							new List<string>(InputBoxWPF.Prompt("Please enter a tasklist of monitored Subversion directories")
-#elif WINFORMS
-						listOfMonitoredSubversionDirectories =
-							new List<string>(DialogBoxStuff.InputDialog("Please enter a list of monitored Subversion directories")
-#elif CONSOLE
-						Console.WriteLine("Please enter a list of monitored Subversion directories");
-					listOfMonitoredSubversionDirectories = new List<string>(Console.ReadLine()
-#endif
-
-.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries));
+								.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries));
 					return listOfMonitoredSubversionDirectories == null ? null : string.Join("|", listOfMonitoredSubversionDirectories);
 				}
 				set { listOfMonitoredSubversionDirectories = value == null ? null : new List<string>(value.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)); }
@@ -1107,15 +1089,7 @@ GlobalSettings.ReadConsole(
 					if (groupedMonitoredList == null || groupedMonitoredList.Count == 0)
 					{
 						promptResult =
-#if WPF
- InputBoxWPF.Prompt(
-#elif WINFORMS
- DialogBoxStuff.InputDialog(
-#elif CONSOLE
- GlobalSettings.ReadConsole(
-#endif
-
-"Please enter a tasklist of grouped items in format Category|first\\path,seconds\\path|Second category|third\\path");
+							InputBoxWPF.Prompt("Please enter a tasklist of grouped items in format Category|first\\path,seconds\\path|Second category|third\\path");
 						groupedMonitoredList = new Dictionary<string, List<string>>();
 						string[] splits = promptResult.Split('|');
 						for (int i = 0; i < splits.Length / 2; i++)

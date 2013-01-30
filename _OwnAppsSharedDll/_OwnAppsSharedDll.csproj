@@ -1,0 +1,300 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{5AA050A3-9D5F-4FEF-9071-BB5D87A7BE3F}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>_OwnAppsSharedDll</RootNamespace>
+    <AssemblyName>_OwnAppsSharedDll</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
+    <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
+    <CodeAnalysisFailOnMissingRules>false</CodeAnalysisFailOnMissingRules>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
+    <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
+    <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="CookComputing.XmlRpcV2">
+      <HintPath>..\..\..\DLLs\XmlRpc\CookComputing.XmlRpcV2.dll</HintPath>
+    </Reference>
+    <Reference Include="log4net">
+      <HintPath>..\..\..\DLLs\RhinoLicensing\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.WindowsAPICodePack, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\DLLs\Windows API\Microsoft.WindowsAPICodePack.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.WindowsAPICodePack.Shell">
+      <HintPath>..\..\..\DLLs\Windows API\Microsoft.WindowsAPICodePack.Shell.dll</HintPath>
+    </Reference>
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="Rhino.Licensing">
+      <HintPath>..\..\..\DLLs\RhinoLicensing\Rhino.Licensing.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Management" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="WindowsFormsIntegration" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\AboutWindow2.xaml.cs">
+      <Link>AboutWindow2.xaml.cs</Link>
+      <DependentUpon>AboutWindow2.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="..\AppTypeIndependant.cs">
+      <Link>AppTypeIndependant.cs</Link>
+    </Compile>
+    <Compile Include="..\AutoUpdating.cs">
+      <Link>AutoUpdating.cs</Link>
+    </Compile>
+    <Compile Include="..\CalledFromService.cs">
+      <Link>CalledFromService.cs</Link>
+    </Compile>
+    <Compile Include="..\CompareObjects.cs">
+      <Link>CompareObjects.cs</Link>
+    </Compile>
+    <Compile Include="..\ConvertersGeneral.cs">
+      <Link>ConvertersGeneral.cs</Link>
+    </Compile>
+    <Compile Include="..\DeveloperCommunication.cs">
+      <Link>DeveloperCommunication.cs</Link>
+    </Compile>
+    <Compile Include="..\EncodeAndDecodeInterop.cs">
+      <Link>EncodeAndDecodeInterop.cs</Link>
+    </Compile>
+    <Compile Include="..\EncryptionInterop.cs">
+      <Link>EncryptionInterop.cs</Link>
+    </Compile>
+    <Compile Include="..\EventHandlers.cs">
+      <Link>EventHandlers.cs</Link>
+    </Compile>
+    <Compile Include="..\fastJSON.cs">
+      <Link>fastJSON.cs</Link>
+    </Compile>
+    <Compile Include="..\FeedbackMessageTypes.cs">
+      <Link>FeedbackMessageTypes.cs</Link>
+    </Compile>
+    <Compile Include="..\Generics.cs">
+      <Link>Generics.cs</Link>
+    </Compile>
+    <Compile Include="..\InputBox.cs">
+      <Link>InputBox.cs</Link>
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="..\InputBox.designer.cs">
+      <Link>InputBox.designer.cs</Link>
+      <DependentUpon>InputBox.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\InputBoxWPF.xaml.cs">
+      <Link>InputBoxWPF.xaml.cs</Link>
+      <DependentUpon>InputBoxWPF.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="..\LicensingInterop_Client.cs">
+      <Link>LicensingInterop_Client.cs</Link>
+    </Compile>
+    <Compile Include="..\LicensingInterop_Shared.cs">
+      <Link>LicensingInterop_Shared.cs</Link>
+    </Compile>
+    <Compile Include="..\Logging.cs">
+      <Link>Logging.cs</Link>
+    </Compile>
+    <Compile Include="..\MachineFingerPrint.cs">
+      <Link>MachineFingerPrint.cs</Link>
+    </Compile>
+    <Compile Include="..\MiniDownloadBarForm.cs">
+      <Link>MiniDownloadBarForm.cs</Link>
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="..\MiniDownloadBarForm.designer.cs">
+      <Link>MiniDownloadBarForm.designer.cs</Link>
+      <DependentUpon>MiniDownloadBarForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NotifyIconWPF.cs">
+      <Link>NotifyIconWPF.cs</Link>
+    </Compile>
+    <Compile Include="..\PhpInterop.cs">
+      <Link>PhpInterop.cs</Link>
+    </Compile>
+    <Compile Include="..\ProcessesInterop.cs">
+      <Link>ProcessesInterop.cs</Link>
+    </Compile>
+    <Compile Include="..\ReflectionInterop.cs">
+      <Link>ReflectionInterop.cs</Link>
+    </Compile>
+    <Compile Include="..\RegistrationWindow.xaml.cs">
+      <Link>RegistrationWindow.xaml.cs</Link>
+      <DependentUpon>RegistrationWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="..\RegistryInterop.cs">
+      <Link>RegistryInterop.cs</Link>
+    </Compile>
+    <Compile Include="..\SettingsInterop.cs">
+      <Link>SettingsInterop.cs</Link>
+    </Compile>
+    <Compile Include="..\SettingsSimple.cs">
+      <Link>SettingsSimple.cs</Link>
+    </Compile>
+    <Compile Include="..\SharedClassesSettings.cs">
+      <Link>SharedClassesSettings.cs</Link>
+    </Compile>
+    <Compile Include="..\ShowNoCallbackNotificationInterop.cs">
+      <Link>ShowNoCallbackNotificationInterop.cs</Link>
+    </Compile>
+    <Compile Include="..\TaskScheduler2.cs">
+      <Link>TaskScheduler2.cs</Link>
+    </Compile>
+    <Compile Include="..\ThreadingInterop.cs">
+      <Link>ThreadingInterop.cs</Link>
+    </Compile>
+    <Compile Include="..\TracXmlRpcInterop.cs">
+      <Link>TracXmlRpcInterop.cs</Link>
+    </Compile>
+    <Compile Include="..\UnhandledExceptionsWindow.xaml.cs">
+      <Link>UnhandledExceptionsWindow.xaml.cs</Link>
+      <DependentUpon>UnhandledExceptionsWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="..\UserMessages.cs">
+      <Link>UserMessages.cs</Link>
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="..\UserMessages.designer.cs">
+      <Link>UserMessages.designer.cs</Link>
+      <DependentUpon>UserMessages.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\WebInterop.cs">
+      <Link>WebInterop.cs</Link>
+    </Compile>
+    <Compile Include="..\Win32Api.cs">
+      <Link>Win32Api.cs</Link>
+    </Compile>
+    <Compile Include="..\Windows7JumpListsInterop.cs">
+      <Link>Windows7JumpListsInterop.cs</Link>
+    </Compile>
+    <Compile Include="..\WPFdraggableCanvas.cs">
+      <Link>WPFdraggableCanvas.cs</Link>
+    </Compile>
+    <Compile Include="..\WPFHelper.cs">
+      <Link>WPFHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\WpfNotificationWindow.xaml.cs">
+      <Link>WpfNotificationWindow.xaml.cs</Link>
+      <DependentUpon>WpfNotificationWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="..\AboutWindow2.xaml">
+      <Link>AboutWindow2.xaml</Link>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="..\InputBoxWPF.xaml">
+      <Link>InputBoxWPF.xaml</Link>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="..\RegistrationWindow.xaml">
+      <Link>RegistrationWindow.xaml</Link>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="..\UnhandledExceptionsWindow.xaml">
+      <Link>UnhandledExceptionsWindow.xaml</Link>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="..\WpfNotificationWindow.xaml">
+      <Link>WpfNotificationWindow.xaml</Link>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\InputBox.resx">
+      <Link>InputBox.resx</Link>
+      <DependentUpon>InputBox.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\MiniDownloadBarForm.resx">
+      <Link>MiniDownloadBarForm.resx</Link>
+      <DependentUpon>MiniDownloadBarForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\UserMessages.resx">
+      <Link>UserMessages.resx</Link>
+      <DependentUpon>UserMessages.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

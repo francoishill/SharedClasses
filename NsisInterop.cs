@@ -90,11 +90,14 @@ public class NsisInterop
 			if (WriteIntoRegistryForWindowsAutostartup)
 				SectionGroupLines.Add("StrCpy $lastState_autostartCheckbox 1");
 
-		SectionGroupLines.Add("");
-		SectionGroupLines.Add(";Ensure these match up with the default values in, we basically set the defaults for when it is in silent mode");
-        SectionGroupLines.Add("IfSilent 0 SkipDefaultsIfNotSilent");
-		SectionGroupLines.AddRange(NSISclass.cDefaultNsisValues);
-		SectionGroupLines.Add("SkipDefaultsIfNotSilent:");
+		if (!isAutoUpdater)
+		{
+			SectionGroupLines.Add("");
+			SectionGroupLines.Add(";Ensure these match up with the default values in, we basically set the defaults for when it is in silent mode");
+			SectionGroupLines.Add("IfSilent 0 SkipDefaultsIfNotSilent");
+			SectionGroupLines.AddRange(NSISclass.cDefaultNsisValues);
+			SectionGroupLines.Add("SkipDefaultsIfNotSilent:");
+		}
 
 		SectionGroupLines.Add("");
 		SectionGroupLines.Add("	!include \"x64.nsh\"");

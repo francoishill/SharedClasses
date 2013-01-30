@@ -59,8 +59,7 @@ namespace SharedClasses
 
 		public static void ShowAboutWindow(ObservableCollection<DisplayItem> ItemsToDisplay, bool showmodal = true, Window owner = null)
 		{
-			int aboutWindowAddApplicationUrl;
-			//Add the application's url to the AboutWindow2, like http://firepuma.com/ownapplication/quickaccess
+			//DONE: Add the application's url to the AboutWindow2, like http://firepuma.com/ownapplication/quickaccess
 
 			List<DisplayItem> forcedItemsToDisplay = new List<DisplayItem>();
 			string thisAppname = System.IO.Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
@@ -98,25 +97,27 @@ namespace SharedClasses
 		private string _displaytext;
 		public string DisplayText { get { return _displaytext; } set { _displaytext = value; OnPropertyChanged("DisplayText"); } }
 
-		private string _linkonclick;
-		public string LinkOnClick { get { return _linkonclick; } set { _linkonclick = value; OnPropertyChanged("LinkOnClick"); } }
+		private List<string> _linksonclick;
+		public List<string> LinksOnClick { get { return _linksonclick; } set { _linksonclick = value; OnPropertyChanged("LinksOnClick"); } }
 
 		private Cursor _currentcursor;
 		public Cursor CurrentCursor { get { return _currentcursor; } set { _currentcursor = value; OnPropertyChanged("CurrentCursor"); } }
 
 
-		public DisplayItem(string Name, string DisplayText, string LinkOnClick = null)
+		public DisplayItem(string Name, string DisplayText, params string[] LinksOnClick)
 		{
 			this.Name = Name;
 			this.DisplayText = DisplayText;
-			this.LinkOnClick = LinkOnClick;
-			if (LinkOnClick != null) CurrentCursor = Cursors.Hand;
+			this.LinksOnClick = new List<string>(LinksOnClick);
+			if (LinksOnClick != null) CurrentCursor = Cursors.Hand;
 		}
 		public void GotoLink()
 		{
-			if (LinkOnClick == null)
+			if (LinksOnClick == null
+				|| LinksOnClick.Count == 0)
 				return;
-			Process.Start(LinkOnClick);
+			foreach (var link in LinksOnClick)
+				Process.Start(link);
 		}
 
 		public event PropertyChangedEventHandler PropertyChanged = delegate { };

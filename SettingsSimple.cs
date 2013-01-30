@@ -615,7 +615,7 @@ namespace SharedClasses
 				this.OnlineDotnetCheckerDllFileUrl = OnlineAppsSettings.Instance.RootFtpUrl.TrimEnd('/') + "/DotNetChecker.dll";
 				this.ListedApplicationNames = new List<string>()
                 {
-					"AutoConnectWifiAdhoc",
+					//"AutoConnectWifiAdhoc",
 					"AddDependenciesCSharp",
 					"MonitorSystem",
 					"QuickAccess",
@@ -777,7 +777,7 @@ namespace SharedClasses
 				{
 					"PublishOwnApps",
 					"FileOperations",
-					"AutoConnectWifiAdhoc",
+					//"AutoConnectWifiAdhoc",
 					"AddDependenciesCSharp",
 					"MonitorSystem",
 					"QuickAccess",
@@ -820,6 +820,9 @@ namespace SharedClasses
 					}
 				allthere = false;
 				tmpInstanceList.Remove("AForgeMotionDetector");
+				tmpInstanceList.Remove("AutoConnectWifiAdhoc");
+				tmpInstanceList.Remove("CodeSnippets");
+				tmpInstanceList.Remove("ApplicationManager");
 
 				if (!allthere)
 				{

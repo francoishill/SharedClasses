@@ -23,6 +23,12 @@ namespace SharedClasses
 			Assembly: Microsoft.Build
 			Assembly: Microsoft.Build.Framework*/
 
+		private readonly static Dictionary<string, string> GlobalBuildProperties = new Dictionary<string, string>()
+		{
+			{ "Configuration", "Release" },
+			{ "Platform", "Any CPU" },//"x86" },
+		};
+
 		private static bool? ChecksAlreadyDone = null;
 
 		public virtual string ApplicationName { get; set; }
@@ -140,8 +146,8 @@ namespace SharedClasses
 
 				string projectFileName = proj.SolutionFullpath;//@"...\ConsoleApplication3\ConsoleApplication3.sln";
 				Dictionary<string, string> GlobalProperty = new Dictionary<string, string>();
-				GlobalProperty.Add("Configuration", "Release");
-				GlobalProperty.Add("Platform", "Any CPU");//"x86");
+				foreach (var key in GlobalBuildProperties.Keys)
+					GlobalProperty.Add(key, GlobalBuildProperties[key]);
 
 				BuildRequestData buildRequest = new BuildRequestData(projectFileName, GlobalProperty, null, new string[] { "Build" }, null);
 				var submission = BuildManager.DefaultBuildManager.PendBuildRequest(buildRequest);
@@ -202,7 +208,7 @@ namespace SharedClasses
 						}
 						else
 						{
-							int incorrect;
+							//int incorrect;
 							//The following is not correct
 							//the buildErrorsCaught is a global list for all apps, now setting LastBuildFeedback of all apps
 
@@ -320,9 +326,10 @@ namespace SharedClasses
 			string projectFileName = this.SolutionFullpath;//@"...\ConsoleApplication3\ConsoleApplication3.sln";
 			ProjectCollection pc = new ProjectCollection();
 			Dictionary<string, string> buildGlobalProperties = new Dictionary<string, string>();
-			buildGlobalProperties.Add("Configuration", "Release");
-			buildGlobalProperties.Add("Platform", "x86");//"Any CPU");
-			onMessage("Publishing in 32bit (x86) mode only", FeedbackMessageTypes.Warning);
+			foreach (var key in GlobalBuildProperties.Keys)
+				buildGlobalProperties.Add(key, GlobalBuildProperties[key]);
+			if (GlobalBuildProperties.ContainsKey("Platform") && GlobalBuildProperties["Platform"].Equals("x86", StringComparison.InvariantCultureIgnoreCase))
+				onMessage("Publishing in 32bit (x86) mode only", FeedbackMessageTypes.Warning);
 			//NB, what if we need to publish in Any CPU mode??
 
 			BuildRequestData BuidlRequest = new BuildRequestData(projectFileName, buildGlobalProperties, null, new string[] { "Build" }, null);

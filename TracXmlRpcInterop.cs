@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Windows.Forms;
 using CookComputing.XmlRpc;
 using SharedClasses;
@@ -91,7 +92,7 @@ public class TracXmlRpcInterop
 		return returnList;
 	}
 
-	public static int[] GetTicketIds(string xmlRpcUrl, string Username = null, string Password = null)
+	public static int[] _getTicketIds(string xmlRpcUrl, string Username = null, string Password = null, string queryString = null)
 	{
 		//SharedClassesSettings.EnsureAllSharedClassesSettingsNotNullCreateDefault();
 		ITracServerFunctions tracMonitorSystem = InitializeTracServer(xmlRpcUrl, Username, Password);
@@ -103,11 +104,14 @@ public class TracXmlRpcInterop
 			{
 				try
 				{
-					ticketIDs = tracMonitorSystem.Query();
+					if (queryString == null)
+						ticketIDs = tracMonitorSystem.Query();
+					else
+						ticketIDs = tracMonitorSystem.Query(queryString);
 				}
 				catch (Exception exc)
 				{
-					UserMessages.ShowErrorMessage("Cannot get ticket IDs in TracXml: " + exc.Message);
+					UserMessages.ShowErrorMessage("Cannot get ticket IDs in TracXml for xmlRpcUrl '" + xmlRpcUrl + "': " + exc.Message);
 				}
 			},
 			ThreadName: "GetTicketIds");
@@ -118,6 +122,15 @@ public class TracXmlRpcInterop
 			UserMessages.ShowErrorMessage("Error: " + exc.Message);
 		}
 		return new int[0];
+	}
+
+	public static int[] GetOpenTicketIds(string xmlRpcUrl, string Username = null, string Password = null)
+	{
+		return _getTicketIds(xmlRpcUrl, Username, Password, null);//
+	}
+	public static int[] GetClosedTicketIds(string xmlRpcUrl, string Username = null, string Password = null)
+	{
+		return _getTicketIds(xmlRpcUrl, Username, Password, "status=closed");//
 	}
 
 	public static Dictionary<string, object> GetFieldValuesOfTicket(int ticketId, string xmlRpcUrl, string Username = null, string Password = null)
@@ -163,7 +176,7 @@ public class TracXmlRpcInterop
 	{
 		Dictionary<int, string> tmpDict = new Dictionary<int, string>();
 
-		int[] ticketIDs = GetTicketIds(xmlRpcUrl, Username, Password);
+		int[] ticketIDs = GetOpenTicketIds(xmlRpcUrl, Username, Password);
 		foreach (int id in ticketIDs)
 		{
 			Dictionary<string, object> fieldvalues = GetFieldValuesOfTicket(id, xmlRpcUrl, Username, Password);
@@ -192,23 +205,93 @@ public class TracXmlRpcInterop
 		return null;
 	}
 
-	public class DescriptionAndTicketType
+	public class TracTicketDetails
 	{
+		public string Summary;
 		public string Description;
 		public TicketTypeEnum TicketType;
-		public DescriptionAndTicketType(string Description, TicketTypeEnum TicketType)
+		public List<string> TicketComments;
+		public TracTicketDetails(string Summary, string Description, TicketTypeEnum TicketType)
 		{
+			this.Summary = Summary;
 			this.Description = Description;
 			this.TicketType = TicketType;
 		}
 	}
 
-	public static Dictionary<int, DescriptionAndTicketType> GetAllTicketDescriptionsAndTypes(string xmlRpcUrl, string Username = null, string Password = null, TextFeedbackEventHandler textFeedbackEvent = null, object textfeedbackSenderObject = null)
+	public class ChangeLogs
 	{
-		Dictionary<int, DescriptionAndTicketType> tmpDict = new Dictionary<int, DescriptionAndTicketType>();
+		public string RootXmlRpcUrl;
+		public string RootTracUrl;
+		public Dictionary<int, TracXmlRpcInterop.TracTicketDetails> BugsFixed;
+		public Dictionary<int, TracXmlRpcInterop.TracTicketDetails> Improvements;
+		public Dictionary<int, TracXmlRpcInterop.TracTicketDetails> NewFeatures;
 
-		int[] ticketIDs = GetTicketIds(xmlRpcUrl, Username, Password);
-		foreach (int id in ticketIDs)
+		public ChangeLogs(string RootXmlRpcUrl, Dictionary<int, TracXmlRpcInterop.TracTicketDetails> BugsFixed, Dictionary<int, TracXmlRpcInterop.TracTicketDetails> Improvements, Dictionary<int, TracXmlRpcInterop.TracTicketDetails> NewFeatures)
+		{
+			this.RootXmlRpcUrl = RootXmlRpcUrl;
+			this.UpdateRootTracUrlFromRootXmlRpcUrl();
+			this.BugsFixed = BugsFixed;
+			this.Improvements = Improvements;
+			this.NewFeatures = NewFeatures;
+		}
+
+		private void UpdateRootTracUrlFromRootXmlRpcUrl()
+		{
+			this.RootTracUrl = RootXmlRpcUrl.TrimEnd('/');
+
+			List<string> endSectionsToRemove = new List<string>() { "/xmlrpc", "/rpc", "/login" };
+			foreach (var endSec in endSectionsToRemove)
+				if (RootTracUrl.EndsWith(endSec, StringComparison.InvariantCultureIgnoreCase))
+					RootTracUrl = RootTracUrl.Substring(0, RootTracUrl.Length - endSec.Length);
+			RootTracUrl = RootTracUrl.TrimEnd('/');
+		}
+
+		public string GetTicketUrl(int ticketID)
+		{
+			return string.Format("{0}/ticket/{1}", RootTracUrl, ticketID);
+		}
+
+		public static string GetTracBaseUrlForApplication(string applicationName)
+		{
+			string preformattedUrl = "http://fjh.dyndns.org/trac/{0}";
+			return string.Format(preformattedUrl, applicationName.ToLower().Replace(" ", ""));
+		}
+
+		public static string GetTracXmlRpcUrlForApplication(string applicationName)
+		{
+			return GetTracBaseUrlForApplication(applicationName).TrimEnd('/') + "/login/xmlrpc";
+		}
+	}
+
+	public static Dictionary<int, TracTicketDetails> GetAllClosedTicketDescriptionsAndTypes(string xmlRpcUrl, DateTime? sinceDate = null, string Username = null, string Password = null, TextFeedbackEventHandler textFeedbackEvent = null, object textfeedbackSenderObject = null)
+	{
+		Dictionary<int, TracTicketDetails> tmpDict = new Dictionary<int, TracTicketDetails>();
+
+		List<int> closedTicketIDs = GetClosedTicketIds(xmlRpcUrl, Username, Password).ToList();//GetOpenTicketIds(xmlRpcUrl, Username, Password).ToList();
+		if (sinceDate.HasValue)//Let us now filter only the tickets from the sinceDate
+		{
+			DateTime universalSinceDate = 
+				sinceDate.Value
+				.ToUniversalTime();
+
+			ITracServerFunctions tracMonitorSystem = InitializeTracServer(xmlRpcUrl, Username, Password);
+			try
+			{
+				List<int> recentChangedIDs = tracMonitorSystem.Ticket_GetRecentChanges(universalSinceDate)
+					.Select(ob => int.Parse(ob.ToString())).ToList();
+
+				for (int i = closedTicketIDs.Count - 1; i >= 0; i--)
+					if (!recentChangedIDs.Contains(closedTicketIDs[i]))
+						closedTicketIDs.RemoveAt(i);//We remove this closed ticket as it was not recently changed
+			}
+			catch (Exception exc)
+			{
+				TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, "Error finding recently changed Trac ticket IDs: " + exc.Message);
+			}
+		}
+
+		foreach (int id in closedTicketIDs)
 		{
 			Dictionary<string, object> fieldvalues = GetFieldValuesOfTicket(id, xmlRpcUrl, Username, Password);
 			if (!fieldvalues.ContainsKey("description"))
@@ -221,14 +304,14 @@ public class TracXmlRpcInterop
 			{
 				TicketTypeEnum? tempNullableTicketType = ParseTicketTypeFromString(fieldvalues["type"].ToString());
 				if (tempNullableTicketType != null)
-					tmpDict.Add(id, new DescriptionAndTicketType(fieldvalues["description"].ToString(), (TicketTypeEnum)tempNullableTicketType));
+					tmpDict.Add(id, new TracTicketDetails(fieldvalues["summary"].ToString(), fieldvalues["description"].ToString(), (TicketTypeEnum)tempNullableTicketType));
 			}
 		}
 
 		return tmpDict;
 	}
 
-	public static List<ChangeLogStruct> ChangeLogs(int ticketId, string xmlRpcUrl, string Username = null, string Password = null)
+	public static List<ChangeLogStruct> GetChangeLogs(int ticketId, string xmlRpcUrl, string Username = null, string Password = null)
 	{
 		List<ChangeLogStruct> tmpList = new List<ChangeLogStruct>();
 
@@ -333,6 +416,9 @@ public class TracXmlRpcInterop
 
 		[XmlRpcMethod("ticket.query")]
 		int[] Query(string qstr = "status!=closed");
+
+		[XmlRpcMethod("ticket.getRecentChanges")]
+		object[] Ticket_GetRecentChanges(DateTime sinceDate);//Date must be UniversalDateTime (UTC)
 
 		[XmlRpcMethod("ticket.status.get")]
 		string TicketStatusGet(string name);

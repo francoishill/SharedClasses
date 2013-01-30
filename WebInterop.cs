@@ -56,6 +56,9 @@ namespace SharedClasses
 		/// <returns>Returns the data received from the php (usually the "echo" statements in the php.</returns>
 		public static bool PostPHP(string url, string escapedData, out string ResponseOrError, TimeSpan? timeout = null)
 		{
+			bool oldExpect100Continue = ServicePointManager.Expect100Continue;
+			ServicePointManager.Expect100Continue = false;
+
 			EnsureHttpsTrustAll();
 			string vystup = "";
 			try
@@ -109,6 +112,10 @@ namespace SharedClasses
 					ResponseOrError = "Post php remote name: " + exc.Message;
 					return false;
 				}
+			}
+			finally
+			{
+				ServicePointManager.Expect100Continue = oldExpect100Continue;
 			}
 			ResponseOrError = vystup;
 			return true;

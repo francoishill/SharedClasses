@@ -6,6 +6,7 @@ using System.IO;
 using System.Xml;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Net;
 //using System.Xml.Linq;
 
 namespace SharedClasses
@@ -29,12 +30,25 @@ namespace SharedClasses
 			Assembly: PresentationFramework
 			Assembly: System.Xaml*/
 
+		private const string cAppNameForStoringSettings = "AnalyseProjects";//Constant for now
 		private const string cRegistryEntriesFilename = "RegistryEntries.json";
 		//private const string cPolicies  ||||   Implement this
+		public static string[] GetPicturesInDirectory(string dirPath)
+		{
+			if (!Directory.Exists(dirPath))
+				return new string[0];
+			return Directory.GetFiles(dirPath, "*.*")//Not searching sub directories too
+				.Where(
+					s => s.EndsWith(".jpeg", StringComparison.InvariantCultureIgnoreCase)
+					|| s.EndsWith(".jpg", StringComparison.InvariantCultureIgnoreCase)
+					|| s.EndsWith(".bmp", StringComparison.InvariantCultureIgnoreCase))
+				.ToArray();
+		}
+
 
 		public static string GetRegistryEntriesFullfilepath(string applicationName, out string errorIfFailed)
 		{
-			int implementthisAbove;
+			//int implementthisAbove;
 			KeyValuePair<string, ApplicationTypes>? csprojFullpathAndApptype = GetCsprojFullpathFromApplicationName(applicationName, out errorIfFailed);
 			if (!csprojFullpathAndApptype.HasValue) return null;
 			return Path.Combine(Path.GetDirectoryName(csprojFullpathAndApptype.Value.Key), "Properties", cRegistryEntriesFilename);
@@ -475,8 +489,18 @@ namespace SharedClasses
 			}
 		}
 
+		/// <summary>
+		/// Get the application entry point, if NULL returned, check the 'errorIfFailed' out parameter.
+		/// </summary>
+		/// <param name="csprojFullPath">The full path to the .csproj file.</param>
+		/// <param name="appType">The application type of the .csproj file.</param>
+		/// <param name="additionalChecksIfFoundEntryPoint">Additional checks that can be done, a string is returned, if NULL the the check passed, else this returned string will be used as the 'errorIfFailed'.</param>
+		/// <param name="errorIfFailed">The error if this method failed.</param>
+		/// <returns>Returns the application Main entry point (if found).</returns>
 		private static string GetAppMainEntryPointCodeBlock(string csprojFullPath, ApplicationTypes appType, out string errorIfFailed)
 		{
+			Func<string, int, string> additionalChecksIfFoundEntryPoint = delegate { return null; };//Just return "success" by default (NULL means no error)
+
 			try
 			{
 				string nsmgrPrefix = "NS:";
@@ -491,7 +515,7 @@ namespace SharedClasses
 						bool? gotAppDefXmlNode = GetApplicationDefinitionXmlNode(ref xmlDoc, ref nsmgr, nsmgrPrefix, csprojFullPath, out tmpAppDefxmlnode, out errorIfFailed);
 						if (gotAppDefXmlNode != true) return null;
 						string appXamlFileRelativePath = tmpAppDefxmlnode.Attributes["Include"].Value;
-						string appXamlStartupBlock = GetOverrideOnStartupBlockInAppXamlOfWpfApplication_RemoveComments(Path.Combine(Path.GetDirectoryName(csprojFullPath), appXamlFileRelativePath), out errorIfFailed);
+						string appXamlStartupBlock = GetOverrideOnStartupBlockInAppXamlOfWpfApplication_RemoveComments(Path.Combine(Path.GetDirectoryName(csprojFullPath), appXamlFileRelativePath), additionalChecksIfFoundEntryPoint, out errorIfFailed);
 						if (appXamlStartupBlock == null)
 							return null;//errorIfFailed already set
 						return appXamlStartupBlock;
@@ -511,7 +535,26 @@ namespace SharedClasses
 						List<string> tmpErrors = new List<string>();
 						foreach (var expBlock in expectedOneOfMethodStartStrings)
 						{
-							string tmpCodeBlock = ExtractMethodBlockFromSourcecodeFile(Path.Combine(Path.GetDirectoryName(csprojFullPath), programCsFileRelativePath), expBlock, out errorIfFailed);
+							additionalChecksIfFoundEntryPoint = (contentOfFileContainingEntryPoint, indexOfEntryPointInFile) =>
+							{
+								int currentChar = indexOfEntryPointInFile;
+								while (--currentChar >= 0//We -- first so we do not include the start of 'static void Main...'
+									&& (char.IsWhiteSpace(contentOfFileContainingEntryPoint, currentChar)
+										|| contentOfFileContainingEntryPoint[currentChar] == '\r'))
+								{ }
+								const string cTextOfStaThread = "[STAThread]";
+								if (currentChar >= 0)//We are at a non-whitespace char now
+									if (contentOfFileContainingEntryPoint[currentChar] == ']')//Now try to find [STAThread]
+									{
+										int indexOfSTAThreadStart = currentChar - (cTextOfStaThread.Length - 1);//-1 because already at last char
+										if (indexOfSTAThreadStart >= 0//Just make sure not out of bounds
+											&& contentOfFileContainingEntryPoint.Substring(indexOfSTAThreadStart, cTextOfStaThread.Length)
+											.Equals(cTextOfStaThread))
+											return null;
+									}
+								return "Could not find " + cTextOfStaThread + " before the application Main entry point";
+							};
+							string tmpCodeBlock = ExtractMethodBlockFromSourcecodeFile(Path.Combine(Path.GetDirectoryName(csprojFullPath), programCsFileRelativePath), expBlock, additionalChecksIfFoundEntryPoint, out errorIfFailed);
 							if (tmpCodeBlock == null)
 								tmpErrors.Add(errorIfFailed);
 							if (!string.IsNullOrEmpty(tmpCodeBlock))
@@ -626,7 +669,7 @@ namespace SharedClasses
 
 		public static bool? ArePoliciesImplemented(string csprojFullPath, ApplicationTypes appType, out string errorIfFailed)
 		{
-			int implementthis;
+			//int implementthis;
 			errorIfFailed = null; return null;
 		}
 
@@ -637,7 +680,7 @@ namespace SharedClasses
 				if (singlelineStringMatches[i].Index < needleIndex
 					&& singlelineStringMatches[i].Index + singlelineStringMatches[i].Length > needleIndex + needleLength)
 					return true;
-			
+
 			return false;
 
 			/*int indexOfNormalStringStart = haystack.IndexOf("\"", startIndex);
@@ -690,22 +733,22 @@ namespace SharedClasses
 			return false;
 		}
 
-		public static string ExtractMethodBlockFromSourcecodeFile(string sourceFilepath, string expectedMethodStartString, out string errorIfFailed)
+		public static string ExtractMethodBlockFromSourcecodeFile(string sourceFilepath, string expectedMethodStartString, Func<string, int, string> additionalChecksIfFoundEntryPoint, out string errorIfFailed)
 		{
 			try
 			{
 				string csContent = File.ReadAllText(sourceFilepath);
 				RemoveCommentsInCsFile(ref csContent);
 
-				int startOfOverrideOnStartup = csContent.StringIndexOfIgnoreInsideStringOrChar(expectedMethodStartString);
-				if (startOfOverrideOnStartup == -1)//We did not find the override OnStartup method
+				int startOfExpectedString = csContent.StringIndexOfIgnoreInsideStringOrChar(expectedMethodStartString);
+				if (startOfExpectedString == -1)//We did not find the expected string
 				{
 					errorIfFailed = null;
 					return "";
 				}
 				else
 				{
-					int indexFirstOpenCurly = csContent.StringIndexOfIgnoreInsideStringOrChar('{', startOfOverrideOnStartup + expectedMethodStartString.Length);
+					int indexFirstOpenCurly = csContent.StringIndexOfIgnoreInsideStringOrChar('{', startOfExpectedString + expectedMethodStartString.Length);
 
 					int tmpindexNextOpenCurly = csContent.StringIndexOfIgnoreInsideStringOrChar('{', indexFirstOpenCurly + 1);
 					int tmpindexNextCloseCurly = csContent.StringIndexOfIgnoreInsideStringOrChar('}', (tmpindexNextOpenCurly == -1 ? indexFirstOpenCurly + 1 : indexFirstOpenCurly + 1));
@@ -718,6 +761,12 @@ namespace SharedClasses
 						if (tmpindexNextCloseCurly < tmpindexNextOpenCurly)//We do not have sub sections (for loops, etc) inside the override OnStartup
 						{
 							errorIfFailed = null;
+							string additionalChecksPossibleErrorString = additionalChecksIfFoundEntryPoint(csContent, startOfExpectedString);
+							if (additionalChecksPossibleErrorString != null)
+							{
+								errorIfFailed = additionalChecksPossibleErrorString;
+								return null;
+							}
 							return csContent.Substring(indexFirstOpenCurly, tmpindexNextCloseCurly - indexFirstOpenCurly);
 						}
 						else
@@ -749,6 +798,12 @@ namespace SharedClasses
 						}
 					}
 
+					string tmpAdditionalChecksPossibleErrorString = additionalChecksIfFoundEntryPoint(csContent, startOfExpectedString);
+					if (tmpAdditionalChecksPossibleErrorString != null)
+					{
+						errorIfFailed = tmpAdditionalChecksPossibleErrorString;
+						return null;
+					}
 					errorIfFailed = null;
 					return csContent.Substring(indexFirstOpenCurly, tmpindexNextCloseCurly - indexFirstOpenCurly + 1);
 				}
@@ -760,7 +815,7 @@ namespace SharedClasses
 			}
 		}
 
-		private static string GetOverrideOnStartupBlockInAppXamlOfWpfApplication_RemoveComments(string appXamlFullPath, out string errorIfFailed)
+		private static string GetOverrideOnStartupBlockInAppXamlOfWpfApplication_RemoveComments(string appXamlFullPath, Func<string, int, string> additionalChecksIfFoundEntryPoint, out string errorIfFailed)
 		{
 			string xamlCsPath = appXamlFullPath + ".cs";
 			if (!File.Exists(xamlCsPath))
@@ -782,7 +837,7 @@ namespace SharedClasses
 					break;
 				}*/
 
-			return ExtractMethodBlockFromSourcecodeFile(xamlCsPath, "protected override void OnStartup", out errorIfFailed);
+			return ExtractMethodBlockFromSourcecodeFile(xamlCsPath, "protected override void OnStartup", additionalChecksIfFoundEntryPoint, out errorIfFailed);
 
 			//First parse the .xaml.cs file and remove comments
 			//Just use code inside override OnStartup, if it sits inside the Eventhandler for Startup, we dont allow this,
@@ -895,12 +950,11 @@ namespace SharedClasses
 				if (newFileContents == null)
 					return false;//errorIfFailed already set
 
-				string cThisAppName = "AnalyseProjects";
 				if (!origFileContent.Equals(newFileContents))
 				{
 					string backupFilePath = SettingsInterop.GetFullFilePathInLocalAppdata(
 						DateTime.Now.ToString("yyyy_MM_dd__HH_mm_ss") + " " + Path.GetFileName(csprojFullpath),
-						cThisAppName,
+						cAppNameForStoringSettings,
 						"BackupsOfChangedCsProjFiles\\" + Path.GetFileNameWithoutExtension(csprojFullpath));
 					File.WriteAllText(backupFilePath, origFileContent);
 					File.WriteAllText(csprojFullpath, newFileContents);
@@ -912,7 +966,7 @@ namespace SharedClasses
 					if (warnings == null)
 						warnings = new List<string>();
 					warnings.Add(tmpwarnmsg);
-					Logging.LogWarningToFile(tmpwarnmsg, Logging.ReportingFrequencies.Daily, cThisAppName, "Logs");
+					Logging.LogWarningToFile(tmpwarnmsg, Logging.ReportingFrequencies.Daily, cAppNameForStoringSettings, "Logs");
 				}
 
 				return true;
@@ -1027,6 +1081,18 @@ namespace SharedClasses
 						return false;
 					}
 
+					string mainWindowXamlFullpath = Path.Combine(Path.GetDirectoryName(csprojFullpath), "MainWindow.xaml");
+					string contentOfMainWindowXaml = File.ReadAllText(mainWindowXamlFullpath);
+					string regexPatternAppIconImplementedInMainWindow = "(?<=<Window[^>]+)Icon='app.ico'(?=[^>]*>)";
+					string regexPatternAppIconImplementedInMainWindow_Alternative = "(?<=<Window[^>]+)Icon=\"app.ico\"(?=[^>]*>)";
+					if (!Regex.IsMatch(contentOfMainWindowXaml, regexPatternAppIconImplementedInMainWindow)
+						&& !Regex.IsMatch(contentOfMainWindowXaml, regexPatternAppIconImplementedInMainWindow_Alternative))
+					{
+						errorIfFailed = "app.ico not implemented in MainWindow.xaml.";
+						mainWinOrFormCodebehindRelativePathToCsproj = null;
+						return null;
+					}
+
 					mainWinOrFormCodebehindRelativePathToCsproj = "MainWindow.xaml.cs";
 					return IsMainWindowOrFormImplementedInAppMainEntryPoint(csprojFullpath, projApplicationType, out errorIfFailed);
 				case OwnAppsInterop.ApplicationTypes.Winforms:
@@ -1106,6 +1172,108 @@ namespace SharedClasses
 				}
 				return rootVSprojectsDir;
 			}
+		}
+
+		private static bool? _checkTracUrlExists(string tracUrl, out string errorIfFailed)
+		{
+			try
+			{
+				string tracWebpageContent = new WebClient().DownloadString(tracUrl);
+				Console.WriteLine("Trac url: " + tracUrl);
+				if (tracWebpageContent.IndexOf("Environment not found", StringComparison.InvariantCultureIgnoreCase) != -1)
+				{
+					errorIfFailed = null;
+					return false;//The environment does not exist
+				}
+				else
+				{
+					errorIfFailed = null;
+					return true;
+				}
+			}
+			catch (WebException webexc)
+			{
+				HttpWebResponse webResponse = webexc.Response as HttpWebResponse;
+				if (webResponse != null)
+				{
+					if (webResponse.StatusCode == HttpStatusCode.NotFound)
+					{
+						errorIfFailed = null;
+						return false;
+					}
+					else
+					{
+						errorIfFailed = string.Format("Unknown Http status code ({0}: {1}), message: {2}",
+							(int)webResponse.StatusCode, webResponse.StatusDescription, webexc.Message);
+						return null;
+					}
+				}
+				else if (webexc.Status == WebExceptionStatus.NameResolutionFailure)
+				{
+					errorIfFailed = "Please check the internet connectivity, could not determine whether Trac url exists.";
+					return null;
+				}
+				errorIfFailed = "Error determining whether Trac url exists: " + webexc.Message;
+				return null;
+			}
+			catch (Exception exc)
+			{
+				errorIfFailed = "Error determining whether Trac url exists: " + exc.Message;
+				return null;
+			}
+		}
+
+		public static bool? DoesTracEnvironmentExistForProject(string applicationName, out string errorIfFailed, Action<bool?, string> callbackIfSeparateThreadTracUrlNotExistAnymore)
+		{
+			if (callbackIfSeparateThreadTracUrlNotExistAnymore == null) callbackIfSeparateThreadTracUrlNotExistAnymore = delegate { };
+
+			string tracRootUrl = TracXmlRpcInterop.ChangeLogs.GetTracBaseUrlForApplication(applicationName);
+
+			string filenameIfCached = SettingsInterop.GetFullFilePathInLocalAppdata(
+				applicationName, cAppNameForStoringSettings, "CachedTracEnvironments");
+
+			if (File.Exists(filenameIfCached))//The trac environment exists, at least according to a previous check
+			{
+				//Check if it actually still exists online, on a separate thread
+				ThreadingInterop.PerformOneArgFunctionSeperateThread<KeyValuePair<string, string>>(
+					(tracUrlOfApp_AndCacheFilename) =>
+					{
+						string tmperr;
+						bool? tracUrlExistsResult = _checkTracUrlExists(tracUrlOfApp_AndCacheFilename.Key, out tmperr);
+						if (tracUrlExistsResult.HasValue 
+							&& tracUrlExistsResult.Value == false)//Does not exist
+						{
+							try
+							{
+								File.Delete(tracUrlOfApp_AndCacheFilename.Value);
+								callbackIfSeparateThreadTracUrlNotExistAnymore(false, tracUrlOfApp_AndCacheFilename.Key);
+							}
+							catch (Exception exc)
+							{
+								callbackIfSeparateThreadTracUrlNotExistAnymore(null, "Cannot delete cached file (for trac url check): " + exc.Message);
+								return;
+							}
+						}
+						callbackIfSeparateThreadTracUrlNotExistAnymore(tracUrlExistsResult, tmperr);
+					},
+					new KeyValuePair<string, string>(tracRootUrl, filenameIfCached),
+					false);
+
+				errorIfFailed = null;
+				return true;
+			}
+
+			//int todoItem;
+			//Not tested with no internent yet
+
+			bool? doesTracUrlExistResult = _checkTracUrlExists(tracRootUrl, out errorIfFailed);
+			if (doesTracUrlExistResult.HasValue
+				&& doesTracUrlExistResult.Value == true)
+			{
+				if (!File.Exists(filenameIfCached))
+					File.Create(filenameIfCached).Close();//This file means that the trac url does exist
+			}
+			return doesTracUrlExistResult;
 		}
 	}
 }

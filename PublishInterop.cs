@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Net;
 using System.Web;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace SharedClasses
 {
@@ -27,8 +28,10 @@ namespace SharedClasses
 		public string MD5Hash;
 		public DateTime PublishedDate;
 		public string FtpUrl;
+		public DateTime? TracTicketsSinceDate;//The Trac ticketing system will be queried for 'recent' tickets using this as 'sinceDate'
+
 		public PublishDetails() { }
-		public PublishDetails(string ApplicationName, string ApplicationVersion, long SetupSize, string MD5Hash, DateTime PublishedDate, string FtpUrl)
+		public PublishDetails(string ApplicationName, string ApplicationVersion, long SetupSize, string MD5Hash, DateTime PublishedDate, string FtpUrl, DateTime? TracTicketsSinceDate)
 		{
 			this.ApplicationName = ApplicationName;
 			this.ApplicationVersion = ApplicationVersion;
@@ -36,6 +39,7 @@ namespace SharedClasses
 			this.MD5Hash = MD5Hash;
 			this.PublishedDate = PublishedDate;
 			this.FtpUrl = FtpUrl;
+			this.TracTicketsSinceDate = TracTicketsSinceDate;
 		}
 		public string GetJsonString() { return WebInterop.GetJsonStringFromObject(this, true); }
 	}
@@ -329,9 +333,9 @@ namespace SharedClasses
 
 		public static bool PerformPublishOnline(string projName, bool _64Only, bool HasPlugins, bool AutomaticallyUpdateRevision, bool InstallLocallyAfterSuccessfullNSIS, bool StartupWithWindows, bool SelectSetupIfSuccessful, bool OpenWebsite, out string publishedVersionString, out string publishedSetupPath, Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage)
 		{
-			List<string> BugsFixed = null;
+			/*List<string> BugsFixed = null;
 			List<string> Improvements = null;
-			List<string> NewFeatures = null;
+			List<string> NewFeatures = null;*/
 
 			ServicePointManager.DefaultConnectionLimit = 10000;
 
@@ -361,39 +365,61 @@ namespace SharedClasses
 			//string rootFtpUri = WebInterop.RootFtpUrlForAppsUploading.TrimEnd('/') + relativeUrl;
 			string rootDownloadHttpUri = SharedClasses.SettingsSimple.HomePcUrls.Instance.AppsPublishingRoot.TrimEnd('/') + relativeUrl.TrimEnd('/');
 
-			PublishDetails publishDetails = new PublishDetails(
+			DateTime now = DateTime.Now;
+
+			DateTime? tracTicketsSinceDate;//Use previous published version's publishedDate as the 'sinceDate' for trac tickets
+			if (!ObtainPreviouslyPublishedDate(projName, actionOnMessage, out tracTicketsSinceDate))
+				return false;//actionOnMessage already occurred inside 'ObtainPreviouslyPublishedDate'
+
+			PublishDetails currentlyPublishDetails = new PublishDetails(
 					projName,
 					publishedVersionString,
 					new FileInfo(publishedSetupPath).Length,
 					publishedSetupPath.FileToMD5Hash(),
-					DateTime.Now,
-					rootDownloadHttpUri + "/" + (new FileInfo(publishedSetupPath).Name));
+					now,
+					rootDownloadHttpUri + "/" + (new FileInfo(publishedSetupPath).Name),
+					tracTicketsSinceDate.HasValue ? tracTicketsSinceDate : DateTime.MinValue);
 			string errorStringIfFailElseJsonString;
-			if (!WebInterop.SaveObjectOnline(PublishDetails.OnlineJsonCategory, projName + " - " + publishedVersionString, publishDetails, out errorStringIfFailElseJsonString))
+			if (!WebInterop.SaveObjectOnline(PublishDetails.OnlineJsonCategory, projName + " - " + publishedVersionString, currentlyPublishDetails, out errorStringIfFailElseJsonString))
 			{
 				actionOnMessage("Cannot save json online (" + projName + " - " + publishedVersionString + "), setup and index.html cancelled for project " + projName + ": " + errorStringIfFailElseJsonString, FeedbackMessageTypes.Error);
 				return false;
 			}
-			if (!WebInterop.SaveObjectOnline(PublishDetails.OnlineJsonCategory, projName + PublishDetails.LastestVersionJsonNamePostfix, publishDetails, out errorStringIfFailElseJsonString))
+			if (!WebInterop.SaveObjectOnline(PublishDetails.OnlineJsonCategory, projName + PublishDetails.LastestVersionJsonNamePostfix, currentlyPublishDetails, out errorStringIfFailElseJsonString))
 			{
 				actionOnMessage("Cannot save json online (" + projName + PublishDetails.LastestVersionJsonNamePostfix + "), setup and index.html cancelled for project " + projName + ": " + errorStringIfFailElseJsonString, FeedbackMessageTypes.Error);
 				return false;
 			}
 
+			actionOnMessage("Busy obtaining Trac BugsFixes, Improvements and NewFeatures", FeedbackMessageTypes.Status);
+			var changeLogs = GetChangeLogs(
+				tracTicketsSinceDate,
+				projName,
+				actionOnMessage);
+			if (changeLogs == null)
+				return false;
+
+			List<string> listOfScreenshotsFullLocalPaths;
 			string htmlFilePath = CreateHtmlPageReturnFilename(
 					projName,
 					publishedVersionString,
 					publishedSetupPath,
-					BugsFixed,
-					Improvements,
-					NewFeatures,
-					publishDetails);
+					changeLogs,
+					out listOfScreenshotsFullLocalPaths,
+					currentlyPublishDetails);
 
 			if (htmlFilePath == null)
 			{
 				actionOnMessage("Could not obtain embedded HTML file", FeedbackMessageTypes.Error);
 				return false;
 			}
+
+
+			//Upload image files
+			if (listOfScreenshotsFullLocalPaths != null)
+				foreach (var screenshotFile in listOfScreenshotsFullLocalPaths)
+					QueueFileToUpload(projName, Path.GetFileNameWithoutExtension(screenshotFile), screenshotFile, "Screenshots/" + Path.GetFileName(screenshotFile));
+			UploadIconAsFaviconIfExists(projName);
 
 			actionOnMessage("Attempting Ftp Uploading of Setup file and index file for " + projName, FeedbackMessageTypes.Status);
 			string uriAfterUploading = GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForAFTERvspublishing() + "/" + validatedUrlsectionForProjname;
@@ -457,6 +483,46 @@ namespace SharedClasses
 			}
 		}
 
+		public static bool ObtainPreviouslyPublishedDate(string projName, Action<string, FeedbackMessageTypes> actionOnMessage, out DateTime? previouslyPublishedDate)
+		{
+			//DateTime? tracTicketsSinceDate = null;
+			PublishDetails previouslyPublishedDetails = new PublishDetails();
+			string tmperr;
+			if (!WebInterop.PopulateObjectFromOnline(PublishDetails.OnlineJsonCategory, projName + PublishDetails.LastestVersionJsonNamePostfix, previouslyPublishedDetails, out tmperr))
+			{
+				if (tmperr.Equals(WebInterop.cErrorIfNotFoundOnline))
+				{
+					actionOnMessage("Not published before yet, obtaining all closed tickets as 'recently' closed (" + projName + PublishDetails.LastestVersionJsonNamePostfix + ").", FeedbackMessageTypes.Warning);
+					previouslyPublishedDate = null;
+					return true;
+				}
+				else
+				{
+					actionOnMessage("Cannot obtain previously published details from online (" + projName + PublishDetails.LastestVersionJsonNamePostfix + "), setup and index.html cancelled for project " + projName + ": " + tmperr, FeedbackMessageTypes.Error);
+					previouslyPublishedDate = null;
+					return false;
+				}
+			}
+			else//We got our previously published details, now see if the field 'TracTicketsSinceDate' is NOT null, then use 'PublishedDate'
+			{
+				if (!previouslyPublishedDetails.TracTicketsSinceDate.HasValue)
+				{
+					actionOnMessage("Previously published details has a NULL 'TracTicketsSinceDate', obtaining all closed tickets as 'recently' closed (" + projName + PublishDetails.LastestVersionJsonNamePostfix + ").", FeedbackMessageTypes.Warning);
+					previouslyPublishedDate = null;
+					return true;
+				}
+				else
+				{
+					//Yes we use 'PublishedDate' instead of 'TracTicketsSinceDate',
+					//by checking 'previouslyPublishedDetails.TracTicketsSinceDate.HasValue' we just make sure
+					//that we have previously actually obtained the Trac tickets
+					previouslyPublishedDate = previouslyPublishedDetails.PublishedDate
+						.Subtract(TimeSpan.FromMinutes(1));//Just subtracting 1 minute as a safety-buffer
+					return true;
+				}
+			}
+		}
+
 		public static string GetApplicationExePathFromApplicationName(string applicationName)
 		{
 			return Path.Combine(
@@ -469,18 +535,6 @@ namespace SharedClasses
 		{
 			string appExePath = GetApplicationExePathFromApplicationName(applicationName);
 			return File.Exists(appExePath);
-		}
-
-		private static string[] GetAllImageFilesInDirectory(string dirPath)
-		{
-			if (!Directory.Exists(dirPath))
-				return new string[0];
-			return Directory.GetFiles(dirPath, "*.*")//Not searching sub directories too
-				.Where(
-					s => s.EndsWith(".jpeg", StringComparison.InvariantCultureIgnoreCase)
-					|| s.EndsWith(".jpg", StringComparison.InvariantCultureIgnoreCase)
-					|| s.EndsWith(".bmp", StringComparison.InvariantCultureIgnoreCase))
-				.ToArray();
 		}
 
 		private static bool QueueFileToUpload(string projName, string displayName, string localFilepath, string onlineFilenameOnly = null)
@@ -499,7 +553,7 @@ namespace SharedClasses
 					true);
 		}
 
-		private static string InsertScreenshotsIntoHtmlAndAlsoUpload(string projectName, string originalHtmlText)
+		private static string InsertScreenshotsIntoHtmlAndReturnScreenshotsFullpath(string projectName, string originalHtmlText, out List<string> listOfScreenshotsFullLocalPaths)
 		{
 			string tmpHtmlAfterReplace = originalHtmlText;
 
@@ -508,14 +562,17 @@ namespace SharedClasses
 			if (tmperr != null)
 			{
 				UserMessages.ShowWarningMessage(tmperr);
+				listOfScreenshotsFullLocalPaths = null;
 				return projectName;
 			}
 			string csprojPath = tmpCsprojAndAppType.Value.Key;
 			string screenshotsDirPath = Path.Combine(Path.GetDirectoryName(csprojPath), "ScreenShots");
-			string[] screenshotsImagePaths = GetAllImageFilesInDirectory(screenshotsDirPath);
+			string[] screenshotsImagePaths = OwnAppsInterop.GetPicturesInDirectory(screenshotsDirPath);
 			bool hasScreenShots = screenshotsImagePaths != null && screenshotsImagePaths.Length > 0;
 			if (hasScreenShots)
 			{
+				listOfScreenshotsFullLocalPaths = new List<string>();
+
 				//tmpHtmlAfterReplace = tmpHtmlAfterReplace.Replace("{ScreenshotsCssDisplay}", "block");
 				List<string> listOfTabnames = new List<string>();
 				List<string> listOfImages = new List<string>();
@@ -526,8 +583,8 @@ namespace SharedClasses
 					string ssFilenamOnly = Path.GetFileName(ss);
 					listOfTabnames.Add(string.Format("<li><a href='#tabs-{0}'>{1}</a></li>", cnt, Path.GetFileNameWithoutExtension(ss)));
 					listOfImages.Add(string.Format("<div id='tabs-{0}'><a href='Screenshots/{1}' class='preview' title='Click thumbnail to view full-size image'><img src='Screenshots/{1}' alt='{2}' /></a></div>", cnt, ssFilenamOnly, Path.GetFileNameWithoutExtension(ss)));
-					//Upload image file
-					QueueFileToUpload(projectName, Path.GetFileNameWithoutExtension(ss), ss, "Screenshots/" + ssFilenamOnly);
+
+					listOfScreenshotsFullLocalPaths.Add(ss);
 					cnt++;
 				}
 				tmpHtmlAfterReplace = tmpHtmlAfterReplace.Replace(
@@ -537,11 +594,118 @@ namespace SharedClasses
 			}
 			else
 			{
+				listOfScreenshotsFullLocalPaths = null;
 				//tmpHtmlAfterReplace = tmpHtmlAfterReplace.Replace("{ScreenshotsCssDisplay}", "none");
 				tmpHtmlAfterReplace = tmpHtmlAfterReplace.Replace("{ListOfScreenshotTabNames}", "There are no screenshots available for this application.");//So the {..} does not remain
 				tmpHtmlAfterReplace = tmpHtmlAfterReplace.Replace("{ListOfScreenShotImages}", "");
 			}
 			return tmpHtmlAfterReplace;
+		}
+
+		public static string GetTracXmlRpcHttpPathFromProjectName(string projectName)
+		{
+			return TracXmlRpcInterop.ChangeLogs.GetTracXmlRpcUrlForApplication(projectName);
+			/*foreach (string tmpuri in GlobalSettings.TracXmlRpcInteropSettings.Instance.GetListedXmlRpcUrls())//GlobalSettings.TracXmlRpcInteropSettings.Instance.ListedApplicationNames.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+				if (tmpuri.ToLower().Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries).Contains(projectName.ToLower()))
+					return tmpuri;
+			return null;*/
+		}
+
+		private static string ReplaceNewlinesWithString(string originalString, string replaceLinesWithThisString)
+		{
+			return originalString.Replace("\r", "").Replace("\n", replaceLinesWithThisString);
+		}
+
+		public static TracXmlRpcInterop.ChangeLogs GetChangeLogs(DateTime? sinceDate, string ProjectName, Action<string, FeedbackMessageTypes> actionOnMessage, string Username = null, string Password = null)
+		{
+			string rootProjectXmlRpcTracUri = GetTracXmlRpcHttpPathFromProjectName(ProjectName);
+			if (string.IsNullOrWhiteSpace(rootProjectXmlRpcTracUri))
+			{
+				//BugsFixed = Improvements = NewFeatures = new List<string>() { "No trac xmlrpc url specified for project " + ProjectName + ", no bugs found." };
+				actionOnMessage("No trac xmlrpc url specified for project " + ProjectName + ", no bugs found.", FeedbackMessageTypes.Error);
+				return null;//return new List<string>() { "No trac xmlrpc url specified for project " + ProjectName + ", no bugs found." };
+			}
+
+			actionOnMessage("Obtaining all ticket descriptions and types from Trac server...", FeedbackMessageTypes.Status);
+			Dictionary<int, TracXmlRpcInterop.TracTicketDetails> tmpIdsAndDescriptionsAndTicketTypes =
+				TracXmlRpcInterop.GetAllClosedTicketDescriptionsAndTypes(rootProjectXmlRpcTracUri, sinceDate, Username, Password);
+			actionOnMessage("Finished obtaining all ticket descriptions and types from Trac server.", FeedbackMessageTypes.Success);
+
+			var tmpBugsFixed = new Dictionary<int, TracXmlRpcInterop.TracTicketDetails>();
+			var tmpImprovements = new Dictionary<int, TracXmlRpcInterop.TracTicketDetails>();
+			var tmpNewFeatures = new Dictionary<int, TracXmlRpcInterop.TracTicketDetails>();
+			ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+			{
+				List<int> tmpKeysList = tmpIdsAndDescriptionsAndTicketTypes.Keys.ToList();
+				Parallel.For(0, tmpKeysList.Count, (tmpIndex) =>
+				{
+					int ticketID = tmpKeysList[tmpIndex];
+					actionOnMessage("Obtaining changelogs for ticket " + ticketID.ToString() + "...", FeedbackMessageTypes.Status);
+					List<TracXmlRpcInterop.ChangeLogStruct> changelogs = TracXmlRpcInterop.GetChangeLogs(ticketID, rootProjectXmlRpcTracUri);
+
+					/*//We have a closed ticket, now get all the fields for it
+					var fieldVals = TracXmlRpcInterop.GetFieldValuesOfTicket(i, ProjectXmlRpcTracUri);
+					if (fieldVals != null)
+					{
+						int continueHere;
+					}*/
+
+					List<string> ticketComments = new List<string>();
+
+					foreach (TracXmlRpcInterop.ChangeLogStruct cl in changelogs)
+						if (cl.Field == "comment" && !string.IsNullOrWhiteSpace(cl.NewValue))
+							//This can be greatly improved
+							if (tmpIdsAndDescriptionsAndTicketTypes[ticketID].TicketType == TracXmlRpcInterop.TicketTypeEnum.Bug)
+								ticketComments.Add(/*"<e class='graycolor'>Ticket #" + i + ":</e> " + */ReplaceNewlinesWithString(cl.NewValue, " ")/* + " <e class='graycolor'>[" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + "]</e>"*/);
+							else if (tmpIdsAndDescriptionsAndTicketTypes[ticketID].TicketType == TracXmlRpcInterop.TicketTypeEnum.Improvement)
+								ticketComments.Add(/*"<e class='graycolor'>Ticket #" + i + ":</e> " + */ReplaceNewlinesWithString(cl.NewValue, " ")/* + " <e class='graycolor'>[" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + "]</e>"*/);
+							else if (tmpIdsAndDescriptionsAndTicketTypes[ticketID].TicketType == TracXmlRpcInterop.TicketTypeEnum.NewFeature)
+								ticketComments.Add(/*"<e class='graycolor'>Ticket #" + i + ":</e> " + */ReplaceNewlinesWithString(cl.NewValue, " ")/* + " <e class='graycolor'>[" + tmpIdsAndDescriptionsAndTicketTypes[i].Description + "]</e>"*/);
+					//tmpList.Add("Ticket #" + i + ": '" + cl.Field + "' new value = " + cl.NewValue + ", old value = " + cl.OldValue);
+
+					tmpIdsAndDescriptionsAndTicketTypes[ticketID].TicketComments = ticketComments;
+					string actionCompletedDescription = "";
+					switch (tmpIdsAndDescriptionsAndTicketTypes[ticketID].TicketType)
+					{
+						case TracXmlRpcInterop.TicketTypeEnum.Bug:
+							actionCompletedDescription = "Bug fixed";
+							break;
+						case TracXmlRpcInterop.TicketTypeEnum.Improvement:
+							actionCompletedDescription = "Improvement";
+							break;
+						case TracXmlRpcInterop.TicketTypeEnum.NewFeature:
+							actionCompletedDescription = "New feature";
+							break;
+						default:
+							actionCompletedDescription = "[UNKNOWN TICKET TYPE: " + tmpIdsAndDescriptionsAndTicketTypes[ticketID].TicketType + "]";
+							break;
+					}
+
+					/*string finalString = 
+						actionCompletedDescription + ": "
+						+ "[" + ReplaceNewlinesWithString(tmpIdsAndDescriptionsAndTicketTypes[ticketID].Summary, " ") + "]"
+						+ ReplaceNewlinesWithString(tmpIdsAndDescriptionsAndTicketTypes[ticketID].Description, " ") + "."
+						+ (ticketComments.Count > 0 ? " Comments: " + "|||" + string.Join("|||", ticketComments) : "");*/
+					switch (tmpIdsAndDescriptionsAndTicketTypes[ticketID].TicketType)
+					{
+						case TracXmlRpcInterop.TicketTypeEnum.Bug:
+							tmpBugsFixed.Add(ticketID, tmpIdsAndDescriptionsAndTicketTypes[ticketID]);
+							break;
+						case TracXmlRpcInterop.TicketTypeEnum.Improvement:
+							tmpImprovements.Add(ticketID, tmpIdsAndDescriptionsAndTicketTypes[ticketID]);
+							break;
+						case TracXmlRpcInterop.TicketTypeEnum.NewFeature:
+							tmpNewFeatures.Add(ticketID, tmpIdsAndDescriptionsAndTicketTypes[ticketID]);
+							break;
+						default:
+							break;
+					}
+
+					actionOnMessage("Finished obtaining changelogs for ticket " + ticketID.ToString() + ".", FeedbackMessageTypes.Success);
+				});
+			},
+			true);
+			return new TracXmlRpcInterop.ChangeLogs(rootProjectXmlRpcTracUri, tmpBugsFixed, tmpImprovements, tmpNewFeatures);
 		}
 
 		private static string GetAppIconFullPath(string projectName)
@@ -564,7 +728,17 @@ namespace SharedClasses
 				QueueFileToUpload(projectName, "Favicon for " + projectName, appIconPath, "favicon.ico");
 		}
 
-		public static string CreateHtmlPageReturnFilename(string projectName, string projectVersion, string setupFilename, List<string> BugsFixed, List<string> Improvements, List<string> NewFeatures, PublishDetails publishDetails = null)
+		private static string GetHtmlLinkForTicket(int ticketID, TracXmlRpcInterop.TracTicketDetails ticketDetails, Func<int, string> functionToGetTicketUrl)
+		{
+			return
+				string.Format("<li title='{0}'><a href='{1}' target='_blank' class='tracticketlink'>[Ticket {2}]</a> {3}</li>",
+					HttpUtility.HtmlEncode(ticketDetails.Description),
+					functionToGetTicketUrl(ticketID),
+					ticketID,
+					HttpUtility.HtmlEncode(ticketDetails.Summary));
+		}
+
+		public static string CreateHtmlPageReturnFilename(string projectName, string projectVersion, string setupFilename, TracXmlRpcInterop.ChangeLogs Changelogs, out List<string> listOfScreenshotsFullLocalPaths, PublishDetails publishDetails = null)
 		{
 			string thisappTempFolder = Path.Combine(Path.GetTempPath(), "TempWebpagesBeforeUploading", projectName);
 			if (!Directory.Exists(thisappTempFolder))
@@ -575,9 +749,15 @@ namespace SharedClasses
 			string bugsfixed = "";
 			string improvements = "";
 			string newfeatures = "";
-			if (BugsFixed != null) foreach (string bug in BugsFixed) bugsfixed += "<li>" + bug + "</li>";
-			if (Improvements != null) foreach (string improvement in Improvements) improvements += "<li>" + improvement + "</li>";
-			if (NewFeatures != null) foreach (string newfeature in NewFeatures) newfeatures += "<li>" + newfeature + "</li>";
+			if (Changelogs.BugsFixed != null)
+				foreach (int bugTicketID in Changelogs.BugsFixed.Keys)
+					bugsfixed += GetHtmlLinkForTicket(bugTicketID, Changelogs.BugsFixed[bugTicketID], Changelogs.GetTicketUrl);
+			if (Changelogs.Improvements != null)
+				foreach (int improvementTicketID in Changelogs.Improvements.Keys)
+					improvements += GetHtmlLinkForTicket(improvementTicketID, Changelogs.Improvements[improvementTicketID], Changelogs.GetTicketUrl);
+			if (Changelogs.NewFeatures != null)
+				foreach (int newfeatureTicketID in Changelogs.NewFeatures.Keys)
+					newfeatures += GetHtmlLinkForTicket(newfeatureTicketID, Changelogs.NewFeatures[newfeatureTicketID], Changelogs.GetTicketUrl);
 
 			//bool HtmlFileFound = false;
 
@@ -586,6 +766,7 @@ namespace SharedClasses
 			if (!Helpers.GetEmbeddedResource_FirstOneEndingWith(HtmlTemplateFileName, out bytesOfHtmlFile))
 			{
 				UserMessages.ShowWarningMessage("Could not find Html file in resources: " + HtmlTemplateFileName);
+				listOfScreenshotsFullLocalPaths = null;
 				return null;
 			}
 			else
@@ -605,27 +786,32 @@ namespace SharedClasses
 				//textOfFile = textOfFile.Replace("{SetupFilename}", Path.GetFileName(setupFilename));
 				textOfFile = textOfFile.Replace("{SetupFilename}", "/downloadownapps.php?relativepath=" + projectName + "/" + Path.GetFileName(setupFilename));
 				//textOfFile = textOfFile.Replace("{DescriptionLiElements}", description);
-				if (!string.IsNullOrWhiteSpace(bugsfixed) && !string.IsNullOrWhiteSpace(improvements) && !string.IsNullOrWhiteSpace(newfeatures))
-				{
-					//textOfFile = textOfFile.Replace("{ChangelistCssDisplay}", "block");
-					textOfFile = textOfFile.Replace("{BugsFixedList}", bugsfixed);
-					textOfFile = textOfFile.Replace("{ImprovementList}", improvements);
-					textOfFile = textOfFile.Replace("{NewFeaturesList}", newfeatures);
-				}
+				/*if (!string.IsNullOrWhiteSpace(bugsfixed)
+					|| !string.IsNullOrWhiteSpace(improvements)
+					|| !string.IsNullOrWhiteSpace(newfeatures))
+				{*/
+				//textOfFile = textOfFile.Replace("{ChangelistCssDisplay}", "block");
+				textOfFile = textOfFile.Replace("{BugsFixedList}", Changelogs.BugsFixed.Count == 0 ? "None." : bugsfixed);
+				textOfFile = textOfFile.Replace("{ImprovementList}", Changelogs.Improvements.Count == 0 ? "None." : improvements);
+				textOfFile = textOfFile.Replace("{NewFeaturesList}", Changelogs.NewFeatures.Count == 0 ? "None." : newfeatures);
+				/*}
 				else
 				{
 					//textOfFile = textOfFile.Replace("{ChangelistCssDisplay}", "none");
 					textOfFile = textOfFile.Replace("{BugsFixedList}", "");//So the {..} does not remain
 					textOfFile = textOfFile.Replace("{ImprovementList}", "There are no changes recorded for this release.");
 					textOfFile = textOfFile.Replace("{NewFeaturesList}", "");//So the {..} does not remain
-				}
+				}*/
+
 				if (publishDetails != null)
+				{
+					textOfFile = textOfFile.Replace("{DownloadSize}", BytesToHumanfriendlyStringConverter.ConvertBytesToHumanreadableString(publishDetails.SetupSize));
 					textOfFile = textOfFile.Replace("{JsonText}", publishDetails.GetJsonString());
+				}
 				else
 					textOfFile = textOfFile.Replace("{JsonText}", "Could not obtain extra info from online database.");
 
-				textOfFile = InsertScreenshotsIntoHtmlAndAlsoUpload(projectName, textOfFile);
-				UploadIconAsFaviconIfExists(projectName);
+				textOfFile = InsertScreenshotsIntoHtmlAndReturnScreenshotsFullpath(projectName, textOfFile, out listOfScreenshotsFullLocalPaths);
 
 				File.WriteAllText(tempFilename, textOfFile);
 			}

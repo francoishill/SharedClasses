@@ -105,6 +105,9 @@ namespace SharedClasses
 				onProgress_Percentage_BytesPerSec = delegate { };
 
 			ServicePointManager.ServerCertificateValidationCallback += (snder, certif, chain, sslPolicyErrors) => actionOnSSLcertificateValidation(snder, certif, chain, sslPolicyErrors);
+
+			bool oldExpect100Continue = System.Net.ServicePointManager.Expect100Continue;
+			ServicePointManager.Expect100Continue = false;
 			try
 			{
 				using (WebClient client = new WebClient())
@@ -210,6 +213,8 @@ namespace SharedClasses
 			finally
 			{
 				ServicePointManager.ServerCertificateValidationCallback = null;
+
+				ServicePointManager.Expect100Continue = oldExpect100Continue;
 			}
 		}
 

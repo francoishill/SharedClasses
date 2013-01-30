@@ -1,6 +1,7 @@
 using System;
 using Microsoft.Win32;
 using System.Diagnostics;
+using System.Threading;
 
 namespace SharedClasses
 {
@@ -23,6 +24,13 @@ namespace SharedClasses
 		public static void Notify(Action<string> actionOnError, string message, string title = null, NotificationTypes notificationType = NotificationTypes.Info, int secondsToShow = 3)
 		{
 			if (actionOnError == null) actionOnError = delegate { };
+
+			WpfNotificationWindow.ShowNotification(
+				title: title,// + i,
+				message: message,// + i,
+				notificationType: notificationType,
+				timeout: TimeSpan.FromSeconds(secondsToShow));/*,//If was -99 it will show forever
+				onCloseCallback_WasClickedToCallback: (o, wasclickedon) => { });*/
 
 			/*
 			We do not use external process anymore, otherwise we must auto install it on each user's machine 

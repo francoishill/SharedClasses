@@ -185,6 +185,38 @@ namespace SharedClasses
 		}
 	}
 
+	public class BytesToHumanfriendlyStringConverter : IValueConverter
+	{
+		public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			if (!(value is long))
+				return (value ?? "").ToString();
+
+			return ConvertBytesToHumanreadableString((long)value);//This code has not been tested yet, 2013-01-27
+		}
+
+		public static string ConvertBytesToHumanreadableString(long bytesCount)
+		{
+			string[] sizes = { "B", "KB", "MB", "GB" };
+			double len = bytesCount;
+			int order = 0;
+			while (len >= 1024 && order + 1 < sizes.Length)
+			{
+				order++;
+				len = len / 1024;
+			}
+
+			// Adjust the format string to your preferences. For example "{0:0.#}{1}" would
+			// show a single decimal place, and no space.
+			return String.Format("{0:0.##} {1}", len, sizes[order]);
+		}
+
+		public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			throw new NotImplementedException();
+		}
+	}
+
 	public class AddToDoubleValueConverter : IValueConverter
 	{
 		public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)

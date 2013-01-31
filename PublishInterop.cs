@@ -814,6 +814,7 @@ namespace SharedClasses
 				if (publishDetails != null)
 				{
 					textOfFile = textOfFile.Replace("{DownloadSize}", BytesToHumanfriendlyStringConverter.ConvertBytesToHumanreadableString(publishDetails.SetupSize));
+					textOfFile = textOfFile.Replace("{PublishedDate}", publishDetails.PublishedDate.ToString("yyyy-MM-dd"));
 					textOfFile = textOfFile.Replace("{JsonText}", publishDetails.GetJsonString());
 				}
 				else

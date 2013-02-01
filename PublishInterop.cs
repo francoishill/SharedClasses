@@ -30,8 +30,10 @@ namespace SharedClasses
 		public string FtpUrl;
 		public DateTime? TracTicketsSinceDate;//The Trac ticketing system will be queried for 'recent' tickets using this as 'sinceDate'
 
+		public TracXmlRpcInterop.ChangeLogs ChangeLogs;
+
 		public PublishDetails() { }
-		public PublishDetails(string ApplicationName, string ApplicationVersion, long SetupSize, string MD5Hash, DateTime PublishedDate, string FtpUrl, DateTime? TracTicketsSinceDate)
+		public PublishDetails(string ApplicationName, string ApplicationVersion, long SetupSize, string MD5Hash, DateTime PublishedDate, string FtpUrl, DateTime? TracTicketsSinceDate, TracXmlRpcInterop.ChangeLogs ChangeLogs)
 		{
 			this.ApplicationName = ApplicationName;
 			this.ApplicationVersion = ApplicationVersion;
@@ -40,6 +42,7 @@ namespace SharedClasses
 			this.PublishedDate = PublishedDate;
 			this.FtpUrl = FtpUrl;
 			this.TracTicketsSinceDate = TracTicketsSinceDate;
+			this.ChangeLogs = ChangeLogs;
 		}
 		public string GetJsonString() { return WebInterop.GetJsonStringFromObject(this, true); }
 	}
@@ -379,6 +382,14 @@ namespace SharedClasses
 			if (!ObtainPreviouslyPublishedDate(projName, actionOnMessage, out tracTicketsSinceDate))
 				return false;//actionOnMessage already occurred inside 'ObtainPreviouslyPublishedDate'
 
+			actionOnMessage("Busy obtaining Trac BugsFixes, Improvements and NewFeatures", FeedbackMessageTypes.Status);
+			var changeLogs = GetChangeLogs(
+				tracTicketsSinceDate,
+				projName,
+				actionOnMessage);
+			if (changeLogs == null)
+				return false;
+
 			PublishDetails currentlyPublishDetails = new PublishDetails(
 					projName,
 					publishedVersionString,
@@ -386,7 +397,9 @@ namespace SharedClasses
 					publishedSetupPath.FileToMD5Hash(),
 					publishDate,
 					rootDownloadHttpUri + "/" + (new FileInfo(publishedSetupPath).Name),
-					tracTicketsSinceDate.HasValue ? tracTicketsSinceDate : DateTime.MinValue);
+					tracTicketsSinceDate.HasValue ? tracTicketsSinceDate : DateTime.MinValue,
+					changeLogs);
+
 			string errorStringIfFailElseJsonString;
 			if (!WebInterop.SaveObjectOnline(PublishDetails.OnlineJsonCategory, projName + " - " + publishedVersionString, currentlyPublishDetails, out errorStringIfFailElseJsonString))
 			{
@@ -399,16 +412,15 @@ namespace SharedClasses
 				return false;
 			}
 
-			actionOnMessage("Busy obtaining Trac BugsFixes, Improvements and NewFeatures", FeedbackMessageTypes.Status);
-			var changeLogs = GetChangeLogs(
-				tracTicketsSinceDate,
-				projName,
-				actionOnMessage);
-			if (changeLogs == null)
+			string tmperr;			
+			List<string> listOfScreenshotsFullLocalPaths = GetScreenshotsFullpath(projName, out tmperr);
+			if (listOfScreenshotsFullLocalPaths == null)
+			{
+				actionOnMessage("Cannot obtain screenshots: " + tmperr, FeedbackMessageTypes.Error);
 				return false;
+			}
 
-			List<string> listOfScreenshotsFullLocalPaths;
-			string htmlFilePath = CreateHtmlPageReturnFilename(
+			/*string htmlFilePath = CreateHtmlPageReturnFilename(
 					projName,
 					publishedVersionString,
 					publishedSetupPath,
@@ -420,7 +432,7 @@ namespace SharedClasses
 			{
 				actionOnMessage("Could not obtain embedded HTML file", FeedbackMessageTypes.Error);
 				return false;
-			}
+			}*/
 
 
 			//Upload image files
@@ -455,7 +467,7 @@ namespace SharedClasses
 
 			Dictionary<string, string> localFiles_DisplaynameFirst = new Dictionary<string, string>();
 			localFiles_DisplaynameFirst.Add("Setup path for " + projName, publishedSetupPath);
-			localFiles_DisplaynameFirst.Add("index.html for " + projName, htmlFilePath);
+			//localFiles_DisplaynameFirst.Add("index.html for " + projName, htmlFilePath);
 			if (isAutoUpdater) localFiles_DisplaynameFirst.Add("Newest AutoUpdater setup", clonedSetupFilepathIfAutoUpdater);
 			/*if (isShowNoCallbackNotification) localFiles_DisplaynameFirst.Add("Newest ShowNoCallbackNotification", clonedSetupFilepathIfShowNoCallbackNotification);
 			if (isStandaloneUploader) localFiles_DisplaynameFirst.Add("Newest StandaloneUploader", clonedSetupFilepathIfStandaloneUploader);*/
@@ -561,17 +573,14 @@ namespace SharedClasses
 					true);
 		}
 
-		private static string InsertScreenshotsIntoHtmlAndReturnScreenshotsFullpath(string projectName, string originalHtmlText, out List<string> listOfScreenshotsFullLocalPaths)
+		private static List<string> GetScreenshotsFullpath(string projectName, out string errorIfFailed)
 		{
-			string tmpHtmlAfterReplace = originalHtmlText;
-
 			string tmperr;
 			var tmpCsprojAndAppType = OwnAppsInterop.GetCsprojFullpathFromApplicationName(projectName, out tmperr);
 			if (tmperr != null)
 			{
-				UserMessages.ShowWarningMessage(tmperr);
-				listOfScreenshotsFullLocalPaths = null;
-				return projectName;
+				errorIfFailed = tmperr;
+				return null;
 			}
 			string csprojPath = tmpCsprojAndAppType.Value.Key;
 			string screenshotsDirPath = Path.Combine(Path.GetDirectoryName(csprojPath), "ScreenShots");
@@ -579,9 +588,8 @@ namespace SharedClasses
 			bool hasScreenShots = screenshotsImagePaths != null && screenshotsImagePaths.Length > 0;
 			if (hasScreenShots)
 			{
-				listOfScreenshotsFullLocalPaths = new List<string>();
+				var tmplist = new List<string>();
 
-				//tmpHtmlAfterReplace = tmpHtmlAfterReplace.Replace("{ScreenshotsCssDisplay}", "block");
 				List<string> listOfTabnames = new List<string>();
 				List<string> listOfImages = new List<string>();
 				int cnt = 1;
@@ -592,22 +600,18 @@ namespace SharedClasses
 					listOfTabnames.Add(string.Format("<li><a href='#tabs-{0}'>{1}</a></li>", cnt, Path.GetFileNameWithoutExtension(ss)));
 					listOfImages.Add(string.Format("<div id='tabs-{0}'><a href='Screenshots/{1}' class='preview' title='Click thumbnail to view full-size image'><img src='Screenshots/{1}' alt='{2}' /></a></div>", cnt, ssFilenamOnly, Path.GetFileNameWithoutExtension(ss)));
 
-					listOfScreenshotsFullLocalPaths.Add(ss);
+					tmplist.Add(ss);
 					cnt++;
 				}
-				tmpHtmlAfterReplace = tmpHtmlAfterReplace.Replace(
-					"{ListOfScreenshotTabNames}", string.Join(Environment.NewLine, listOfTabnames));
-				tmpHtmlAfterReplace = tmpHtmlAfterReplace.Replace(
-					"{ListOfScreenShotImages}", string.Join(Environment.NewLine, listOfImages));
+
+				errorIfFailed = null;
+				return tmplist;
 			}
 			else
 			{
-				listOfScreenshotsFullLocalPaths = null;
-				//tmpHtmlAfterReplace = tmpHtmlAfterReplace.Replace("{ScreenshotsCssDisplay}", "none");
-				tmpHtmlAfterReplace = tmpHtmlAfterReplace.Replace("{ListOfScreenshotTabNames}", "There are no screenshots available for this application.");//So the {..} does not remain
-				tmpHtmlAfterReplace = tmpHtmlAfterReplace.Replace("{ListOfScreenShotImages}", "");
+				errorIfFailed = null;
+				return new List<string>();//No screenshots found
 			}
-			return tmpHtmlAfterReplace;
 		}
 
 		public static string GetTracXmlRpcHttpPathFromProjectName(string projectName)
@@ -746,9 +750,13 @@ namespace SharedClasses
 					HttpUtility.HtmlEncode(ticketDetails.Summary));
 		}
 
+		[Obsolete("Not used anymore, the webpage is now stored online and dynamically populated", true)]
 		public static string CreateHtmlPageReturnFilename(string projectName, string projectVersion, string setupFilename, TracXmlRpcInterop.ChangeLogs Changelogs, out List<string> listOfScreenshotsFullLocalPaths, PublishDetails publishDetails = null)
 		{
-			string thisappTempFolder = Path.Combine(Path.GetTempPath(), "TempWebpagesBeforeUploading", projectName);
+			listOfScreenshotsFullLocalPaths = null;
+			return null;
+
+			/*string thisappTempFolder = Path.Combine(Path.GetTempPath(), "TempWebpagesBeforeUploading", projectName);
 			if (!Directory.Exists(thisappTempFolder))
 				Directory.CreateDirectory(thisappTempFolder);
 			string tempFilename = Path.Combine(thisappTempFolder, "index.html");
@@ -794,22 +802,22 @@ namespace SharedClasses
 				//textOfFile = textOfFile.Replace("{SetupFilename}", Path.GetFileName(setupFilename));
 				textOfFile = textOfFile.Replace("{SetupFilename}", "/downloadownapps.php?relativepath=" + projectName + "/" + Path.GetFileName(setupFilename));
 				//textOfFile = textOfFile.Replace("{DescriptionLiElements}", description);
-				/*if (!string.IsNullOrWhiteSpace(bugsfixed)
-					|| !string.IsNullOrWhiteSpace(improvements)
-					|| !string.IsNullOrWhiteSpace(newfeatures))
-				{*/
+				//if (!string.IsNullOrWhiteSpace(bugsfixed)
+				//    || !string.IsNullOrWhiteSpace(improvements)
+				//    || !string.IsNullOrWhiteSpace(newfeatures))
+				//{
 				//textOfFile = textOfFile.Replace("{ChangelistCssDisplay}", "block");
 				textOfFile = textOfFile.Replace("{BugsFixedList}", Changelogs.BugsFixed.Count == 0 ? "None." : bugsfixed);
 				textOfFile = textOfFile.Replace("{ImprovementList}", Changelogs.Improvements.Count == 0 ? "None." : improvements);
 				textOfFile = textOfFile.Replace("{NewFeaturesList}", Changelogs.NewFeatures.Count == 0 ? "None." : newfeatures);
-				/*}
-				else
-				{
-					//textOfFile = textOfFile.Replace("{ChangelistCssDisplay}", "none");
-					textOfFile = textOfFile.Replace("{BugsFixedList}", "");//So the {..} does not remain
-					textOfFile = textOfFile.Replace("{ImprovementList}", "There are no changes recorded for this release.");
-					textOfFile = textOfFile.Replace("{NewFeaturesList}", "");//So the {..} does not remain
-				}*/
+				//}
+				//else
+				//{
+				//    //textOfFile = textOfFile.Replace("{ChangelistCssDisplay}", "none");
+				//    textOfFile = textOfFile.Replace("{BugsFixedList}", "");//So the {..} does not remain
+				//    textOfFile = textOfFile.Replace("{ImprovementList}", "There are no changes recorded for this release.");
+				//    textOfFile = textOfFile.Replace("{NewFeaturesList}", "");//So the {..} does not remain
+				//}
 
 				if (publishDetails != null)
 				{
@@ -825,7 +833,7 @@ namespace SharedClasses
 				File.WriteAllText(tempFilename, textOfFile);
 			}
 
-			return tempFilename;
+			return tempFilename;*/
 		}
 	}
 }

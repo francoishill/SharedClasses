@@ -211,6 +211,9 @@ public class TracXmlRpcInterop
 		public string Description;
 		public TicketTypeEnum TicketType;
 		public List<string> TicketComments;
+
+		public TracTicketDetails() { }//Needed to populate from JSON
+
 		public TracTicketDetails(string Summary, string Description, TicketTypeEnum TicketType)
 		{
 			this.Summary = Summary;
@@ -226,6 +229,8 @@ public class TracXmlRpcInterop
 		public Dictionary<int, TracXmlRpcInterop.TracTicketDetails> BugsFixed;
 		public Dictionary<int, TracXmlRpcInterop.TracTicketDetails> Improvements;
 		public Dictionary<int, TracXmlRpcInterop.TracTicketDetails> NewFeatures;
+
+		public ChangeLogs() { }//Needed to populate from JSON
 
 		public ChangeLogs(string RootXmlRpcUrl, Dictionary<int, TracXmlRpcInterop.TracTicketDetails> BugsFixed, Dictionary<int, TracXmlRpcInterop.TracTicketDetails> Improvements, Dictionary<int, TracXmlRpcInterop.TracTicketDetails> NewFeatures)
 		{

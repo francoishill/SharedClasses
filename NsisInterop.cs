@@ -50,7 +50,7 @@ public class NsisInterop
 		//List<NSISclass.SectionGroupClass.SectionClass> sections,
 		bool InstallForAllUsers,
 		NSISclass.DotnetFrameworkTargetedEnum DotnetFrameworkTargetedIn,
-		bool _64Only,
+		/*bool True64bit_False32bit,*/
 		bool WriteIntoRegistryForWindowsAutostartup,
 		bool HasPlugins,
 		string customSetupFilename = null)
@@ -75,8 +75,8 @@ public class NsisInterop
 			ProductExeNameIn,
 			null,//No InstTypes at this stage
 			cDefaultPublisherName,
-			DotnetFrameworkTargetedIn,
-			_64Only
+			DotnetFrameworkTargetedIn//,
+			/*True64bit_False32bit*/
 			//InstallForAllUsersIn: InstallForAllUsers
 			);
 
@@ -109,19 +109,19 @@ public class NsisInterop
 		//SectionGroupLines.Add("		!insertmacro MUI_LANGDLL_DISPLAY");
 		SectionGroupLines.Add("		SetRegView 64");
 		SectionGroupLines.Add("	${Else}");
-		if (_64Only)
+		/*if (True64bit_False32bit)
 		{
 			SectionGroupLines.Add("		MessageBox MB_OK|MB_ICONSTOP \"You cannot run this version of $PRODUCT_NAME on your OS.$\\r$\\n\\");
 			SectionGroupLines.Add("		  Please use a 64-bit OS or download a 32-bit version of PRODUCT_NAME.\"");
 			SectionGroupLines.Add("		Quit");
 		}
 		else
-		{
+		{*/
 			SectionGroupLines.Add("		; Currently allows 32bit mode");
 			SectionGroupLines.Add("		;MessageBox MB_OK|MB_ICONSTOP \"You cannot run this version of $PRODUCT_NAME on your OS.$\\r$\\n\\");
 			SectionGroupLines.Add("		;  Please use a 64-bit OS or download a 32-bit version of PRODUCT_NAME.\"");
 			SectionGroupLines.Add("		;Quit");
-		}
+		/*}*/
 		SectionGroupLines.Add("	${EndIf}");
 		SectionGroupLines.Add("FunctionEnd");
 
@@ -564,7 +564,7 @@ public class NsisInterop
 		public string StartmenuFolderName;
 
 		public DotnetFrameworkTargetedEnum DotnetFrameworkTargeted;
-		public bool _64Only;
+		/*public bool True64bit_False32bit;*/
 
 		public NSISclass() { }
 
@@ -590,7 +590,7 @@ public class NsisInterop
 				List<string> InstTypesIn,
 				string StartmenuFolderNameIn,
 				DotnetFrameworkTargetedEnum DotnetFrameworkTargetedIn,
-				bool _64OnlyIn,
+				/*bool True64bit_False32bitIn,*/
 				string InstallerIconPathIn = @"${NSISDIR}\Contrib\Graphics\Icons\modern-install-blue-full.ico",
 				string UninstallerIconPathIn = @"${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall-blue-full.ico",
 				Boolean InstallForAllUsersIn = true)
@@ -626,7 +626,7 @@ public class NsisInterop
 			StartmenuFolderName = StartmenuFolderNameIn;
 
 			DotnetFrameworkTargeted = DotnetFrameworkTargetedIn;
-			_64Only = _64OnlyIn;
+			/*True64bit_False32bit = True64bit_False32bitIn;*/
 
 			InstallForAllUsers = InstallForAllUsersIn;
 		}
@@ -1699,8 +1699,8 @@ public class NsisInterop
 									AppNameIncludingEXEextension,
 									new List<string>() { },
 									null,
-									DotnetFrameworkTargetedEnum.DotNet4client,
-									false);
+									DotnetFrameworkTargetedEnum.DotNet4client/*,
+									false*/);
 							tmpMainNode.Nodes.Add(subSectionNode);
 
 							return tmpMainNode;

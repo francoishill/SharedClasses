@@ -26,7 +26,8 @@ namespace SharedClasses
 		private readonly static Dictionary<string, string> GlobalBuildProperties = new Dictionary<string, string>()
 		{
 			{ "Configuration", "Release" },
-			{ "Platform", "Any CPU" },//"x86" },
+			{ "Platform", "Any CPU" },
+			//{ "Platform", "x86" },
 		};
 
 		private static bool? ChecksAlreadyDone = null;
@@ -411,7 +412,7 @@ namespace SharedClasses
 			DateTime outPublishDate;
 			bool publishResult = PublishInterop.PerformPublish(
 				this.ApplicationName,
-				_64bit,//What if required
+				/*_64bit,//What if required*/
 				false,//What about QuickAccess
 				autoUpdateRevision,
 				installLocally,

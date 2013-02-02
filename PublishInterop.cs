@@ -142,7 +142,7 @@ namespace SharedClasses
 		}
 
 		public const string cTempWebfolderName = "TempWeb";
-		public static bool PerformPublish(string projName, bool _64Only, bool HasPlugins, bool AutomaticallyUpdateRevision, bool InstallLocallyAfterSuccessfullNSIS, bool StartupWithWindows, bool SelectSetupIfSuccessful, out string publishedVersionString, out string publishedSetupPath, out DateTime publishDate, Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage, bool placeSetupInTempWebFolder = false, string customSetupFilename = null)
+		public static bool PerformPublish(string projName, /*bool True64bit_False32bit, */bool HasPlugins, bool AutomaticallyUpdateRevision, bool InstallLocallyAfterSuccessfullNSIS, bool StartupWithWindows, bool SelectSetupIfSuccessful, out string publishedVersionString, out string publishedSetupPath, out DateTime publishDate, Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage, bool placeSetupInTempWebFolder = false, string customSetupFilename = null)
 		{
 			if (!Directory.Exists(cProjectsRootDir)
 				&& !Directory.Exists(projName)
@@ -251,7 +251,7 @@ namespace SharedClasses
 					null,
 					true,
 					NsisInterop.NSISclass.DotnetFrameworkTargetedEnum.DotNet4client,
-					_64Only,
+					/*True64bit_False32bit,*/
 					StartupWithWindows,
 					HasPlugins,
 					customSetupFilename));
@@ -351,7 +351,7 @@ namespace SharedClasses
 
 			bool successPublish = PerformPublish(
 				projName,
-				_64Only,
+				/*_64Only,*/
 				HasPlugins,
 				AutomaticallyUpdateRevision,
 				InstallLocallyAfterSuccessfullNSIS,

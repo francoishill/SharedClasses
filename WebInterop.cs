@@ -161,7 +161,7 @@ namespace SharedClasses
 				GetOperationUri(OnlineOperations.GetModifiedTime),
 				new Dictionary<string, string>() { { "category", category }, { "name", name } },
 				out response,
-				TimeSpan.FromSeconds(15)))
+				cTimeoutForJsonObjects))
 			{
 				if (response.Equals(NORESULT_STRING, StringComparison.InvariantCultureIgnoreCase))
 				{
@@ -194,21 +194,27 @@ namespace SharedClasses
 			}
 		}
 
-		public static bool PopulateObjectFromOnline(string category, string name, object objectToPopulate, out string errorStringIfFail, TimeSpan? timeout = null)
+		const int cMaxJsonObjectOnlineRetries = 7;
+		public static bool PopulateObjectFromOnline(string category, string name, object objectToPopulate, out string errorStringIfFail)
 		{
 			EnsureHttpsTrustAll();
 			JSON.SetDefaultJsonInstanceSettings();
+
+			int currentRetriedCount = 0;
+		retrylabel:
 
 			string response;
 			if (WebInterop.PostPHP(
 				GetOperationUri(OnlineOperations.GetValue),//rootUrl + "/json/getvaluepretty",
 				new Dictionary<string, string>() { { "category", category }, { "name", name } },
 				out response,
-				timeout))
+				cTimeoutForJsonObjects))
 			{
 				if (response.Equals(NORESULT_STRING, StringComparison.InvariantCultureIgnoreCase))
 				{
-					errorStringIfFail = cErrorIfNotFoundOnline;
+					if (currentRetriedCount++ < cMaxJsonObjectOnlineRetries)
+						goto retrylabel;
+					errorStringIfFail = string.Format("[Retried {0} times] - {1}", cMaxJsonObjectOnlineRetries, cErrorIfNotFoundOnline);
 					return false;
 				}
 				else
@@ -229,7 +235,9 @@ namespace SharedClasses
 			}
 			else
 			{
-				errorStringIfFail = response;
+				if (currentRetriedCount++ < cMaxJsonObjectOnlineRetries)
+					goto retrylabel;
+				errorStringIfFail = string.Format("[Retried {0} times] - {1}", cMaxJsonObjectOnlineRetries, response);
 				return false;
 			}
 		}
@@ -242,6 +250,7 @@ namespace SharedClasses
 			return tmpJson;
 		}
 
+		private static readonly TimeSpan cTimeoutForJsonObjects = TimeSpan.FromSeconds(20);
 		public static bool SaveObjectOnline(string category, string name, object obj, out string errorStringIfFailElseJsonString)
 		{
 			//The json php controller already checks if the current value in the db is the same as the
@@ -250,29 +259,37 @@ namespace SharedClasses
 			EnsureHttpsTrustAll();
 			JSON.SetDefaultJsonInstanceSettings();
 
-			string response;
 			//string newvalue = JSON.Instance.Beautify(JSON.Instance.ToJSON(obj, false));
 			string newvalue = GetJsonStringFromObject(obj, false);
+
+			int currentRetriedCount = 0;
+		retrylabel:
+
+			string response;
 			if (WebInterop.PostPHP(
 				GetOperationUri(OnlineOperations.SetValue),
 				new Dictionary<string, string>() { { "category", category }, { "name", name }, { "jsonstring", newvalue } },
 				out response,
-				TimeSpan.FromSeconds(15)))
+				cTimeoutForJsonObjects))
 			{
-				if (response.Equals("1") || response.Equals("0"))
+				if (response.Equals("1") || response.Equals("0"))//1 means we added it, 2 means the value to set was the same online
 				{
 					errorStringIfFailElseJsonString = newvalue;
 					return true;
 				}
 				else
 				{
-					errorStringIfFailElseJsonString = response;
+					if (currentRetriedCount++ < cMaxJsonObjectOnlineRetries)
+						goto retrylabel;
+					errorStringIfFailElseJsonString = string.Format("[Retried {0} times] - {1}", cMaxJsonObjectOnlineRetries, response);
 					return false;
 				}
 			}
 			else
 			{
-				errorStringIfFailElseJsonString = response;
+				if (currentRetriedCount++ < cMaxJsonObjectOnlineRetries)
+					goto retrylabel;
+				errorStringIfFailElseJsonString = string.Format("[Retried {0} times] - {1}", cMaxJsonObjectOnlineRetries, response);
 				return false;
 			}
 		}

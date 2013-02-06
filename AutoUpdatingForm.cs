@@ -56,8 +56,7 @@ namespace SharedClasses
 				PublishDetails.OnlineJsonCategory,
 				ApplicationName + PublishDetails.LastestVersionJsonNamePostfix,
 				onlineAppDetails,
-				out errIfFail,
-				TimeSpan.FromSeconds(10));
+				out errIfFail);
 			if (populatesuccess)
 			{
 				//return CompareVersions(installedVersion, onlineAppDetails.ApplicationVersion);

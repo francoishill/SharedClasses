@@ -9,6 +9,9 @@ using System.Text.RegularExpressions;
 using System.Collections;
 using System.Threading.Tasks;
 
+using System.Diagnostics;
+using System.Collections.Concurrent;
+
 namespace SharedClasses
 {
 	public class VsBuildProject_NonAbstract : VsBuildProject
@@ -23,6 +26,94 @@ namespace SharedClasses
 			Assembly: Microsoft.Build
 			Assembly: Microsoft.Build.Framework*/
 
+		#region Nested classes
+		private class LoggerForBuilding : ILogger
+		{
+			private Action<BuildErrorEventArgs> OnBuildError;
+			private Action<ProjectStartedEventArgs> OnProjectStarted;
+			public LoggerForBuilding(Action<BuildErrorEventArgs> OnBuildError, Action<ProjectStartedEventArgs> OnProjectStarted)
+			{
+				this.OnBuildError = OnBuildError ?? delegate { };
+				this.OnProjectStarted = OnProjectStarted ?? delegate { };
+			}
+
+			public void Initialize(IEventSource eventSource)
+			{
+				if (OnBuildError != null)
+					eventSource.ErrorRaised += (snd, evt) => OnBuildError(evt);
+				if (OnProjectStarted != null)
+					eventSource.ProjectStarted += (snd, evt) => OnProjectStarted(evt);
+			}
+
+			public string Parameters { get; set; }
+
+			public void Shutdown()
+			{
+				//
+			}
+
+			public LoggerVerbosity Verbosity { get; set; }
+		}
+
+		public class OperationDetails
+		{
+			public IEnumerable<VsBuildProject> ApplicationList;
+			public Action<VsBuildProject> ActionOnEachApplication;
+			public OverallOperationSettings Settings;
+			public OperationDetails(IEnumerable<VsBuildProject> ApplicationList, Action<VsBuildProject> ActionOnEachApplication, OverallOperationSettings Settings)
+			{
+				this.ApplicationList = ApplicationList;
+				this.ActionOnEachApplication = ActionOnEachApplication;
+				this.Settings = Settings;
+			}
+		}
+
+		public class OverallOperationSettings//When operating on multiple applications, this handles the feedback which is relative to the entire list
+		{
+			public enum DurationMeasurementType { MessagelogOnly, FilelogOnly, Both, None };
+
+			public string OperationDisplayName;
+			public string InitialStatusMessage;
+			public bool AllowConcurrent;//If false then perform one after another
+			public Action<int, ProgressStates?> OnProgressPercentageChanged;//Note: this is not per app, but for entire loop
+			public Action<string, FeedbackMessageTypes> OnStatusMessage;//Note: this is not per app, but for entire loop
+			public bool ClearAppStatusTextFirst;
+			public Predicate<VsBuildProject> ShouldIncludeApp;
+			public DurationMeasurementType MeasureDurationType;
+
+			public OverallOperationSettings(
+				string OperationDisplayName, string InitialStatusMessage, bool AllowConcurrent,
+				Action<int, ProgressStates?> OnProgressPercentageChanged, Action<string, FeedbackMessageTypes> OnStatusMessage,
+				bool ClearAppStatusTextFirst, Predicate<VsBuildProject> ShouldIncludeApp,
+				DurationMeasurementType MeasureDurationType)
+			{
+				this.OperationDisplayName = OperationDisplayName;
+				this.InitialStatusMessage = InitialStatusMessage;
+				this.AllowConcurrent = AllowConcurrent;
+				this.OnProgressPercentageChanged = OnProgressPercentageChanged ?? delegate { };
+				this.OnStatusMessage = OnStatusMessage ?? delegate { };
+				this.ClearAppStatusTextFirst = ClearAppStatusTextFirst;
+				this.ShouldIncludeApp = ShouldIncludeApp ?? delegate { return true; };
+				this.MeasureDurationType = MeasureDurationType;
+			}
+
+			private object lockObj = new object();
+			private int CompletedItemCount = 0;
+			private int TotalItemCount = 0;//Note we exclude those that return 'false' for 'PredicateWhetherToIncludeApp'
+			public void SetTotalCount(int totalItemCount) { this.TotalItemCount = totalItemCount; }
+			public void ResetCompletedCount() { this.CompletedItemCount = 0; }
+			public void IncreaseCompletedCount()
+			{
+				lock (lockObj)
+				{
+					this.CompletedItemCount++;
+					this.OnProgressPercentageChanged((int)(100d * (double)CompletedItemCount / (double)TotalItemCount), null);
+				}
+			}
+		}
+		#endregion Neseted classes
+
+		public enum ProgressStates { None, Indeterminate, Normal, Error, Paused };
 		public enum StatusTypes { Normal, Queued, Busy, Success, Error, Warning };
 		public static Action<VsBuildProject, string, FeedbackMessageTypes> ActionOnFeedbackMessageReceived = delegate { };
 		public static Action<VsBuildProject, int?> ActionOnProgressPercentageChanged = delegate { };
@@ -80,6 +171,12 @@ namespace SharedClasses
 			//}
 		}
 
+		public void MarkAsQueued()
+		{
+			this.CurrentProgressPercentage = 0;
+			this.CurrentStatus = StatusTypes.Queued;
+		}
+
 		public void MarkAsBusy()
 		{
 			this.CurrentProgressPercentage = null;
@@ -90,7 +187,7 @@ namespace SharedClasses
 		{
 			this.CurrentProgressPercentage = 0;
 			if (this.CurrentStatus == StatusTypes.Busy)
-				this.CurrentStatus = StatusTypes.Normal;
+				this.CurrentStatus = StatusTypes.Success;//StatusTypes.Normal;
 		}
 
 		public void AppendCurrentStatusText(string textToAppend)
@@ -155,32 +252,155 @@ namespace SharedClasses
 		#endregion Progress changes
 		#endregion OnFeedback events
 
-		private class MyLogger : ILogger
+		private static Stopwatch _stopwathOverall;
+		private static bool _isbusyWithAnOperation = false;
+		private static Queue<OperationDetails> _operationsQueue = new Queue<OperationDetails>();
+		public static void DoOperation(IEnumerable<VsBuildProject> applicationList, Action<VsBuildProject> actionForEachProject, OverallOperationSettings overallOperationSettings)
+		{//This operation will always be on separate threads if AllowConcurrent then multiple threads otherwise complete loop on same SEPARATE thread
+			var operationDetails = new OperationDetails(applicationList, actionForEachProject, overallOperationSettings);
+
+			if (_isbusyWithAnOperation)
+			{
+				_operationsQueue.Enqueue(operationDetails);
+				foreach (var pr in applicationList)
+				{
+					pr.CurrentStatus = StatusTypes.Queued;
+					pr.AppendCurrentStatusText("Queued because another operation already busy");
+				}
+				return;
+			}
+			_isbusyWithAnOperation = true;
+
+			ThreadingInterop.PerformOneArgFunctionSeperateThread<OperationDetails>(
+				(operDetails) =>
+				{
+					_stopwathOverall = Stopwatch.StartNew();
+
+					operDetails.Settings.OnStatusMessage("Started operation " + operDetails.Settings.OperationDisplayName + ", please wait...", FeedbackMessageTypes.Status);
+
+					foreach (var app in operDetails.ApplicationList)
+					{
+						if (!operDetails.Settings.ShouldIncludeApp(app))
+						{
+							app.ResetStatus(false);
+							app.CurrentStatus = StatusTypes.Normal;//Otherwise it might be RED due to previous Operation
+							continue;
+						}
+
+						if (operDetails.Settings.ClearAppStatusTextFirst)
+							app.ResetStatus(true);
+						else
+							app.MarkAsQueued();
+					}
+
+					operDetails.Settings.OnProgressPercentageChanged(0, ProgressStates.Normal);
+					operDetails.Settings.ResetCompletedCount();
+					operDetails.Settings.SetTotalCount(operDetails.ApplicationList.Count(vbp => operDetails.Settings.ShouldIncludeApp(vbp)));
+
+					if (operDetails.Settings.AllowConcurrent)
+					{
+						Parallel.ForEach<VsBuildProject>(
+							operDetails.ApplicationList,
+							(app) => _doOperationOnApp(operDetails.ActionOnEachApplication, app, operDetails.Settings));
+					}
+					else
+					{
+						foreach (var app in operDetails.ApplicationList)
+							_doOperationOnApp(operDetails.ActionOnEachApplication, app, operDetails.Settings);
+					}
+
+					_stopwathOverall.Stop();
+					if (operDetails.Settings.MeasureDurationType == OverallOperationSettings.DurationMeasurementType.Both
+						|| operDetails.Settings.MeasureDurationType == OverallOperationSettings.DurationMeasurementType.MessagelogOnly)
+					{
+						operDetails.Settings.OnStatusMessage(
+							string.Format("Overall duration for {0} was {1} seconds",
+								operDetails.Settings.OperationDisplayName, _stopwathOverall.Elapsed.TotalSeconds),
+							FeedbackMessageTypes.Status);
+					}
+					if (operDetails.Settings.MeasureDurationType == OverallOperationSettings.DurationMeasurementType.Both
+						|| operDetails.Settings.MeasureDurationType == OverallOperationSettings.DurationMeasurementType.FilelogOnly)
+					{
+						Logging.LogInfoToFile(
+							string.Format("Overall duration to {0} was {1} seconds.",
+								operDetails.Settings.OperationDisplayName,
+								_stopwathOverall.Elapsed.TotalSeconds),
+							Logging.ReportingFrequencies.Daily,
+							OwnAppsInterop.GetApplicationName(),
+							"Benchmarks");
+					}
+
+					bool anyAppHadErrOrWarn = operDetails.ApplicationList
+						.Count(app =>
+							operDetails.Settings.ShouldIncludeApp(app)
+							&& (app.CurrentStatus == StatusTypes.Error || app.CurrentStatus == StatusTypes.Warning)) > 0;
+					if (anyAppHadErrOrWarn)
+						operDetails.Settings.OnProgressPercentageChanged(100, null);
+					else
+						operDetails.Settings.OnProgressPercentageChanged(0, ProgressStates.None);
+
+					_isbusyWithAnOperation = false;
+					if (_operationsQueue.Count > 0)
+					{
+						//There is a possibility that just after we Dequeue another operation comes in and sees the
+						//flag '_isbusyWithAnOperation' is false and starts before this Dequeued operation
+						//So then it will just be queued again
+						var dequeuedOperation = _operationsQueue.Dequeue();
+						DoOperation(dequeuedOperation.ApplicationList, dequeuedOperation.ActionOnEachApplication, dequeuedOperation.Settings);
+					}
+				},
+				operationDetails,
+				false);
+		}
+
+		private static ConcurrentDictionary<VsBuildProject, Stopwatch> _stopwatchesForOperations = new ConcurrentDictionary<VsBuildProject, Stopwatch>();
+		private static void _doOperationOnApp(Action<VsBuildProject> predefinedAction, VsBuildProject application, OverallOperationSettings settings)
 		{
-			private Action<BuildErrorEventArgs> OnBuildError;
-			private Action<ProjectStartedEventArgs> OnProjectStarted;
-			public MyLogger(Action<BuildErrorEventArgs> OnBuildError, Action<ProjectStartedEventArgs> OnProjectStarted)
+			if (!settings.ShouldIncludeApp(application))//This app should be excluded
+				return;
+
+			Stopwatch tmpSw = Stopwatch.StartNew();
+			while (tmpSw == null) { }
+			//while (_stopwatchesForOperations == null) { }
+			//while (application == null) { }
+
+			if (_stopwatchesForOperations.ContainsKey(application))
 			{
-				this.OnBuildError = OnBuildError ?? delegate { };
-				this.OnProjectStarted = OnProjectStarted ?? delegate { };
+				Stopwatch removedSw;
+				while (!_stopwatchesForOperations.TryRemove(application, out removedSw)) { }//Remove stopwatch if found
+			}
+			while (!_stopwatchesForOperations.TryAdd(application, tmpSw)) { }
+			application.MarkAsBusy();
+			settings.OnStatusMessage(string.Format("Busy with {0} on '{1}'", settings.OperationDisplayName, application.ApplicationName), FeedbackMessageTypes.Status);
+
+			predefinedAction(application);//The actual operation that was requested from outside
+
+			_stopwatchesForOperations[application].Stop();
+			if (settings.MeasureDurationType == OverallOperationSettings.DurationMeasurementType.Both
+				|| settings.MeasureDurationType == OverallOperationSettings.DurationMeasurementType.MessagelogOnly)
+			{
+				application.AppendCurrentStatusText(
+					string.Format("Duration to {0} application '{1}' was {2} seconds",
+					settings.OperationDisplayName, application.ApplicationName, _stopwatchesForOperations[application].Elapsed.TotalSeconds));
+			}
+			if (settings.MeasureDurationType == OverallOperationSettings.DurationMeasurementType.Both
+				|| settings.MeasureDurationType == OverallOperationSettings.DurationMeasurementType.FilelogOnly)
+			{
+				Logging.LogInfoToFile(
+					string.Format("Duration to {0} application '{1}' was {2} seconds.",
+						settings.OperationDisplayName,
+						application.ApplicationName,
+						_stopwathOverall.Elapsed.TotalSeconds),
+					Logging.ReportingFrequencies.Daily,
+					OwnAppsInterop.GetApplicationName(),
+					"Benchmarks");
 			}
 
-			public void Initialize(IEventSource eventSource)
-			{
-				if (OnBuildError != null)
-					eventSource.ErrorRaised += (snd, evt) => OnBuildError(evt);
-				if (OnProjectStarted != null)
-					eventSource.ProjectStarted += (snd, evt) => OnProjectStarted(evt);
-			}
+			application.MarkAsComplete();
+			settings.IncreaseCompletedCount();//Will also increase the progress
 
-			public string Parameters { get; set; }
-
-			public void Shutdown()
-			{
-				//
-			}
-
-			public LoggerVerbosity Verbosity { get; set; }
+			Stopwatch tmpRemoveSW;
+			while (!_stopwatchesForOperations.TryRemove(application, out tmpRemoveSW)) { }
 		}
 
 		public static Dictionary<VsBuildProject, bool> PerformMultipleBuild(IEnumerable<VsBuildProject> projects, out Dictionary<VsBuildProject, string> errorsIfFail, Action<VsBuildProject> onBuildStart, Action<VsBuildProject, bool> onBuildComplete)
@@ -207,7 +427,7 @@ namespace SharedClasses
 					DetailedSummary = true,
 					Loggers = new ILogger[]
 					{
-						new MyLogger(
+						new LoggerForBuilding(
 							(builderr) =>
 							{
 								buildErrorsCaught[submissionIDs[builderr.BuildEventContext.SubmissionId]].Add(
@@ -439,7 +659,7 @@ namespace SharedClasses
 					DetailedSummary = true,
 					Loggers = new ILogger[]
 					{
-						new MyLogger(
+						new LoggerForBuilding(
 							(builderr) =>
 							{
 								string errMsg = string.Format("Could not build '{0}',{1}Error in {2}: line {3},{1}Error message: '{4}'",

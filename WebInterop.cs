@@ -244,6 +244,9 @@ namespace SharedClasses
 
 		public static bool SaveObjectOnline(string category, string name, object obj, out string errorStringIfFailElseJsonString)
 		{
+			//The json php controller already checks if the current value in the db is the same as the
+			//one we're trying to set, then it will just not set it
+
 			EnsureHttpsTrustAll();
 			JSON.SetDefaultJsonInstanceSettings();
 

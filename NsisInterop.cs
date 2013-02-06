@@ -38,77 +38,77 @@ public class NsisInterop
 
 	//public enum BuildTypeEnum { Debug, Release };
 	public static List<string> CreateOwnappNsis(
-		string VsProjectName,
-		string ProductPublishedNameIn,
-		string ProductVersionIn,
+		string vsProjectName,
+		string productPublishedNameIn,
+		string productVersionIn,
 		//string ProductPublisherIn,
-		string ProductWebsiteIn,
-		string ProductExeNameIn,
-		DateTime PublishedDate,
+		string productWebsiteIn,
+		string productExeNameIn,
+		DateTime publishedDate,
 		RegistryInterop.MainContextMenuItem explorerContextMenuItems,
-		NSISclass.LicensePageDetails LicenseDetails,
+		NSISclass.LicensePageDetails licenseDetails,
 		//List<NSISclass.SectionGroupClass.SectionClass> sections,
 		bool InstallForAllUsers,
-		NSISclass.DotnetFrameworkTargetedEnum DotnetFrameworkTargetedIn,
+		NSISclass.DotnetFrameworkTargetedEnum dotnetFrameworkTargetedIn,
 		/*bool True64bit_False32bit,*/
-		bool WriteIntoRegistryForWindowsAutostartup,
-		bool HasPlugins,
+		bool writeIntoRegistryForWindowsAutostartup,
+		bool hasPlugins,
 		string customSetupFilename = null)
 	{
-		NSISclass nsis = new NSISclass(
-			ProductPublishedNameIn,
-			ProductVersionIn,
+		var nsis = new NSISclass(
+			productPublishedNameIn,
+			productVersionIn,
 			cDefaultPublisherName,//ProductPublisherIn,
-			ProductWebsiteIn,
-			ProductExeNameIn,
-			PublishedDate,
+			productWebsiteIn,
+			productExeNameIn,
+			publishedDate,
 			new NSISclass.Compressor(NSISclass.Compressor.CompressionModeEnum.lzma, true, true),//new NSISclass.Compressor(NSISclass.Compressor.CompressionModeEnum.bzip2, false, false),
 			64,
-			customSetupFilename == null ? GetSetupNameForProduct(ProductPublishedNameIn, ProductVersionIn) : customSetupFilename,
+			customSetupFilename ?? GetSetupNameForProduct(productPublishedNameIn, productVersionIn),
 			NSISclass.LanguagesEnum.English,
 			true,
 			true,
-			LicenseDetails,
+			licenseDetails,
 			true,
 			true,
 			true,
-			ProductExeNameIn,
+			productExeNameIn,
 			null,//No InstTypes at this stage
 			cDefaultPublisherName,
-			DotnetFrameworkTargetedIn//,
+			dotnetFrameworkTargetedIn//,
 			/*True64bit_False32bit*/
 			//InstallForAllUsersIn: InstallForAllUsers
 			);
 
 		//string rootProjDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects";
 
-		string binariesDir = GetBinariesDirectoryPathFromVsProjectName(VsProjectName);
-		List<string> SectionGroupLines = new List<string>();
+		var binariesDir = GetBinariesDirectoryPathFromVsProjectName(vsProjectName);
+		var sectionGroupLines = new List<string>();
 
-		bool isAutoUpdater = ProductPublishedNameIn.Replace(" ", "").Equals("AutoUpdater", StringComparison.InvariantCultureIgnoreCase);
+		var isAutoUpdater = productPublishedNameIn.Replace(" ", "").Equals("AutoUpdater", StringComparison.InvariantCultureIgnoreCase);
 
-		SectionGroupLines.Add("Function .onInit");
+		sectionGroupLines.Add("Function .onInit");
 		if (!isAutoUpdater)
-			if (WriteIntoRegistryForWindowsAutostartup)
-				SectionGroupLines.Add("StrCpy $lastState_autostartCheckbox 1");
+			if (writeIntoRegistryForWindowsAutostartup)
+				sectionGroupLines.Add("StrCpy $lastState_autostartCheckbox 1");
 
 		if (!isAutoUpdater)
 		{
-			SectionGroupLines.Add("");
-			SectionGroupLines.Add(";Ensure these match up with the default values in, we basically set the defaults for when it is in silent mode");
-			SectionGroupLines.Add("IfSilent 0 SkipDefaultsIfNotSilent");
-			SectionGroupLines.AddRange(NSISclass.cDefaultNsisValues);
-			SectionGroupLines.Add("SkipDefaultsIfNotSilent:");
+			sectionGroupLines.Add("");
+			sectionGroupLines.Add(";Ensure these match up with the default values in, we basically set the defaults for when it is in silent mode");
+			sectionGroupLines.Add("IfSilent 0 SkipDefaultsIfNotSilent");
+			sectionGroupLines.AddRange(NSISclass.cDefaultNsisValues);
+			sectionGroupLines.Add("SkipDefaultsIfNotSilent:");
 		}
 
-		SectionGroupLines.Add("");
-		SectionGroupLines.Add("	!include \"x64.nsh\"");
-		SectionGroupLines.Add("	; This checks if nsis is running under wow64 (since nsis is only 32bit)");
-		SectionGroupLines.Add("	; hopefully this will be dependable in the future too...");
-		SectionGroupLines.Add("	${If} ${RunningX64}");
+		sectionGroupLines.Add("");
+		sectionGroupLines.Add("	!include \"x64.nsh\"");
+		sectionGroupLines.Add("	; This checks if nsis is running under wow64 (since nsis is only 32bit)");
+		sectionGroupLines.Add("	; hopefully this will be dependable in the future too...");
+		sectionGroupLines.Add("	${If} ${RunningX64}");
 		//SectionGroupLines.Add("		!insertmacro MUI_LANGDLL_DISPLAY");
-		SectionGroupLines.Add("		SetRegView 64");
-		SectionGroupLines.Add("	${Else}");
+		sectionGroupLines.Add("		SetRegView 64");
+		sectionGroupLines.Add("	${Else}");
 		/*if (True64bit_False32bit)
 		{
 			SectionGroupLines.Add("		MessageBox MB_OK|MB_ICONSTOP \"You cannot run this version of $PRODUCT_NAME on your OS.$\\r$\\n\\");
@@ -117,20 +117,41 @@ public class NsisInterop
 		}
 		else
 		{*/
-			SectionGroupLines.Add("		; Currently allows 32bit mode");
-			SectionGroupLines.Add("		;MessageBox MB_OK|MB_ICONSTOP \"You cannot run this version of $PRODUCT_NAME on your OS.$\\r$\\n\\");
-			SectionGroupLines.Add("		;  Please use a 64-bit OS or download a 32-bit version of PRODUCT_NAME.\"");
-			SectionGroupLines.Add("		;Quit");
+			sectionGroupLines.Add("		; Currently allows 32bit mode");
+			sectionGroupLines.Add("		;MessageBox MB_OK|MB_ICONSTOP \"You cannot run this version of $PRODUCT_NAME on your OS.$\\r$\\n\\");
+			sectionGroupLines.Add("		;  Please use a 64-bit OS or download a 32-bit version of PRODUCT_NAME.\"");
+			sectionGroupLines.Add("		;Quit");
 		/*}*/
-		SectionGroupLines.Add("	${EndIf}");
-		SectionGroupLines.Add("FunctionEnd");
+		sectionGroupLines.Add("	${EndIf}");
+		sectionGroupLines.Add("FunctionEnd");
 
-		SectionGroupLines.Add(@"Section ""Full program"" SEC001");
-		SectionGroupLines.Add(@"  SetShellVarContext all");
-		SectionGroupLines.Add(@"  SetOverwrite on");
-		SectionGroupLines.Add(@"	SetOutPath ""$INSTDIR""");
-		SectionGroupLines.Add(@"  SetOverwrite on");
-		SectionGroupLines.Add(@"  File /a /x *.pdb /x *.application /x *.vshost.* /x *.manifest" + MainProgram_FaceDetectionNsisExclusionList() + @" """ + binariesDir + @"\*.*""");
+		if (dotnetFrameworkTargetedIn != NSISclass.DotnetFrameworkTargetedEnum.None)
+		{
+			string Spacer = "  ";
+			sectionGroupLines.Add(@"Section -DotNetFramework");
+			if (dotnetFrameworkTargetedIn == NSISclass.DotnetFrameworkTargetedEnum.DotNet4full)
+				sectionGroupLines.Add(Spacer + @"!insertmacro CheckNetFramework 40Full ; if your application targets .NET 4.0 Full Framework");
+			if (dotnetFrameworkTargetedIn == NSISclass.DotnetFrameworkTargetedEnum.DotNet4client)
+				sectionGroupLines.Add(Spacer + @"!insertmacro CheckNetFramework 40Client ; if your application targets .NET 4.0 ClientOnServerSide Framework");
+			if (dotnetFrameworkTargetedIn == NSISclass.DotnetFrameworkTargetedEnum.DotNet3_5)
+				sectionGroupLines.Add(Spacer + @"!insertmacro CheckNetFramework 35 ; if your application targets .NET 3.5 Framework");
+			if (dotnetFrameworkTargetedIn == NSISclass.DotnetFrameworkTargetedEnum.DotNet3_0)
+				sectionGroupLines.Add(Spacer + @"!insertmacro CheckNetFramework 30 ; if your application targets .NET 3.0 Framework");
+			if (dotnetFrameworkTargetedIn == NSISclass.DotnetFrameworkTargetedEnum.DotNet2_0)
+				sectionGroupLines.Add(Spacer + @"!insertmacro CheckNetFramework 20 ; if your application targets .NET 2.0 Framework");
+			if (dotnetFrameworkTargetedIn == NSISclass.DotnetFrameworkTargetedEnum.DotNet1_1)
+				sectionGroupLines.Add(Spacer + @"!insertmacro CheckNetFramework 11 ; if your application targets .NET 1.1 Framework");
+			if (dotnetFrameworkTargetedIn == NSISclass.DotnetFrameworkTargetedEnum.DotNet1_0)
+				sectionGroupLines.Add(Spacer + @"!insertmacro CheckNetFramework 10 ; if your application targets .NET 1.0 Framework");
+			sectionGroupLines.Add(@"SectionEnd"); sectionGroupLines.Add("");
+		}
+
+		sectionGroupLines.Add(@"Section ""Full program"" SEC001");
+		sectionGroupLines.Add(@"  SetShellVarContext all");
+		sectionGroupLines.Add(@"  SetOverwrite on");
+		sectionGroupLines.Add(@"	SetOutPath ""$INSTDIR""");
+		sectionGroupLines.Add(@"  SetOverwrite on");
+		sectionGroupLines.Add(@"  File /a /x *.pdb /x *.application /x *.vshost.* /x *.manifest" + MainProgram_FaceDetectionNsisExclusionList() + @" """ + binariesDir + @"\*.*""");
 
 		//If NSISdl does not work right may be required to have inetc.dll, NSISdl is already part of NSIS installation`
 		//string inetcDllPath = Path.Combine(nsisDir, "Plugins", "inetc.dll");
@@ -141,38 +162,38 @@ public class NsisInterop
 
 		if (!isAutoUpdater)
 		{
-			SectionGroupLines.Add("");
-			SectionGroupLines.Add("${If} $lastState_autoInstallAutoUpdater <> 1");
-			SectionGroupLines.Add("  goto AutoUpdaterDownloadSkipped");
-			SectionGroupLines.Add("${EndIf}");
+			sectionGroupLines.Add("");
+			sectionGroupLines.Add("${If} $lastState_autoInstallAutoUpdater <> 1");
+			sectionGroupLines.Add("  goto AutoUpdaterDownloadSkipped");
+			sectionGroupLines.Add("${EndIf}");
 
-			SectionGroupLines.Add("");
-			SectionGroupLines.Add(@"IfFileExists ""$PROGRAMFILES\Auto Updater\AutoUpdater.exe"" AutoUpdaterFound");
-			SectionGroupLines.Add(@"	  RetryDownload:");
-			SectionGroupLines.Add(@"	  ;All following lines removed, gave error when trying to read content from a URL");
-			SectionGroupLines.Add(@"	  ;NsisUrlLib::UrlOpen /NOUNLOAD """ + SharedClasses.SettingsSimple.HomePcUrls.Instance.AppsPublishingRoot + @"/json/getautoupdaterlatest"" ;Get content of this page (it returns the URL of newest setup package of AutoUpdater");
-			SectionGroupLines.Add(@"	  ;Pop $7");
-			SectionGroupLines.Add(@"	  ;MessageBox MB_OK $7");
-			SectionGroupLines.Add(@"	  ;NsisUrlLib::IterateLine /NOUNLOAD ;Read the first line (which is the URL)");
-			SectionGroupLines.Add(@"	  ;Pop $7 ;Place the URL read into variable $7");
-			SectionGroupLines.Add(@"	  ;MessageBox MB_OK ""$7""");
-			SectionGroupLines.Add(@"	  ;NSISdl::download ""$7"" tmpAutoUpdater_SetupLatest.exe ;Download the file at this URL");
-			SectionGroupLines.Add(@"	  NSISdl::download """ + AutoUpdating.GetDownloadlinkForLatestAutoUpdater() + @""" tmpAutoUpdater_SetupLatest.exe ; Download latest AutoUpdater Setup");
-			SectionGroupLines.Add(@"	  Pop $R4 ;Read the result of the download");
-			SectionGroupLines.Add(@"	  StrCmp $R4 ""success"" SuccessfullyDownloadedAutoUpdater");
-			SectionGroupLines.Add(@"	  ;StrCmp $R4 ""cancel"" DownloadCanceled");
-			SectionGroupLines.Add(@"	  ;IntCmp $R5 $R0 NoSuccess");
-			SectionGroupLines.Add(@"	  ;;DetailPrint ""Download failed (error $R4)"" ;, trying with other mirror");
-			SectionGroupLines.Add(@"	  MessageBox MB_RETRYCANCEL ""Download failed, retry download?"" IDRETRY RetryDownload");
-			SectionGroupLines.Add(@"	  	DetailPrint ""Download unsuccessful for AutoUpdater (reason = $R4), ${PRODUCT_NAME} will not automatically be updated""");
-			SectionGroupLines.Add(@"	  	;Abort ; causes installer to quit.");
-			SectionGroupLines.Add(@"	  	goto AutoUpdaterDownloadSkipped");
-			SectionGroupLines.Add(@"	  SuccessfullyDownloadedAutoUpdater:");
-			SectionGroupLines.Add(@"	  ExecWait ""tmpAutoUpdater_SetupLatest.exe /S""");
-			SectionGroupLines.Add(@"	  Delete tmpAutoUpdater_SetupLatest.exe");
-			SectionGroupLines.Add(@"	  ;nsExec::Exec tmpAutoUpdater_SetupLatest.exe /S ;Install AutoUpdater silently");
-			SectionGroupLines.Add(@"AutoUpdaterDownloadSkipped:");
-			SectionGroupLines.Add(@"AutoUpdaterFound:");
+			sectionGroupLines.Add("");
+			sectionGroupLines.Add(@"IfFileExists ""$PROGRAMFILES\Auto Updater\AutoUpdater.exe"" AutoUpdaterFound");
+			sectionGroupLines.Add(@"	  RetryDownload:");
+			sectionGroupLines.Add(@"	  ;All following lines removed, gave error when trying to read content from a URL");
+			sectionGroupLines.Add(@"	  ;NsisUrlLib::UrlOpen /NOUNLOAD """ + SharedClasses.SettingsSimple.HomePcUrls.Instance.AppsPublishingRoot + @"/json/getautoupdaterlatest"" ;Get content of this page (it returns the URL of newest setup package of AutoUpdater");
+			sectionGroupLines.Add(@"	  ;Pop $7");
+			sectionGroupLines.Add(@"	  ;MessageBox MB_OK $7");
+			sectionGroupLines.Add(@"	  ;NsisUrlLib::IterateLine /NOUNLOAD ;Read the first line (which is the URL)");
+			sectionGroupLines.Add(@"	  ;Pop $7 ;Place the URL read into variable $7");
+			sectionGroupLines.Add(@"	  ;MessageBox MB_OK ""$7""");
+			sectionGroupLines.Add(@"	  ;NSISdl::download ""$7"" tmpAutoUpdater_SetupLatest.exe ;Download the file at this URL");
+			sectionGroupLines.Add(@"	  NSISdl::download """ + AutoUpdating.GetDownloadlinkForLatestAutoUpdater() + @""" tmpAutoUpdater_SetupLatest.exe ; Download latest AutoUpdater Setup");
+			sectionGroupLines.Add(@"	  Pop $R4 ;Read the result of the download");
+			sectionGroupLines.Add(@"	  StrCmp $R4 ""success"" SuccessfullyDownloadedAutoUpdater");
+			sectionGroupLines.Add(@"	  ;StrCmp $R4 ""cancel"" DownloadCanceled");
+			sectionGroupLines.Add(@"	  ;IntCmp $R5 $R0 NoSuccess");
+			sectionGroupLines.Add(@"	  ;;DetailPrint ""Download failed (error $R4)"" ;, trying with other mirror");
+			sectionGroupLines.Add(@"	  MessageBox MB_RETRYCANCEL ""Download failed, retry download?"" IDRETRY RetryDownload");
+			sectionGroupLines.Add(@"	  	DetailPrint ""Download unsuccessful for AutoUpdater (reason = $R4), ${PRODUCT_NAME} will not automatically be updated""");
+			sectionGroupLines.Add(@"	  	;Abort ; causes installer to quit.");
+			sectionGroupLines.Add(@"	  	goto AutoUpdaterDownloadSkipped");
+			sectionGroupLines.Add(@"	  SuccessfullyDownloadedAutoUpdater:");
+			sectionGroupLines.Add(@"	  ExecWait ""tmpAutoUpdater_SetupLatest.exe /S""");
+			sectionGroupLines.Add(@"	  Delete tmpAutoUpdater_SetupLatest.exe");
+			sectionGroupLines.Add(@"	  ;nsExec::Exec tmpAutoUpdater_SetupLatest.exe /S ;Install AutoUpdater silently");
+			sectionGroupLines.Add(@"AutoUpdaterDownloadSkipped:");
+			sectionGroupLines.Add(@"AutoUpdaterFound:");
 		}
 
 		//DONE: We removed the other apps from auto downloading (while NSIS installing) if not installed yet, just left AutoUpdater to remain
@@ -207,16 +228,16 @@ public class NsisInterop
 		//if (!isAutoUpdater)
 		//{
 		//No always start with windows if AutoUpdater
-		SectionGroupLines.Add("");
-		if (!isAutoUpdater) SectionGroupLines.Add(@"${If} $lastState_autostartCheckbox <> 0");
-		SectionGroupLines.Add(@"  WriteRegStr HKCU ""SOFTWARE\Microsoft\Windows\CurrentVersion\Run"" '${PRODUCT_NAME}' '$INSTDIR\${PRODUCT_EXE_NAME}'");
-		if (!isAutoUpdater) SectionGroupLines.Add(@"${EndIf}");
+		sectionGroupLines.Add("");
+		if (!isAutoUpdater) sectionGroupLines.Add(@"${If} $lastState_autostartCheckbox <> 0");
+		sectionGroupLines.Add(@"  WriteRegStr HKCU ""SOFTWARE\Microsoft\Windows\CurrentVersion\Run"" '${PRODUCT_NAME}' '$INSTDIR\${PRODUCT_EXE_NAME}'");
+		if (!isAutoUpdater) sectionGroupLines.Add(@"${EndIf}");
 		//}
 
-		SectionGroupLines.Add("");
+		sectionGroupLines.Add("");
 
 
-		SectionGroupLines.Add(@"SectionEnd");
+		sectionGroupLines.Add(@"SectionEnd");
 
 		//Section "Plugins" SEC002
 		//	SetShellVarContext all
@@ -225,19 +246,19 @@ public class NsisInterop
 		//	SetOverwrite ifnewer
 		//	File /a "C:\Users\francois\Documents\Visual Studio 2010\Projects\QuickAccess\QuickAccess" + subDirInProj + "\Plugins\*.*"
 		//SectionEnd
-		if (HasPlugins)
+		if (hasPlugins)
 		{
-			int startSectionNumber = 2;//SEC002
-			string SolutionBaseDir = Path.Combine(PublishInterop.cProjectsRootDir, VsProjectName);//Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects\" + VsProjectName;
+			var startSectionNumber = 2;//SEC002
+			var solutionBaseDir = Path.Combine(PublishInterop.cProjectsRootDir, vsProjectName);//Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects\" + VsProjectName;
 
-			SectionGroupLines.Add("");
-			SectionGroupLines.Add(@"SectionGroup ""Plugins""");
-			foreach (string baseDirForEachPluginProjects in Directory.GetDirectories(SolutionBaseDir, "*Plugin"))
+			sectionGroupLines.Add("");
+			sectionGroupLines.Add(@"SectionGroup ""Plugins""");
+			foreach (string baseDirForEachPluginProjects in Directory.GetDirectories(solutionBaseDir, "*Plugin"))
 			{
-				string baseFolderNameForPlugin = Path.GetFileName(baseDirForEachPluginProjects);
-				string pluginDllPath = baseDirForEachPluginProjects + subDirInProj;
-				string pluginName = 
-						(baseFolderNameForPlugin.ToLower().EndsWith("plugin")
+				var baseFolderNameForPlugin = Path.GetFileName(baseDirForEachPluginProjects);
+				var pluginDllPath = baseDirForEachPluginProjects + subDirInProj;
+				var pluginName = 
+						(baseFolderNameForPlugin != null && baseFolderNameForPlugin.ToLower().EndsWith("plugin")
 						? baseFolderNameForPlugin.Substring(0, baseFolderNameForPlugin.Length - 6)
 						: baseFolderNameForPlugin).InsertSpacesBeforeCamelCase();
 
@@ -251,19 +272,19 @@ public class NsisInterop
 				//		? filenameWithoutExtension.Substring(0, filenameWithoutExtension.Length - 6)
 				//		: filenameWithoutExtension);
 				//SectionGroupLines.Add("");
-				SectionGroupLines.Add(NSISclass.Spacer + @"Section """ + pluginName + @""" SEC" + startSectionNumber++.ToString("000"));
-				SectionGroupLines.Add(NSISclass.Spacer + @"  SetShellVarContext all");
-				SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite on");
-				SectionGroupLines.Add(NSISclass.Spacer + @"	SetOutPath ""$INSTDIR\Plugins""");
-				SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite on");
-				SectionGroupLines.Add(NSISclass.Spacer + @"  File /a /x *.pdb /x *.xml /x *Toolkit* /x *InterfaceFor* /x *CookComputing.XmlRpcV2.dll /x *MouseGestures.dll /x *System.Windows.Controls.WpfPropertyGrid.dll" + Plugins_FaceDetectionNsisExclusionList() + Plugins_Pdf2textExclusionList() + @" """ + pluginDllPath + @"\*.*""");
-				SectionGroupLines.Add(NSISclass.Spacer + @"SectionEnd");
-				SectionGroupLines.Add("");
+				sectionGroupLines.Add(NSISclass.Spacer + @"Section """ + pluginName + @""" SEC" + startSectionNumber++.ToString("000"));
+				sectionGroupLines.Add(NSISclass.Spacer + @"  SetShellVarContext all");
+				sectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite on");
+				sectionGroupLines.Add(NSISclass.Spacer + @"	SetOutPath ""$INSTDIR\Plugins""");
+				sectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite on");
+				sectionGroupLines.Add(NSISclass.Spacer + @"  File /a /x *.pdb /x *.xml /x *Toolkit* /x *InterfaceFor* /x *CookComputing.XmlRpcV2.dll /x *MouseGestures.dll /x *System.Windows.Controls.WpfPropertyGrid.dll" + Plugins_FaceDetectionNsisExclusionList() + Plugins_Pdf2textExclusionList() + @" """ + pluginDllPath + @"\*.*""");
+				sectionGroupLines.Add(NSISclass.Spacer + @"SectionEnd");
+				sectionGroupLines.Add("");
 				//}
 			}
-			if (SectionGroupLines[SectionGroupLines.Count - 1].Trim() == "")
-				SectionGroupLines.RemoveAt(SectionGroupLines.Count - 1);
-			SectionGroupLines.Add("SectionGroupEnd");
+			if (sectionGroupLines[sectionGroupLines.Count - 1].Trim() == "")
+				sectionGroupLines.RemoveAt(sectionGroupLines.Count - 1);
+			sectionGroupLines.Add("SectionGroupEnd");
 
 			//string PluginsDir = PublishedDir + @"\Plugins";
 			//SectionGroupLines.Add("");
@@ -301,10 +322,10 @@ public class NsisInterop
 		}
 
 		return nsis.GetAllLinesForNSISfile(
-			SectionGroupLines,
+			sectionGroupLines,
 			null,
-			WriteIntoRegistryForWindowsAutostartup,
-			HasPlugins,
+			writeIntoRegistryForWindowsAutostartup,
+			hasPlugins,
 			explorerContextMenuItems);//SectionDescriptions);
 	}
 
@@ -1016,26 +1037,6 @@ public class NsisInterop
 					tmpList.Add(Spacer + regAssociatedRegistryline.Replace("((EXEPATH))", "$INSTDIR\\${PRODUCT_EXE_NAME}"));
 
 			tmpList.Add(@"SectionEnd"); tmpList.Add("");
-
-			if (DotnetFrameworkTargeted != DotnetFrameworkTargetedEnum.None)
-			{
-				tmpList.Add(@"Section -DotNetFramework");
-				if (DotnetFrameworkTargeted == DotnetFrameworkTargetedEnum.DotNet4full)
-					tmpList.Add(Spacer + @"!insertmacro CheckNetFramework 40Full ; if your application targets .NET 4.0 Full Framework");
-				if (DotnetFrameworkTargeted == DotnetFrameworkTargetedEnum.DotNet4client)
-					tmpList.Add(Spacer + @"!insertmacro CheckNetFramework 40Client ; if your application targets .NET 4.0 ClientOnServerSide Framework");
-				if (DotnetFrameworkTargeted == DotnetFrameworkTargetedEnum.DotNet3_5)
-					tmpList.Add(Spacer + @"!insertmacro CheckNetFramework 35 ; if your application targets .NET 3.5 Framework");
-				if (DotnetFrameworkTargeted == DotnetFrameworkTargetedEnum.DotNet3_0)
-					tmpList.Add(Spacer + @"!insertmacro CheckNetFramework 30 ; if your application targets .NET 3.0 Framework");
-				if (DotnetFrameworkTargeted == DotnetFrameworkTargetedEnum.DotNet2_0)
-					tmpList.Add(Spacer + @"!insertmacro CheckNetFramework 20 ; if your application targets .NET 2.0 Framework");
-				if (DotnetFrameworkTargeted == DotnetFrameworkTargetedEnum.DotNet1_1)
-					tmpList.Add(Spacer + @"!insertmacro CheckNetFramework 11 ; if your application targets .NET 1.1 Framework");
-				if (DotnetFrameworkTargeted == DotnetFrameworkTargetedEnum.DotNet1_0)
-					tmpList.Add(Spacer + @"!insertmacro CheckNetFramework 10 ; if your application targets .NET 1.0 Framework");
-				tmpList.Add(@"SectionEnd"); tmpList.Add("");
-			}
 
 			tmpList.Add(";Section -CheckMutexOpen");
 			tmpList.Add(Spacer + ";System::Call 'kernel32::OpenMutex(i 0x100000, b 0, buildTask \"QuickAccess-{6EBAC5AC-BCF2-4263-A82C-F189930AEA30}\") i .R0'");

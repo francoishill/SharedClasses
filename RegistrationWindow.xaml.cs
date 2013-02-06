@@ -27,7 +27,10 @@ namespace SharedClasses
 
 			try
 			{
-				UpdateUniqueSignature();
+				if (!UpdateUniqueSignature(out errorIfFailed))
+				{
+					return false;
+				}
 
 				if (!LicensingInterop_Client.GetLicenseAndPublicKeyFromLicenseServer(currentUniqueSignature, out licenseKeyObtainedOnline, out publicKeyObtainedOnline))
 				{
@@ -78,11 +81,11 @@ namespace SharedClasses
 				UserMessages.ShowErrorMessage(errorIfFailed);
 		}
 
-		private bool UpdateUniqueSignature()
+		private bool UpdateUniqueSignature(out string errorIfFailed)
 		{
 			if (string.IsNullOrWhiteSpace(textboxOwnerEmail.Text))
 			{
-				UserMessages.ShowWarningMessage("Please enter an owner email first.");
+				errorIfFailed = "Please enter an owner email first.";
 				textboxOwnerEmail.Focus();
 				return false;
 			}
@@ -97,6 +100,7 @@ namespace SharedClasses
 				   reversedOrderCode,
 				   LicensingInterop_Client.GetThisPcMachineSignature(),
 				   err => UserMessages.ShowErrorMessage(err));
+			errorIfFailed = null;
 			return true;
 		}
 

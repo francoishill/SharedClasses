@@ -11,12 +11,12 @@ using System.Threading.Tasks;
 
 namespace SharedClasses
 {
-	public class VSBuildProject_NonAbstract : VSBuildProject
+	public class VsBuildProject_NonAbstract : VsBuildProject
 	{
-		public VSBuildProject_NonAbstract(string ApplicationName, string CsprojOrSolutionFullpath = null) : base(ApplicationName, CsprojOrSolutionFullpath) { }
+		public VsBuildProject_NonAbstract(string applicationName, string csprojOrSolutionFullpath = null) : base(applicationName, csprojOrSolutionFullpath) { }
 	}
 
-	public abstract class VSBuildProject
+	public abstract class VsBuildProject
 	{
 		/* Additional dependencies for this file:
 			Class: SharedClassesSettings
@@ -30,31 +30,35 @@ namespace SharedClasses
 			//{ "Platform", "x86" },
 		};
 
-		private static bool? ChecksAlreadyDone = null;
+		private static bool? _checksAlreadyDone = null;
 
 		public virtual string ApplicationName { get; set; }
-		public virtual string LastBuildFeedback { get; set; }
-		public virtual bool? LastBuildResult { get; set; }
-		public virtual bool HasFeedbackText { get; set; }
+		public virtual string CurrentStatusText { get; set; }
+		//public virtual bool? LastBuildResult { get; set; }
+		public virtual bool HasFeedbackText { get { return !string.IsNullOrWhiteSpace(CurrentStatusText); } /*set; */}
 
 		public string PublishedSetupPath { get; private set; }
 
 		public string SolutionFullpath { get; protected set; }
 		public string GetSolutionDirectory() { return Path.GetDirectoryName(SolutionFullpath); }
 
-		public VSBuildProject(string ApplicationName, string CsprojOrSolutionFullpath = null, Action<string> actionOnError = null)
+		public VsBuildProject(string ApplicationName, string CsprojOrSolutionFullpath = null, Action<string> actionOnError = null)
 		{
 			if (actionOnError == null) actionOnError = errms => UserMessages.ShowErrorMessage(errms);
 
 			this.ApplicationName = Path.GetFileNameWithoutExtension(ApplicationName);
-			this.LastBuildFeedback = null;
-			this.HasFeedbackText = false;
-			this.LastBuildResult = null;
+			this.CurrentStatusText = null;
+			//this.LastBuildResult = null;
 
 			string err = null;
 			this.SolutionFullpath = CsprojOrSolutionFullpath ?? OwnAppsInterop.GetSolutionPathFromApplicationName(this.ApplicationName, out err);
 			if (err != null)
 				actionOnError(err);
+		}
+
+		public virtual void ClearStatusText()
+		{
+			this.CurrentStatusText = null;
 		}
 
 		private class MyLogger : ILogger
@@ -85,17 +89,17 @@ namespace SharedClasses
 			public LoggerVerbosity Verbosity { get; set; }
 		}
 
-		public static Dictionary<VSBuildProject, bool> PerformMultipleBuild(IEnumerable<VSBuildProject> projects, out Dictionary<VSBuildProject, string> errorsIfFail, Action<VSBuildProject> onBuildStart, Action<VSBuildProject, bool> onBuildComplete)
+		public static Dictionary<VsBuildProject, bool> PerformMultipleBuild(IEnumerable<VsBuildProject> projects, out Dictionary<VsBuildProject, string> errorsIfFail, Action<VsBuildProject> onBuildStart, Action<VsBuildProject, bool> onBuildComplete)
 		{
 			if (onBuildStart == null) onBuildStart = delegate { };
 			if (onBuildComplete == null) onBuildComplete = delegate { };
 
-			errorsIfFail = new Dictionary<VSBuildProject, string>();
+			errorsIfFail = new Dictionary<VsBuildProject, string>();
 			foreach (var app in projects)
 				errorsIfFail.Add(app, string.Empty);
 
-			Dictionary<int, VSBuildProject> submissionIDs = new Dictionary<int, VSBuildProject>();
-			Dictionary<VSBuildProject, List<string>> buildErrorsCaught = new Dictionary<VSBuildProject, List<string>>();
+			Dictionary<int, VsBuildProject> submissionIDs = new Dictionary<int, VsBuildProject>();
+			Dictionary<VsBuildProject, List<string>> buildErrorsCaught = new Dictionary<VsBuildProject, List<string>>();
 			foreach (var app in projects)
 				buildErrorsCaught.Add(app, new List<string>());
 
@@ -117,7 +121,7 @@ namespace SharedClasses
 							)
 					}
 				});
-			Dictionary<VSBuildProject, BuildSubmission> submissions = new Dictionary<VSBuildProject, BuildSubmission>();
+			Dictionary<VsBuildProject, BuildSubmission> submissions = new Dictionary<VsBuildProject, BuildSubmission>();
 
 			//string parallelErrIfFail = string.Empty;
 			//var projArray = projects.ToArray();
@@ -127,9 +131,9 @@ namespace SharedClasses
 				onBuildStart(proj);
 
 				//var proj = projArray[i];
-				if (!ChecksAlreadyDone.HasValue)
-					ChecksAlreadyDone = OwnAppsInterop.RootVSprojectsDir != null;
-				if (ChecksAlreadyDone == false)
+				if (!_checksAlreadyDone.HasValue)
+					_checksAlreadyDone = OwnAppsInterop.RootVSprojectsDir != null;
+				if (_checksAlreadyDone == false)
 				{
 					errorsIfFail[proj] += "Cannot find RootVisualStudio path" + Environment.NewLine;
 					continue;
@@ -141,9 +145,7 @@ namespace SharedClasses
 					continue;
 				}
 
-				proj.LastBuildFeedback = null;
-				proj.HasFeedbackText = true;//Just for incase
-				proj.LastBuildResult = null;
+				proj.ClearStatusText();
 
 				string projectFileName = proj.SolutionFullpath;//@"...\ConsoleApplication3\ConsoleApplication3.sln";
 				Dictionary<string, string> GlobalProperty = new Dictionary<string, string>();
@@ -168,14 +170,12 @@ namespace SharedClasses
 
 				/*if (buildResult.OverallResult == BuildResultCode.Success && csprojectPathsCaughtMatchingSolutionName.Count > 0)
 				{
-					this.HasFeedbackText = false;
 					errorIfFail = null;
 					csprojectPaths = csprojectPathsCaughtMatchingSolutionName;
 					return true;
 				}
 				else
 				{
-					this.HasFeedbackText = true;
 					string nowString = DateTime.Now.ToString("HH:mm:ss.fff");
 					if (csprojectPathsCaughtMatchingSolutionName.Count == 0 && buildResult.OverallResult == BuildResultCode.Success)//Build successfully but could not obtain csProject filepaths
 						this.LastBuildFeedback = string.Format("[{0}] Build successfully but could not obtain .csproj path(s) for solution: {1}", nowString, SolutionFullpath);
@@ -190,7 +190,7 @@ namespace SharedClasses
 				}*/
 			}//);
 
-			var tmpResult = new Dictionary<VSBuildProject, bool>();
+			var tmpResult = new Dictionary<VsBuildProject, bool>();
 			var submissionKeys = submissions.Keys.ToList();
 			while (submissionKeys.Count > 0)// && !submissions[0].IsCompleted)
 			{
@@ -201,7 +201,6 @@ namespace SharedClasses
 
 						if (submissions[proj].BuildResult.OverallResult == BuildResultCode.Success)// && csprojectPathsCaughtMatchingSolutionName.Count > 0)
 						{
-							proj.HasFeedbackText = false;
 							//errorIfFail = null;
 							//csprojectPaths = csprojectPathsCaughtMatchingSolutionName;
 							//return true;
@@ -213,17 +212,16 @@ namespace SharedClasses
 							//The following is not correct
 							//the buildErrorsCaught is a global list for all apps, now setting LastBuildFeedback of all apps
 
-							proj.HasFeedbackText = true;
 							string nowString = DateTime.Now.ToString("HH:mm:ss.fff");
 							/*if (csprojectPathsCaughtMatchingSolutionName.Count == 0 && buildResult.OverallResult == BuildResultCode.Success)//Build successfully but could not obtain csProject filepaths
 								this.LastBuildFeedback = string.Format("[{0}] Build successfully but could not obtain .csproj path(s) for solution: {1}", nowString, SolutionFullpath);
 							else */
 							if (buildErrorsCaught[proj].Count == 0)
-								proj.LastBuildFeedback = string.Format("[{0}] Unknown error to build " + proj.ApplicationName, nowString);
+								proj.CurrentStatusText = string.Format("[{0}] Unknown error to build " + proj.ApplicationName, nowString);
 							else
-								proj.LastBuildFeedback = string.Format("[{0}] Build failed for " + proj.ApplicationName, nowString)
+								proj.CurrentStatusText = string.Format("[{0}] Build failed for " + proj.ApplicationName, nowString)
 							 + Environment.NewLine + string.Join(Environment.NewLine, buildErrorsCaught[proj]);
-							errorsIfFail[proj] += proj.LastBuildFeedback + Environment.NewLine;
+							errorsIfFail[proj] += proj.CurrentStatusText + Environment.NewLine;
 							//csprojectPaths = null;
 							tmpResult.Add(proj, false);
 						}
@@ -245,7 +243,6 @@ namespace SharedClasses
 			{
 				if (submissions[proj].BuildResult.OverallResult == BuildResultCode.Success)// && csprojectPathsCaughtMatchingSolutionName.Count > 0)
 				{
-					proj.HasFeedbackText = false;
 					//errorIfFail = null;
 					//csprojectPaths = csprojectPathsCaughtMatchingSolutionName;
 					//return true;
@@ -257,7 +254,6 @@ namespace SharedClasses
 					//The following is not correct
 					//the buildErrorsCaught is a global list for all apps, now setting LastBuildFeedback of all apps
 
-					proj.HasFeedbackText = true;
 					string nowString = DateTime.Now.ToString("HH:mm:ss.fff");
 					//if (csprojectPathsCaughtMatchingSolutionName.Count == 0 && buildResult.OverallResult == BuildResultCode.Success)//Build successfully but could not obtain csProject filepaths
 					//    this.LastBuildFeedback = string.Format("[{0}] Build successfully but could not obtain .csproj path(s) for solution: {1}", nowString, SolutionFullpath);
@@ -274,11 +270,11 @@ namespace SharedClasses
 			}*/
 
 			//errorIfFail = parallelErrIfFail;
-			{
-				var tmpErrKeys = errorsIfFail.Keys.ToList();
-				foreach (var k in tmpErrKeys)
-					errorsIfFail[k] = errorsIfFail[k].TrimEnd('\n', '\r');
-			}
+			//{
+			var tmpErrKeys = errorsIfFail.Keys.ToList();
+			foreach (var k in tmpErrKeys)
+				errorsIfFail[k] = errorsIfFail[k].TrimEnd('\n', '\r');
+			//}
 
 			return tmpResult;
 		}
@@ -311,13 +307,11 @@ namespace SharedClasses
 
 			//try
 			//{
-			this.LastBuildFeedback = null;
-			this.HasFeedbackText = true;//Just for incase
-			this.LastBuildResult = null;
+			this.ClearStatusText();
 
-			if (!ChecksAlreadyDone.HasValue)
-				ChecksAlreadyDone = OwnAppsInterop.RootVSprojectsDir != null;
-			if (ChecksAlreadyDone == false)
+			if (!_checksAlreadyDone.HasValue)
+				_checksAlreadyDone = OwnAppsInterop.RootVSprojectsDir != null;
+			if (_checksAlreadyDone == false)
 			{
 				onMessage("Cannot find RootVisualStudio path", FeedbackMessageTypes.Error);
 				csprojectPaths = null;
@@ -377,22 +371,20 @@ namespace SharedClasses
 			bool successFullyBuilt = submission.BuildResult.OverallResult == BuildResultCode.Success;
 			if (successFullyBuilt && csprojectPathsCaughtMatchingSolutionName.Count > 0)
 			{
-				this.HasFeedbackText = false;
 				csprojectPaths = csprojectPathsCaughtMatchingSolutionName;
 				return true;
 			}
 			else
 			{
-				this.HasFeedbackText = true;
 				string nowString = DateTime.Now.ToString("HH:mm:ss.fff");
 				if (csprojectPathsCaughtMatchingSolutionName.Count == 0 && successFullyBuilt)//Build successfully but could not obtain csProject filepaths
-					this.LastBuildFeedback = string.Format("[{0}] Build successfully but could not obtain .csproj path(s) for solution: {1}", nowString, SolutionFullpath);
+					this.CurrentStatusText = string.Format("[{0}] Build successfully but could not obtain .csproj path(s) for solution: {1}", nowString, SolutionFullpath);
 				else if (buildErrorsCaught.Count == 0)
-					this.LastBuildFeedback = string.Format("[{0}] Unknown error to build " + this.ApplicationName, nowString);
+					this.CurrentStatusText = string.Format("[{0}] Unknown error to build " + this.ApplicationName, nowString);
 				else
-					this.LastBuildFeedback = string.Format("[{0}] Build failed for " + this.ApplicationName, nowString)
+					this.CurrentStatusText = string.Format("[{0}] Build failed for " + this.ApplicationName, nowString)
 						+ Environment.NewLine + string.Join(Environment.NewLine, buildErrorsCaught);
-				onMessage(this.LastBuildFeedback, FeedbackMessageTypes.Error);
+				onMessage(this.CurrentStatusText, FeedbackMessageTypes.Error);
 				csprojectPaths = null;
 				return false;
 			}

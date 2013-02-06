@@ -84,6 +84,9 @@ namespace SharedClasses
 //#if WPF
 		public static ImageSource IconToImageSource(this Icon icon)
 		{
+			if (icon == null)
+				return null;
+
 			ImageSource imageSource = Imaging.CreateBitmapSourceFromHIcon(
 					icon.Handle,
 					Int32Rect.Empty,

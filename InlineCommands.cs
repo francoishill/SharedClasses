@@ -158,7 +158,7 @@ namespace InlineCommandToolkit
 			string DisplayName { get; }
 			string Description { get; }
 			string ArgumentsExample { get; }
-			bool PreValidateArgument(out string errorMessage, int Index, string argumentValue);
+			bool PreValidateArgument(out string errorMessage, int index, string argumentValue);
 			bool ValidateArguments(out string errorMessage, params string[] arguments);
 			bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments);
 			List<string[]> ArgumentsHistory { get; set; }
@@ -186,7 +186,7 @@ namespace InlineCommandToolkit
 			public abstract string DisplayName { get; }
 			public abstract string Description { get; }
 			public abstract string ArgumentsExample { get; }
-			public abstract bool PreValidateArgument(out string errorMessage, int Index, string argumentValue);
+			public abstract bool PreValidateArgument(out string errorMessage, int index, string argumentValue);
 			public abstract bool ValidateArguments(out string errorMessage, params string[] arguments);
 			public abstract bool PerformCommand(out string errorMessage, TextFeedbackEventHandler textFeedbackEvent = null, ProgressChangedEventHandler progressChangedEvent = null, params string[] arguments);
 

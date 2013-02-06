@@ -664,6 +664,7 @@ namespace SharedClasses
 			public string AppsDownloadFtpPassword { get; set; }
 			public string AppsUploadFtpUsername { get; set; }
 			public string AppsUploadFtpPassword { get; set; }
+			public List<string> AllowedListOfApplicationsToDownload { get; set; }//For the online site firepuma.com/apps (which must be listed, if they have a published folder yet - firepuma.com/ownapplications/[appname])
 
 			public OnlineAppsSettings()
 			{
@@ -672,6 +673,27 @@ namespace SharedClasses
 				this.AppsDownloadFtpPassword = "appsdownload.pass123";
 				this.AppsUploadFtpUsername = "ownappsupload";
 				this.AppsUploadFtpPassword = "ownappsuploadpass123";
+				this.AllowedListOfApplicationsToDownload = new List<string>()
+				{
+					"AdvancedClipboard",
+					"AutoUpdater",
+					"AutoUploadChangesToFtp",
+					"CompareCSVs",
+					"GenericTextFunctions",
+					"MiniPopupTasks",
+					"MoveSvnToGitWPF",
+					"QuickAccess",
+					"ShoppingList",
+					"StandaloneUploader",
+					"StartupTodoManager",
+					"StickyNotes",
+					"TaskbarShortcuts",
+					"TestHoursWorkedCalculator",
+					"TestingByteArrayDiff",
+					"TestingMonitorSubversion",
+					"TopmostSearchBox",
+					"WindowsStartupManager"
+				};
 			}
 		}
 

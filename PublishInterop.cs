@@ -164,7 +164,7 @@ namespace SharedClasses
 
 			actionOnMessage("Attempting to build project " + projName, FeedbackMessageTypes.Status);
 
-			var projToBuild = new VSBuildProject_NonAbstract(projName);
+			var projToBuild = new VsBuildProject_NonAbstract(projName);
 			List<string> csprojPaths;
 			//string errorIfNotNull;
 			if (!projToBuild.PerformBuild(actionOnMessage, out csprojPaths))
@@ -251,7 +251,7 @@ namespace SharedClasses
 					null,
 					true,
 					NsisInterop.NSISclass.DotnetFrameworkTargetedEnum.DotNet4client,
-					/*True64bit_False32bit,*/
+				/*True64bit_False32bit,*/
 					StartupWithWindows,
 					HasPlugins,
 					customSetupFilename));
@@ -400,19 +400,19 @@ namespace SharedClasses
 					tracTicketsSinceDate.HasValue ? tracTicketsSinceDate : DateTime.MinValue,
 					changeLogs);
 
-			string errorStringIfFailElseJsonString;
-			if (!WebInterop.SaveObjectOnline(PublishDetails.OnlineJsonCategory, projName + " - " + publishedVersionString, currentlyPublishDetails, out errorStringIfFailElseJsonString))
+			string errstr;
+			if (!WebInterop.SaveObjectOnline(PublishDetails.OnlineJsonCategory, projName + " - " + publishedVersionString, currentlyPublishDetails, out errstr))
 			{
-				actionOnMessage("Cannot save json online (" + projName + " - " + publishedVersionString + "), setup and index.html cancelled for project " + projName + ": " + errorStringIfFailElseJsonString, FeedbackMessageTypes.Error);
+				actionOnMessage("Cannot save json online (" + projName + " - " + publishedVersionString + "), setup and index.html cancelled for project " + projName + ": " + errstr, FeedbackMessageTypes.Error);
 				return false;
 			}
-			if (!WebInterop.SaveObjectOnline(PublishDetails.OnlineJsonCategory, projName + PublishDetails.LastestVersionJsonNamePostfix, currentlyPublishDetails, out errorStringIfFailElseJsonString))
+			if (!WebInterop.SaveObjectOnline(PublishDetails.OnlineJsonCategory, projName + PublishDetails.LastestVersionJsonNamePostfix, currentlyPublishDetails, out errstr))
 			{
-				actionOnMessage("Cannot save json online (" + projName + PublishDetails.LastestVersionJsonNamePostfix + "), setup and index.html cancelled for project " + projName + ": " + errorStringIfFailElseJsonString, FeedbackMessageTypes.Error);
+				actionOnMessage("Cannot save json online (" + projName + PublishDetails.LastestVersionJsonNamePostfix + "), setup and index.html cancelled for project " + projName + ": " + errstr, FeedbackMessageTypes.Error);
 				return false;
 			}
 
-			string tmperr;			
+			string tmperr;
 			List<string> listOfScreenshotsFullLocalPaths = GetScreenshotsFullpath(projName, out tmperr);
 			if (listOfScreenshotsFullLocalPaths == null)
 			{

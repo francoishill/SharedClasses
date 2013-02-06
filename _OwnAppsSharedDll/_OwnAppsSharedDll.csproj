@@ -206,6 +206,9 @@
     <Compile Include="..\ShowNoCallbackNotificationInterop.cs">
       <Link>ShowNoCallbackNotificationInterop.cs</Link>
     </Compile>
+    <Compile Include="..\StringExtensions.cs">
+      <Link>StringExtensions.cs</Link>
+    </Compile>
     <Compile Include="..\TaskScheduler2.cs">
       <Link>TaskScheduler2.cs</Link>
     </Compile>

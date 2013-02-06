@@ -371,7 +371,6 @@ namespace SharedClasses
 					//msi.CopyTo(gs);
 					CopyTo(msi, gs);
 				}
-
 				return mso.ToArray();
 			}
 		}

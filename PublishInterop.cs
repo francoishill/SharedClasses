@@ -167,7 +167,7 @@ namespace SharedClasses
 			var projToBuild = new VsBuildProject_NonAbstract(projName);
 			List<string> csprojPaths;
 			//string errorIfNotNull;
-			if (!projToBuild.PerformBuild(actionOnMessage, out csprojPaths))
+			if (!projToBuild.PerformBuild(out csprojPaths))
 			{
 				publishedVersionString = null;
 				publishedSetupPath = null;
@@ -717,6 +717,15 @@ namespace SharedClasses
 				});
 			},
 			true);
+
+			if (tmpBugsFixed.Count == 0
+				&& tmpImprovements.Count == 0
+				&& tmpNewFeatures.Count == 0)
+			actionOnMessage(
+				"No tickets were [CLOSED] yet"
+				+ (sinceDate.HasValue ? " since " + sinceDate.Value.ToString("yyyy-MM-dd HH:mm:ss") : ""),
+				FeedbackMessageTypes.Warning);//Warn if no CLOSED tickets?
+
 			return new TracXmlRpcInterop.ChangeLogs(rootProjectXmlRpcTracUri, tmpBugsFixed, tmpImprovements, tmpNewFeatures);
 		}
 

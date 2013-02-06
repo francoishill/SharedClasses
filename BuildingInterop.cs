@@ -23,6 +23,10 @@ namespace SharedClasses
 			Assembly: Microsoft.Build
 			Assembly: Microsoft.Build.Framework*/
 
+		public enum StatusTypes { Normal, Queued, Busy, Success, Error, Warning };
+		public static Action<VsBuildProject, string, FeedbackMessageTypes> ActionOnFeedbackMessageReceived = delegate { };
+		public static Action<VsBuildProject, int?> ActionOnProgressPercentageChanged = delegate { };
+
 		private readonly static Dictionary<string, string> GlobalBuildProperties = new Dictionary<string, string>()
 		{
 			{ "Configuration", "Release" },
@@ -34,6 +38,8 @@ namespace SharedClasses
 
 		public virtual string ApplicationName { get; set; }
 		public virtual string CurrentStatusText { get; set; }
+		public virtual StatusTypes CurrentStatus { get; set; }
+		public virtual int? CurrentProgressPercentage { get; set; }
 		//public virtual bool? LastBuildResult { get; set; }
 		public virtual bool HasFeedbackText { get { return !string.IsNullOrWhiteSpace(CurrentStatusText); } /*set; */}
 
@@ -42,9 +48,9 @@ namespace SharedClasses
 		public string SolutionFullpath { get; protected set; }
 		public string GetSolutionDirectory() { return Path.GetDirectoryName(SolutionFullpath); }
 
-		public VsBuildProject(string ApplicationName, string CsprojOrSolutionFullpath = null, Action<string> actionOnError = null)
+		public VsBuildProject(string ApplicationName, string CsprojOrSolutionFullpath = null)
 		{
-			if (actionOnError == null) actionOnError = errms => UserMessages.ShowErrorMessage(errms);
+			//if (ActionOnFeedbackMessageReceived == null) ActionOnFeedbackMessageReceived = errms => UserMessages.ShowErrorMessage(errms);
 
 			this.ApplicationName = Path.GetFileNameWithoutExtension(ApplicationName);
 			this.CurrentStatusText = null;
@@ -53,13 +59,101 @@ namespace SharedClasses
 			string err = null;
 			this.SolutionFullpath = CsprojOrSolutionFullpath ?? OwnAppsInterop.GetSolutionPathFromApplicationName(this.ApplicationName, out err);
 			if (err != null)
-				actionOnError(err);
+				OnFeedbackMessage(err, FeedbackMessageTypes.Error);
 		}
 
-		public virtual void ClearStatusText()
+		public void ResetStatus(bool markAsQueued)
 		{
 			this.CurrentStatusText = null;
+			/*if (setIndeterminateProgress)
+			{
+				this.CurrentProgressPercentage = null;
+				this.CurrentStatus = StatusTypes.Busy;
+			}
+			else
+			{*/
+			this.CurrentProgressPercentage = 0;
+			if (markAsQueued)
+				this.CurrentStatus = StatusTypes.Queued;
+			else
+				this.CurrentStatus = StatusTypes.Normal;
+			//}
 		}
+
+		public void MarkAsBusy()
+		{
+			this.CurrentProgressPercentage = null;
+			this.CurrentStatus = StatusTypes.Busy;
+		}
+
+		public void MarkAsComplete()
+		{
+			this.CurrentProgressPercentage = 0;
+			if (this.CurrentStatus == StatusTypes.Busy)
+				this.CurrentStatus = StatusTypes.Normal;
+		}
+
+		public void AppendCurrentStatusText(string textToAppend)
+		{
+			if (!string.IsNullOrWhiteSpace(this.CurrentStatusText))
+				this.CurrentStatusText += Environment.NewLine;
+			this.CurrentStatusText += textToAppend;
+		}
+
+		#region OnFeedback events
+		#region Text messages
+		public static void OnFeedbackMessage(VsBuildProject buildapp, string message, FeedbackMessageTypes messageType)
+		{
+			switch (messageType)
+			{
+				case FeedbackMessageTypes.Success:
+					if (buildapp.CurrentStatus != StatusTypes.Error
+						&& buildapp.CurrentStatus != StatusTypes.Warning)//Only set success if its not Error/Warning
+						buildapp.CurrentStatus = StatusTypes.Success;
+					break;
+				case FeedbackMessageTypes.Error:
+					buildapp.CurrentStatus = StatusTypes.Error;
+					break;
+				case FeedbackMessageTypes.Warning:
+					if (buildapp.CurrentStatus != StatusTypes.Error)//Only set warning if its not Error
+						buildapp.CurrentStatus = StatusTypes.Warning;
+					break;
+				case FeedbackMessageTypes.Status:
+					break;
+				default:
+					UserMessages.ShowWarningMessage("Cannot use messagetype = " + messageType.ToString());
+					break;
+			}
+			buildapp.AppendCurrentStatusText(message);
+			ActionOnFeedbackMessageReceived(buildapp, message, messageType);
+		}
+		public static void OnErrorMessage(VsBuildProject buildapp, string errMessage)
+		{
+			OnFeedbackMessage(buildapp, errMessage, FeedbackMessageTypes.Error);
+		}
+
+		public void OnFeedbackMessage(string message, FeedbackMessageTypes messageType)
+		{
+			OnFeedbackMessage(this, message, messageType);
+		}
+		public void OnErrorMessage(string errMessage)
+		{
+			OnFeedbackMessage(errMessage, FeedbackMessageTypes.Error);
+		}
+		#endregion Text messages
+
+		#region Progress changes
+		public static void OnProgressPercentageChanged(VsBuildProject buildapp, int? newProgressValue)
+		{
+			buildapp.CurrentProgressPercentage = newProgressValue;
+			ActionOnProgressPercentageChanged(buildapp, newProgressValue);
+		}
+		public void OnProgressPercentageChanged(int? newProgressValue)
+		{
+			OnProgressPercentageChanged(this, newProgressValue);
+		}
+		#endregion Progress changes
+		#endregion OnFeedback events
 
 		private class MyLogger : ILogger
 		{
@@ -145,7 +239,7 @@ namespace SharedClasses
 					continue;
 				}
 
-				proj.ClearStatusText();
+				proj.ResetStatus(true);
 
 				string projectFileName = proj.SolutionFullpath;//@"...\ConsoleApplication3\ConsoleApplication3.sln";
 				Dictionary<string, string> GlobalProperty = new Dictionary<string, string>();
@@ -285,10 +379,8 @@ namespace SharedClasses
 		/// </summary>
 		/// <param name="errorIfFail">Returns an error string if the result was FALSE</param>
 		/// <returns>Returns null if succeeded, otherwise error</returns>
-		public bool PerformBuild(Action<string, FeedbackMessageTypes> onMessage, out List<string> csprojectPaths)
+		public bool PerformBuild(out List<string> csprojectPaths)
 		{
-			if (onMessage == null) onMessage = delegate { };
-
 			/*if (IsBusyBuilding)
 			{
 				errorIfFail = "Cannot build " + this.ApplicationName + ", another build is already in progress.";
@@ -298,7 +390,7 @@ namespace SharedClasses
 
 			if (SolutionFullpath == null)
 			{
-				onMessage("SolutionFullPath is null for application " + this.ApplicationName + ", cannot build project", FeedbackMessageTypes.Error);
+				OnFeedbackMessage("SolutionFullPath is null for application " + this.ApplicationName + ", cannot build project", FeedbackMessageTypes.Error);
 				csprojectPaths = null;
 				return false;
 			}
@@ -307,13 +399,13 @@ namespace SharedClasses
 
 			//try
 			//{
-			this.ClearStatusText();
+			this.ResetStatus(true);
 
 			if (!_checksAlreadyDone.HasValue)
 				_checksAlreadyDone = OwnAppsInterop.RootVSprojectsDir != null;
 			if (_checksAlreadyDone == false)
 			{
-				onMessage("Cannot find RootVisualStudio path", FeedbackMessageTypes.Error);
+				OnFeedbackMessage("Cannot find RootVisualStudio path", FeedbackMessageTypes.Error);
 				csprojectPaths = null;
 				return false;
 			}
@@ -324,7 +416,7 @@ namespace SharedClasses
 			foreach (var key in GlobalBuildProperties.Keys)
 				buildGlobalProperties.Add(key, GlobalBuildProperties[key]);
 			if (GlobalBuildProperties.ContainsKey("Platform") && GlobalBuildProperties["Platform"].Equals("x86", StringComparison.InvariantCultureIgnoreCase))
-				onMessage("Publishing in 32bit (x86) mode only", FeedbackMessageTypes.Warning);
+				OnFeedbackMessage("Publishing in 32bit (x86) mode only", FeedbackMessageTypes.Warning);
 			//NB, what if we need to publish in Any CPU mode??
 
 			BuildRequestData BuidlRequest = new BuildRequestData(projectFileName, buildGlobalProperties, null, new string[] { "Build" }, null);
@@ -345,7 +437,7 @@ namespace SharedClasses
 							{
 								string errMsg = string.Format("Could not build '{0}',{1}Error in {2}: line {3},{1}Error message: '{4}'",
 									builderr.ProjectFile, /*Environment.NewLine*/"  ", builderr.File, builderr.LineNumber, builderr.Message);
-								onMessage(errMsg, FeedbackMessageTypes.Error);
+								OnFeedbackMessage(errMsg, FeedbackMessageTypes.Error);
 								buildErrorsCaught.Add(errMsg);
 							},
 							(projstarted) =>
@@ -362,7 +454,7 @@ namespace SharedClasses
 			//BuildRequestData request = new BuildRequestData(buildProject.CreateProjectInstance(), new string[0]);
 			BuildSubmission submission = BuildManager.DefaultBuildManager.PendBuildRequest(BuidlRequest);//request);
 			submission.ExecuteAsync(null, null);
-			onMessage("Project started to build", FeedbackMessageTypes.Status);
+			OnFeedbackMessage("Project started to build", FeedbackMessageTypes.Status);
 			// Wait for the build to finish.
 			submission.WaitHandle.WaitOne();
 
@@ -384,7 +476,7 @@ namespace SharedClasses
 				else
 					this.CurrentStatusText = string.Format("[{0}] Build failed for " + this.ApplicationName, nowString)
 						+ Environment.NewLine + string.Join(Environment.NewLine, buildErrorsCaught);
-				onMessage(this.CurrentStatusText, FeedbackMessageTypes.Error);
+				OnFeedbackMessage(this.CurrentStatusText, FeedbackMessageTypes.Error);
 				csprojectPaths = null;
 				return false;
 			}
@@ -395,8 +487,7 @@ namespace SharedClasses
 			//}
 		}
 
-		public bool PerformPublish(Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage,
-			bool _64bit = false, bool autoUpdateRevision = true, bool installLocally = true,
+		public bool PerformPublish(bool _64bit = false, bool autoUpdateRevision = true, bool installLocally = true,
 			bool placeSetupInTempWebFolder = false, string customSetupFilename = null)
 		{
 			string outPublishedVersion;
@@ -413,8 +504,8 @@ namespace SharedClasses
 				out outPublishedVersion,
 				out resultSetupFilename,
 				out outPublishDate,
-				actionOnMessage,
-				actionOnProgressPercentage,
+				OnFeedbackMessage,
+				(progperc) => OnProgressPercentageChanged(progperc),
 				placeSetupInTempWebFolder,
 				customSetupFilename);
 
@@ -426,7 +517,7 @@ namespace SharedClasses
 			return publishResult;
 		}
 
-		public bool PerformPublishOnline(Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage)
+		public bool PerformPublishOnline()
 		{
 			string outPublishedVersion;
 			string resultSetupFilename;
@@ -443,8 +534,8 @@ namespace SharedClasses
 				out outPublishedVersion,
 				out resultSetupFilename,
 				out outPublishDate,
-				actionOnMessage,
-				actionOnProgressPercentage);
+				OnFeedbackMessage,
+				(progperc) => OnProgressPercentageChanged(progperc));
 			return publishResult;
 		}
 	}

@@ -195,7 +195,10 @@ namespace SharedClasses
 			Dictionary<int, VsBuildProject> submissionIDs = new Dictionary<int, VsBuildProject>();
 			Dictionary<VsBuildProject, List<string>> buildErrorsCaught = new Dictionary<VsBuildProject, List<string>>();
 			foreach (var app in projects)
+			{
+				app.ResetStatus(true);
 				buildErrorsCaught.Add(app, new List<string>());
+			}
 
 			ProjectCollection pc = new ProjectCollection();
 			BuildManager.DefaultBuildManager.BeginBuild(
@@ -222,6 +225,7 @@ namespace SharedClasses
 			foreach (var proj in projects)
 			//Parallel.For(0, projArray.Length - 1, (i) =>
 			{
+				proj.MarkAsBusy();
 				onBuildStart(proj);
 
 				//var proj = projArray[i];
@@ -239,7 +243,7 @@ namespace SharedClasses
 					continue;
 				}
 
-				proj.ResetStatus(true);
+				//proj.ResetStatus(true);
 
 				string projectFileName = proj.SolutionFullpath;//@"...\ConsoleApplication3\ConsoleApplication3.sln";
 				Dictionary<string, string> GlobalProperty = new Dictionary<string, string>();
@@ -299,6 +303,7 @@ namespace SharedClasses
 							//csprojectPaths = csprojectPathsCaughtMatchingSolutionName;
 							//return true;
 							tmpResult.Add(proj, true);
+							proj.CurrentStatus = StatusTypes.Success;
 						}
 						else
 						{
@@ -310,6 +315,7 @@ namespace SharedClasses
 							/*if (csprojectPathsCaughtMatchingSolutionName.Count == 0 && buildResult.OverallResult == BuildResultCode.Success)//Build successfully but could not obtain csProject filepaths
 								this.LastBuildFeedback = string.Format("[{0}] Build successfully but could not obtain .csproj path(s) for solution: {1}", nowString, SolutionFullpath);
 							else */
+							proj.CurrentStatus = StatusTypes.Error;
 							if (buildErrorsCaught[proj].Count == 0)
 								proj.CurrentStatusText = string.Format("[{0}] Unknown error to build " + proj.ApplicationName, nowString);
 							else
@@ -320,6 +326,7 @@ namespace SharedClasses
 							tmpResult.Add(proj, false);
 						}
 
+						proj.MarkAsComplete();
 						onBuildComplete(
 							proj,
 							submissions[proj].BuildResult.OverallResult == BuildResultCode.Success);

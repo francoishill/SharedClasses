@@ -708,6 +708,7 @@ namespace SharedClasses
 				public enum PathTypes { FullPath, OwnApp };
 				public string DisplayName { get; set; }
 				public string AppPath { get; set; }
+				public string PathToProcessExe { get; set; }//Usually required with Portable apps
 				public PathTypes PathType { get; set; }
 				public string CommandlineArguments { get; set; }
 				public bool WaitForUserInput { get; set; }
@@ -718,7 +719,7 @@ namespace SharedClasses
 				public RunCommand() { }
 				public RunCommand(string AppPath, string DisplayName, PathTypes PathType, bool WaitForUserInput = false, string CommandlineArguments = null, int DelayAfterStartSeconds = cDefaultDelayInSeconds, bool IsEnabled = true, bool IncludeInQuickClose = false)
 				{
-					this.AppPath = AppPath;
+					this.AppPath = AppPath.Trim(' ', '\\', '"', '\'');
 					this.DisplayName = DisplayName;
 					this.PathType = PathType;
 					this.WaitForUserInput = WaitForUserInput;

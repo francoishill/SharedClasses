@@ -279,11 +279,19 @@ namespace SharedClasses
 			if (fe == null) return null;
 			return fe.DataContext as T;
 		}
-		public static void DoActionIfObtainedItemFromObjectSender<T>(object sender, Action<T> action) where T : class
+		public static void DoActionIfObtainedItemFromObjectSender<T>(object sender, Action<T> action,
+			bool separateThread = false, bool waitUntilFinishIfSeparateThread = false) where T : class
 		{
 			T item = GetFromObjectSender<T>(sender);
 			if (item == null) return;
-			action(item);
+
+			if (separateThread)
+				ThreadingInterop.PerformOneArgFunctionSeperateThread<T>(
+					action,
+					item,
+					waitUntilFinishIfSeparateThread);
+			else
+				action(item);
 		}
 
 		public static class MouseLocation

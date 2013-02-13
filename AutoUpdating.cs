@@ -108,6 +108,98 @@ namespace SharedClasses
 
 		}
 
+		private static readonly TimeSpan cDelayBeforeInitialCheck = TimeSpan.FromSeconds(10);
+		private static readonly TimeSpan cCheckInterval = TimeSpan.FromSeconds(5);
+
+		private const long cMemoryThresholdBytes = 250 * 1024 * 1024;
+		private static bool busyShowingHighMemoryUsageMessage = false;
+		private static void CheckMemoryUsage(Process process)
+		{
+			process.Refresh();
+
+			//BytesToHumanfriendlyStringConverter.ConvertBytesToHumanreadableString(currentProcess.PrivateMemorySize64)
+			if (process.PrivateMemorySize64 > cMemoryThresholdBytes)
+			{
+				if (!busyShowingHighMemoryUsageMessage)
+				{
+					busyShowingHighMemoryUsageMessage = true;
+					ThreadingInterop.DoAction(delegate
+					{
+						string appname = LicensingInterop_Client.GetApplicationName();
+						if (UserMessages.Confirm(
+							string.Format("WARNING!!! Confirm to terminate application '{0}'? Current Memory usage is above {1} (current memory usage is {2}).", appname, BytesToHumanfriendlyStringConverter.ConvertBytesToHumanreadableString(cMemoryThresholdBytes), BytesToHumanfriendlyStringConverter.ConvertBytesToHumanreadableString(process.PrivateMemorySize64))))
+							Environment.Exit(0);
+						busyShowingHighMemoryUsageMessage = false;
+					},
+					false);
+				}
+			}
+		}
+
+		private const double cCPUthresholdPercentage = 40.0;
+		private const double cWarningSecondsIfAboveCPUThresholdForLongerThan = 10;
+		private static Timer _memoryWatcherTimer = null;
+		private static DateTime? _previousCheckedTime = null;
+		private static double _previousTotalMilliseconds;
+		private static int numberConsecutiveTimesCPUabove50 = 0;
+		private static bool busyShowingHighCpuUsageMessage = false;
+		private static void CheckCpuLoad(Process process)
+		{
+			process.Refresh();
+
+			if (_previousCheckedTime.HasValue)
+			{
+				double totalMillisecondsAddedAfterLastCheck = process.TotalProcessorTime.TotalMilliseconds - _previousTotalMilliseconds;
+				TimeSpan durationAfterLastCheck = DateTime.Now - _previousCheckedTime.Value;
+				double currentTotalCPUload = 100D * (totalMillisecondsAddedAfterLastCheck / durationAfterLastCheck.TotalMilliseconds);
+				currentTotalCPUload = currentTotalCPUload / (double)Environment.ProcessorCount;
+
+				//We are currently measuring the CURRENT cpu load, not the AVERAGE
+				if (currentTotalCPUload > cCPUthresholdPercentage)
+				{
+					numberConsecutiveTimesCPUabove50++;
+					if (cCheckInterval.TotalSeconds * (double)numberConsecutiveTimesCPUabove50 > cWarningSecondsIfAboveCPUThresholdForLongerThan)
+					{
+						if (!busyShowingHighCpuUsageMessage)
+						{
+							busyShowingHighCpuUsageMessage = true;
+							ThreadingInterop.DoAction(delegate
+							{
+								string appname = LicensingInterop_Client.GetApplicationName();
+								double secondsTheCpuIsAboveThreshold = cCheckInterval.TotalSeconds * (double)numberConsecutiveTimesCPUabove50;
+								if (UserMessages.Confirm(
+									string.Format("WARNING!!! Confirm to terminate application '{0}'? Current CPU load is above {1} (current load is {2}) for more than {3} seconds.", appname, cCPUthresholdPercentage, currentTotalCPUload.ToString("0.##"), secondsTheCpuIsAboveThreshold)))
+									Environment.Exit(0);
+								busyShowingHighCpuUsageMessage = false;
+							},
+							false);
+						}
+					}
+				}
+				else
+					numberConsecutiveTimesCPUabove50 = 0;
+
+				Console.WriteLine("CPU load = {0}", currentTotalCPUload);
+			}
+
+			_previousCheckedTime = DateTime.Now;
+			_previousTotalMilliseconds = process.TotalProcessorTime.TotalMilliseconds;
+		}
+
+		private static void RegisterMemoryAndCpuWatcher()
+		{
+			_memoryWatcherTimer = new Timer(
+				delegate
+				{
+					var currentProcess = Process.GetCurrentProcess();
+					CheckMemoryUsage(currentProcess);
+					CheckCpuLoad(currentProcess);
+				},
+				null,
+				cDelayBeforeInitialCheck,
+				cCheckInterval);
+		}
+
 		public static string GetThisAppVersionString()
 		{
 			return FileVersionInfo.GetVersionInfo(Environment.GetCommandLineArgs()[0]).FileVersion;
@@ -145,6 +237,8 @@ namespace SharedClasses
 
 			AddJumplistForNewfeaturesAndBugs_AlsoHandleCommandlineArguments();
 
+			RegisterMemoryAndCpuWatcher();
+
 			Thread checkForUpdatesThread = _checkForUpdates(ActionIfUptoDate);
 			return checkForUpdatesThread;
 		}
@@ -167,7 +261,7 @@ namespace SharedClasses
 					//Only show message if we are using own PC, otherwise we just log it
 					if (Directory.Exists(@"C:\Francois\Dev\VSprojects"))
 						AppTypeIndependant.ShowErrorMessage("AutoUpdater not installed, could not find AutoUpdater.exe in App Paths of Regsitry.");
-					
+
 					Logging.LogWarningToFile(
 						"AutoUpdater is not installed, could not check for updates.",
 						Logging.ReportingFrequencies.Daily,

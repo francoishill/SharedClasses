@@ -107,6 +107,9 @@
       <Link>AboutWindow2.xaml.cs</Link>
       <DependentUpon>AboutWindow2.xaml</DependentUpon>
     </Compile>
+    <Compile Include="..\ApplicationRecoveryAndRestart.cs">
+      <Link>ApplicationRecoveryAndRestart.cs</Link>
+    </Compile>
     <Compile Include="..\AppTypeIndependant.cs">
       <Link>AppTypeIndependant.cs</Link>
     </Compile>
@@ -183,6 +186,9 @@
     </Compile>
     <Compile Include="..\ProcessesInterop.cs">
       <Link>ProcessesInterop.cs</Link>
+    </Compile>
+    <Compile Include="..\QueueingActionsInterop.cs">
+      <Link>QueueingActionsInterop.cs</Link>
     </Compile>
     <Compile Include="..\ReflectionInterop.cs">
       <Link>ReflectionInterop.cs</Link>

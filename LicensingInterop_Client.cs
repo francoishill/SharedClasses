@@ -36,7 +36,7 @@ namespace SharedClasses
 				applicationName + ".exe");
 		}
 
-		private static string GetApplicationName()
+		public static string GetApplicationName()
 		{
 			string applicationName = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
 			if (applicationName.EndsWith(".vshost", StringComparison.InvariantCultureIgnoreCase))

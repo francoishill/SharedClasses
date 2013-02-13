@@ -505,6 +505,7 @@ namespace SharedClasses
 
 		public static bool ObtainPreviouslyPublishedDate(string projName, Action<string, FeedbackMessageTypes> actionOnMessage, out DateTime? previouslyPublishedDate)
 		{
+			actionOnMessage("Busy obtaining previsouly published date, please wait...", FeedbackMessageTypes.Status);
 			//DateTime? tracTicketsSinceDate = null;
 			PublishDetails previouslyPublishedDetails = new PublishDetails();
 			string tmperr;

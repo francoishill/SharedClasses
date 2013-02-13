@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Windows;
@@ -1633,10 +1634,99 @@ namespace SharedClasses
 			(sender as DockPanel).ContextMenu.IsOpen = true;
 		}
 
+		public static void ShowAndEditAllSettings()
+		{
+			List<object> objList = new List<object>();
+			foreach (Type type in typeof(GlobalSettings).GetNestedTypes(BindingFlags.Public))
+				if (!type.IsAbstract && type.BaseType == typeof(GenericSettings))//Get all settings classes
+				{
+					PropertyInfo[] staticProperties = type.GetProperties(BindingFlags.Static | BindingFlags.Public);
+					foreach (PropertyInfo spi in staticProperties)
+						if (type == spi.PropertyType)//Check to find the static "Instance" of the class
+							objList.Add(spi.GetValue(null, new object[0]));
+				}
+
+			//objList.Add(TempClass.Instance);
+			PropertiesEditor pe = new PropertiesEditor(objList);
+			pe.ShowDialog();
+			pe = null;
+			objList.Clear();
+			objList = null;
+		}
+		public static void ShowAndEditAllOnlineSettings()
+		{
+			List<object> objList = new List<object>();
+
+			Dictionary<IInterceptorNotifiable, Dictionary<PropertyInfo, object>> objectsAndPropertyValues = new Dictionary<IInterceptorNotifiable, Dictionary<PropertyInfo, object>>();
+
+			foreach (Type type in typeof(SettingsSimple).GetNestedTypes(BindingFlags.Public))
+				if (!type.IsAbstract && type.BaseType.Name == typeof(SettingsSimple.BaseOnlineClass<>).Name)//Get all settings classes
+				{
+					PropertyInfo[] staticProperties = type.BaseType.GetProperties(BindingFlags.Static | BindingFlags.Public);
+					foreach (PropertyInfo spi in staticProperties)
+						if (type == spi.PropertyType)//Check to find the static "Instance" of the class
+						{
+							var tmpobj = (IInterceptorNotifiable)spi.GetValue(null, new object[0]);
+							objList.Add(tmpobj);
+
+							var tmpPropertyValues = new Dictionary<PropertyInfo, object>();
+							foreach (var prop in tmpobj.GetType().GetProperties())
+							{
+								tmpPropertyValues.Add(prop, prop.GetValue(tmpobj, new object[0]).Clone());
+							}
+							objectsAndPropertyValues.Add(tmpobj, tmpPropertyValues);
+						}
+				}
+			PropertiesEditor pe = new PropertiesEditor(objList);
+			pe.ShowDialog();
+			pe = null;
+			objList.Clear();
+			objList = null;
+
+			//Check if any of the properties changed.
+			var keys = objectsAndPropertyValues.Keys.ToArray();
+			var values = objectsAndPropertyValues.Values.ToArray();
+			for (int i = 0; i < keys.Length; i++)
+			{
+				foreach (var prop in values[i].Keys)
+				{
+					object tmpobj = values[i][prop];
+					object tmpobj2 = prop.GetValue(keys[i], new object[0]);
+
+					string err;
+					ComparisonResult compareResult = CompareObjects.CompareObjectsByValue(tmpobj, tmpobj2, out err);
+					switch (compareResult)
+					{
+						case ComparisonResult.NullValue:
+							UserMessages.ShowWarningMessage(string.Format("Cannot compare values, one/both null values. Obj1 = '{0}', Obj2 = '{1}'", (tmpobj == null ? "[NULL]" : tmpobj.ToString()), (tmpobj2 == null ? "[NULL]" : tmpobj2.ToString())));
+							break;
+						case ComparisonResult.DifferentTypes:
+							UserMessages.ShowWarningMessage(string.Format("Cannot compare different types of '{0}' and '{1}'", tmpobj.GetType().ToString(), tmpobj2.GetType().ToString()));
+							break;
+						case ComparisonResult.Equal:
+							//UserMessages.ShowInfoMessage("Equal");
+							break;
+						case ComparisonResult.NotEqual:
+							//UserMessages.ShowWarningMessage("Changed: " + prop.Name);
+							keys[i].OnPropertySet(prop.Name);
+							break;
+						case ComparisonResult.UnsupportedType:
+							UserMessages.ShowWarningMessage(
+								string.Format("Type unsupported for comparison, either Obj1 = '{0}' or Obj2 = '{1}', error message:{2}{3}",
+									tmpobj.GetType().ToString(),
+									tmpobj2.GetType().ToString(),
+									Environment.NewLine,
+									err));
+							break;
+					}
+				}
+			}
+		}
+
 		private void labelEditSettings_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
 		{
 			e.Handled = true;
-			GenericSettings.ShowAndEditAllSettings();
+			ShowAndEditAllSettings();
 		}
 
 		private void Grid_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
@@ -1657,7 +1747,7 @@ namespace SharedClasses
 		private void labelEditOnlineSettings_MouseDoubleClick(object sender, MouseButtonEventArgs e)
 		{
 			e.Handled = true;
-			GenericSettings.ShowAndEditAllOnlineSettings();
+			ShowAndEditAllOnlineSettings();
 		}
 
 		//private void Button_Click(object sender, RoutedEventArgs e)

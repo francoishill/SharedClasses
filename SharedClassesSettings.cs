@@ -361,8 +361,8 @@ namespace SharedClasses
 				}
 		}
 
-#if WPF && HAVEPLUGINS
-		public static void ShowAndEditAllSettings()
+//#if WPF && HAVEPLUGINS
+		/*public static void ShowAndEditAllSettings()
 		{
 			List<object> objList = new List<object>();
 			foreach (Type type in typeof(GlobalSettings).GetNestedTypes(BindingFlags.Public))
@@ -449,8 +449,8 @@ namespace SharedClasses
 					}
 				}
 			}
-		}
-#endif
+		}*/
+//#endif
 
 		//Have a look at Lazy<> in c#, being able to initialize an object the first time it is used.
 		public abstract void LoadFromFile(string ApplicationName, string SubfolderNameInApplication = null, string CompanyName = "FJH");

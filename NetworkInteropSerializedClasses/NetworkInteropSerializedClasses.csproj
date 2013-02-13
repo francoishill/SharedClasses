@@ -110,9 +110,6 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\Logging.cs">
-      <Link>Logging.cs</Link>
-    </Compile>
     <Compile Include="..\MemoryManagement.cs">
       <Link>MemoryManagement.cs</Link>
     </Compile>
@@ -122,6 +119,10 @@
     <ProjectReference Include="..\..\QuickAccess\InlineCommandToolkit\InlineCommandToolkit.csproj">
       <Project>{3f73ece5-851e-4c02-ac70-37c0f92783ad}</Project>
       <Name>InlineCommandToolkit</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\_OwnAppsSharedDll\_OwnAppsSharedDll.csproj">
+      <Project>{5aa050a3-9d5f-4fef-9071-bb5d87a7be3f}</Project>
+      <Name>_OwnAppsSharedDll</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

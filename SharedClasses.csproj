@@ -63,12 +63,10 @@
     <Compile Include="InputBox.Designer.cs">
       <DependentUpon>InputBox.cs</DependentUpon>
     </Compile>
-    <Compile Include="Logging.cs" />
     <Compile Include="MicrosoftOfficeInterop.cs" />
     <Compile Include="MotionBlurEffect.cs" />
     <Compile Include="MouseHooks.cs" />
     <Compile Include="NetworkInteropSerializedClasses\InfoTransferred.cs" />
-    <Compile Include="PhpInterop.cs" />
     <Compile Include="QueueingActionsInterop.cs" />
     <Compile Include="ScreenAndDrawingInterop.cs" />
     <Compile Include="SnarlNetworkProtocol.cs" />
@@ -163,6 +161,10 @@
     <ProjectReference Include="..\QuickAccess\InlineCommandToolkit\InlineCommandToolkit.csproj">
       <Project>{3f73ece5-851e-4c02-ac70-37c0f92783ad}</Project>
       <Name>InlineCommandToolkit</Name>
+    </ProjectReference>
+    <ProjectReference Include="_OwnAppsSharedDll\_OwnAppsSharedDll.csproj">
+      <Project>{5aa050a3-9d5f-4fef-9071-bb5d87a7be3f}</Project>
+      <Name>_OwnAppsSharedDll</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

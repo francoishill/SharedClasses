@@ -136,7 +136,7 @@ namespace SharedClasses
 			}
 		}
 
-		private const double cCPUthresholdPercentage = 40.0;
+		private const double cCPUthresholdPercentage = 3.0;//40.0;
 		private const double cWarningSecondsIfAboveCPUThresholdForLongerThan = 10;
 		private static Timer _memoryWatcherTimer = null;
 		private static DateTime? _previousCheckedTime = null;

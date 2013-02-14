@@ -23,9 +23,13 @@ public class SubversionInterop : INotifyPropertyChanged
 		string logmessage = null;
 		if (svnCommand == SubversionCommand.Commit)
 		{
-			logmessage = svnargs.Split(';')[1];//projnameAndlogmessage.Split(';')[1];
-			logmessage = logmessage.Replace("\\", "\\\\");
-			logmessage = logmessage.Replace("\"", "\\\"");
+			int semicolonIndex = svnargs.IndexOf(';');
+			if (semicolonIndex != -1 && semicolonIndex != svnargs.Length - 1)
+			{
+				logmessage = svnargs.Substring(semicolonIndex + 1);//svnargs.Split(';')[1];//projnameAndlogmessage.Split(';')[1];
+				logmessage = logmessage.Replace("\\", "\\\\");
+				logmessage = logmessage.Replace("\"", "\\\"");
+			}
 		}
 		try
 		{

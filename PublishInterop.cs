@@ -142,7 +142,7 @@ namespace SharedClasses
 		}
 
 		public const string cTempWebfolderName = "TempWeb";
-		public static bool PerformPublish(string projName, /*bool True64bit_False32bit, */bool HasPlugins, bool AutomaticallyUpdateRevision, bool InstallLocallyAfterSuccessfullNSIS, bool StartupWithWindows, bool SelectSetupIfSuccessful, out string publishedVersionString, out string publishedSetupPath, out DateTime publishDate, Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage, bool placeSetupInTempWebFolder = false, string customSetupFilename = null)
+		public static bool PerformPublish(string projName, /*bool True64bit_False32bit, */bool HasPlugins, bool AutomaticallyUpdateRevision, bool? InstallLocallyAfterSuccessfullNSIS_NullToNotRunAfterInstallingSilently, bool StartupWithWindows, bool SelectSetupIfSuccessful, out string publishedVersionString, out string publishedSetupPath, out DateTime publishDate, Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage, bool placeSetupInTempWebFolder = false, string customSetupFilename = null)
 		{
 			if (!Directory.Exists(cProjectsRootDir)
 				&& !Directory.Exists(projName)
@@ -298,12 +298,15 @@ namespace SharedClasses
 
 				if (File.Exists(publishedSetupPath))
 				{
-					if (InstallLocallyAfterSuccessfullNSIS || SelectSetupIfSuccessful)
+					if (InstallLocallyAfterSuccessfullNSIS_NullToNotRunAfterInstallingSilently == true
+						|| InstallLocallyAfterSuccessfullNSIS_NullToNotRunAfterInstallingSilently == null//silenlty
+						|| SelectSetupIfSuccessful)
 					{
 						actionOnMessage("Publish success, opening folder and/or running setup file...", FeedbackMessageTypes.Success);
 						if (SelectSetupIfSuccessful)
 							Process.Start("explorer", "/select, \"" + publishedSetupPath + "\"");
-						if (InstallLocallyAfterSuccessfullNSIS)
+						if (InstallLocallyAfterSuccessfullNSIS_NullToNotRunAfterInstallingSilently == true
+							|| InstallLocallyAfterSuccessfullNSIS_NullToNotRunAfterInstallingSilently == null)//silently
 						{
 							Process curproc = Process.GetCurrentProcess();
 							bool DoNotKillProcessAndInstall = projName.Equals(curproc.ProcessName, StringComparison.InvariantCultureIgnoreCase);
@@ -323,9 +326,12 @@ namespace SharedClasses
 								actionOnMessage("Installing '{0}' silently.".Fmt(projName), FeedbackMessageTypes.Status);
 								var setupProc = Process.Start(publishedSetupPath, "/S");
 								setupProc.WaitForExit();
-								actionOnMessage("Launching '{0}'.".Fmt(projName), FeedbackMessageTypes.Status);
-								try { Process.Start(projName + ".exe"); }
-								catch (Exception exc) { actionOnMessage("Error launching '{0}': {1}".Fmt(projName, exc.Message), FeedbackMessageTypes.Error); }
+								if (InstallLocallyAfterSuccessfullNSIS_NullToNotRunAfterInstallingSilently == true)
+								{
+									actionOnMessage("Launching '{0}'.".Fmt(projName), FeedbackMessageTypes.Status);
+									try { Process.Start(projName + ".exe"); }
+									catch (Exception exc) { actionOnMessage("Error launching '{0}': {1}".Fmt(projName, exc.Message), FeedbackMessageTypes.Error); }
+								}
 							}
 						}
 					}
@@ -341,7 +347,7 @@ namespace SharedClasses
 			return HttpUtility.UrlPathEncode(projName).ToLower();
 		}
 
-		public static bool PerformPublishOnline(string projName, bool _64Only, bool HasPlugins, bool AutomaticallyUpdateRevision, bool InstallLocallyAfterSuccessfullNSIS, bool StartupWithWindows, bool SelectSetupIfSuccessful, bool OpenWebsite, out string publishedVersionString, out string publishedSetupPath, out DateTime publishDate, Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage)
+		public static bool PerformPublishOnline(string projName, bool _64Only, bool HasPlugins, bool AutomaticallyUpdateRevision, bool? InstallLocallyAfterSuccessfullNSIS_NullToNotRunAfterInstallingSilently, bool StartupWithWindows, bool SelectSetupIfSuccessful, bool OpenWebsite, out string publishedVersionString, out string publishedSetupPath, out DateTime publishDate, Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage)
 		{
 			/*List<string> BugsFixed = null;
 			List<string> Improvements = null;
@@ -354,7 +360,7 @@ namespace SharedClasses
 				/*_64Only,*/
 				HasPlugins,
 				AutomaticallyUpdateRevision,
-				InstallLocallyAfterSuccessfullNSIS,
+				InstallLocallyAfterSuccessfullNSIS_NullToNotRunAfterInstallingSilently,
 				StartupWithWindows,
 				SelectSetupIfSuccessful,
 				out publishedVersionString,

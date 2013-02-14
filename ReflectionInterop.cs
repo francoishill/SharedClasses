@@ -5,11 +5,69 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Linq;
 using System.ComponentModel;
+using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 
 namespace SharedClasses
 {
 	public static class ReflectionInterop
 	{
+		/// <summary>
+		/// Do an operation on a instance of a class
+		/// </summary>
+		/// <typeparam name="T">The type of class to perform the operation on.</typeparam>
+		/// <param name="instance">The instace of the type T.</param>
+		/// <param name="propertiesOrFieldsAsExpressions">List of expressions which are simply a field/property, an example of one would be: inst => inst.PersonName</param>
+		/// <param name="actionOnPropertyInfoWithValue">Action to perform on these properties, where its parameters will be the Instance, PropertyInfo, and propertyValue.</param>
+		public static void DoForeachPropertOrField<T>(T instance, IEnumerable<Expression<Func<T, object>>> propertiesOrFieldsAsExpressions, Action<T, MemberInfo, object> actionOnPropertyInfoWithValue)
+			//expr.Body.ToString().Substring(expectedStartString.Length)where T : new()
+		{
+			if (instance == null)
+				throw new Exception("Instance may not be null for 'DoForeachPropertOrField'");
+
+			foreach (var expr in propertiesOrFieldsAsExpressions)
+			{
+				Expression expressionToUse = expr.Body;
+
+				if (expressionToUse is UnaryExpression)
+				{
+					Match insideConvertMatch = Regex.Match(expressionToUse.ToString(), @"(?<=Convert\()[a-zA-Z0-9_]+\.[a-zA-Z0-9_]+(?=\))");
+					if (!insideConvertMatch.Success)
+						throw new Exception("Invalid expression for 'DoForeachPropertOrField': " + expressionToUse.ToString());
+					var expr2 = expressionToUse as UnaryExpression;
+					expressionToUse = expr2.Operand;
+				}
+
+				if (expr.Parameters.Count != 1)
+					throw new Exception("Each expression should have exactly one parameter.");
+
+				string expectedStartString = string.Format("{0}.", expr.Parameters[0].Name);
+				if (expressionToUse.GetType().Name.Equals("PropertyExpression")
+					&& expressionToUse.ToString().StartsWith(expectedStartString))
+				{
+					string propertyName = expressionToUse.ToString().Substring(expectedStartString.Length);
+					var pi = instance.GetType().GetProperty(propertyName);
+					if (pi == null)
+						throw new Exception("Cannot obtain property '" + propertyName + "' in instance of " + instance.GetType());
+					
+					object pValue = pi.GetValue(instance, null);
+					actionOnPropertyInfoWithValue(instance, pi, pValue);
+				}
+				else if (expressionToUse.GetType().Name.Equals("FieldExpression")
+					&& expressionToUse.ToString().StartsWith(expectedStartString))
+				{
+					string fieldName = expressionToUse.ToString().Substring(expectedStartString.Length);
+					var fi = instance.GetType().GetField(fieldName);
+					if (fi == null)
+						throw new Exception("Cannot obtain field '" + fieldName + "' in instance of " + instance.GetType());
+					object fValue = fi.GetValue(instance);
+					actionOnPropertyInfoWithValue(instance, fi, fValue);
+				}
+				else
+					throw new Exception("Body of expression is not a valid type, should be PropertyExpression or FieldExpression");
+			}
+		}
+
 		/// <summary>
 		/// Gets the Display Name for the property descriptor passed in
 		/// </summary>

@@ -714,7 +714,12 @@ namespace SharedClasses
 			//}
 		}
 
-		public bool PerformPublish(bool _64bit = false, bool autoUpdateRevision = true, bool installLocally = true,
+		private bool AppHasPlugins()
+		{
+			return this.ApplicationName.Replace(" ", "").Equals("QuickAccess", StringComparison.InvariantCultureIgnoreCase);
+		}
+
+		public bool PerformPublish(bool _64bit = false, bool autoUpdateRevision = true, bool? installLocally = true,
 			bool placeSetupInTempWebFolder = false, string customSetupFilename = null)
 		{
 			string outPublishedVersion;
@@ -723,7 +728,7 @@ namespace SharedClasses
 			bool publishResult = PublishInterop.PerformPublish(
 				this.ApplicationName,
 				/*_64bit,//What if required*/
-				false,//What about QuickAccess
+				this.AppHasPlugins(),//What about QuickAccess
 				autoUpdateRevision,
 				installLocally,
 				false,//Never run on startup?
@@ -744,17 +749,21 @@ namespace SharedClasses
 			return publishResult;
 		}
 
-		public bool PerformPublishOnline()
+		public bool PerformPublishOnline(bool runAfterInstallingSilently = true)
 		{
+			bool? installLocallyAfterSuccessfullNSIS_NullToNotRunAfterInstallingSilently = true;
+			if (!runAfterInstallingSilently)
+				installLocallyAfterSuccessfullNSIS_NullToNotRunAfterInstallingSilently = null;
+
 			string outPublishedVersion;
 			string resultSetupFilename;
 			DateTime outPublishDate;
 			bool publishResult = PublishInterop.PerformPublishOnline(
 				this.ApplicationName,
 				false,//What if required
-				false,//What about QuickAccess
+				this.AppHasPlugins(),
 				true,
-				true,
+				installLocallyAfterSuccessfullNSIS_NullToNotRunAfterInstallingSilently,
 				false,//Never run on startup?
 				false,
 				false,

@@ -19,7 +19,7 @@
 		UseLayoutRounding='True'
 		MouseLeftButtonDown='CommandsWindow1_MouseLeftButtonDown'
 		MouseRightButtonUp='CommandsWindow1_MouseRightButtonDown'
-		Height="700"
+		Height="850"
 		StateChanged='CommandsWindow1_StateChanged'>
 	<Window.Resources>
 		<ResourceDictionary Source='pack://application:,,,/InlineCommandToolkit;component/Resources/General.xaml' />

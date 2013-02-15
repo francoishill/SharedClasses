@@ -605,6 +605,8 @@ namespace SharedClasses
 		{
 			[Description("The full URL to the online DotNetChecker.dll file.")]
 			public string OnlineDotnetCheckerDllFileUrl { get; set; }
+			[Description("The full URL to the online nsProcess.dll file.")]
+			public string OnlineNsProcessDllFileUrl { get; set; }
 
 			//[Editor(typeof(MyCollectionEditor), typeof(UITypeEditor))]
 			[Description("A tasklist of application names to be added defaultly to the tasklist to pick.")]
@@ -613,6 +615,8 @@ namespace SharedClasses
 			public PublishSettings()//Defaults
 			{
 				this.OnlineDotnetCheckerDllFileUrl = OnlineAppsSettings.Instance.RootFtpUrl.TrimEnd('/') + "/DotNetChecker.dll";
+				this.OnlineNsProcessDllFileUrl = OnlineAppsSettings.Instance.RootFtpUrl.TrimEnd('/') + "/nsProcess.dll";
+
 				this.ListedApplicationNames = new List<string>()
                 {
 					//"AutoConnectWifiAdhoc",

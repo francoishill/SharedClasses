@@ -142,29 +142,10 @@ namespace SharedClasses
 		}
 
 		public const string cTempWebfolderName = "TempWeb";
-		public static bool PerformPublish(string projName, /*bool True64bit_False32bit, */bool HasPlugins, bool AutomaticallyUpdateRevision, bool? InstallLocallyAfterSuccessfullNSIS_NullToNotRunAfterInstallingSilently, bool StartupWithWindows, bool SelectSetupIfSuccessful, out string publishedVersionString, out string publishedSetupPath, out DateTime publishDate, Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage, bool placeSetupInTempWebFolder = false, string customSetupFilename = null)
+		public static bool PerformPublish(VsBuildProject projToBuild, /*string projName, *//*bool True64bit_False32bit, */bool HasPlugins, bool AutomaticallyUpdateRevision, bool? InstallLocallyAfterSuccessfullNSIS_NullToNotRunAfterInstallingSilently, bool StartupWithWindows, bool SelectSetupIfSuccessful, out string publishedVersionString, out string publishedSetupPath, out DateTime publishDate, Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage, bool placeSetupInTempWebFolder = false, string customSetupFilename = null)
 		{
-			if (!Directory.Exists(cProjectsRootDir)
-				&& !Directory.Exists(projName)
-				&& !File.Exists(projName))
-			{
-				actionOnMessage("Cannot find root project directory: " + cProjectsRootDir, FeedbackMessageTypes.Error);
-				publishedVersionString = null;
-				publishedSetupPath = null;
-				publishDate = DateTime.MinValue;
-				return false;
-			}
+			actionOnMessage("Attempting to build project " + projToBuild.ApplicationName, FeedbackMessageTypes.Status);
 
-			string projDir =
-                    Directory.Exists(projName) ? projName :
-							Path.Combine(cProjectsRootDir, projName);
-
-			if (Directory.Exists(projName))
-				projName = Path.GetFileNameWithoutExtension(projName);
-
-			actionOnMessage("Attempting to build project " + projName, FeedbackMessageTypes.Status);
-
-			var projToBuild = new VsBuildProject_NonAbstract(projName);
 			List<string> csprojPaths;
 			//string errorIfNotNull;
 			if (!projToBuild.PerformBuild(out csprojPaths))
@@ -203,23 +184,28 @@ namespace SharedClasses
 
 			actionOnMessage(
 					AutomaticallyUpdateRevision
-					? "Project " + projName + " will be published as version " + publishedVersionString + " but sourcecode updated to version " + outNewVersion + ", attempting to publish..."
-					: "Using current revision of " + projName + " (" + publishedVersionString + "), attempting to publish...",
+					? "Project " + projToBuild.ApplicationName + " will be published as version " + publishedVersionString + " but sourcecode updated to version " + outNewVersion + ", attempting to publish..."
+					: "Using current revision of " + projToBuild.ApplicationName + " (" + publishedVersionString + "), attempting to publish...",
 					FeedbackMessageTypes.Status);
 
 			string tmpSubfolder = placeSetupInTempWebFolder ? cTempWebfolderName + "\\" : "";
 			string nsisExportsRoot = GetNsisExportsPath();// Path.Combine(localAppDatapath, @"FJH\NSISinstaller\NSISexports").TrimEnd('\\');
-			string nsisFileName = nsisExportsRoot + "\\" + tmpSubfolder + projName + "_" + publishedVersionString + ".nsi";
+			string nsisFileName = nsisExportsRoot + "\\" + tmpSubfolder + projToBuild.ApplicationName + "_" + publishedVersionString + ".nsi";
 			publishedSetupPath = Path.GetDirectoryName(nsisFileName) + "\\"
-				+ (customSetupFilename != null ? customSetupFilename : NsisInterop.GetSetupNameForProduct(projName.InsertSpacesBeforeCamelCase(), publishedVersionString));
+				+ (customSetupFilename != null ? customSetupFilename : NsisInterop.GetSetupNameForProduct(projToBuild.ApplicationName.InsertSpacesBeforeCamelCase(), publishedVersionString));
 
 			if (!Directory.Exists(Path.GetDirectoryName(nsisFileName)))
 				Directory.CreateDirectory(Path.GetDirectoryName(nsisFileName));
-			File.WriteAllText(Path.Combine(Path.GetDirectoryName(nsisFileName), @"DotNetChecker.nsh"),
+			File.WriteAllText(
+				Path.Combine(Path.GetDirectoryName(nsisFileName), "DotNetChecker.nsh"),
 				NsisInterop.DotNetChecker_NSH_file);
 
+			File.WriteAllText(
+				Path.Combine(Path.GetDirectoryName(nsisFileName), "nsProcess.nsh"),
+				NsisInterop.cNsProcess_NSH_file);
+
 			string errorIfFailed;
-			string registryEntriesFilepath = OwnAppsInterop.GetRegistryEntriesFullfilepath(projName, out errorIfFailed);
+			string registryEntriesFilepath = OwnAppsInterop.GetRegistryEntriesFullfilepath(projToBuild.ApplicationName, out errorIfFailed);
 			if (registryEntriesFilepath == null)//This means an error occurred, not that the file does not exist
 				actionOnMessage("Error occurred obtaining path to RegistryEntries: " + errorIfFailed, FeedbackMessageTypes.Error);
 			if (!File.Exists(registryEntriesFilepath))
@@ -241,11 +227,11 @@ namespace SharedClasses
 
 			File.WriteAllLines(nsisFileName,
 				NsisInterop.CreateOwnappNsis(
-					projName,
-					projName.InsertSpacesBeforeCamelCase(),
+					projToBuild.ApplicationName,
+					projToBuild.ApplicationName.InsertSpacesBeforeCamelCase(),
 					publishedVersionString,//Should obtain (and increase) product version from csproj file
-					AutoUpdating.GetApplicationOnlineUrl(projName),
-					projName + ".exe",
+					AutoUpdating.GetApplicationOnlineUrl(projToBuild.ApplicationName),
+					projToBuild.ApplicationName + ".exe",
 					publishDate,
 					RegistryInterop.GetRegistryAssociationItemFromJsonFile(registryEntriesFilepath, actionOnMessage),
 					null,
@@ -260,21 +246,37 @@ namespace SharedClasses
 			actionOnMessage(startMsg + nsisFileName, FeedbackMessageTypes.Success);
 
 			string nsisDir = NsisInterop.GetNsisInstallDirectory();
-			string dotnetCheckerDllPath = Path.Combine(nsisDir, "Plugins", "dotnetchecker.dll");
 
-			if (!File.Exists(dotnetCheckerDllPath))
+			Dictionary<string, string> nsisRequiredPlugins = new Dictionary<string, string>()
 			{
-				string downloadededPath = NetworkInteropSimple.FtpDownloadFile(
-						Path.GetDirectoryName(dotnetCheckerDllPath),
-						SettingsSimple.OnlineAppsSettings.Instance.AppsDownloadFtpUsername,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpUsername,
-						SettingsSimple.OnlineAppsSettings.Instance.AppsDownloadFtpPassword,//GlobalSettings.VisualStudioInteropSettings.Instance.FtpPassword,
-						SettingsSimple.PublishSettings.Instance.OnlineDotnetCheckerDllFileUrl,
+				{ "dotnetchecker.dll", SettingsSimple.PublishSettings.Instance.OnlineDotnetCheckerDllFileUrl },
+				{ "nsProcess.dll", SettingsSimple.PublishSettings.Instance.OnlineNsProcessDllFileUrl },
+			};
+
+			foreach (var nsisPlugin in nsisRequiredPlugins)
+			{
+				continue;
+				string pluginPath = Path.Combine(nsisDir, "Plugins", nsisPlugin.Key);
+				string onlineUrl = nsisPlugin.Value;
+				if (!File.Exists(pluginPath))
+				{
+					string downloadededPath = NetworkInteropSimple.FtpDownloadFile(
+						Path.GetDirectoryName(pluginPath),
+						SettingsSimple.OnlineAppsSettings.Instance.AppsDownloadFtpUsername,
+						SettingsSimple.OnlineAppsSettings.Instance.AppsDownloadFtpPassword,
+						onlineUrl,
 						actionOnMessage,
 						actionOnProgressPercentage);
-				if (downloadededPath == null)
-					UserMessages.ShowWarningMessage("Could not find (or download) DotNetChecker.dll from URL: " + SettingsSimple.PublishSettings.Instance.OnlineDotnetCheckerDllFileUrl);
-				else
-					dotnetCheckerDllPath = downloadededPath;
+					if (downloadededPath == null)
+					{
+						actionOnMessage(
+							string.Format("Could not find (or download) nsis pluging '{0}' from URL: {1}",
+								nsisPlugin.Key,
+								SettingsSimple.PublishSettings.Instance.OnlineDotnetCheckerDllFileUrl),
+							FeedbackMessageTypes.Error);
+						return false;
+					}
+				}
 			}
 
 			string MakeNsisFilePath = Path.Combine(nsisDir, "makensis.exe");//@"C:\Program Files (x86)\NSIS\makensis.exe";
@@ -309,35 +311,35 @@ namespace SharedClasses
 							|| InstallLocallyAfterSuccessfullNSIS_NullToNotRunAfterInstallingSilently == null)//silently
 						{
 							Process curproc = Process.GetCurrentProcess();
-							bool DoNotKillProcessAndInstall = projName.Equals(curproc.ProcessName, StringComparison.InvariantCultureIgnoreCase);
-							if (projName.Equals("StandaloneUploader", StringComparison.InvariantCultureIgnoreCase))
+							bool DoNotKillProcessAndInstall = projToBuild.ApplicationName.Equals(curproc.ProcessName, StringComparison.InvariantCultureIgnoreCase);
+							if (projToBuild.ApplicationName.Equals("StandaloneUploader", StringComparison.InvariantCultureIgnoreCase))
 								DoNotKillProcessAndInstall = true;
 
 							if (!DoNotKillProcessAndInstall)
-								ProcessesInterop.KillProcess(projName, actionOnMessage);
+								ProcessesInterop.KillProcess(projToBuild.ApplicationName, actionOnMessage);
 
 							if (DoNotKillProcessAndInstall)
 							{
-								actionOnMessage("Launching setup for '{0}', not running silently because same application name as current.".Fmt(projName), FeedbackMessageTypes.Status);
+								actionOnMessage("Launching setup for '{0}', not running silently because same application name as current.".Fmt(projToBuild.ApplicationName), FeedbackMessageTypes.Status);
 								Process.Start(publishedSetupPath);
 							}
 							else
 							{
-								actionOnMessage("Installing '{0}' silently.".Fmt(projName), FeedbackMessageTypes.Status);
+								actionOnMessage("Installing '{0}' silently.".Fmt(projToBuild.ApplicationName), FeedbackMessageTypes.Status);
 								var setupProc = Process.Start(publishedSetupPath, "/S");
 								setupProc.WaitForExit();
 								if (InstallLocallyAfterSuccessfullNSIS_NullToNotRunAfterInstallingSilently == true)
 								{
-									actionOnMessage("Launching '{0}'.".Fmt(projName), FeedbackMessageTypes.Status);
-									try { Process.Start(projName + ".exe"); }
-									catch (Exception exc) { actionOnMessage("Error launching '{0}': {1}".Fmt(projName, exc.Message), FeedbackMessageTypes.Error); }
+									actionOnMessage("Launching '{0}'.".Fmt(projToBuild.ApplicationName), FeedbackMessageTypes.Status);
+									try { Process.Start(projToBuild.ApplicationName + ".exe"); }
+									catch (Exception exc) { actionOnMessage("Error launching '{0}': {1}".Fmt(projToBuild.ApplicationName, exc.Message), FeedbackMessageTypes.Error); }
 								}
 							}
 						}
 					}
 					return true;
 				}
-				else actionOnMessage("Could not successfully create setup for " + projName, FeedbackMessageTypes.Error);
+				else actionOnMessage("Could not successfully create setup for " + projToBuild.ApplicationName, FeedbackMessageTypes.Error);
 			}
 			return false;
 		}
@@ -347,7 +349,7 @@ namespace SharedClasses
 			return HttpUtility.UrlPathEncode(projName).ToLower();
 		}
 
-		public static bool PerformPublishOnline(string projName, bool _64Only, bool HasPlugins, bool AutomaticallyUpdateRevision, bool? InstallLocallyAfterSuccessfullNSIS_NullToNotRunAfterInstallingSilently, bool StartupWithWindows, bool SelectSetupIfSuccessful, bool OpenWebsite, out string publishedVersionString, out string publishedSetupPath, out DateTime publishDate, Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage)
+		public static bool PerformPublishOnline(VsBuildProject projToBuild, bool _64Only, bool HasPlugins, bool AutomaticallyUpdateRevision, bool? InstallLocallyAfterSuccessfullNSIS_NullToNotRunAfterInstallingSilently, bool StartupWithWindows, bool SelectSetupIfSuccessful, bool OpenWebsite, out string publishedVersionString, out string publishedSetupPath, out DateTime publishDate, Action<string, FeedbackMessageTypes> actionOnMessage, Action<int> actionOnProgressPercentage)
 		{
 			/*List<string> BugsFixed = null;
 			List<string> Improvements = null;
@@ -356,7 +358,7 @@ namespace SharedClasses
 			ServicePointManager.DefaultConnectionLimit = 10000;
 
 			bool successPublish = PerformPublish(
-				projName,
+				projToBuild,
 				/*_64Only,*/
 				HasPlugins,
 				AutomaticallyUpdateRevision,
@@ -372,7 +374,7 @@ namespace SharedClasses
 			if (!successPublish)
 				return false;
 
-			string validatedUrlsectionForProjname = GetValidatedUrlsectionForProjname(projName);
+			string validatedUrlsectionForProjname = GetValidatedUrlsectionForProjname(projToBuild.ApplicationName);
 
 			//int changedTheFollowing;
 			//DONE: The following was changed
@@ -385,19 +387,19 @@ namespace SharedClasses
 			//DateTime publishDate = DateTime.Now;
 
 			DateTime? tracTicketsSinceDate;//Use previous published version's publishedDate as the 'sinceDate' for trac tickets
-			if (!ObtainPreviouslyPublishedDate(projName, actionOnMessage, out tracTicketsSinceDate))
+			if (!ObtainPreviouslyPublishedDate(projToBuild.ApplicationName, actionOnMessage, out tracTicketsSinceDate))
 				return false;//actionOnMessage already occurred inside 'ObtainPreviouslyPublishedDate'
 
 			actionOnMessage("Busy obtaining Trac BugsFixes, Improvements and NewFeatures", FeedbackMessageTypes.Status);
 			var changeLogs = GetChangeLogs(
 				tracTicketsSinceDate,
-				projName,
+				projToBuild.ApplicationName,
 				actionOnMessage);
 			if (changeLogs == null)
 				return false;
 
 			PublishDetails currentlyPublishDetails = new PublishDetails(
-					projName,
+					projToBuild.ApplicationName,
 					publishedVersionString,
 					new FileInfo(publishedSetupPath).Length,
 					publishedSetupPath.FileToMD5Hash(),
@@ -407,19 +409,19 @@ namespace SharedClasses
 					changeLogs);
 
 			string errstr;
-			if (!WebInterop.SaveObjectOnline(PublishDetails.OnlineJsonCategory, projName + " - " + publishedVersionString, currentlyPublishDetails, out errstr))
+			if (!WebInterop.SaveObjectOnline(PublishDetails.OnlineJsonCategory, projToBuild.ApplicationName + " - " + publishedVersionString, currentlyPublishDetails, out errstr))
 			{
-				actionOnMessage("Cannot save json online (" + projName + " - " + publishedVersionString + "), setup and index.html cancelled for project " + projName + ": " + errstr, FeedbackMessageTypes.Error);
+				actionOnMessage("Cannot save json online (" + projToBuild.ApplicationName + " - " + publishedVersionString + "), setup and index.html cancelled for project " + projToBuild.ApplicationName + ": " + errstr, FeedbackMessageTypes.Error);
 				return false;
 			}
-			if (!WebInterop.SaveObjectOnline(PublishDetails.OnlineJsonCategory, projName + PublishDetails.LastestVersionJsonNamePostfix, currentlyPublishDetails, out errstr))
+			if (!WebInterop.SaveObjectOnline(PublishDetails.OnlineJsonCategory, projToBuild.ApplicationName + PublishDetails.LastestVersionJsonNamePostfix, currentlyPublishDetails, out errstr))
 			{
-				actionOnMessage("Cannot save json online (" + projName + PublishDetails.LastestVersionJsonNamePostfix + "), setup and index.html cancelled for project " + projName + ": " + errstr, FeedbackMessageTypes.Error);
+				actionOnMessage("Cannot save json online (" + projToBuild.ApplicationName + PublishDetails.LastestVersionJsonNamePostfix + "), setup and index.html cancelled for project " + projToBuild.ApplicationName + ": " + errstr, FeedbackMessageTypes.Error);
 				return false;
 			}
 
 			string tmperr;
-			List<string> listOfScreenshotsFullLocalPaths = GetScreenshotsFullpath(projName, out tmperr);
+			List<string> listOfScreenshotsFullLocalPaths = GetScreenshotsFullpath(projToBuild.ApplicationName, out tmperr);
 			if (listOfScreenshotsFullLocalPaths == null)
 			{
 				actionOnMessage("Cannot obtain screenshots: " + tmperr, FeedbackMessageTypes.Error);
@@ -444,14 +446,14 @@ namespace SharedClasses
 			//Upload image files
 			if (listOfScreenshotsFullLocalPaths != null)
 				foreach (var screenshotFile in listOfScreenshotsFullLocalPaths)
-					QueueFileToUpload(projName, Path.GetFileNameWithoutExtension(screenshotFile), screenshotFile, "Screenshots/" + Path.GetFileName(screenshotFile));
-			UploadIconAsFaviconIfExists(projName);
+					QueueFileToUpload(projToBuild.ApplicationName, Path.GetFileNameWithoutExtension(screenshotFile), screenshotFile, "Screenshots/" + Path.GetFileName(screenshotFile));
+			UploadIconAsFaviconIfExists(projToBuild.ApplicationName);
 
-			actionOnMessage("Attempting Ftp Uploading of Setup file and index file for " + projName, FeedbackMessageTypes.Status);
+			actionOnMessage("Attempting Ftp Uploading of Setup file and index file for " + projToBuild.ApplicationName, FeedbackMessageTypes.Status);
 			string uriAfterUploading = GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForAFTERvspublishing() + "/" + validatedUrlsectionForProjname;
 
 			//DONE: We removed the other apps from auto downloading (while NSIS installing) if not installed yet, just left AutoUpdater to remain
-			bool isAutoUpdater = projName.Replace(" ", "").Equals("AutoUpdater", StringComparison.InvariantCultureIgnoreCase);
+			bool isAutoUpdater = projToBuild.ApplicationName.Replace(" ", "").Equals("AutoUpdater", StringComparison.InvariantCultureIgnoreCase);
 			/*bool isShowNoCallbackNotification = projName.Replace(" ", "").Equals("ShowNoCallbackNotification", StringComparison.InvariantCultureIgnoreCase);
 			bool isStandaloneUploader = projName.Replace(" ", "").Equals("StandaloneUploader", StringComparison.InvariantCultureIgnoreCase);*/
 			string clonedSetupFilepathIfAutoUpdater = 
@@ -472,7 +474,7 @@ namespace SharedClasses
 				-File.Copy(publishedSetupPath, clonedSetupFilepathIfStandaloneUploader, true);*/
 
 			Dictionary<string, string> localFiles_DisplaynameFirst = new Dictionary<string, string>();
-			localFiles_DisplaynameFirst.Add("Setup path for " + projName, publishedSetupPath);
+			localFiles_DisplaynameFirst.Add("Setup path for " + projToBuild.ApplicationName, publishedSetupPath);
 			//localFiles_DisplaynameFirst.Add("index.html for " + projName, htmlFilePath);
 			if (isAutoUpdater) localFiles_DisplaynameFirst.Add("Newest AutoUpdater setup", clonedSetupFilepathIfAutoUpdater);
 			/*if (isShowNoCallbackNotification) localFiles_DisplaynameFirst.Add("Newest ShowNoCallbackNotification", clonedSetupFilepathIfShowNoCallbackNotification);

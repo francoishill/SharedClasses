@@ -128,7 +128,7 @@ namespace SharedClasses
 		private static bool? _checksAlreadyDone = null;
 
 		public virtual string ApplicationName { get; set; }
-		public virtual string CurrentStatusText { get; set; }
+		public virtual string CurrentStatusText { get; protected set; }
 		public virtual StatusTypes CurrentStatus { get; set; }
 		public virtual int? CurrentProgressPercentage { get; set; }
 		//public virtual bool? LastBuildResult { get; set; }
@@ -302,12 +302,12 @@ namespace SharedClasses
 					{
 						Parallel.ForEach<VsBuildProject>(
 							operDetails.ApplicationList,
-							(app) => _doOperationOnApp(operDetails.ActionOnEachApplication, app, operDetails.Settings));
+							(app) => _doOperationOnSingleApp(operDetails.ActionOnEachApplication, app, operDetails.Settings));
 					}
 					else
 					{
 						foreach (var app in operDetails.ApplicationList)
-							_doOperationOnApp(operDetails.ActionOnEachApplication, app, operDetails.Settings);
+							_doOperationOnSingleApp(operDetails.ActionOnEachApplication, app, operDetails.Settings);
 					}
 
 					_stopwathOverall.Stop();
@@ -355,9 +355,12 @@ namespace SharedClasses
 		}
 
 		private static ConcurrentDictionary<VsBuildProject, Stopwatch> _stopwatchesForOperations = new ConcurrentDictionary<VsBuildProject, Stopwatch>();
-		private static void _doOperationOnApp(Action<VsBuildProject> predefinedAction, VsBuildProject application, OverallOperationSettings settings)
+		private static void _doOperationOnSingleApp(Action<VsBuildProject> predefinedAction, VsBuildProject application, OverallOperationSettings settings)
 		{
-			application.CurrentStatusText = settings.InitialStatusMessage;
+			if (settings.ClearAppStatusTextFirst)
+				application.CurrentStatusText = settings.InitialStatusMessage;
+			else
+				application.AppendCurrentStatusText(settings.InitialStatusMessage);
 
 			Stopwatch tmpSw = Stopwatch.StartNew();
 			while (tmpSw == null) { }
@@ -537,10 +540,10 @@ namespace SharedClasses
 							else */
 							proj.CurrentStatus = StatusTypes.Error;
 							if (buildErrorsCaught[proj].Count == 0)
-								proj.CurrentStatusText = string.Format("[{0}] Unknown error to build " + proj.ApplicationName, nowString);
+								proj.AppendCurrentStatusText(string.Format("[{0}] Unknown error to build " + proj.ApplicationName, nowString));
 							else
-								proj.CurrentStatusText = string.Format("[{0}] Build failed for " + proj.ApplicationName, nowString)
-							 + Environment.NewLine + string.Join(Environment.NewLine, buildErrorsCaught[proj]);
+								proj.AppendCurrentStatusText(string.Format("[{0}] Build failed for " + proj.ApplicationName, nowString)
+							 + Environment.NewLine + string.Join(Environment.NewLine, buildErrorsCaught[proj]));
 							errorsIfFail[proj] += proj.CurrentStatusText + Environment.NewLine;
 							//csprojectPaths = null;
 							tmpResult.Add(proj, false);
@@ -626,7 +629,7 @@ namespace SharedClasses
 
 			//try
 			//{
-			this.ResetStatus(true);
+			//this.ResetStatus(true);
 
 			if (!_checksAlreadyDone.HasValue)
 				_checksAlreadyDone = OwnAppsInterop.RootVSprojectsDir != null;
@@ -697,12 +700,12 @@ namespace SharedClasses
 			{
 				string nowString = DateTime.Now.ToString("HH:mm:ss.fff");
 				if (csprojectPathsCaughtMatchingSolutionName.Count == 0 && successFullyBuilt)//Build successfully but could not obtain csProject filepaths
-					this.CurrentStatusText = string.Format("[{0}] Build successfully but could not obtain .csproj path(s) for solution: {1}", nowString, SolutionFullpath);
+					this.AppendCurrentStatusText(string.Format("[{0}] Build successfully but could not obtain .csproj path(s) for solution: {1}", nowString, SolutionFullpath));
 				else if (buildErrorsCaught.Count == 0)
-					this.CurrentStatusText = string.Format("[{0}] Unknown error to build " + this.ApplicationName, nowString);
+					this.AppendCurrentStatusText(string.Format("[{0}] Unknown error to build " + this.ApplicationName, nowString));
 				else
-					this.CurrentStatusText = string.Format("[{0}] Build failed for " + this.ApplicationName, nowString)
-						+ Environment.NewLine + string.Join(Environment.NewLine, buildErrorsCaught);
+					this.AppendCurrentStatusText(string.Format("[{0}] Build failed for " + this.ApplicationName, nowString)
+						+ Environment.NewLine + string.Join(Environment.NewLine, buildErrorsCaught));
 				OnFeedbackMessage(this.CurrentStatusText, FeedbackMessageTypes.Error);
 				csprojectPaths = null;
 				return false;
@@ -726,7 +729,7 @@ namespace SharedClasses
 			string resultSetupFilename;
 			DateTime outPublishDate;
 			bool publishResult = PublishInterop.PerformPublish(
-				this.ApplicationName,
+				this,
 				/*_64bit,//What if required*/
 				this.AppHasPlugins(),//What about QuickAccess
 				autoUpdateRevision,
@@ -759,7 +762,7 @@ namespace SharedClasses
 			string resultSetupFilename;
 			DateTime outPublishDate;
 			bool publishResult = PublishInterop.PerformPublishOnline(
-				this.ApplicationName,
+				this,
 				false,//What if required
 				this.AppHasPlugins(),
 				true,

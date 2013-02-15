@@ -532,6 +532,40 @@ public class NsisInterop
 		}
 	}
 
+	public static string cNsProcess_NSH_file
+	{
+		get
+		{
+			return @"!define nsProcess::FindProcess `!insertmacro nsProcess::FindProcess`
+
+					!macro nsProcess::FindProcess _FILE _ERR
+						nsProcess::_FindProcess /NOUNLOAD `${_FILE}`
+						Pop ${_ERR}
+					!macroend
+
+
+					!define nsProcess::KillProcess `!insertmacro nsProcess::KillProcess`
+
+					!macro nsProcess::KillProcess _FILE _ERR
+						nsProcess::_KillProcess /NOUNLOAD `${_FILE}`
+						Pop ${_ERR}
+					!macroend
+
+					!define nsProcess::CloseProcess `!insertmacro nsProcess::CloseProcess`
+
+					!macro nsProcess::CloseProcess _FILE _ERR
+						nsProcess::_CloseProcess /NOUNLOAD `${_FILE}`
+						Pop ${_ERR}
+					!macroend
+
+
+					!define nsProcess::Unload `!insertmacro nsProcess::Unload`
+
+					!macro nsProcess::Unload
+						nsProcess::_Unload
+					!macroend";
+		}
+	}
 
 	public class NSISclass
 	{
@@ -824,6 +858,12 @@ public class NsisInterop
 			tmpList.Add("");
 			tmpList.Add(@"; DotNetChecker checks and downloads dotnet version");
 			tmpList.Add(@"!include ""DotNetChecker.nsh""");
+			tmpList.Add(@"!include ""nsProcess.nsh""");
+
+			//nsProcess does not work with 64bit processes, remove the plugin from all used places, also from HomePC with FileZilla
+			//Rather use FindProcDLL and KillProcDLL, see laptop folder: C:\Users\FrancoisLaptopDell\Downloads\nsProcess_1_6\Example
+			//Just include in Nsis\Plugins folder then run like this example: http://nsis.sourceforge.net/KillProcDLL_Manual
+
 			tmpList.Add("");
 
 			tmpList.Add(";To use custom page with checkbox");

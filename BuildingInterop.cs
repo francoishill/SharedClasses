@@ -257,12 +257,13 @@ namespace SharedClasses
 		private static Queue<OperationDetails> _operationsQueue = new Queue<OperationDetails>();
 		public static void DoOperation(IEnumerable<VsBuildProject> applicationList, Action<VsBuildProject> actionForEachProject, OverallOperationSettings overallOperationSettings)
 		{//This operation will always be on separate threads if AllowConcurrent then multiple threads otherwise complete loop on same SEPARATE thread
-			var operationDetails = new OperationDetails(applicationList, actionForEachProject, overallOperationSettings);
+			var applistSubset = applicationList.Where(app => overallOperationSettings.ShouldIncludeApp(app));
+			var operationDetails = new OperationDetails(applistSubset, actionForEachProject, overallOperationSettings);
 
 			if (_isbusyWithAnOperation)
 			{
 				_operationsQueue.Enqueue(operationDetails);
-				foreach (var pr in applicationList)
+				foreach (var pr in operationDetails.ApplicationList)
 				{
 					pr.CurrentStatus = StatusTypes.Queued;
 					pr.AppendCurrentStatusText("Queued because another operation already busy");
@@ -356,8 +357,7 @@ namespace SharedClasses
 		private static ConcurrentDictionary<VsBuildProject, Stopwatch> _stopwatchesForOperations = new ConcurrentDictionary<VsBuildProject, Stopwatch>();
 		private static void _doOperationOnApp(Action<VsBuildProject> predefinedAction, VsBuildProject application, OverallOperationSettings settings)
 		{
-			if (!settings.ShouldIncludeApp(application))//This app should be excluded
-				return;
+			application.CurrentStatusText = settings.InitialStatusMessage;
 
 			Stopwatch tmpSw = Stopwatch.StartNew();
 			while (tmpSw == null) { }

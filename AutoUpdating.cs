@@ -110,9 +110,11 @@ namespace SharedClasses
 
 		private static readonly TimeSpan cDelayBeforeInitialCheck = TimeSpan.FromSeconds(10);
 		private static readonly TimeSpan cCheckInterval = TimeSpan.FromSeconds(5);
+		private static readonly TimeSpan cDurationAfterWhichToAutokillIfHighMemoryOrCpu = TimeSpan.FromMinutes(5.0);
 
 		private const long cMemoryThresholdBytes = 250 * 1024 * 1024;
-		private static bool busyShowingHighMemoryUsageMessage = false;
+		private static DateTime? busyShowingHighMemoryUsageMessage = null;
+		private static bool donotShowHighMemoryUsageMessages = false;
 		private static void CheckMemoryUsage(Process process)
 		{
 			process.Refresh();
@@ -120,18 +122,38 @@ namespace SharedClasses
 			//BytesToHumanfriendlyStringConverter.ConvertBytesToHumanreadableString(currentProcess.PrivateMemorySize64)
 			if (process.PrivateMemorySize64 > cMemoryThresholdBytes)
 			{
-				if (!busyShowingHighMemoryUsageMessage)
+				if (!busyShowingHighMemoryUsageMessage.HasValue
+					&& !donotShowHighMemoryUsageMessages)
 				{
-					busyShowingHighMemoryUsageMessage = true;
+					busyShowingHighMemoryUsageMessage = DateTime.Now;
 					ThreadingInterop.DoAction(delegate
 					{
 						string appname = LicensingInterop_Client.GetApplicationName();
-						if (UserMessages.Confirm(
-							string.Format("WARNING!!! Confirm to terminate application '{0}'? Current Memory usage is above {1} (current memory usage is {2}).", appname, BytesToHumanfriendlyStringConverter.ConvertBytesToHumanreadableString(cMemoryThresholdBytes), BytesToHumanfriendlyStringConverter.ConvertBytesToHumanreadableString(process.PrivateMemorySize64))))
+						bool? yesTerminate_NoDontTerminate_NullDoNotShowAgain =
+							UserMessages.ConfirmNullable(
+								string.Format(
+									"WARNING!!! Confirm to terminate application '{0}' (cancel to not show message again).? Current Memory usage is above {1} (current memory usage is {2})."
+									+ Environment.NewLine + Environment.NewLine
+									+ "Application will automatically exit after {3} if no option is chosen.",
+									appname,
+									BytesToHumanfriendlyStringConverter.ConvertBytesToHumanreadableString(cMemoryThresholdBytes),
+									BytesToHumanfriendlyStringConverter.ConvertBytesToHumanreadableString(process.PrivateMemorySize64),
+									cDurationAfterWhichToAutokillIfHighMemoryOrCpu.ToString()),
+								"Current time is " + DateTime.Now.ToString("HH:mm:ss"));
+						if (yesTerminate_NoDontTerminate_NullDoNotShowAgain == true)
 							Environment.Exit(0);
-						busyShowingHighMemoryUsageMessage = false;
+						else if (yesTerminate_NoDontTerminate_NullDoNotShowAgain == null)
+							donotShowHighMemoryUsageMessages = true;
+
+						busyShowingHighMemoryUsageMessage = null;
 					},
 					false);
+				}
+				else if (busyShowingHighMemoryUsageMessage.HasValue
+					&& !donotShowHighMemoryUsageMessages)
+				{
+					if (DateTime.Now - busyShowingHighMemoryUsageMessage.Value > cDurationAfterWhichToAutokillIfHighMemoryOrCpu)
+						Environment.Exit(0);
 				}
 			}
 		}
@@ -142,7 +164,8 @@ namespace SharedClasses
 		private static DateTime? _previousCheckedTime = null;
 		private static double _previousTotalMilliseconds;
 		private static int numberConsecutiveTimesCPUabove50 = 0;
-		private static bool busyShowingHighCpuUsageMessage = false;
+		private static DateTime? busyShowingHighCpuUsageMessage = null;
+		private static bool donotShowHighCpuUsageMessages = false;
 		private static void CheckCpuLoad(Process process)
 		{
 			process.Refresh();
@@ -160,19 +183,40 @@ namespace SharedClasses
 					numberConsecutiveTimesCPUabove50++;
 					if (cCheckInterval.TotalSeconds * (double)numberConsecutiveTimesCPUabove50 > cWarningSecondsIfAboveCPUThresholdForLongerThan)
 					{
-						if (!busyShowingHighCpuUsageMessage)
+						if (!busyShowingHighCpuUsageMessage.HasValue
+							&& !donotShowHighCpuUsageMessages)
 						{
-							busyShowingHighCpuUsageMessage = true;
+							busyShowingHighCpuUsageMessage = DateTime.Now;
 							ThreadingInterop.DoAction(delegate
 							{
 								string appname = LicensingInterop_Client.GetApplicationName();
 								double secondsTheCpuIsAboveThreshold = cCheckInterval.TotalSeconds * (double)numberConsecutiveTimesCPUabove50;
-								if (UserMessages.Confirm(
-									string.Format("WARNING!!! Confirm to terminate application '{0}'? Current CPU load is above {1} (current load is {2}) for more than {3} seconds.", appname, cCPUthresholdPercentage, currentTotalCPUload.ToString("0.##"), secondsTheCpuIsAboveThreshold)))
+								bool? yesTerminate_NoDontTerminate_NullDoNotShowAgain =
+									UserMessages.ConfirmNullable(
+										string.Format(
+											"WARNING!!! Confirm to terminate application '{0}' (cancel to not show message again)? Current CPU load is above {1} (current load is {2}) for more than {3} seconds."
+											+ Environment.NewLine + Environment.NewLine
+											+ "Application will automatically exit after {4} if no option is chosen.",
+											appname,
+											cCPUthresholdPercentage,
+											currentTotalCPUload.ToString("0.##"),
+											secondsTheCpuIsAboveThreshold,
+											cDurationAfterWhichToAutokillIfHighMemoryOrCpu.ToString()),
+										"Current time is " + DateTime.Now.ToString("HH:mm:ss"));
+								if (yesTerminate_NoDontTerminate_NullDoNotShowAgain == true)
 									Environment.Exit(0);
-								busyShowingHighCpuUsageMessage = false;
+								else if (yesTerminate_NoDontTerminate_NullDoNotShowAgain == null)
+									donotShowHighCpuUsageMessages = true;
+
+								busyShowingHighCpuUsageMessage = null;
 							},
 							false);
+						}
+						else if (busyShowingHighCpuUsageMessage.HasValue
+							&& !donotShowHighCpuUsageMessages)
+						{
+							if (DateTime.Now - busyShowingHighCpuUsageMessage.Value > cDurationAfterWhichToAutokillIfHighMemoryOrCpu)
+								Environment.Exit(0);
 						}
 					}
 				}
@@ -254,7 +298,6 @@ namespace SharedClasses
 			Thread checkForUpdatesSilentlyThread = ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 			{
 				string fullExePath = Environment.GetCommandLineArgs()[0];
-
 
 				if (!IsAutoUpdaterInstalled())
 				{

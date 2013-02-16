@@ -200,10 +200,6 @@ namespace SharedClasses
 				Path.Combine(Path.GetDirectoryName(nsisFileName), "DotNetChecker.nsh"),
 				NsisInterop.DotNetChecker_NSH_file);
 
-			File.WriteAllText(
-				Path.Combine(Path.GetDirectoryName(nsisFileName), "nsProcess.nsh"),
-				NsisInterop.cNsProcess_NSH_file);
-
 			string errorIfFailed;
 			string registryEntriesFilepath = OwnAppsInterop.GetRegistryEntriesFullfilepath(projToBuild.ApplicationName, out errorIfFailed);
 			if (registryEntriesFilepath == null)//This means an error occurred, not that the file does not exist
@@ -249,13 +245,11 @@ namespace SharedClasses
 
 			Dictionary<string, string> nsisRequiredPlugins = new Dictionary<string, string>()
 			{
-				{ "dotnetchecker.dll", SettingsSimple.PublishSettings.Instance.OnlineDotnetCheckerDllFileUrl },
-				{ "nsProcess.dll", SettingsSimple.PublishSettings.Instance.OnlineNsProcessDllFileUrl },
+				{ "dotnetchecker.dll", SettingsSimple.PublishSettings.Instance.OnlineDotnetCheckerDllFileUrl }
 			};
 
 			foreach (var nsisPlugin in nsisRequiredPlugins)
 			{
-				continue;
 				string pluginPath = Path.Combine(nsisDir, "Plugins", nsisPlugin.Key);
 				string onlineUrl = nsisPlugin.Value;
 				if (!File.Exists(pluginPath))

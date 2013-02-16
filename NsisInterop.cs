@@ -117,10 +117,10 @@ public class NsisInterop
 		}
 		else
 		{*/
-			sectionGroupLines.Add("		; Currently allows 32bit mode");
-			sectionGroupLines.Add("		;MessageBox MB_OK|MB_ICONSTOP \"You cannot run this version of $PRODUCT_NAME on your OS.$\\r$\\n\\");
-			sectionGroupLines.Add("		;  Please use a 64-bit OS or download a 32-bit version of PRODUCT_NAME.\"");
-			sectionGroupLines.Add("		;Quit");
+		sectionGroupLines.Add("		; Currently allows 32bit mode");
+		sectionGroupLines.Add("		;MessageBox MB_OK|MB_ICONSTOP \"You cannot run this version of $PRODUCT_NAME on your OS.$\\r$\\n\\");
+		sectionGroupLines.Add("		;  Please use a 64-bit OS or download a 32-bit version of PRODUCT_NAME.\"");
+		sectionGroupLines.Add("		;Quit");
 		/*}*/
 		sectionGroupLines.Add("	${EndIf}");
 		sectionGroupLines.Add("FunctionEnd");
@@ -128,6 +128,7 @@ public class NsisInterop
 		if (dotnetFrameworkTargetedIn != NSISclass.DotnetFrameworkTargetedEnum.None)
 		{
 			string Spacer = "  ";
+			sectionGroupLines.Add("");
 			sectionGroupLines.Add(@"Section -DotNetFramework");
 			if (dotnetFrameworkTargetedIn == NSISclass.DotnetFrameworkTargetedEnum.DotNet4full)
 				sectionGroupLines.Add(Spacer + @"!insertmacro CheckNetFramework 40Full ; if your application targets .NET 4.0 Full Framework");
@@ -145,6 +146,26 @@ public class NsisInterop
 				sectionGroupLines.Add(Spacer + @"!insertmacro CheckNetFramework 10 ; if your application targets .NET 1.0 Framework");
 			sectionGroupLines.Add(@"SectionEnd"); sectionGroupLines.Add("");
 		}
+
+		//Check process running
+		sectionGroupLines.Add("");
+		sectionGroupLines.Add(@"Section -CheckProcessRunning");
+		sectionGroupLines.Add(@"    nsExec::ExecToStack 'tasklist /NH /FO $\""CSV$\"" /FI $\""IMAGENAME eq ${PRODUCT_EXE_NAME}$\""'");
+		sectionGroupLines.Add(@"    Pop $0");
+		sectionGroupLines.Add(@"    Pop $1");
+		sectionGroupLines.Add(@"");
+		sectionGroupLines.Add(@"    StrCmp $0 ""0"" NoErrorOccurredCheckingProcessRunning");
+		sectionGroupLines.Add(@"    	DetailPrint ""Error checking if application already running (by using window's tasklist.exe): $0""");
+		sectionGroupLines.Add(@"    NoErrorOccurredCheckingProcessRunning:");
+		sectionGroupLines.Add(@"    StrCpy $2 $1 ${TEMP_PROCESSNAME_LENGTH} 1");
+		sectionGroupLines.Add(@"    StrCmp $2 ""${PRODUCT_EXE_NAME}"" ProcessFound ProcessNotFound");
+		sectionGroupLines.Add(@"    ProcessFound:");
+		sectionGroupLines.Add(@"		MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 ""'${PRODUCT_NAME}' is already running, automatically close it and continue installation (any unsaved data may be lost)?$\n$\nPress no to cancel installation."" IDYES +2");
+		sectionGroupLines.Add(@"		Abort ""'${PRODUCT_NAME}' is running, installation cancelled.""");
+		sectionGroupLines.Add(@"		nsExec::Exec 'taskkill /F /IM $\""${PRODUCT_EXE_NAME}$\""'");
+		sectionGroupLines.Add(@"    ProcessNotFound:");
+		sectionGroupLines.Add(@"   	;Installation can continue, the process is not running or user agreed to kill it");
+		sectionGroupLines.Add(@"SectionEnd");
 
 		sectionGroupLines.Add(@"Section ""Full program"" SEC001");
 		sectionGroupLines.Add(@"  SetShellVarContext all");
@@ -532,7 +553,7 @@ public class NsisInterop
 		}
 	}
 
-	public static string cNsProcess_NSH_file
+	/*public static string cNsProcess_NSH_file
 	{
 		get
 		{
@@ -565,7 +586,7 @@ public class NsisInterop
 						nsProcess::_Unload
 					!macroend";
 		}
-	}
+	}*/
 
 	public class NSISclass
 	{
@@ -645,7 +666,7 @@ public class NsisInterop
 				List<string> InstTypesIn,
 				string StartmenuFolderNameIn,
 				DotnetFrameworkTargetedEnum DotnetFrameworkTargetedIn,
-				/*bool True64bit_False32bitIn,*/
+			/*bool True64bit_False32bitIn,*/
 				string InstallerIconPathIn = @"${NSISDIR}\Contrib\Graphics\Icons\modern-install-blue-full.ico",
 				string UninstallerIconPathIn = @"${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall-blue-full.ico",
 				Boolean InstallForAllUsersIn = true)
@@ -827,6 +848,8 @@ public class NsisInterop
 			tmpList.Add(@"!define PRODUCT_STARTMENU_REGVAL ""NSIS:StartMenuDir""");
 			tmpList.Add(@"!define PRODUCT_SETUP_FILENAME """ + (SetupFileName.ToLower().EndsWith(".exe") ? SetupFileName : SetupFileName + ".exe") + @"""");
 			tmpList.Add("");
+			tmpList.Add("!define TEMP_PROCESSNAME_LENGTH " + ProductExeName.Length);
+			tmpList.Add("");
 
 			tmpList.Add("Var /GLOBAL classesRootMainKey  ;used for reading Registry keys for install/uninstall");
 			tmpList.Add("Var /GLOBAL CustomControlsInitialized");
@@ -859,10 +882,6 @@ public class NsisInterop
 			tmpList.Add(@"; DotNetChecker checks and downloads dotnet version");
 			tmpList.Add(@"!include ""DotNetChecker.nsh""");
 			tmpList.Add(@"!include ""nsProcess.nsh""");
-
-			//nsProcess does not work with 64bit processes, remove the plugin from all used places, also from HomePC with FileZilla
-			//Rather use FindProcDLL and KillProcDLL, see laptop folder: C:\Users\FrancoisLaptopDell\Downloads\nsProcess_1_6\Example
-			//Just include in Nsis\Plugins folder then run like this example: http://nsis.sourceforge.net/KillProcDLL_Manual
 
 			tmpList.Add("");
 

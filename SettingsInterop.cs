@@ -133,7 +133,7 @@ namespace SharedClasses
 		//	//Settings.Default.Save();
 
 		//	Serialize<NetworkInteropSettings>(@"c:\testfile2.xml",
-		//		new NetworkInteropSettings() { RootUriForVsPublishing = "http://" + "fjh.dyndns.org" + "/ownapplications" });
+		//		new NetworkInteropSettings() { RootUriForVsPublishing = "http://" + "fjh.dyndns.org" + "/apps" });
 
 		//	NetworkInteropSettings ni = Deserialize<NetworkInteropSettings>(@"c:\testfile2.xml");
 		//	MessageBox.Show(ni.RootUriForVsPublishing);

@@ -668,11 +668,11 @@ namespace SharedClasses
 			public string AppsDownloadFtpPassword { get; set; }
 			public string AppsUploadFtpUsername { get; set; }
 			public string AppsUploadFtpPassword { get; set; }
-			public List<string> AllowedListOfApplicationsToDownload { get; set; }//For the online site firepuma.com/apps (which must be listed, if they have a published folder yet - firepuma.com/ownapplications/[appname])
+			public List<string> AllowedListOfApplicationsToDownload { get; set; }//For the online site firepuma.com/apps (which must be listed, if they have a published folder yet - firepuma.com/apps/[appname])
 
 			public OnlineAppsSettings()
 			{
-				this.RootFtpUrl = "ftp://fjh.dyndns.org";//"ftp://fjh.dyndns.org/francois/websites/firepuma/ownapplications";
+				this.RootFtpUrl = "ftp://fjh.dyndns.org";//"ftp://fjh.dyndns.org/francois/websites/firepuma/apps";
 				this.AppsDownloadFtpUsername = "appsdownload";
 				this.AppsDownloadFtpPassword = "appsdownload.pass123";
 				this.AppsUploadFtpUsername = "ownappsupload";

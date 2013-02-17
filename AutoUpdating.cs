@@ -260,7 +260,7 @@ namespace SharedClasses
 
 		public static string GetApplicationOnlineUrl(string applicationName)
 		{
-			return SettingsSimple.HomePcUrls.Instance.AppsPublishingRoot + "/ownapplications/" + applicationName.ToLower();//"http://fjh.dyndns.org/ownapplications/" + projName.ToLower(),
+			return SettingsSimple.HomePcUrls.Instance.AppsPublishingRoot + "/apps/" + applicationName.ToLower();//"http://fjh.dyndns.org/ownapplications/" + projName.ToLower(),
 		}
 
 		public static bool IsAutoUpdaterInstalled()

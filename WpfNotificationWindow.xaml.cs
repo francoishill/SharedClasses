@@ -387,6 +387,7 @@ namespace SharedClasses
 			ListBoxItem myListBoxItem = listboxNotificationList.ItemContainerGenerator.ContainerFromItem(notificationItem) as ListBoxItem;
 			if (myListBoxItem == null) return null;
 			ContentPresenter myContentPresenter = FindVisualChild<ContentPresenter>(myListBoxItem);
+			if (myContentPresenter == null) return null;
 			DataTemplate myDataTemplate = myContentPresenter.ContentTemplate;
 			return myDataTemplate.FindName("NotificationMainBorder", myContentPresenter) as Border;
 		}

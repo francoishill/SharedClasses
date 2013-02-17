@@ -881,7 +881,6 @@ public class NsisInterop
 			tmpList.Add("");
 			tmpList.Add(@"; DotNetChecker checks and downloads dotnet version");
 			tmpList.Add(@"!include ""DotNetChecker.nsh""");
-			tmpList.Add(@"!include ""nsProcess.nsh""");
 
 			tmpList.Add("");
 

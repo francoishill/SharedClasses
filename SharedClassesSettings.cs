@@ -713,13 +713,13 @@ namespace SharedClasses
 			[SettingAttribute("Please enter the base Uri for Visual Studio publishing, ie. code.google.com")]
 			public string BaseUri { get; set; }
 
-			[Description("This is the section after the base url of the url used for opening the published webpage after successful publishing. It must start with a front-slash / (example: /ownapplications).")]
+			[Description("This is the section after the base url of the url used for opening the published webpage after successful publishing. It must start with a front-slash / (example: /apps).")]
 			public string RelativeRootUriAFTERvspublishing { get; set; }
 
 			[Description("The uri protocol (Http or Ftp) used for opening the published webpage after successful publishing.")]
 			public UriProtocol? UriProtocolForAFTERvspublishing { get; set; }
 
-			[Description("This is the section after the base url of the visual studio publishing path. It must start with a front-slash / (example: /ownapplications).")]
+			[Description("This is the section after the base url of the visual studio publishing path. It must start with a front-slash / (example: /apps).")]
 			public string RelativeRootUriForVsPublishing { get; set; }
 
 			[Description("The uri protocol (Http or Ftp) used for publishing visual studio application.")]
@@ -742,9 +742,9 @@ namespace SharedClasses
 			public VisualStudioInteropSettings()
 			{
 				BaseUri = null;//"fjh.dyndns.org";//"127.0.0.1";
-				RelativeRootUriAFTERvspublishing = null;//"/ownapplications";
+				RelativeRootUriAFTERvspublishing = null;//"/apps";
 				UriProtocolForAFTERvspublishing = null;//UriProtocol.Http;
-				RelativeRootUriForVsPublishing = null;//"/francois/websites/firepuma/ownapplications";
+				RelativeRootUriForVsPublishing = null;//"/francois/websites/firepuma/apps";
 				UriProtocolForVsPublishing = null;//UriProtocol.Ftp;
 				FtpUsername = null;
 				FtpPassword = null;

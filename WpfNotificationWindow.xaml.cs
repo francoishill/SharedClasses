@@ -153,84 +153,77 @@ namespace SharedClasses
 
 		private static List<Thread> activeThreadList = new List<Thread>();
 		private static object lockObj_ShowNotification = new object();
-		public static void ShowNotification(
-			string title, string message,
-			ShowNoCallbackNotificationInterop.NotificationTypes notificationType,
-			TimeSpan? timeout,
-			Action<object> leftClickCallback, object leftClickCallbackArgument,
-			Action<object> rightClickCallback, object rightClickCallbackArgument,
-			Action<object> middleClickCallback, object middleClickCallbackArgument,
-			Action<object, bool> onCloseCallback_WasClickedToCallback, object onCloseCallbackArgument)
+		public static void ShowNotification(NotificationClass notificationSettings)
 		{
-			bool justcreated = false;
-			lock (lockObj_ShowNotification)
-			{
-				if (notificationWindow == null)
+			Action<NotificationClass> actionToShowNotification =
+				(notif) =>
 				{
-					notificationWindow = new WpfNotificationWindow();
-					justcreated = true;
-				}
-			}
-
-			/*Thread thread = new Thread(() =>
-			{*/
-			if (CurrentVersionString != null)
-				SetCurrentVersionDisplayed(CurrentVersionString);
-
-			while (notificationWindow == null)
-			{
-				Dispatcher.CurrentDispatcher.Invoke((Action)delegate { }, DispatcherPriority.Background);
-			}//Just do this as it may take some time to create the notificationWindow
-
-			notificationWindow.Dispatcher.Invoke(
-				(Action)delegate
-				{
-					var notif = new NotificationClass(
-						//notifications.Count + " " + title, message,
-						title, message,
-						notificationType,
-						timeout,
-						leftClickCallback, leftClickCallbackArgument,
-						rightClickCallback, rightClickCallbackArgument,
-						middleClickCallback, middleClickCallbackArgument,
-						onCloseCallback_WasClickedToCallback, onCloseCallbackArgument);
-
-					try
+					bool justcreated = false;
+					lock (lockObj_ShowNotification)
 					{
-						if (justcreated)
-							notificationWindow.listboxNotificationList.ItemsSource = notifications;
-						notificationWindow.BringIntoView();
-						notificationWindow.Topmost = !notificationWindow.Topmost;
-						notificationWindow.Topmost = !notificationWindow.Topmost;
-
-						while (collectionChangedEventBusy) { }
-
-						if (!notifications.Contains(notif))
-							notifications.Insert(0, notif);
-						if (!notificationWindow.IsVisible)
-							notificationWindow.ShowDialog();
+						if (notificationWindow == null)
+						{
+							notificationWindow = new WpfNotificationWindow();
+							justcreated = true;
+						}
 					}
-					catch (Exception exc)
+
+					/*Thread thread = new Thread(() =>
+					{*/
+					if (CurrentVersionString != null)
+						SetCurrentVersionDisplayed(CurrentVersionString);
+
+					while (notificationWindow == null)
 					{
-						Console.WriteLine("ERROR: " + exc.Message);
-					}
-				});
-			/*});
-			thread.SetApartmentState(ApartmentState.STA);
-			thread.Start();
-			activeThreadList.Add(thread);
-			return thread;*/
+						Dispatcher.CurrentDispatcher.Invoke((Action)delegate { }, DispatcherPriority.Background);
+					}//Just do this as it may take some time to create the notificationWindow
 
-			//notificationWindow.listboxNotificationList.UpdateLayout();
-			//if (timeout.HasValue)
-			//{
-			//    new System.Threading.Timer(
-			//        new System.Threading.TimerCallback(
-			//            not => notificationWindow.InvokeFromSeparateThread((not1) => notificationWindow.FadeOutAndRemoveNotificationFromBorder(notificationWindow.GetBorderOfNotification(not1 as NotificationClass)), not)),
-			//        notif,
-			//        timeout.Value,
-			//        TimeSpan.FromMilliseconds(-1));
-			//}
+					notificationWindow.Dispatcher.Invoke(
+						(Action)delegate
+						{
+							try
+							{
+								if (justcreated)
+									notificationWindow.listboxNotificationList.ItemsSource = notifications;
+								notificationWindow.BringIntoView();
+								notificationWindow.Topmost = !notificationWindow.Topmost;
+								notificationWindow.Topmost = !notificationWindow.Topmost;
+
+								while (collectionChangedEventBusy) { }
+
+								if (!notifications.Contains(notif))
+									notifications.Insert(0, notif);
+								if (!notificationWindow.IsVisible)
+									notificationWindow.ShowDialog();
+							}
+							catch (Exception exc)
+							{
+								Console.WriteLine("ERROR: " + exc.Message);
+							}
+						});
+					/*});
+					thread.SetApartmentState(ApartmentState.STA);
+					thread.Start();
+					activeThreadList.Add(thread);
+					return thread;*/
+
+					//notificationWindow.listboxNotificationList.UpdateLayout();
+					//if (timeout.HasValue)
+					//{
+					//    new System.Threading.Timer(
+					//        new System.Threading.TimerCallback(
+					//            not => notificationWindow.InvokeFromSeparateThread((not1) => notificationWindow.FadeOutAndRemoveNotificationFromBorder(notificationWindow.GetBorderOfNotification(not1 as NotificationClass)), not)),
+					//        notif,
+					//        timeout.Value,
+					//        TimeSpan.FromMilliseconds(-1));
+					//}
+				};
+
+			ThreadingInterop.PerformOneArgFunctionSeperateThread<NotificationClass>(
+				actionToShowNotification,
+				notificationSettings,
+				false,
+				apartmentState: ApartmentState.STA);
 		}
 
 		protected void InvokeFromSeparateThread(Action<object> action, object arg1)
@@ -249,13 +242,14 @@ namespace SharedClasses
 			string title = null)
 		{
 			ShowNotification(
+				new NotificationClass(
 				title ?? "Notification", message,
 				notificationType,
 				timeout,
 				leftClickCallback, leftClickCallbackArgument,
 				rightClickCallback, rightClickCallbackArgument,
 				middleClickCallback, middleClickCallbackArgument,
-				onCloseCallback_WasClickedToCallback, onCloseCallbackArgument);
+				onCloseCallback_WasClickedToCallback, onCloseCallbackArgument));
 		}
 
 		public static void CloseNotificationWindow()

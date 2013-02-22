@@ -197,6 +197,13 @@ namespace SharedClasses
 			return Directory.Exists(System.IO.Path.Combine(dir, ".svn"));
 		}
 
+		public static bool DirIsValidGitPath(string dir)
+		{
+			if (!Directory.Exists(dir))
+				return false;
+			return Directory.Exists(System.IO.Path.Combine(dir, ".git"));
+		}
+
 		private static XmlDocument OpenCsprojAsXmlDocument(string csprojFullPath, ref string namespacePrefix, out XmlNamespaceManager xmlNSmanager, out string errorIfFailed)
 		{
 			if (!namespacePrefix.EndsWith(":"))

@@ -237,6 +237,52 @@ namespace SharedClasses
 			return xmlDoc;
 		}
 
+		public static List<string> GetListOfLinkedFilesForCsProj(string csprojPath)
+		{
+			string namespacePrefix = "NS:";
+			XmlNamespaceManager nsmgr;
+			string errorIfFailed;
+			var xmlDoc = OpenCsprojAsXmlDocument(
+				csprojPath,
+				ref namespacePrefix,
+				out nsmgr,
+				out errorIfFailed);
+
+			List<string> linkedFiles = new List<string>();
+			var pageNodes = xmlDoc.SelectNodes(string.Format("/{0}Project/{0}ItemGroup/{0}Page", namespacePrefix), nsmgr);
+			ForeachNodeWithAtLeastOneChildNodeSatisfyingCondition(pageNodes, cn => cn.Name.Equals("Link"),
+				(parentNodeWithLinkChild) =>
+				{
+					var includeAttr = parentNodeWithLinkChild.Attributes["Include"];
+					if (includeAttr != null)
+						linkedFiles.Add(includeAttr.Value);
+				});
+			var compileNodes = xmlDoc.SelectNodes(string.Format("/{0}Project/{0}ItemGroup/{0}Compile", namespacePrefix), nsmgr);
+			ForeachNodeWithAtLeastOneChildNodeSatisfyingCondition(compileNodes, cn => cn.Name.Equals("Link"),
+				(parentNodeWithLinkChild) =>
+				{
+					var includeAttr = parentNodeWithLinkChild.Attributes["Include"];
+					if (includeAttr != null)
+						linkedFiles.Add(includeAttr.Value);
+				});
+
+			string csprojDirectory = Path.GetDirectoryName(csprojPath);
+			for (int i = 0; i < linkedFiles.Count; i++)
+				linkedFiles[i] = Path.GetFullPath(Path.Combine(csprojDirectory, linkedFiles[i]));
+			return linkedFiles;
+		}
+
+		private static void ForeachNodeWithAtLeastOneChildNodeSatisfyingCondition(XmlNodeList nodeList, Predicate<XmlNode> condition, Action<XmlNode> actionOnParentNode)
+		{
+			foreach (XmlNode parentNode in nodeList)
+				foreach (XmlNode childnode in parentNode.ChildNodes)
+					if (condition(childnode))
+					{
+						actionOnParentNode(parentNode);
+						break;
+					}
+		}
+
 		private static string GetOutputTypeNodeInnerText(ref XmlDocument xmlDoc, ref XmlNamespaceManager nsmgr, string nsmgrPrefix, string csprojFullPath_JustForMessages, out string errorIfFailed)
 		{
 			XmlNodeList OutputTypeNodes = xmlDoc.SelectNodes(string.Format("/{0}Project/{0}PropertyGroup/{0}OutputType", nsmgrPrefix), nsmgr);
@@ -1181,7 +1227,8 @@ namespace SharedClasses
 			}
 		}
 
-		private static bool? _checkTracUrlExists(string tracUrl, out string errorIfFailed)
+		//true=exists, false=not exists, null=unknown error
+		public static bool? _checkTracUrlExists(string tracUrl, out string errorIfFailed)
 		{
 			try
 			{
@@ -1289,6 +1336,19 @@ namespace SharedClasses
 			if (applicationName.EndsWith(".vshost", StringComparison.InvariantCultureIgnoreCase))
 				applicationName = applicationName.Substring(0, applicationName.Length - ".vshost".Length);
 			return applicationName;
+		}
+
+		public static bool DoesProjectSolutionReference_OwnAppsSharedDll(string solutionFilename)
+		{
+			var fileContents = File.ReadAllText(solutionFilename);
+			try
+			{
+				return fileContents.IndexOf("_OwnAppsSharedDll", StringComparison.InvariantCultureIgnoreCase) != -1;
+			}
+			finally
+			{
+				fileContents = null;
+			}
 		}
 	}
 }

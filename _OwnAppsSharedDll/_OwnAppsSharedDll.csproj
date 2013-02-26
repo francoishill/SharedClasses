@@ -146,6 +146,10 @@
     <Compile Include="..\Generics.cs">
       <Link>Generics.cs</Link>
     </Compile>
+    <Compile Include="..\HighResourceUsageWindow.xaml.cs">
+      <Link>HighResourceUsageWindow.xaml.cs</Link>
+      <DependentUpon>HighResourceUsageWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="..\InputBox.cs">
       <Link>InputBox.cs</Link>
       <SubType>Form</SubType>
@@ -260,6 +264,11 @@
   <ItemGroup>
     <Page Include="..\AboutWindow2.xaml">
       <Link>AboutWindow2.xaml</Link>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="..\HighResourceUsageWindow.xaml">
+      <Link>HighResourceUsageWindow.xaml</Link>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

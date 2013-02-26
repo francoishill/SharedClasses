@@ -118,10 +118,29 @@ namespace SharedClasses
 		public static Action<VsBuildProject, string, FeedbackMessageTypes> ActionOnFeedbackMessageReceived = delegate { };
 		public static Action<VsBuildProject, int?> ActionOnProgressPercentageChanged = delegate { };
 
+		private static void ClearOutputFolder(string projName)
+		{
+			string dir = GetTempOutputFolderPath(projName);
+			if (Directory.Exists(dir))
+			{
+				try
+				{
+					Directory.Delete(dir, true);
+				}
+				catch { }
+			}
+		}
+		public static string GetTempOutputFolderPath(string projName)
+		{
+			string dir = Path.Combine(Path.GetTempPath(), "TempBuilds", OwnAppsInterop.GetApplicationName(), projName);
+			if (!Directory.Exists(dir))
+				Directory.CreateDirectory(dir);
+			return dir;
+		}
 		private readonly static Dictionary<string, string> GlobalBuildProperties = new Dictionary<string, string>()
 		{
 			{ "Configuration", "Release" },
-			{ "Platform", "Any CPU" },
+			{ "Platform", "Any CPU" }
 			//{ "Platform", "x86" },
 		};
 
@@ -469,11 +488,13 @@ namespace SharedClasses
 				//proj.ResetStatus(true);
 
 				string projectFileName = proj.SolutionFullpath;//@"...\ConsoleApplication3\ConsoleApplication3.sln";
-				Dictionary<string, string> GlobalProperty = new Dictionary<string, string>();
+				Dictionary<string, string> buildGlobalProperty = new Dictionary<string, string>();
 				foreach (var key in GlobalBuildProperties.Keys)
-					GlobalProperty.Add(key, GlobalBuildProperties[key]);
+					buildGlobalProperty.Add(key, GlobalBuildProperties[key]);
+				ClearOutputFolder(proj.ApplicationName);
+				buildGlobalProperty.Add("Outdir", GetTempOutputFolderPath(proj.ApplicationName));
 
-				BuildRequestData buildRequest = new BuildRequestData(projectFileName, GlobalProperty, null, new string[] { "Build" }, null);
+				BuildRequestData buildRequest = new BuildRequestData(projectFileName, buildGlobalProperty, null, new string[] { "Build" }, null);
 				var submission = BuildManager.DefaultBuildManager.PendBuildRequest(buildRequest);
 				submissionIDs.Add(submission.SubmissionId, proj);
 				submissions.Add(proj, submission);
@@ -526,6 +547,12 @@ namespace SharedClasses
 							//csprojectPaths = csprojectPathsCaughtMatchingSolutionName;
 							//return true;
 							tmpResult.Add(proj, true);
+							MovePluginFilesToSubfolder(GetTempOutputFolderPath(proj.ApplicationName),
+								err =>
+								{
+									proj.CurrentStatus = StatusTypes.Error;
+									proj.AppendCurrentStatusText(err);
+								});
 							proj.CurrentStatus = StatusTypes.Success;
 						}
 						else
@@ -645,6 +672,11 @@ namespace SharedClasses
 			Dictionary<string, string> buildGlobalProperties = new Dictionary<string, string>();
 			foreach (var key in GlobalBuildProperties.Keys)
 				buildGlobalProperties.Add(key, GlobalBuildProperties[key]);
+			string projname = Path.GetFileNameWithoutExtension(projectFileName);
+			ClearOutputFolder(projname);
+			string outputDir = GetTempOutputFolderPath(projname);
+
+			buildGlobalProperties.Add("Outdir", outputDir);
 			if (GlobalBuildProperties.ContainsKey("Platform") && GlobalBuildProperties["Platform"].Equals("x86", StringComparison.InvariantCultureIgnoreCase))
 				OnFeedbackMessage("Publishing in 32bit (x86) mode only", FeedbackMessageTypes.Warning);
 			//NB, what if we need to publish in Any CPU mode??
@@ -694,6 +726,7 @@ namespace SharedClasses
 			if (successFullyBuilt && csprojectPathsCaughtMatchingSolutionName.Count > 0)
 			{
 				csprojectPaths = csprojectPathsCaughtMatchingSolutionName;
+				MovePluginFilesToSubfolder(outputDir, err => OnFeedbackMessage(err, FeedbackMessageTypes.Error));
 				return true;
 			}
 			else
@@ -715,6 +748,32 @@ namespace SharedClasses
 			//{
 			//    IsBusyBuilding = false;
 			//}
+		}
+
+		private static void MovePluginFilesToSubfolder(string outputDir, Action<string> onError)
+		{
+			if (Directory.Exists(outputDir))
+			{
+				var pluginFiles = Directory.GetFiles(outputDir, "*Plugin.*");
+				if (pluginFiles.Count() > 0)
+				{
+					string pluginDir = Path.Combine(outputDir, "Plugins");
+					if (!Directory.Exists(pluginDir))
+						Directory.CreateDirectory(pluginDir);
+					foreach (var origPluginPath in pluginFiles)
+					{
+						try
+						{
+							string destPluginPath = Path.Combine(pluginDir, Path.GetFileName(origPluginPath));
+							File.Move(origPluginPath, destPluginPath);
+						}
+						catch (Exception exc)
+						{
+							onError(string.Format("Unable to move built plugin file '{0}': {1}", origPluginPath, exc.Message));
+						}
+					}
+				}
+			}
 		}
 
 		private bool AppHasPlugins()

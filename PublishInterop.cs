@@ -30,10 +30,10 @@ namespace SharedClasses
 		public string FtpUrl;
 		public DateTime? TracTicketsSinceDate;//The Trac ticketing system will be queried for 'recent' tickets using this as 'sinceDate'
 
-		public TracXmlRpcInterop.ChangeLogs ChangeLogs;
+		public List<TracXmlRpcInterop.ChangeLogs> ChangeLogsList;
 
 		public PublishDetails() { }
-		public PublishDetails(string ApplicationName, string ApplicationVersion, long SetupSize, string MD5Hash, DateTime PublishedDate, string FtpUrl, DateTime? TracTicketsSinceDate, TracXmlRpcInterop.ChangeLogs ChangeLogs)
+		public PublishDetails(string ApplicationName, string ApplicationVersion, long SetupSize, string MD5Hash, DateTime PublishedDate, string FtpUrl, DateTime? TracTicketsSinceDate, List<TracXmlRpcInterop.ChangeLogs> ChangeLogsList)
 		{
 			this.ApplicationName = ApplicationName;
 			this.ApplicationVersion = ApplicationVersion;
@@ -42,7 +42,7 @@ namespace SharedClasses
 			this.PublishedDate = PublishedDate;
 			this.FtpUrl = FtpUrl;
 			this.TracTicketsSinceDate = TracTicketsSinceDate;
-			this.ChangeLogs = ChangeLogs;
+			this.ChangeLogsList = ChangeLogsList;
 		}
 		public string GetJsonString() { return WebInterop.GetJsonStringFromObject(this, true); }
 	}
@@ -380,6 +380,7 @@ namespace SharedClasses
 
 			//DateTime publishDate = DateTime.Now;
 
+			actionOnMessage("Obtaining previously published date.", FeedbackMessageTypes.Status);
 			DateTime? tracTicketsSinceDate;//Use previous published version's publishedDate as the 'sinceDate' for trac tickets
 			if (!ObtainPreviouslyPublishedDate(projToBuild.ApplicationName, actionOnMessage, out tracTicketsSinceDate))
 				return false;//actionOnMessage already occurred inside 'ObtainPreviouslyPublishedDate'
@@ -392,6 +393,49 @@ namespace SharedClasses
 			if (changeLogs == null)
 				return false;
 
+			var listOfChangeLogsForEachRepo = new List<TracXmlRpcInterop.ChangeLogs>();
+			listOfChangeLogsForEachRepo.Add(changeLogs);
+
+			string err2;//Not used
+			var csprojPathAndApptype = OwnAppsInterop.GetCsprojFullpathFromApplicationName(projToBuild.ApplicationName, out err2);
+			if (csprojPathAndApptype.HasValue)
+			{
+				var linkedFiles = OwnAppsInterop.GetListOfLinkedFilesForCsProj(csprojPathAndApptype.Value.Key);
+
+				if (OwnAppsInterop.DoesProjectSolutionReference_OwnAppsSharedDll(projToBuild.SolutionFullpath))
+				{
+					var filesLinkedToOwnAppsSharedProject = OwnAppsInterop.GetListOfLinkedFilesForCsProj(
+						Path.Combine(OwnAppsInterop.RootVSprojectsDir, @"SharedClasses\_OwnAppsSharedDll\_OwnAppsSharedDll.csproj"));
+					linkedFiles = linkedFiles.Concat(filesLinkedToOwnAppsSharedProject).ToList();	
+				}
+
+				var distinctVsProjRootFolderPaths =
+				linkedFiles
+					.Where(lf => lf.StartsWith(OwnAppsInterop.RootVSprojectsDir, StringComparison.InvariantCultureIgnoreCase))
+					.GroupBy(lf => lf.Substring(OwnAppsInterop.RootVSprojectsDir.Length).TrimStart('\\').Split('\\').First())
+					.Select(grpFoldername => System.IO.Path.Combine(OwnAppsInterop.RootVSprojectsDir, grpFoldername.Key));
+				foreach (var dir in distinctVsProjRootFolderPaths)
+				{
+					/*string err;
+					string tracUrl = TracXmlRpcInterop.ChangeLogs.GetTracBaseUrlForApplication(System.IO.Path.GetFileNameWithoutExtension(dir));
+					bool? tracExists = OwnAppsInterop._checkTracUrlExists(
+						tracUrl, out err);
+					if (tracExists == true)
+					{*/
+						var tmpChangeLogs = GetChangeLogs(
+							tracTicketsSinceDate,
+							System.IO.Path.GetFileNameWithoutExtension(dir),
+							actionOnMessage);
+						if (tmpChangeLogs != null)
+							listOfChangeLogsForEachRepo.Add(tmpChangeLogs);
+					/*}
+					else if (tracExists == false)
+						actionOnMessage("Dependant files of csproject does not have Trac environment, it does not exist: " + tracUrl, FeedbackMessageTypes.Warning);
+					else if (tracExists == null)
+						actionOnMessage("Cannot determine if dependant files of csproject has Trac environment: " + err);*/
+				}
+			}
+
 			PublishDetails currentlyPublishDetails = new PublishDetails(
 					projToBuild.ApplicationName,
 					publishedVersionString,
@@ -400,7 +444,7 @@ namespace SharedClasses
 					publishDate,
 					rootDownloadHttpUri + "/" + (new FileInfo(publishedSetupPath).Name),
 					tracTicketsSinceDate.HasValue ? tracTicketsSinceDate : DateTime.MinValue,
-					changeLogs);
+					listOfChangeLogsForEachRepo);
 
 			string errstr;
 			if (!WebInterop.SaveObjectOnline(PublishDetails.OnlineJsonCategory, projToBuild.ApplicationName + " - " + publishedVersionString, currentlyPublishDetails, out errstr))
@@ -513,7 +557,7 @@ namespace SharedClasses
 			string tmperr;
 			if (!WebInterop.PopulateObjectFromOnline(PublishDetails.OnlineJsonCategory, projName + PublishDetails.LastestVersionJsonNamePostfix, previouslyPublishedDetails, out tmperr))
 			{
-				if (tmperr.Equals(WebInterop.cErrorIfNotFoundOnline))
+				if (tmperr.EndsWith(WebInterop.cErrorIfNotFoundOnline, StringComparison.InvariantCultureIgnoreCase))
 				{
 					actionOnMessage("Not published before yet, obtaining all closed tickets as 'recently' closed (" + projName + PublishDetails.LastestVersionJsonNamePostfix + ").", FeedbackMessageTypes.Warning);
 					previouslyPublishedDate = null;

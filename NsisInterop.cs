@@ -30,10 +30,11 @@ public class NsisInterop
 
 	public static string GetBinariesDirectoryPathFromVsProjectName(string vsProjectName)
 	{
-		return
+		return VsBuildProject.GetTempOutputFolderPath(vsProjectName);
+		/*return
 			Directory.Exists(PublishInterop.cProjectsRootDir.TrimEnd('\\') + @"\" + vsProjectName + subDirInProj)
 			? PublishInterop.cProjectsRootDir.TrimEnd('\\') + @"\" + vsProjectName + subDirInProj
-			: PublishInterop.cProjectsRootDir.TrimEnd('\\') + @"\" + vsProjectName + @"\" + vsProjectName + subDirInProj;
+			: PublishInterop.cProjectsRootDir.TrimEnd('\\') + @"\" + vsProjectName + @"\" + vsProjectName + subDirInProj;*/
 	}
 
 	//public enum BuildTypeEnum { Debug, Release };
@@ -270,76 +271,111 @@ public class NsisInterop
 		if (hasPlugins)
 		{
 			var startSectionNumber = 2;//SEC002
-			var solutionBaseDir = Path.Combine(PublishInterop.cProjectsRootDir, vsProjectName);//Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects\" + VsProjectName;
 
-			sectionGroupLines.Add("");
-			sectionGroupLines.Add(@"SectionGroup ""Plugins""");
-			foreach (string baseDirForEachPluginProjects in Directory.GetDirectories(solutionBaseDir, "*Plugin"))
+			string pluginsDir = Path.Combine(VsBuildProject.GetTempOutputFolderPath(vsProjectName), "Plugins");
+			if (!Directory.Exists(pluginsDir))
+				UserMessages.ShowErrorMessage("Cannot copy plugin files, directory does not exists: " + pluginsDir);
+			else
 			{
-				var baseFolderNameForPlugin = Path.GetFileName(baseDirForEachPluginProjects);
-				var pluginDllPath = baseDirForEachPluginProjects + subDirInProj;
-				var pluginName = 
-						(baseFolderNameForPlugin != null && baseFolderNameForPlugin.ToLower().EndsWith("plugin")
-						? baseFolderNameForPlugin.Substring(0, baseFolderNameForPlugin.Length - 6)
-						: baseFolderNameForPlugin).InsertSpacesBeforeCamelCase();
+				var uniqueFilenamesOnly =
+					Directory.GetFiles(pluginsDir, "*Plugin.dll")
+					.Select(fp => Path.GetFileNameWithoutExtension(fp))
+					.Distinct(StringComparer.InvariantCultureIgnoreCase);
 
+				sectionGroupLines.Add("");
+				sectionGroupLines.Add(@"SectionGroup ""Plugins""");
+				foreach (var pluginFullname in uniqueFilenamesOnly)
+				{
+					var pluginName = pluginFullname
+						.Substring(0, pluginFullname.Length - "Plugin".Length)
+						.InsertSpacesBeforeCamelCase();
+
+					string pluginDllFilepath = Path.Combine(pluginsDir, pluginFullname + ".dll");
+
+					sectionGroupLines.Add(NSISclass.Spacer + @"Section """ + pluginName + @""" SEC" + startSectionNumber++.ToString("000"));
+					sectionGroupLines.Add(NSISclass.Spacer + @"  SetShellVarContext all");
+					sectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite on");
+					sectionGroupLines.Add(NSISclass.Spacer + @"	SetOutPath ""$INSTDIR\Plugins""");
+					sectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite on");
+					sectionGroupLines.Add(NSISclass.Spacer + @"  File /a /x *.pdb /x *.xml /x *Toolkit* /x *InterfaceFor* /x *CookComputing.XmlRpcV2.dll /x *MouseGestures.dll /x *System.Windows.Controls.WpfPropertyGrid.dll" + Plugins_FaceDetectionNsisExclusionList() + Plugins_Pdf2textExclusionList() + " \"" + pluginDllFilepath + "\"");
+					sectionGroupLines.Add(NSISclass.Spacer + @"SectionEnd");
+					sectionGroupLines.Add("");
+				}
+				if (sectionGroupLines[sectionGroupLines.Count - 1].Trim() == "")
+					sectionGroupLines.RemoveAt(sectionGroupLines.Count - 1);
+				sectionGroupLines.Add("SectionGroupEnd");
+
+				/*var solutionBaseDir = Path.Combine(PublishInterop.cProjectsRootDir, vsProjectName);//Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Visual Studio 2010\Projects\" + VsProjectName;
+
+				sectionGroupLines.Add("");
+				sectionGroupLines.Add(@"SectionGroup ""Plugins""");
+				foreach (string baseDirForEachPluginProjects in Directory.GetDirectories(solutionBaseDir, "*Plugin"))
+				{
+					var baseFolderNameForPlugin = Path.GetFileName(baseDirForEachPluginProjects);
+					var pluginDllPath = baseDirForEachPluginProjects + subDirInProj;
+					var pluginName = 
+						(baseFolderNameForPlugin != null && baseFolderNameForPlugin.ToLower().EndsWith("plugin")
+							? baseFolderNameForPlugin.Substring(0, baseFolderNameForPlugin.Length - 6)
+							: baseFolderNameForPlugin).InsertSpacesBeforeCamelCase();
+
+					//SectionGroupLines.Add("");
+					//foreach (string dllfile in Directory.GetFiles(PluginsDir, "*.dll"))
+					//{
+					//	string filenameWithoutExtension = Path.GetFileNameWithoutExtension(dllfile);
+					//	string filenameExcludingLastPluginWord =
+					//	VisualStudioInterop.InsertSpacesBeforeCamelCase(
+					//		filenameWithoutExtension.ToLower().EndsWith("plugin")
+					//		? filenameWithoutExtension.Substring(0, filenameWithoutExtension.Length - 6)
+					//		: filenameWithoutExtension);
+					//SectionGroupLines.Add("");
+					sectionGroupLines.Add(NSISclass.Spacer + @"Section """ + pluginName + @""" SEC" + startSectionNumber++.ToString("000"));
+					sectionGroupLines.Add(NSISclass.Spacer + @"  SetShellVarContext all");
+					sectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite on");
+					sectionGroupLines.Add(NSISclass.Spacer + @"	SetOutPath ""$INSTDIR\Plugins""");
+					sectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite on");
+					sectionGroupLines.Add(NSISclass.Spacer + @"  File /a /x *.pdb /x *.xml /x *Toolkit* /x *InterfaceFor* /x *CookComputing.XmlRpcV2.dll /x *MouseGestures.dll /x *System.Windows.Controls.WpfPropertyGrid.dll" + Plugins_FaceDetectionNsisExclusionList() + Plugins_Pdf2textExclusionList() + @" """ + pluginDllPath + @"\*.*""");
+					sectionGroupLines.Add(NSISclass.Spacer + @"SectionEnd");
+					sectionGroupLines.Add("");
+					//}
+				}
+				if (sectionGroupLines[sectionGroupLines.Count - 1].Trim() == "")
+					sectionGroupLines.RemoveAt(sectionGroupLines.Count - 1);
+				sectionGroupLines.Add("SectionGroupEnd");*/
+
+				//string PluginsDir = PublishedDir + @"\Plugins";
 				//SectionGroupLines.Add("");
+				//SectionGroupLines.Add(@"SectionGroup ""Plugins""");
+				////SectionGroupLines.Add("");
 				//foreach (string dllfile in Directory.GetFiles(PluginsDir, "*.dll"))
 				//{
 				//	string filenameWithoutExtension = Path.GetFileNameWithoutExtension(dllfile);
 				//	string filenameExcludingLastPluginWord =
-				//	VisualStudioInterop.InsertSpacesBeforeCamelCase(
+				//		VisualStudioInterop.InsertSpacesBeforeCamelCase(
 				//		filenameWithoutExtension.ToLower().EndsWith("plugin")
 				//		? filenameWithoutExtension.Substring(0, filenameWithoutExtension.Length - 6)
 				//		: filenameWithoutExtension);
-				//SectionGroupLines.Add("");
-				sectionGroupLines.Add(NSISclass.Spacer + @"Section """ + pluginName + @""" SEC" + startSectionNumber++.ToString("000"));
-				sectionGroupLines.Add(NSISclass.Spacer + @"  SetShellVarContext all");
-				sectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite on");
-				sectionGroupLines.Add(NSISclass.Spacer + @"	SetOutPath ""$INSTDIR\Plugins""");
-				sectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite on");
-				sectionGroupLines.Add(NSISclass.Spacer + @"  File /a /x *.pdb /x *.xml /x *Toolkit* /x *InterfaceFor* /x *CookComputing.XmlRpcV2.dll /x *MouseGestures.dll /x *System.Windows.Controls.WpfPropertyGrid.dll" + Plugins_FaceDetectionNsisExclusionList() + Plugins_Pdf2textExclusionList() + @" """ + pluginDllPath + @"\*.*""");
-				sectionGroupLines.Add(NSISclass.Spacer + @"SectionEnd");
-				sectionGroupLines.Add("");
+				//	//SectionGroupLines.Add("");
+				//	SectionGroupLines.Add(NSISclass.Spacer + @"Section """ + filenameExcludingLastPluginWord + @""" SEC" + startSectionNumber++.ToString("000"));
+				//	SectionGroupLines.Add(NSISclass.Spacer + @"  SetShellVarContext all");
+				//	SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite ifnewer");
+				//	SectionGroupLines.Add(NSISclass.Spacer + @"	SetOutPath ""$INSTDIR\Plugins""");
+				//	SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite ifnewer");
+				//	SectionGroupLines.Add(NSISclass.Spacer + @"  File /a """ + PluginsDir + @"\" + filenameWithoutExtension + @".*""");
+				//	SectionGroupLines.Add(NSISclass.Spacer + @"SectionEnd");
+				//	SectionGroupLines.Add("");
 				//}
+				//if (SectionGroupLines[SectionGroupLines.Count - 1].Trim() == "")
+				//	SectionGroupLines.RemoveAt(SectionGroupLines.Count - 1);
+				//SectionGroupLines.Add("SectionGroupEnd");
+
+				//SectionGroupLines.Add(@"Section ""Plugins"" SEC002");
+				//SectionGroupLines.Add(@"  SetShellVarContext all");
+				//SectionGroupLines.Add(@"  SetOverwrite ifnewer");
+				//SectionGroupLines.Add(@"	SetOutPath ""$INSTDIR\Plugins""");
+				//SectionGroupLines.Add(@"  SetOverwrite ifnewer");
+				//SectionGroupLines.Add(@"  File /a """ + PublishedDir + @"\Plugins\*.*""");
+				//SectionGroupLines.Add(@"SectionEnd");
 			}
-			if (sectionGroupLines[sectionGroupLines.Count - 1].Trim() == "")
-				sectionGroupLines.RemoveAt(sectionGroupLines.Count - 1);
-			sectionGroupLines.Add("SectionGroupEnd");
-
-			//string PluginsDir = PublishedDir + @"\Plugins";
-			//SectionGroupLines.Add("");
-			//SectionGroupLines.Add(@"SectionGroup ""Plugins""");
-			////SectionGroupLines.Add("");
-			//foreach (string dllfile in Directory.GetFiles(PluginsDir, "*.dll"))
-			//{
-			//	string filenameWithoutExtension = Path.GetFileNameWithoutExtension(dllfile);
-			//	string filenameExcludingLastPluginWord =
-			//		VisualStudioInterop.InsertSpacesBeforeCamelCase(
-			//		filenameWithoutExtension.ToLower().EndsWith("plugin")
-			//		? filenameWithoutExtension.Substring(0, filenameWithoutExtension.Length - 6)
-			//		: filenameWithoutExtension);
-			//	//SectionGroupLines.Add("");
-			//	SectionGroupLines.Add(NSISclass.Spacer + @"Section """ + filenameExcludingLastPluginWord + @""" SEC" + startSectionNumber++.ToString("000"));
-			//	SectionGroupLines.Add(NSISclass.Spacer + @"  SetShellVarContext all");
-			//	SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite ifnewer");
-			//	SectionGroupLines.Add(NSISclass.Spacer + @"	SetOutPath ""$INSTDIR\Plugins""");
-			//	SectionGroupLines.Add(NSISclass.Spacer + @"  SetOverwrite ifnewer");
-			//	SectionGroupLines.Add(NSISclass.Spacer + @"  File /a """ + PluginsDir + @"\" + filenameWithoutExtension + @".*""");
-			//	SectionGroupLines.Add(NSISclass.Spacer + @"SectionEnd");
-			//	SectionGroupLines.Add("");
-			//}
-			//if (SectionGroupLines[SectionGroupLines.Count - 1].Trim() == "")
-			//	SectionGroupLines.RemoveAt(SectionGroupLines.Count - 1);
-			//SectionGroupLines.Add("SectionGroupEnd");
-
-			//SectionGroupLines.Add(@"Section ""Plugins"" SEC002");
-			//SectionGroupLines.Add(@"  SetShellVarContext all");
-			//SectionGroupLines.Add(@"  SetOverwrite ifnewer");
-			//SectionGroupLines.Add(@"	SetOutPath ""$INSTDIR\Plugins""");
-			//SectionGroupLines.Add(@"  SetOverwrite ifnewer");
-			//SectionGroupLines.Add(@"  File /a """ + PublishedDir + @"\Plugins\*.*""");
-			//SectionGroupLines.Add(@"SectionEnd");
 		}
 
 		return nsis.GetAllLinesForNSISfile(

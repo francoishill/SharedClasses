@@ -129,25 +129,27 @@ namespace SharedClasses
 					ThreadingInterop.DoAction(delegate
 					{
 						string appname = LicensingInterop_Client.GetApplicationName();
-						bool? yesTerminate_NoDontTerminate_NullDoNotShowAgain =
-							UserMessages.ConfirmNullable(
-								string.Format(
-									"WARNING!!! Confirm to terminate application '{0}' (cancel to not show message again).? Current Memory usage is above {1} (current memory usage is {2})."
-									+ Environment.NewLine + Environment.NewLine
-									+ "Application will automatically exit after {3} if no option is chosen.",
-									appname,
-									BytesToHumanfriendlyStringConverter.ConvertBytesToHumanreadableString(cMemoryThresholdBytes),
-									BytesToHumanfriendlyStringConverter.ConvertBytesToHumanreadableString(process.PrivateMemorySize64),
-									cDurationAfterWhichToAutokillIfHighMemoryOrCpu.ToString()),
-								"Current time is " + DateTime.Now.ToString("HH:mm:ss"));
-						if (yesTerminate_NoDontTerminate_NullDoNotShowAgain == true)
+
+						var result = HighResourceUsageWindow.ShowHighResourceUsageWindowReturnResult(
+							string.Format(
+								"WARNING!!! Confirm to terminate application '{0}' (cancel to not show message again).? Current Memory usage is above {1} (current memory usage is {2})."
+								+ Environment.NewLine + Environment.NewLine
+								+ "Application will automatically exit after {3} if no option is chosen.",
+								appname,
+								BytesToHumanfriendlyStringConverter.ConvertBytesToHumanreadableString(cMemoryThresholdBytes),
+								BytesToHumanfriendlyStringConverter.ConvertBytesToHumanreadableString(process.PrivateMemorySize64),
+								cDurationAfterWhichToAutokillIfHighMemoryOrCpu.ToString()),
+							"Current time is " + DateTime.Now.ToString("HH:mm:ss"));
+
+						if (result == HighResourceUsageWindow.ReturnResult.ForceClose)
 							Environment.Exit(0);
-						else if (yesTerminate_NoDontTerminate_NullDoNotShowAgain == null)
+						else if (result == HighResourceUsageWindow.ReturnResult.HideUntilAppClose)
 							donotShowHighMemoryUsageMessages = true;
 
 						busyShowingHighMemoryUsageMessage = null;
 					},
-					false);
+					false,
+					apartmentState: System.Threading.ApartmentState.STA);
 				}
 				else if (busyShowingHighMemoryUsageMessage.HasValue
 					&& !donotShowHighMemoryUsageMessages)
@@ -191,26 +193,26 @@ namespace SharedClasses
 							{
 								string appname = LicensingInterop_Client.GetApplicationName();
 								double secondsTheCpuIsAboveThreshold = cCheckInterval.TotalSeconds * (double)numberConsecutiveTimesCPUabove50;
-								bool? yesTerminate_NoDontTerminate_NullDoNotShowAgain =
-									UserMessages.ConfirmNullable(
-										string.Format(
-											"WARNING!!! Confirm to terminate application '{0}' (cancel to not show message again)? Current CPU load is above {1} (current load is {2}) for more than {3} seconds."
-											+ Environment.NewLine + Environment.NewLine
-											+ "Application will automatically exit after {4} if no option is chosen.",
-											appname,
-											cCPUthresholdPercentage,
-											currentTotalCPUload.ToString("0.##"),
-											secondsTheCpuIsAboveThreshold,
-											cDurationAfterWhichToAutokillIfHighMemoryOrCpu.ToString()),
-										"Current time is " + DateTime.Now.ToString("HH:mm:ss"));
-								if (yesTerminate_NoDontTerminate_NullDoNotShowAgain == true)
+								var result = HighResourceUsageWindow.ShowHighResourceUsageWindowReturnResult(
+									string.Format(
+										"WARNING!!! Confirm to terminate application '{0}' (cancel to not show message again)? Current CPU load is above {1} (current load is {2}) for more than {3} seconds."
+										+ Environment.NewLine + Environment.NewLine
+										+ "Application will automatically exit after {4} if no option is chosen.",
+										appname,
+										cCPUthresholdPercentage,
+										currentTotalCPUload.ToString("0.##"),
+										secondsTheCpuIsAboveThreshold,
+										cDurationAfterWhichToAutokillIfHighMemoryOrCpu.ToString()),
+									"Current time is " + DateTime.Now.ToString("HH:mm:ss"));
+								if (result == HighResourceUsageWindow.ReturnResult.ForceClose)
 									Environment.Exit(0);
-								else if (yesTerminate_NoDontTerminate_NullDoNotShowAgain == null)
+								else if (result == HighResourceUsageWindow.ReturnResult.HideUntilAppClose)
 									donotShowHighCpuUsageMessages = true;
 
 								busyShowingHighCpuUsageMessage = null;
 							},
-							false);
+							false,
+							apartmentState: System.Threading.ApartmentState.STA);
 						}
 						else if (busyShowingHighCpuUsageMessage.HasValue
 							&& !donotShowHighCpuUsageMessages)

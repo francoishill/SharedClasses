@@ -950,5 +950,25 @@ namespace SharedClasses
 			{
 			}
 		}
+
+		public class HighResourceUsageSettings : BaseOnlineClass<HighResourceUsageSettings>
+		{
+			public double DelayBeforeInitialCheck_Sec { get; set; }
+			public double CheckInterval_Sec { get; set; }
+			public double DurationToKillIfNoUserResponse_Min { get; set; }
+			public long MemoryThreshold_Bytes { get; set; }
+			public double CpuThreshold_Percentage { get; set; }
+			public double DurationCpuThresholdMustBeOver_Sec { get; set; }
+
+			public HighResourceUsageSettings()//Defaults
+			{
+				this.DelayBeforeInitialCheck_Sec = 10;
+				this.CheckInterval_Sec = 5;
+				this.DurationToKillIfNoUserResponse_Min = 5;
+				this.MemoryThreshold_Bytes = 250 * 1024 * 1024;
+				this.CpuThreshold_Percentage = 3.0;//40.0
+				this.DurationCpuThresholdMustBeOver_Sec = 10;
+			}
+		}
 	}
 }

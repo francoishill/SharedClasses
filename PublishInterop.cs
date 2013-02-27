@@ -675,6 +675,22 @@ namespace SharedClasses
 			return originalString.Replace("\r", "").Replace("\n", replaceLinesWithThisString);
 		}
 
+		private static FeedbackMessageTypes GetFeedbackMessageTypesFromTextFeedbackType(TextFeedbackType tft)
+		{
+			switch (tft)
+			{
+				case TextFeedbackType.Error:
+					return FeedbackMessageTypes.Error;
+				case TextFeedbackType.Success:
+					return FeedbackMessageTypes.Success;
+				case TextFeedbackType.Noteworthy:
+					return FeedbackMessageTypes.Status;//FeedbackMessageTypes.Warning;
+				case TextFeedbackType.Subtle:
+					return FeedbackMessageTypes.Status;
+			}
+			return FeedbackMessageTypes.Error;
+		}
+
 		public static TracXmlRpcInterop.ChangeLogs GetChangeLogs(DateTime? sinceDate, string ProjectName, Action<string, FeedbackMessageTypes> actionOnMessage, string Username = null, string Password = null)
 		{
 			string rootProjectXmlRpcTracUri = GetTracXmlRpcHttpPathFromProjectName(ProjectName);
@@ -687,7 +703,8 @@ namespace SharedClasses
 
 			actionOnMessage("Obtaining all ticket descriptions and types from Trac server...", FeedbackMessageTypes.Status);
 			Dictionary<int, TracXmlRpcInterop.TracTicketDetails> tmpIdsAndDescriptionsAndTicketTypes =
-				TracXmlRpcInterop.GetAllClosedTicketDescriptionsAndTypes(rootProjectXmlRpcTracUri, sinceDate, Username, Password);
+				TracXmlRpcInterop.GetAllClosedTicketDescriptionsAndTypes(rootProjectXmlRpcTracUri, sinceDate, Username, Password,
+				(sn, fbe) => actionOnMessage(fbe.FeedbackText, GetFeedbackMessageTypesFromTextFeedbackType(fbe.FeedbackType)));
 			actionOnMessage("Finished obtaining all ticket descriptions and types from Trac server.", FeedbackMessageTypes.Success);
 
 			var tmpBugsFixed = new Dictionary<int, TracXmlRpcInterop.TracTicketDetails>();

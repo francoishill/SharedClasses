@@ -113,6 +113,7 @@ namespace SharedClasses
 		private static readonly TimeSpan cDurationAfterWhichToAutokillIfHighMemoryOrCpu = TimeSpan.FromMinutes(5.0);
 
 		private const long cMemoryThresholdBytes = 250 * 1024 * 1024;
+		
 		private static DateTime? busyShowingHighMemoryUsageMessage = null;
 		private static bool donotShowHighMemoryUsageMessages = false;
 		private static void CheckMemoryUsage(Process process)
@@ -141,9 +142,9 @@ namespace SharedClasses
 								cDurationAfterWhichToAutokillIfHighMemoryOrCpu.ToString()),
 							"Current time is " + DateTime.Now.ToString("HH:mm:ss"));
 
-						if (result == HighResourceUsageWindow.ReturnResult.ForceClose)
+						if (result == HighResourceUsageWindow.ReturnResult.ForceCloseNow)
 							Environment.Exit(0);
-						else if (result == HighResourceUsageWindow.ReturnResult.HideUntilAppClose)
+						else if (result == HighResourceUsageWindow.ReturnResult.IgnoreUntilClose)
 							donotShowHighMemoryUsageMessages = true;
 
 						busyShowingHighMemoryUsageMessage = null;
@@ -162,6 +163,7 @@ namespace SharedClasses
 
 		private const double cCPUthresholdPercentage = 3.0;//40.0;
 		private const double cWarningSecondsIfAboveCPUThresholdForLongerThan = 10;
+
 		private static Timer _memoryWatcherTimer = null;
 		private static DateTime? _previousCheckedTime = null;
 		private static double _previousTotalMilliseconds;
@@ -204,9 +206,9 @@ namespace SharedClasses
 										secondsTheCpuIsAboveThreshold,
 										cDurationAfterWhichToAutokillIfHighMemoryOrCpu.ToString()),
 									"Current time is " + DateTime.Now.ToString("HH:mm:ss"));
-								if (result == HighResourceUsageWindow.ReturnResult.ForceClose)
+								if (result == HighResourceUsageWindow.ReturnResult.ForceCloseNow)
 									Environment.Exit(0);
-								else if (result == HighResourceUsageWindow.ReturnResult.HideUntilAppClose)
+								else if (result == HighResourceUsageWindow.ReturnResult.IgnoreUntilClose)
 									donotShowHighCpuUsageMessages = true;
 
 								busyShowingHighCpuUsageMessage = null;

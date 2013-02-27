@@ -19,8 +19,9 @@ namespace SharedClasses
 	/// </summary>
 	public partial class HighResourceUsageWindow : Window
 	{
-		public enum ReturnResult { ForceClose, HideTemp, HideUntilAppClose };
+		public enum ReturnResult { ForceCloseNow, IgnoreOnce, IgnoreUntilClose };
 		private Dictionary<HighResourceUsageWindow, string> _listOfThisAppOpenWindowsWithWorkspaceFiles = new Dictionary<HighResourceUsageWindow, string>();
+		private ReturnResult _dialogResult = ReturnResult.IgnoreOnce;
 
 		public HighResourceUsageWindow(string messageText, string messageTitle)
 		{
@@ -157,29 +158,33 @@ namespace SharedClasses
 
 		private void buttonForceCloseNow_Click(object sender, RoutedEventArgs e)
 		{
-			this.DialogResult = true;
+			this._dialogResult = ReturnResult.ForceCloseNow;
+			this.Close();
 		}
 
-		private void buttonHideTemp_Click(object sender, RoutedEventArgs e)
+		private void buttonIgnoreOnce_Click(object sender, RoutedEventArgs e)
 		{
-			this.DialogResult = false;
+			this._dialogResult = ReturnResult.IgnoreOnce;
+			this.Close();
 		}
 
-		private void buttonHideLong_Click(object sender, RoutedEventArgs e)
+		private void buttonIgnoreUntilClose_Click(object sender, RoutedEventArgs e)
 		{
-			this.DialogResult = null;
+			this._dialogResult = ReturnResult.IgnoreUntilClose;
 			this.Close();
 		}
 
 		public static ReturnResult ShowHighResourceUsageWindowReturnResult(string messageText, string messageTitle)
 		{
-			bool? result = new HighResourceUsageWindow(messageText, messageTitle).ShowDialog();
-			if (!result.HasValue)
-				return ReturnResult.HideUntilAppClose;
-			else if (result.Value == true)
-				return ReturnResult.ForceClose;
-			else
-				return ReturnResult.HideTemp;
+			var tmpwin = new HighResourceUsageWindow(messageText, messageTitle);
+			tmpwin.ShowDialog();
+			return tmpwin._dialogResult;
+		}
+
+		private void textblockEditSettings_MouseUp(object sender, MouseButtonEventArgs e)
+		{
+			var tmpwin = new HighResourceUsageSettingsWindow();
+			tmpwin.ShowDialog();
 		}
 	}
 }

@@ -8,7 +8,22 @@
 		WindowStartupLocation='CenterScreen'
 		SizeToContent='WidthAndHeight'
 		PreviewKeyDown='Window_PreviewKeyDown'>
-	<Grid>
+	<Window.Resources>
+		<Style x:Key="LinkTextBlockStyle"
+			   TargetType="{x:Type TextBlock}">
+			<Setter Property='Cursor'
+					Value='Hand' />
+			<Setter Property='Foreground'
+					Value='Blue' />
+			<Setter Property='TextBlock.TextDecorations'
+					Value='Underline' />
+		</Style>
+		<ContextMenu x:Key='contextmenuSettings'>
+			<MenuItem Header='High resource usage warnings'
+					  Click='menuitemHighResourceUsageWarnings_Click' />
+		</ContextMenu>
+	</Window.Resources>
+		<Grid>
 		<Image Name='imageIcon'
 			   Width='32'
 			   Height='32'
@@ -51,5 +66,13 @@
 				</Style>
 			</ListBox.ItemContainerStyle>
 		</ListBox>
+
+		<TextBlock Text='Settings'
+				   Style='{StaticResource LinkTextBlockStyle}'
+				   Margin='5 0 0 5'
+				   Foreground='#555'
+				   MouseLeftButtonDown='textblockSettings_MouseLeftButtonDown'
+			   VerticalAlignment='Bottom'
+			   HorizontalAlignment='Left' />
 	</Grid>
 </Window>

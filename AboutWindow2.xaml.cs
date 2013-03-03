@@ -87,6 +87,18 @@ namespace SharedClasses
 			if (e.Key == Key.Escape)
 				this.Close();
 		}
+
+		private void textblockSettings_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+		{
+			var menu = this.Resources["contextmenuSettings"] as ContextMenu;
+			if (menu == null) return;
+			menu.IsOpen = true;
+		}
+
+		private void menuitemHighResourceUsageWarnings_Click(object sender, RoutedEventArgs e)
+		{
+			HighResourceUsageSettingsWindow.ShowWindowDialog();
+		}
 	}
 
 	public class DisplayItem : INotifyPropertyChanged

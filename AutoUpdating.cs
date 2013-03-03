@@ -108,11 +108,11 @@ namespace SharedClasses
 
 		}
 
-		private static readonly TimeSpan cDelayBeforeInitialCheck = TimeSpan.FromSeconds(10);
-		private static readonly TimeSpan cCheckInterval = TimeSpan.FromSeconds(5);
-		private static readonly TimeSpan cDurationAfterWhichToAutokillIfHighMemoryOrCpu = TimeSpan.FromMinutes(5.0);
+		//private static readonly TimeSpan cDelayBeforeInitialCheck = TimeSpan.FromSeconds(10);
+		//private static readonly TimeSpan cCheckInterval = TimeSpan.FromSeconds(5);
+		//private static readonly TimeSpan cDurationAfterWhichToAutokillIfHighMemoryOrCpu = TimeSpan.FromMinutes(5.0);
 
-		private const long cMemoryThresholdBytes = 250 * 1024 * 1024;
+		//private const long cMemoryThresholdBytes = 250 * 1024 * 1024;
 		
 		private static DateTime? busyShowingHighMemoryUsageMessage = null;
 		private static bool donotShowHighMemoryUsageMessages = false;
@@ -120,8 +120,11 @@ namespace SharedClasses
 		{
 			process.Refresh();
 
+			SettingsSimple.HighResourceUsageSettings settings = SettingsSimple.HighResourceUsageSettings.Instance;
+
+			long memoryThresholdBytes = settings.MemoryThreshold_MegaBytes * 1024 * 1024;
 			//BytesToHumanfriendlyStringConverter.ConvertBytesToHumanreadableString(currentProcess.PrivateMemorySize64)
-			if (process.PrivateMemorySize64 > cMemoryThresholdBytes)
+			if (process.PrivateMemorySize64 > memoryThresholdBytes)
 			{
 				if (!busyShowingHighMemoryUsageMessage.HasValue
 					&& !donotShowHighMemoryUsageMessages)
@@ -135,11 +138,11 @@ namespace SharedClasses
 							string.Format(
 								"WARNING!!! Confirm to terminate application '{0}' (cancel to not show message again).? Current Memory usage is above {1} (current memory usage is {2})."
 								+ Environment.NewLine + Environment.NewLine
-								+ "Application will automatically exit after {3} if no option is chosen.",
+								+ "Application will automatically exit after {3} minutes if no option is chosen.",
 								appname,
-								BytesToHumanfriendlyStringConverter.ConvertBytesToHumanreadableString(cMemoryThresholdBytes),
+								BytesToHumanfriendlyStringConverter.ConvertBytesToHumanreadableString(memoryThresholdBytes),
 								BytesToHumanfriendlyStringConverter.ConvertBytesToHumanreadableString(process.PrivateMemorySize64),
-								cDurationAfterWhichToAutokillIfHighMemoryOrCpu.ToString()),
+								((int)Math.Round(settings.DurationToKillIfNoUserResponse_Min)).ToString()),
 							"Current time is " + DateTime.Now.ToString("HH:mm:ss"));
 
 						if (result == HighResourceUsageWindow.ReturnResult.ForceCloseNow)
@@ -155,14 +158,14 @@ namespace SharedClasses
 				else if (busyShowingHighMemoryUsageMessage.HasValue
 					&& !donotShowHighMemoryUsageMessages)
 				{
-					if (DateTime.Now - busyShowingHighMemoryUsageMessage.Value > cDurationAfterWhichToAutokillIfHighMemoryOrCpu)
+					if (DateTime.Now - busyShowingHighMemoryUsageMessage.Value > TimeSpan.FromMinutes(settings.DurationToKillIfNoUserResponse_Min))
 						Environment.Exit(0);
 				}
 			}
 		}
 
-		private const double cCPUthresholdPercentage = 3.0;//40.0;
-		private const double cWarningSecondsIfAboveCPUThresholdForLongerThan = 10;
+		//private const double cCPUthresholdPercentage = 3.0;//40.0;
+		//private const double cWarningSecondsIfAboveCPUThresholdForLongerThan = 10;
 
 		private static Timer _memoryWatcherTimer = null;
 		private static DateTime? _previousCheckedTime = null;
@@ -181,11 +184,13 @@ namespace SharedClasses
 				double currentTotalCPUload = 100D * (totalMillisecondsAddedAfterLastCheck / durationAfterLastCheck.TotalMilliseconds);
 				currentTotalCPUload = currentTotalCPUload / (double)Environment.ProcessorCount;
 
+				SettingsSimple.HighResourceUsageSettings settings = SettingsSimple.HighResourceUsageSettings.Instance;
+
 				//We are currently measuring the CURRENT cpu load, not the AVERAGE
-				if (currentTotalCPUload > cCPUthresholdPercentage)
+				if (currentTotalCPUload > settings.CpuThreshold_Percentage)
 				{
 					numberConsecutiveTimesCPUabove50++;
-					if (cCheckInterval.TotalSeconds * (double)numberConsecutiveTimesCPUabove50 > cWarningSecondsIfAboveCPUThresholdForLongerThan)
+					if (settings.CheckInterval_Sec * (double)numberConsecutiveTimesCPUabove50 > settings.DurationCpuThresholdMustBeOver_Sec)
 					{
 						if (!busyShowingHighCpuUsageMessage.HasValue
 							&& !donotShowHighCpuUsageMessages)
@@ -194,17 +199,17 @@ namespace SharedClasses
 							ThreadingInterop.DoAction(delegate
 							{
 								string appname = LicensingInterop_Client.GetApplicationName();
-								double secondsTheCpuIsAboveThreshold = cCheckInterval.TotalSeconds * (double)numberConsecutiveTimesCPUabove50;
+								double secondsTheCpuIsAboveThreshold = settings.CheckInterval_Sec * (double)numberConsecutiveTimesCPUabove50;
 								var result = HighResourceUsageWindow.ShowHighResourceUsageWindowReturnResult(
 									string.Format(
 										"WARNING!!! Confirm to terminate application '{0}' (cancel to not show message again)? Current CPU load is above {1} (current load is {2}) for more than {3} seconds."
 										+ Environment.NewLine + Environment.NewLine
-										+ "Application will automatically exit after {4} if no option is chosen.",
+										+ "Application will automatically exit after {4} minutes if no option is chosen.",
 										appname,
-										cCPUthresholdPercentage,
+										settings.CpuThreshold_Percentage,
 										currentTotalCPUload.ToString("0.##"),
 										secondsTheCpuIsAboveThreshold,
-										cDurationAfterWhichToAutokillIfHighMemoryOrCpu.ToString()),
+										((int)Math.Round(settings.DurationToKillIfNoUserResponse_Min)).ToString()),
 									"Current time is " + DateTime.Now.ToString("HH:mm:ss"));
 								if (result == HighResourceUsageWindow.ReturnResult.ForceCloseNow)
 									Environment.Exit(0);
@@ -219,7 +224,7 @@ namespace SharedClasses
 						else if (busyShowingHighCpuUsageMessage.HasValue
 							&& !donotShowHighCpuUsageMessages)
 						{
-							if (DateTime.Now - busyShowingHighCpuUsageMessage.Value > cDurationAfterWhichToAutokillIfHighMemoryOrCpu)
+							if (DateTime.Now - busyShowingHighCpuUsageMessage.Value > TimeSpan.FromMinutes(settings.DurationToKillIfNoUserResponse_Min))
 								Environment.Exit(0);
 						}
 					}
@@ -236,6 +241,8 @@ namespace SharedClasses
 
 		private static void RegisterMemoryAndCpuWatcher()
 		{
+			SettingsSimple.HighResourceUsageSettings settings = SettingsSimple.HighResourceUsageSettings.Instance;
+
 			_memoryWatcherTimer = new Timer(
 				delegate
 				{
@@ -244,8 +251,8 @@ namespace SharedClasses
 					CheckCpuLoad(currentProcess);
 				},
 				null,
-				cDelayBeforeInitialCheck,
-				cCheckInterval);
+				TimeSpan.FromSeconds(settings.DelayBeforeInitialCheck_Sec),
+				TimeSpan.FromSeconds(settings.CheckInterval_Sec));
 		}
 
 		public static string GetThisAppVersionString()

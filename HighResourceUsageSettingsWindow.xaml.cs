@@ -25,8 +25,15 @@ namespace SharedClasses
 			InitializeComponent();
 
 			var settings = SettingsSimple.HighResourceUsageSettings.Instance;
+			this.Title = "High resources usage settings for " + SettingsInterop.GetApplicationName();
 
 			this.DataContext = settings;
+		}
+
+		public static void ShowWindowDialog()
+		{
+			var tmpwin = new HighResourceUsageSettingsWindow();
+			tmpwin.ShowDialog();
 		}
 	}
 }

@@ -2,9 +2,10 @@
 		xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
 		xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
 		Title='HighResourceUsageSettingsWindow'
-		Height='250'
-		Width='654'
-		FontSize='16'>
+		Height='300'
+		Width='717'
+		FontSize='16'
+		WindowStartupLocation='CenterScreen'>
 	<Grid Margin='10'>
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width='2*' />
@@ -14,50 +15,53 @@
 			<RowDefinition />
 			<RowDefinition />
 			<RowDefinition />
+			<RowDefinition Height='20' />
 			<RowDefinition />
+			<RowDefinition Height='20' />
 			<RowDefinition />
 			<RowDefinition />
 		</Grid.RowDefinitions>
 		<Label Grid.Column='0'
 			   Grid.Row='0'
-			   Content='Delay before initial check' />
+			   Content='Delay before initial check (seconds)' />
 		<TextBox Grid.Column='1'
 				 Grid.Row='0'
 				 Text='{Binding DelayBeforeInitialCheck_Sec}'
 				 VerticalAlignment='Center'/>
 		<Label Grid.Column='0'
 			   Grid.Row='1'
-			   Content='Check interval' />
+			   Content='Check interval (seconds)' />
 		<TextBox Grid.Column='1'
 				 Grid.Row='1'
 				 Text='{Binding CheckInterval_Sec}'
 				 VerticalAlignment='Center' />
 		<Label Grid.Column='0'
 			   Grid.Row='2'
-			   Content='Duration to wait before auto kill if no user response' />
+			   Content='Duration to wait before auto kill if no user response (minutes)' />
 		<TextBox Grid.Column='1'
 				 Grid.Row='2'
 				 Text='{Binding DurationToKillIfNoUserResponse_Min}'
 				 VerticalAlignment='Center' />
-		<Label Grid.Column='0'
-			   Grid.Row='3'
-			   Content='Memory/RAM threshold before warning' />
-		<TextBox Grid.Column='1'
-				 Grid.Row='3'
-				 Text='{Binding MemoryThreshold_Bytes}'
-				 VerticalAlignment='Center' />
+		
 		<Label Grid.Column='0'
 			   Grid.Row='4'
-			   Content='Cpu threshold before warning' />
+			   Content='Memory/RAM threshold before warning (MB)' />
 		<TextBox Grid.Column='1'
 				 Grid.Row='4'
+				 Text='{Binding MemoryThreshold_MegaBytes}'
+				 VerticalAlignment='Center' />
+		<Label Grid.Column='0'
+			   Grid.Row='6'
+			   Content='Cpu threshold before warning (%)' />
+		<TextBox Grid.Column='1'
+				 Grid.Row='6'
 				 Text='{Binding CpuThreshold_Percentage}'
 				 VerticalAlignment='Center' />
 		<Label Grid.Column='0'
-			   Grid.Row='5'
-			   Content='Duration the threshold must be over' />
+			   Grid.Row='7'
+			   Content='Duration the threshold must be over (seconds)' />
 		<TextBox Grid.Column='1'
-				 Grid.Row='5'
+				 Grid.Row='7'
 				 Text='{Binding DurationCpuThresholdMustBeOver_Sec}'
 				 VerticalAlignment='Center' />
 	</Grid>

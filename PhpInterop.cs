@@ -58,10 +58,11 @@ namespace SharedClasses
 		/// <param name="url">The url of the php, do not include the ?</param>
 		/// <param name="data">The data, i.e. "name=koos&surname=koekemoer". Note to not include the ?</param>
 		/// <returns>Returns the data received from the php (usually the "echo" statements in the php.</returns>
-		public static string PostPHP(Object textfeedbackSenderObject, string url, string data, TextFeedbackEventHandler textFeedbackEvent = null)
+		public static string PostPHP(Object textfeedbackSenderObject, string url, string data, TextFeedbackEventHandler textFeedbackEvent = null, bool separateThread = true)
 		{
 			string vystup = "";
-			ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
+
+			Action action = () =>
 			{
 				try
 				{
@@ -116,7 +117,12 @@ namespace SharedClasses
 					//TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textFeedbackEvent, "Post php remote name: " + exc.Message);
 					//SysWinForms.MessageBox.Show("Error (092892): " + Environment.NewLine + exc.Message, "Exception error", SysWinForms.MessageBoxButtons.OK, SysWinForms.MessageBoxIcon.Error);
 				}
-			});
+			};
+
+			if (separateThread)
+				ThreadingInterop.DoAction(delegate { action(); }, true);
+			else
+				action();
 			return vystup;
 		}
 
@@ -164,7 +170,7 @@ namespace SharedClasses
 			//textBox1.Text = "";
 		}
 
-		public static bool AddJournalItemFirepuma(Object textfeedbackSenderObject, string description, string link = null, TextFeedbackEventHandler textFeedbackEvent = null)
+		public static bool AddJournalItemFirepuma(Object textfeedbackSenderObject, string description, string link = null, TextFeedbackEventHandler textFeedbackEvent = null, bool separateThread = true)
 		{
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Sending journal item, please wait...");
 			string responsestr  = PhpInterop.PostPHP(
@@ -172,7 +178,9 @@ namespace SharedClasses
 				"http://firepuma.com/journal/directadd/f"
 					+ "/" + EncodeAndDecodeInterop.EncodeStringHex(description, err => TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, err))
 					+ "/" + EncodeAndDecodeInterop.EncodeStringHex(link, err => TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, err)),
-					"");
+					"",
+					textFeedbackEvent,
+					separateThread);
 
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, responsestr);
 			return responsestr.ToLower().StartsWith("success:");

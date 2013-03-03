@@ -9,6 +9,14 @@ namespace SharedClasses
 	{
 		public const string SettingsFileExtension = ".fset";
 
+		public static string GetApplicationName()
+		{
+			string applicationName = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
+			if (applicationName.EndsWith(".vshost", StringComparison.InvariantCultureIgnoreCase))
+				applicationName = applicationName.Substring(0, applicationName.Length - ".vshost".Length);
+			return applicationName;
+		}
+
 		public static string GetComputerGuidAsString()
 		{
 			return GetComputerGuid().ToString();

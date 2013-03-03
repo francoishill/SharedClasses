@@ -39,13 +39,22 @@
 							Margin='0 3 0 0'>
 					<TextBlock Text='settings'
 							   VerticalAlignment='Center'
+							   TextOptions.TextFormattingMode='Display'
 							   TextDecorations='Underline'
-							   Foreground='Blue'
-							   FontSize='9'
+							   Foreground='Gray'
+							   FontSize='10'
 							   Opacity='0.75'
 							   Cursor='Hand'
 							   ToolTip='Edit settings for tolerances and durations when these kind of checks are performed.'
-							   MouseUp='textblockEditSettings_MouseUp' />
+							   MouseUp='textblockEditSettings_MouseUp'>
+						<TextBlock.Effect>
+							<DropShadowEffect ShadowDepth="3"
+											  Direction="330"
+											  Color="Black"
+											  Opacity="0.5"
+											  BlurRadius="4" />
+						</TextBlock.Effect>
+					</TextBlock>
 					<Button DockPanel.Dock='Right'
 							VerticalAlignment='Center'
 							HorizontalAlignment='Center'

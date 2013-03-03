@@ -183,8 +183,7 @@ namespace SharedClasses
 
 		private void textblockEditSettings_MouseUp(object sender, MouseButtonEventArgs e)
 		{
-			var tmpwin = new HighResourceUsageSettingsWindow();
-			tmpwin.ShowDialog();
+			HighResourceUsageSettingsWindow.ShowWindowDialog();
 		}
 	}
 }

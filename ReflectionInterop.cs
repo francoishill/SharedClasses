@@ -20,7 +20,7 @@ namespace SharedClasses
 		/// <param name="propertiesOrFieldsAsExpressions">List of expressions which are simply a field/property, an example of one would be: inst => inst.PersonName</param>
 		/// <param name="actionOnPropertyInfoWithValue">Action to perform on these properties, where its parameters will be the Instance, PropertyInfo, and propertyValue.</param>
 		public static void DoForeachPropertOrField<T>(T instance, IEnumerable<Expression<Func<T, object>>> propertiesOrFieldsAsExpressions, Action<T, MemberInfo, object> actionOnPropertyInfoWithValue)
-			//expr.Body.ToString().Substring(expectedStartString.Length)where T : new()
+		//expr.Body.ToString().Substring(expectedStartString.Length)where T : new()
 		{
 			if (instance == null)
 				throw new Exception("Instance may not be null for 'DoForeachPropertOrField'");
@@ -49,7 +49,7 @@ namespace SharedClasses
 					var pi = instance.GetType().GetProperty(propertyName);
 					if (pi == null)
 						throw new Exception("Cannot obtain property '" + propertyName + "' in instance of " + instance.GetType());
-					
+
 					object pValue = pi.GetValue(instance, null);
 					actionOnPropertyInfoWithValue(instance, pi, pValue);
 				}
@@ -150,8 +150,20 @@ namespace SharedClasses
 				AllUniqueSimpleTypesInCurrentAssembly = new List<Type>();
 				Assembly[] appAssemblies = System.AppDomain.CurrentDomain.GetAssemblies();
 				foreach (Assembly assembly in appAssemblies)
-					foreach (Type type in assembly.GetTypes())
-						AllUniqueSimpleTypesInCurrentAssembly.Add(type);
+				{
+					try
+					{
+						foreach (Type type in assembly.GetTypes())
+						{
+							try
+							{
+								AllUniqueSimpleTypesInCurrentAssembly.Add(type);
+							}
+							catch { }
+						}
+					}
+					catch { }
+				}
 				return AllUniqueSimpleTypesInCurrentAssembly.OrderBy(t => t.FullName).ToList();
 			}
 		}

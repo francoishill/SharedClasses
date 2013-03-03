@@ -123,7 +123,8 @@ namespace SharedClasses
 				OnWarningOverrideShowingUsermessage(null, new ErrorEventArgs(new Exception(warnmsg)));
 		}
 
-		public class GuidAsCategoryPrefixAttribute : Attribute { }
+		public class ComputerSpecificSettings : Attribute { }
+		public class ApplicationSpecificSettings : Attribute { }
 
 		public class PropertyInterceptor<T> where T : MarshalByRefObject, IInterceptorNotifiable, new()
 		{
@@ -208,17 +209,34 @@ namespace SharedClasses
 					//var thisType = this.GetType();
 					//string displayName = thisType.Name.Split('+')[thisType.Name.Split('+').Length - 1];
 					//if (thisType.GetCustomAttributes(typeof(GuidAsCategoryPrefixAttribute), true).Length > 0)
+
+					string categoryPrefix = "";
+
 					if (IsSeparateSettingsForEachPc)
-						return SettingsInterop.GetComputerGuid() + "-" + _settingsCategory;
-					else
-						return _settingsCategory;
+						categoryPrefix += SettingsInterop.GetComputerGuid() + "-";
+					if (IsSeparateSettingsForApplication)
+						categoryPrefix += SettingsInterop.GetApplicationName() + "-";
+
+					return categoryPrefix + _settingsCategory;
 				}
 			}
-			private bool IsSeparateSettingsForEachPc { get { return this.GetType().GetCustomAttributes(typeof(GuidAsCategoryPrefixAttribute), true).Length > 0; } }
+			private bool IsSeparateSettingsForEachPc { get { return this.GetType().GetCustomAttributes(typeof(ComputerSpecificSettings), true).Length > 0; } }
+			private bool IsSeparateSettingsForApplication { get { return this.GetType().GetCustomAttributes(typeof(ApplicationSpecificSettings), true).Length > 0; } }
 
 			private string SettingName { get { var thisType = this.GetType(); return thisType.Name.Split('+')[thisType.Name.Split('+').Length - 1]; } }
 			//Add the computer GUID to the filename, otherwise it will not work correctly as the OnlineSettings are synced over DropBox
-			private string SettingsFileName { get { return SettingName + (IsSeparateSettingsForEachPc ? "[" + SettingsInterop.GetComputerGuidAsFileName() + "]" : "") + SettingsInterop.SettingsFileExtension; } }
+			private string SettingsFileName
+			{
+				get
+				{
+					string postfix = "";
+					if (IsSeparateSettingsForApplication)
+						postfix += "(" + SettingsInterop.GetApplicationName() + ")";
+					if (IsSeparateSettingsForEachPc)
+						postfix += "[" + SettingsInterop.GetComputerGuidAsFileName() + "]";
+					return SettingName + postfix + SettingsInterop.SettingsFileExtension;
+				}
+			}
 			private string SettingsFilePath { get { return SettingsInterop.GetFullFilePathInLocalAppdata(SettingsFileName, "SharedClasses", "OnlineCached", "FJH"); } }
 			private string LocalCachedDateFilePath { get { return SettingsFilePath + ".mdate"; } }
 			[XmlIgnore]
@@ -254,7 +272,7 @@ namespace SharedClasses
 				string errIfFail;
 				if (!WebInterop.PopulateObjectFromOnline(SettingsCategory, SettingName, this, out errIfFail))
 				{
-					if (errIfFail.Equals(WebInterop.cErrorIfNotFoundOnline, StringComparison.InvariantCultureIgnoreCase))
+					if (errIfFail.EndsWith(WebInterop.cErrorIfNotFoundOnline, StringComparison.InvariantCultureIgnoreCase))
 					{
 						//Set default settings, should already be populated with default values
 						return null;
@@ -415,7 +433,9 @@ namespace SharedClasses
 							this.SaveToLocalCache();
 					}
 					else if (populatedFromOnline == false)//Error occurred, not internet, etc
-						ShowWarningMessage("Warning: could not get cached NOR local settings, using defaults.");
+						Logging.LogErrorToFile("Warning: could not get cached NOR local settings, using defaults.", 
+							Logging.ReportingFrequencies.Daily,
+							SettingsInterop.GetApplicationName());
 				}
 			}
 
@@ -701,7 +721,7 @@ namespace SharedClasses
 			}
 		}
 
-		[GuidAsCategoryPrefixAttribute]
+		[ComputerSpecificSettings]
 		public class ApplicationManagerSettings : BaseOnlineClass<ApplicationManagerSettings>
 		{
 			[Serializable]
@@ -951,12 +971,13 @@ namespace SharedClasses
 			}
 		}
 
+		[ApplicationSpecificSettings]
 		public class HighResourceUsageSettings : BaseOnlineClass<HighResourceUsageSettings>
 		{
 			public double DelayBeforeInitialCheck_Sec { get; set; }
 			public double CheckInterval_Sec { get; set; }
 			public double DurationToKillIfNoUserResponse_Min { get; set; }
-			public long MemoryThreshold_Bytes { get; set; }
+			public long MemoryThreshold_MegaBytes { get; set; }
 			public double CpuThreshold_Percentage { get; set; }
 			public double DurationCpuThresholdMustBeOver_Sec { get; set; }
 
@@ -965,7 +986,7 @@ namespace SharedClasses
 				this.DelayBeforeInitialCheck_Sec = 10;
 				this.CheckInterval_Sec = 5;
 				this.DurationToKillIfNoUserResponse_Min = 5;
-				this.MemoryThreshold_Bytes = 250 * 1024 * 1024;
+				this.MemoryThreshold_MegaBytes = 250;// *1024 * 1024;
 				this.CpuThreshold_Percentage = 3.0;//40.0
 				this.DurationCpuThresholdMustBeOver_Sec = 10;
 			}

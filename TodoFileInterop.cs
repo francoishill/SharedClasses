@@ -10,6 +10,7 @@ namespace SharedClasses
 {
 	public class TodoFile : INotifyPropertyChanged
 	{
+		public static readonly string cLinkText = AutoUpdating.GetApplicationOnlineUrl("StickyNotes");
 		private static Timer saveFilesTimer = null;
 		private static List<TodoFile> createdTodoFiles = new List<TodoFile>();
 		private static TimeSpan tickIntervalToSaveFiles = TimeSpan.FromSeconds(5);
@@ -82,6 +83,8 @@ namespace SharedClasses
 		}
 		~TodoFile()
 		{
+			SaveOnline();
+
 			if (this.HasUnsavedChanges)
 				this.SaveChanges();
 			if (File.Exists(FullFilePath) && string.IsNullOrWhiteSpace(FileContent))
@@ -110,6 +113,28 @@ namespace SharedClasses
 				_filecontent = null;
 			}
 			OnPropertyChanged("FileContent");
+		}
+
+		private void SaveOnline()
+		{
+			//ThreadingInterop.PerformOneArgFunctionSeperateThread<string>(
+			//	(textToSaveOnline) =>
+			//	{
+			string linkText = cLinkText;
+			string description = this._filecontent;//textToSaveOnline;
+			if (string.IsNullOrWhiteSpace(description))
+				return;
+
+			PhpInterop.AddJournalItemFirepuma(null, description, linkText,
+				(snder, msg) =>
+				{
+					if (msg.FeedbackType == TextFeedbackType.Error || msg.FeedbackType == TextFeedbackType.Noteworthy)
+						UserMessages.ShowErrorMessage(msg.FeedbackText, "Cannot save online");
+				},
+				false);
+			//},
+			//this._filecontent,
+			//false);
 		}
 
 		private void UpdateTodoLines()

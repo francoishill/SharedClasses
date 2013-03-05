@@ -161,6 +161,7 @@ public class NsisInterop
 		sectionGroupLines.Add(@"    StrCpy $2 $1 ${TEMP_PROCESSNAME_LENGTH} 1");
 		sectionGroupLines.Add(@"    StrCmp $2 ""${PRODUCT_EXE_NAME}"" ProcessFound ProcessNotFound");
 		sectionGroupLines.Add(@"    ProcessFound:");
+		sectionGroupLines.Add(@"		IfSilent +3");
 		sectionGroupLines.Add(@"		MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 ""'${PRODUCT_NAME}' is already running, automatically close it and continue installation (any unsaved data may be lost)?$\n$\nPress no to cancel installation."" IDYES +2");
 		sectionGroupLines.Add(@"		Abort ""'${PRODUCT_NAME}' is running, installation cancelled.""");
 		sectionGroupLines.Add(@"		nsExec::Exec 'taskkill /F /IM $\""${PRODUCT_EXE_NAME}$\""'");

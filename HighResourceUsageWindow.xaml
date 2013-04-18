@@ -3,8 +3,8 @@
 		xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
 		Title='HighResourceUsageWindow'
 		Height='110'
-		Width='445'
-		FontSize='10'
+        Width='568'
+        FontSize='10'
 		FontFamily='Comic Sans MS'
 		WindowStartupLocation='Manual'
 		Topmost='True'
@@ -48,10 +48,10 @@
 							   ToolTip='Edit settings for tolerances and durations when these kind of checks are performed.'
 							   MouseUp='textblockEditSettings_MouseUp'>
 						<TextBlock.Effect>
-							<DropShadowEffect ShadowDepth="3"
+							<DropShadowEffect ShadowDepth="1"
 											  Direction="330"
 											  Color="Black"
-											  Opacity="0.5"
+											  Opacity="0.2"
 											  BlurRadius="4" />
 						</TextBlock.Effect>
 					</TextBlock>
@@ -79,7 +79,26 @@
 							Content='Ignore until close'
 							ToolTip='Do not show this message again until application closes'
 							Click='buttonIgnoreUntilClose_Click' />
-				</StackPanel>
+                    <TextBlock Text='history'
+                               VerticalAlignment='Center'
+                               Margin='5 0 0 0'
+                               TextOptions.TextFormattingMode='Display'
+                               TextDecorations='Underline'
+                               Foreground='Gray'
+                               FontSize='10'
+                               Opacity='0.75'
+                               Cursor='Hand'
+                               ToolTip='Edit settings for tolerances and durations when these kind of checks are performed.'
+                               MouseUp='textblockShowUsageHistory_MouseUp'>
+                        <TextBlock.Effect>
+                            <DropShadowEffect ShadowDepth="1"
+                                              Direction="330"
+                                              Color="Black"
+                                              Opacity="0.2"
+                                              BlurRadius="4" />
+                        </TextBlock.Effect>
+                    </TextBlock>
+                </StackPanel>
 				<TextBlock Name='textblockTitle'
 						   TextTrimming='WordEllipsis'
 						   VerticalAlignment='Center' />

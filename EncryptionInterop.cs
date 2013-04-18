@@ -65,7 +65,7 @@ namespace SharedClasses
 			tdes.IV = iv;
 			tdes.Key = key;
 			tdes.Mode = CipherMode.CBC;
-			tdes.Padding = PaddingMode.Zeros;
+			tdes.Padding = PaddingMode.Zeros;//This causes \0 bytes to be padded to end, to make up intervals of 8 characters?
 			ICryptoTransform ict = tdes.CreateEncryptor();
 			enc = ict.TransformFinalBlock(data, 0, data.Length);
 			return ByteArrayToString(enc);
@@ -81,10 +81,11 @@ namespace SharedClasses
 			tdes.IV = iv;
 			tdes.Key = key;
 			tdes.Mode = CipherMode.CBC;
-			tdes.Padding = PaddingMode.Zeros;
+			tdes.Padding = PaddingMode.Zeros;//This causes \0 bytes to be padded to end, to make up intervals of 8 characters?
 			ICryptoTransform ict = tdes.CreateDecryptor();
 			enc = ict.TransformFinalBlock(data, 0, data.Length);
-			return Encoding.ASCII.GetString(enc);
+			//return Encoding.ASCII.GetString(enc);
+			return Encoding.ASCII.GetString(enc).TrimEnd('\0');
 		}
 
 		public static string ByteArrayToString(byte[] ba)

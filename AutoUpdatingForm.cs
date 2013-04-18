@@ -121,9 +121,6 @@ namespace SharedClasses
 				return null;
 			}
 		}
-
-		public static string GetAppFullPath() { return Environment.GetCommandLineArgs()[0]; }
-		public static string GetApplicationName() { return Path.GetFileNameWithoutExtension(GetAppFullPath()); }
 		
 		[Obsolete("Please use CheckForUpdates in AutoUpdating.cs, also then remove reference to AutoUpdatingForm.cs from project.", true)]
 		public static void CheckForUpdates(Action exitApplicationAction, Action<string> ActionIfUptoDate_Versionstring, Action<string> ActionIfUnableToCheckForUpdates, bool ShowModally = true)//string ApplicationName, string InstalledVersion)
@@ -132,7 +129,7 @@ namespace SharedClasses
 			ThreadingInterop.PerformVoidFunctionSeperateThread(() =>
 			{
 				string appfullpath = GetAppFullPath();
-				string ApplicationName = GetApplicationName();
+				string ApplicationName = OwnAppsShared.GetApplicationName();
 				//var versionfileFullpath = appfullpath + ".version";
 				var InstalledVersion = System.Diagnostics.FileVersionInfo.GetVersionInfo(appfullpath).FileVersion;//File.Exists(versionfileFullpath) ? File.ReadAllText(versionfileFullpath).Trim() : "";
 

@@ -83,7 +83,7 @@ namespace SharedClasses
 		}
 		~TodoFile()
 		{
-			SaveOnline();
+			//SaveOnline();//We made the save online a contentmenu item
 
 			if (this.HasUnsavedChanges)
 				this.SaveChanges();
@@ -115,7 +115,7 @@ namespace SharedClasses
 			OnPropertyChanged("FileContent");
 		}
 
-		private void SaveOnline()
+		public void SaveOnline()
 		{
 			//ThreadingInterop.PerformOneArgFunctionSeperateThread<string>(
 			//	(textToSaveOnline) =>

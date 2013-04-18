@@ -1038,8 +1038,7 @@ namespace SharedClasses
 			{
 				string nsPrefix = "NS:";
 				XmlNamespaceManager nsmgr;
-				XmlDocument xmlDoc =
-				OpenCsprojAsXmlDocument(csprojFullpath, ref nsPrefix, out nsmgr, out errorIfFailed);
+				XmlDocument xmlDoc = OpenCsprojAsXmlDocument(csprojFullpath, ref nsPrefix, out nsmgr, out errorIfFailed);
 				if (xmlDoc == null)
 					return false;//errorIfFailed already set
 				XmlNode appdefXmlNode;
@@ -1294,7 +1293,7 @@ namespace SharedClasses
 					{
 						string tmperr;
 						bool? tracUrlExistsResult = _checkTracUrlExists(tracUrlOfApp_AndCacheFilename.Key, out tmperr);
-						if (tracUrlExistsResult.HasValue 
+						if (tracUrlExistsResult.HasValue
 							&& tracUrlExistsResult.Value == false)//Does not exist
 						{
 							try
@@ -1330,14 +1329,6 @@ namespace SharedClasses
 			return doesTracUrlExistResult;
 		}
 
-		public static string GetApplicationName()
-		{
-			string applicationName = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
-			if (applicationName.EndsWith(".vshost", StringComparison.InvariantCultureIgnoreCase))
-				applicationName = applicationName.Substring(0, applicationName.Length - ".vshost".Length);
-			return applicationName;
-		}
-
 		public static bool DoesProjectSolutionReference_OwnAppsSharedDll(string solutionFilename)
 		{
 			var fileContents = File.ReadAllText(solutionFilename);
@@ -1348,6 +1339,214 @@ namespace SharedClasses
 			finally
 			{
 				fileContents = null;
+			}
+		}
+
+		public static bool FixBuildOutputPaths(string csprojFullpath, out string errorIfFailed, out List<string> warnings)
+		{
+			warnings = new List<string>();
+
+			try
+			{
+				var fileLines = File.ReadAllLines(csprojFullpath).ToList();
+				bool hasModifiedLines = false;
+				var linesToInsert = new Dictionary<int, string>();
+
+				for (int i = 0; i < fileLines.Count; i++)
+				{
+					var line = fileLines[i].Trim();
+					if (!line.StartsWith("<PropertyGroup"))
+						continue;
+					if (line.Contains("Condition="))
+					{
+						int outputPathLine = -1;
+						int numSpacesBeforeOuputPathTag = 0;
+						for (int j = i; i < fileLines.Count; j++)
+						{
+							var line2 = fileLines[j].Trim();
+							if (line2.Contains("</PropertyGroup>"))
+								break;
+							if (line2.StartsWith("<OutputPath>"))
+							{
+								numSpacesBeforeOuputPathTag = fileLines[j].Length - fileLines[j].TrimStart().Length;
+								outputPathLine = j;
+							}
+						}
+						if (outputPathLine == -1)
+							continue;//We just don't have an OutputPath tag in this PropertyGroup
+
+						int intermediateOutputPathLine = -1;
+						for (int j = i; i < fileLines.Count; j++)
+						{
+							var line2 = fileLines[j].Trim();
+							if (line2.Contains("</PropertyGroup>"))
+								break;
+							if (line2.StartsWith("<BaseIntermediateOutputPath>"))
+								intermediateOutputPathLine = j;
+						}
+
+						string patternConditionAttribute = @"(?<=Condition="")[^"">]*(?="">)";
+						var conditionMatch = Regex.Match(line, patternConditionAttribute);
+						if (conditionMatch.Success)
+						{
+							string conditionAttrValue = conditionMatch.ToString().Trim();
+							string patternConfigurationAndPlatformValues = @"(?<=\=\=[ ]*')[^']*(?=')";
+							var configAndPlatformMatch = Regex.Match(conditionAttrValue, patternConfigurationAndPlatformValues);
+							if (configAndPlatformMatch.Success)
+							{
+								string configAndPlatformPipeSplitted = configAndPlatformMatch.ToString().Trim();
+								var splittedVals = configAndPlatformPipeSplitted.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+								if (splittedVals.Length != 2)
+								{
+									warnings.Add(string.Format(
+										"Unable to determine Configuration and Platform from Condition attribute value = '{0}', csproj file {1} line {2}.",
+										conditionAttrValue, csprojFullpath, i));
+									continue;
+								}
+								string config = splittedVals[0];
+								string platform = splittedVals[1];
+
+								string appname = Path.GetFileNameWithoutExtension(csprojFullpath);
+								string newOutputPath = string.Format(@"<OutputPath>..\..\..\..\Binaries\{0}\bin\{1}\{2}</OutputPath>", appname, config, platform);
+								for (int s = 0; s < numSpacesBeforeOuputPathTag; s++)
+									newOutputPath = " " + newOutputPath;
+								if (!fileLines[outputPathLine].Trim().Equals(newOutputPath.Trim()))
+								{
+									hasModifiedLines = true;
+									fileLines[outputPathLine] = newOutputPath;
+								}
+
+								string newIntermediateOutputPath = newOutputPath
+									.Replace("OutputPath>", "BaseIntermediateOutputPath>")
+									.Replace(@"\bin\", @"\obj\");
+								if (intermediateOutputPathLine != -1)
+								{
+									if (!fileLines[intermediateOutputPathLine].Trim().Equals(newIntermediateOutputPath.Trim()))
+										hasModifiedLines = true;
+									fileLines[intermediateOutputPathLine] = newIntermediateOutputPath;
+								}
+								else
+								{
+									hasModifiedLines = true;
+									linesToInsert.Add(outputPathLine, newIntermediateOutputPath);
+								}
+
+								/*
+								Do not create directory here, MsBuild / C# will create this itsself
+								if (!Directory.Exists(cBinariesRootDir))
+									Directory.CreateDirectory(cBinariesRootDir);*/
+							}
+						}
+					}
+					else
+					{
+						for (int j = i; i < fileLines.Count; j++)
+						{
+							var line2 = fileLines[j].Trim();
+							if (line2.Contains("</PropertyGroup>"))
+								break;
+							if (line2.StartsWith("<OutputPath>"))
+							{
+								warnings.Add(string.Format(
+									"PropertyGroup with no 'Condition' attribute as a OutputPath child node, it cannot be automatically fixed, csproj file {0} line {1} and {2}.",
+									csprojFullpath, i, j));
+								continue;
+							}
+						}
+					}
+				}
+
+				if (linesToInsert.Count > 0)
+				{
+					var lineNums = linesToInsert.Keys.ToList();
+					lineNums.Sort();
+					for (int l = lineNums.Count - 1; l >= 0; l--)
+						fileLines.Insert(lineNums[l], linesToInsert[lineNums[l]]);
+				}
+
+				if (fileLines != null
+					&& fileLines.Count > 0
+					&& hasModifiedLines)
+					File.WriteAllLines(csprojFullpath, fileLines);
+
+				errorIfFailed = null;
+				if (warnings.Count == 0)
+					warnings = null;
+				return true;
+
+				/*string nsPrefix = "NS:";
+				XmlNamespaceManager nsmgr;
+				string err;
+				var xmldoc = OwnAppsInterop.OpenCsprojAsXmlDocument(csprojFullpath, ref nsPrefix, out nsmgr, out err);
+				var nodes = xmldoc.SelectNodes(string.Format("/{0}Project/{0}PropertyGroup", nsPrefix), nsmgr);
+				foreach (XmlNode n in nodes)
+				{
+					var outputPathNodes = n.SelectNodes(string.Format("{0}OutputPath", nsPrefix), nsmgr);
+					if (outputPathNodes.Count == 0)
+						continue;
+					if (outputPathNodes.Count > 1)
+					{
+						warnings.Add("Multiple OutputPath nodes found (using first) in one of the 'PropertyGroup' nodes in csproj: " + csprojFullpath);
+						continue;
+					}
+					var condition = n.Attributes["Condition"];
+					if (condition == null)
+					{
+						warnings.Add("PropertyGroup with no 'Condition' attribute as a OutputPath child node, it cannot be automatically fixed.");
+						continue;
+					}
+					var node = outputPathNodes[0];
+					node.InnerText
+					rather use Regex instead of XmlDocument, otherwise we cannot replace the file text
+				}
+
+				errorIfFailed = null;
+				if (warnings.Count == 0)
+					warnings = null;
+				return true;*/
+			}
+			catch (Exception exc)
+			{
+				errorIfFailed = "Could not FixBuildOutputPaths: " + exc.Message;
+				if (warnings.Count == 0)
+					warnings = null;
+				return false;
+			}
+			//C:\Francois\Other
+		}
+
+		public static bool? CheckIfNotUsingClientDotNet(string csprojFullpath, out string errorIfFailed)
+		{
+			try
+			{
+				string nsPrefix = "NS:";
+				XmlNamespaceManager nsmgr;
+				XmlDocument xmlDoc = OpenCsprojAsXmlDocument(csprojFullpath, ref nsPrefix, out nsmgr, out errorIfFailed);
+				if (xmlDoc == null)
+					return false;//errorIfFailed already set
+
+				XmlNodeList targetFrameworkProfileNodes = xmlDoc.SelectNodes(string.Format("/{0}Project/{0}PropertyGroup/{0}TargetFrameworkProfile", nsPrefix), nsmgr);
+				if (targetFrameworkProfileNodes.Count == 0)
+				{
+					errorIfFailed = null;
+					return true;
+				}
+				string profile = (targetFrameworkProfileNodes[0].InnerText ?? "").Trim();
+				if (profile.Equals("Client", StringComparison.InvariantCultureIgnoreCase))
+				{
+					errorIfFailed = null;
+					return false;
+				}
+				else
+				{
+					errorIfFailed = null;
+					return true;
+				}
+			}
+			catch (Exception exc)
+			{
+				errorIfFailed = string.Format("Error checking if project '{0}' is using Client .NET profile: {1}", csprojFullpath, exc.Message);
+				return null;
 			}
 		}
 	}

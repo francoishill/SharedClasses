@@ -11,6 +11,8 @@ using System.Globalization;
 using System.Configuration;
 using System.Reflection;
 using System.Diagnostics;
+using System.Net.Mail;
+using System.Net;
 
 [Obsolete("OnlineSettings was renamed to SettingsSimple, also contained in SharedClasses.SettingsSimple", true)]
 public class OnlineSettings
@@ -215,7 +217,7 @@ namespace SharedClasses
 					if (IsSeparateSettingsForEachPc)
 						categoryPrefix += SettingsInterop.GetComputerGuid() + "-";
 					if (IsSeparateSettingsForApplication)
-						categoryPrefix += SettingsInterop.GetApplicationName() + "-";
+						categoryPrefix += OwnAppsShared.GetApplicationName() + "-";
 
 					return categoryPrefix + _settingsCategory;
 				}
@@ -231,7 +233,7 @@ namespace SharedClasses
 				{
 					string postfix = "";
 					if (IsSeparateSettingsForApplication)
-						postfix += "(" + SettingsInterop.GetApplicationName() + ")";
+						postfix += "(" + OwnAppsShared.GetApplicationName() + ")";
 					if (IsSeparateSettingsForEachPc)
 						postfix += "[" + SettingsInterop.GetComputerGuidAsFileName() + "]";
 					return SettingName + postfix + SettingsInterop.SettingsFileExtension;
@@ -433,9 +435,9 @@ namespace SharedClasses
 							this.SaveToLocalCache();
 					}
 					else if (populatedFromOnline == false)//Error occurred, not internet, etc
-						Logging.LogErrorToFile("Warning: could not get cached NOR local settings, using defaults.", 
+						Logging.LogErrorToFile("Warning: could not get cached NOR local settings, using defaults.",
 							Logging.ReportingFrequencies.Daily,
-							SettingsInterop.GetApplicationName());
+							OwnAppsShared.GetApplicationName());
 				}
 			}
 
@@ -562,6 +564,8 @@ namespace SharedClasses
 
 		public class MovieOrganizerSettings : BaseOnlineClass<MovieOrganizerSettings>
 		{
+			[Description("Root of movies directory")]
+			public string MoviesRootDirectory { get; set; }
 			[Description("A list of file extensions of movies.")]
 			public List<string> MovieFileExtensions { get; set; }
 			[Description("A list of non-word characters, type them as one long string.")]
@@ -573,9 +577,10 @@ namespace SharedClasses
 
 			public MovieOrganizerSettings()//Defaults
 			{
+				this.MoviesRootDirectory = @"D:\Movies";
 				this.MovieFileExtensions = new List<string>() { "asf", "3gp", "avi", "divx", "flv", "ifo", "mkv", "mp4", "mpeg", "mpg", "vob", "wmv" };
 				this.NonWordChars = "&()`:[]_{} ,.-";
-				this.IrrelevantPhrases = new List<string>() { "1 of 2", "2 of 2", "imagine sample", "ts imagine", "rio heist ts v3 imagine", "861_", "862_", "863_", "-illustrated", "brrip noir", "r5 line goldfish", "line x264 ac3 vision", "hive cm8", "flawl3ss sample", "line ac3", "t0xic ink", "r5 line readnfo imagine", "cam readnfo imagine", "ts devise", "line ltt", "r5.line.", "line.xvid" };
+				this.IrrelevantPhrases = new List<string>() { "1 of 2", "2 of 2", "imagine sample", "ts imagine", "rio heist ts v3 imagine", "861_", "862_", "863_", "-illustrated", "brrip noir", "r5 line goldfish", "line x264 ac3 vision", "hive cm8", "flawl3ss sample", "line ac3", "t0xic ink", "r5 line readnfo imagine", "cam readnfo imagine", "ts devise", "line ltt", "r5.line.", "line.xvid", "Part 1" };
 				this.IrrelevantWords = new List<string>() { "01", "02", "03", "1of2", "1989", "1996", "1997", "1998", "1999", "2000", "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010", "2011", "2012", "1080p", "1337x", "3xforum", "dvdscr", "noscr", "torentz", "www", "maxspeed", "ro", "axxo", "divx", "dvdrip", "xvid", "faf2009", "opt", "2hd", "hdtv", "vtv", "2of2", "cd1", "cd2", "imbt", "dmd", "ac3", "rc5", "eng", "fxg", "vaper", "brrip", "extratorrentrg", "ts", "20th", "h", "264", "newarriot", "jr", "r5", "x264", "bdrip", "hq", "cm8", "flawl3ss", "t0xic", "nydic", "dd", "avi", "sample", "ii", "rvj", "readnfo", "tfe", "vrxuniique", "ika", "ltrg", "tdc", "m00dy", "gfw", "noir", "nikonxp", "vmt", "ltt", "mxmg", "osht", "NewArtRiot", "qcf", "tnan", "ppvrip", "timpe", "rx" };
 			}
 		}
@@ -989,6 +994,45 @@ namespace SharedClasses
 				this.MemoryThreshold_MegaBytes = 250;// *1024 * 1024;
 				this.CpuThreshold_Percentage = 3.0;//40.0
 				this.DurationCpuThresholdMustBeOver_Sec = 10;
+			}
+		}
+
+		[ComputerSpecificSettings]
+		public class SmtpMailSettings : BaseOnlineClass<SmtpMailSettings>
+		{
+			public string Host { get; set; }
+			public string FromAddress { get; set; }
+			public int Port { get; set; }
+			public bool EnableSsl { get; set; }
+			public SmtpDeliveryMethod DeliveryMethod { get; set; }
+			public bool UseDefaultCredentials { get; set; }
+			public string Username { get; set; }
+			[Setting("Password", false, true)]
+			public string Password { get; set; }
+			public SmtpMailSettings()
+			{
+
+			}
+		}
+
+		[ComputerSpecificSettings]
+		public class SoftwareDebuggingTool : BaseOnlineClass<SoftwareDebuggingTool>
+		{
+			public string ApplicationName { get; set; }
+			public int ApplicationVersion { get; set; }
+			public string SharedFoldersRoot { get; set; }
+			public string LocalFoldersRoot { get; set; }
+			public SoftwareDebuggingTool() { }
+		}
+
+		public class ResourceUsageTracker : BaseOnlineClass<ResourceUsageTracker>
+		{
+			public int TakeMeasurementIntervalInMilliseconds { get; set; }
+			public int FlushToFileIntervalInMinutes { get; set; }
+			public ResourceUsageTracker()//Defaults
+			{
+				this.TakeMeasurementIntervalInMilliseconds = 500;
+				this.FlushToFileIntervalInMinutes = 60;
 			}
 		}
 	}

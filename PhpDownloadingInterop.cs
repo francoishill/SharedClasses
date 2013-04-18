@@ -123,8 +123,10 @@ namespace SharedClasses
 
 						fs.Write(buffer, 0, readcount);
 						fs.Flush();
-						if (totalDownloadedBytes == totalBytesToDownload)
+						if (totalDownloadedBytes >= totalBytesToDownload)
 							break;
+						
+						//Console.WriteLine("Total read = {0}, total to read = {1}, current read count = {2}", totalDownloadedBytes, totalBytesToDownload, readcount);
 						readcount = stream.Read(buffer, 0, buffer.Length);
 					}
 				}

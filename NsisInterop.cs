@@ -179,9 +179,9 @@ public class NsisInterop
 		//If NSISdl does not work right may be required to have inetc.dll, NSISdl is already part of NSIS installation`
 		//string inetcDllPath = Path.Combine(nsisDir, "Plugins", "inetc.dll");
 
-		string NsisUrlLibDllPath = Path.Combine(GetNsisInstallDirectory() ?? "c:\\zzzzzz", "Plugins", "NsisUrlLib.dll");
-		if (!File.Exists(NsisUrlLibDllPath))
-			UserMessages.ShowErrorMessage("NSIS will not compile, missing plugin: " + NsisUrlLibDllPath);
+		//string NsisUrlLibDllPath = Path.Combine(GetNsisInstallDirectory() ?? "c:\\zzzzzz", "Plugins", "NsisUrlLib.dll");
+		//if (!File.Exists(NsisUrlLibDllPath))
+		//	UserMessages.ShowErrorMessage("NSIS will not compile, missing plugin: " + NsisUrlLibDllPath);
 
 		if (!isAutoUpdater)
 		{

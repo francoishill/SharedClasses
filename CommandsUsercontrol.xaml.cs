@@ -59,7 +59,7 @@ namespace SharedClasses
 			if (!AppDomain.CurrentDomain.BaseDirectory.ToLower().Contains(@"QuickAccess\QuickAccess\bin".ToLower()))
 				DynamicDLLs.LoadPluginsInDirectory(System.AppDomain.CurrentDomain.BaseDirectory + @"Plugins");
 			else
-				foreach (string pluginProjectBaseDir in Directory.GetDirectories(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\\Visual Studio 2010\Projects\QuickAccess", "*Plugin"))
+				foreach (string pluginProjectBaseDir in Directory.GetDirectories(@"C:\Users\francois\Dropbox\Dev\VSprojects\QuickAccess", "*Plugin"))
 					DynamicDLLs.LoadPluginsInDirectory(pluginProjectBaseDir + @"\bin\Release");
 		}
 

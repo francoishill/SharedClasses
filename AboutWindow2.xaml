@@ -21,7 +21,9 @@
 		<ContextMenu x:Key='contextmenuSettings'>
 			<MenuItem Header='High resource usage warnings'
 					  Click='menuitemHighResourceUsageWarnings_Click' />
-		</ContextMenu>
+            <MenuItem Header='Show recorded resource usages chart'
+                      Click='menuitemShowRecordedResourceUsagesChart_Click'/>
+        </ContextMenu>
 	</Window.Resources>
 		<Grid>
 		<Image Name='imageIcon'

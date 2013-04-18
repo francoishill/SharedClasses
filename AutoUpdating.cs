@@ -54,12 +54,13 @@ namespace SharedClasses
 		}
 
 		private static bool alreadyRegisteredUnhandledExceptionHandler = false;
-		private static void RegisterUnhandledExceptionHandler()
+		public static void RegisterUnhandledExceptionHandler()
 		{
 			if (alreadyRegisteredUnhandledExceptionHandler) return;
 			alreadyRegisteredUnhandledExceptionHandler = true;
 			AppDomain.CurrentDomain.UnhandledException += (s, uexc) =>
 			{
+				ResourceUsageTracker.FlushAllCurrentLogLines();
 				Exception exc = uexc.ExceptionObject as Exception;
 				if (exc != null)
 				{
@@ -74,10 +75,11 @@ namespace SharedClasses
 			};
 		}
 
+		private static DateTime? firstTimeFailedForJumplists = null;
 		private static void AddJumplistForNewfeaturesAndBugs_AlsoHandleCommandlineArguments()
 		{
 			if (Windows7JumpListsInterop.HandleCommandlineJumplistCommand())
-				Environment.Exit(0);
+				OwnAppsShared.ExitAppWithExitCode(0);
 
 			ThreadingInterop.DoAction(delegate
 			{
@@ -90,6 +92,18 @@ namespace SharedClasses
 					}
 					catch (InvalidOperationException)
 					{
+						if (!firstTimeFailedForJumplists.HasValue)
+							firstTimeFailedForJumplists = DateTime.Now;
+						const int cSecondsToWaitForJumplistsWindow = 10;
+						if (DateTime.Now.Subtract(firstTimeFailedForJumplists.Value).TotalSeconds > cSecondsToWaitForJumplistsWindow)
+						{
+							Logging.LogErrorToFile(
+								string.Format("Waited {0} seconds but still no window created, will now abort trying to to add JumpList items to app Taskbar", cSecondsToWaitForJumplistsWindow),
+								Logging.ReportingFrequencies.Daily,
+								OwnAppsShared.GetApplicationName(),
+								"JumpListFailedNoWindowFound");
+							break;
+						}
 						Thread.Sleep(10);//This may happen because the window is not created yet, so we continue to loop until the window is created
 					}
 					catch (Exception)
@@ -106,153 +120,6 @@ namespace SharedClasses
 				ApplicationPath = ???
 			});*/
 
-		}
-
-		//private static readonly TimeSpan cDelayBeforeInitialCheck = TimeSpan.FromSeconds(10);
-		//private static readonly TimeSpan cCheckInterval = TimeSpan.FromSeconds(5);
-		//private static readonly TimeSpan cDurationAfterWhichToAutokillIfHighMemoryOrCpu = TimeSpan.FromMinutes(5.0);
-
-		//private const long cMemoryThresholdBytes = 250 * 1024 * 1024;
-		
-		private static DateTime? busyShowingHighMemoryUsageMessage = null;
-		private static bool donotShowHighMemoryUsageMessages = false;
-		private static void CheckMemoryUsage(Process process)
-		{
-			process.Refresh();
-
-			SettingsSimple.HighResourceUsageSettings settings = SettingsSimple.HighResourceUsageSettings.Instance;
-
-			long memoryThresholdBytes = settings.MemoryThreshold_MegaBytes * 1024 * 1024;
-			//BytesToHumanfriendlyStringConverter.ConvertBytesToHumanreadableString(currentProcess.PrivateMemorySize64)
-			if (process.PrivateMemorySize64 > memoryThresholdBytes)
-			{
-				if (!busyShowingHighMemoryUsageMessage.HasValue
-					&& !donotShowHighMemoryUsageMessages)
-				{
-					busyShowingHighMemoryUsageMessage = DateTime.Now;
-					ThreadingInterop.DoAction(delegate
-					{
-						string appname = LicensingInterop_Client.GetApplicationName();
-
-						var result = HighResourceUsageWindow.ShowHighResourceUsageWindowReturnResult(
-							string.Format(
-								"WARNING!!! Confirm to terminate application '{0}' (cancel to not show message again).? Current Memory usage is above {1} (current memory usage is {2})."
-								+ Environment.NewLine + Environment.NewLine
-								+ "Application will automatically exit after {3} minutes if no option is chosen.",
-								appname,
-								BytesToHumanfriendlyStringConverter.ConvertBytesToHumanreadableString(memoryThresholdBytes),
-								BytesToHumanfriendlyStringConverter.ConvertBytesToHumanreadableString(process.PrivateMemorySize64),
-								((int)Math.Round(settings.DurationToKillIfNoUserResponse_Min)).ToString()),
-							"Current time is " + DateTime.Now.ToString("HH:mm:ss"));
-
-						if (result == HighResourceUsageWindow.ReturnResult.ForceCloseNow)
-							Environment.Exit(0);
-						else if (result == HighResourceUsageWindow.ReturnResult.IgnoreUntilClose)
-							donotShowHighMemoryUsageMessages = true;
-
-						busyShowingHighMemoryUsageMessage = null;
-					},
-					false,
-					apartmentState: System.Threading.ApartmentState.STA);
-				}
-				else if (busyShowingHighMemoryUsageMessage.HasValue
-					&& !donotShowHighMemoryUsageMessages)
-				{
-					if (DateTime.Now - busyShowingHighMemoryUsageMessage.Value > TimeSpan.FromMinutes(settings.DurationToKillIfNoUserResponse_Min))
-						Environment.Exit(0);
-				}
-			}
-		}
-
-		//private const double cCPUthresholdPercentage = 3.0;//40.0;
-		//private const double cWarningSecondsIfAboveCPUThresholdForLongerThan = 10;
-
-		private static Timer _memoryWatcherTimer = null;
-		private static DateTime? _previousCheckedTime = null;
-		private static double _previousTotalMilliseconds;
-		private static int numberConsecutiveTimesCPUabove50 = 0;
-		private static DateTime? busyShowingHighCpuUsageMessage = null;
-		private static bool donotShowHighCpuUsageMessages = false;
-		private static void CheckCpuLoad(Process process)
-		{
-			process.Refresh();
-
-			if (_previousCheckedTime.HasValue)
-			{
-				double totalMillisecondsAddedAfterLastCheck = process.TotalProcessorTime.TotalMilliseconds - _previousTotalMilliseconds;
-				TimeSpan durationAfterLastCheck = DateTime.Now - _previousCheckedTime.Value;
-				double currentTotalCPUload = 100D * (totalMillisecondsAddedAfterLastCheck / durationAfterLastCheck.TotalMilliseconds);
-				currentTotalCPUload = currentTotalCPUload / (double)Environment.ProcessorCount;
-
-				SettingsSimple.HighResourceUsageSettings settings = SettingsSimple.HighResourceUsageSettings.Instance;
-
-				//We are currently measuring the CURRENT cpu load, not the AVERAGE
-				if (currentTotalCPUload > settings.CpuThreshold_Percentage)
-				{
-					numberConsecutiveTimesCPUabove50++;
-					if (settings.CheckInterval_Sec * (double)numberConsecutiveTimesCPUabove50 > settings.DurationCpuThresholdMustBeOver_Sec)
-					{
-						if (!busyShowingHighCpuUsageMessage.HasValue
-							&& !donotShowHighCpuUsageMessages)
-						{
-							busyShowingHighCpuUsageMessage = DateTime.Now;
-							ThreadingInterop.DoAction(delegate
-							{
-								string appname = LicensingInterop_Client.GetApplicationName();
-								double secondsTheCpuIsAboveThreshold = settings.CheckInterval_Sec * (double)numberConsecutiveTimesCPUabove50;
-								var result = HighResourceUsageWindow.ShowHighResourceUsageWindowReturnResult(
-									string.Format(
-										"WARNING!!! Confirm to terminate application '{0}' (cancel to not show message again)? Current CPU load is above {1} (current load is {2}) for more than {3} seconds."
-										+ Environment.NewLine + Environment.NewLine
-										+ "Application will automatically exit after {4} minutes if no option is chosen.",
-										appname,
-										settings.CpuThreshold_Percentage,
-										currentTotalCPUload.ToString("0.##"),
-										secondsTheCpuIsAboveThreshold,
-										((int)Math.Round(settings.DurationToKillIfNoUserResponse_Min)).ToString()),
-									"Current time is " + DateTime.Now.ToString("HH:mm:ss"));
-								if (result == HighResourceUsageWindow.ReturnResult.ForceCloseNow)
-									Environment.Exit(0);
-								else if (result == HighResourceUsageWindow.ReturnResult.IgnoreUntilClose)
-									donotShowHighCpuUsageMessages = true;
-
-								busyShowingHighCpuUsageMessage = null;
-							},
-							false,
-							apartmentState: System.Threading.ApartmentState.STA);
-						}
-						else if (busyShowingHighCpuUsageMessage.HasValue
-							&& !donotShowHighCpuUsageMessages)
-						{
-							if (DateTime.Now - busyShowingHighCpuUsageMessage.Value > TimeSpan.FromMinutes(settings.DurationToKillIfNoUserResponse_Min))
-								Environment.Exit(0);
-						}
-					}
-				}
-				else
-					numberConsecutiveTimesCPUabove50 = 0;
-
-				Console.WriteLine("CPU load = {0}", currentTotalCPUload);
-			}
-
-			_previousCheckedTime = DateTime.Now;
-			_previousTotalMilliseconds = process.TotalProcessorTime.TotalMilliseconds;
-		}
-
-		private static void RegisterMemoryAndCpuWatcher()
-		{
-			SettingsSimple.HighResourceUsageSettings settings = SettingsSimple.HighResourceUsageSettings.Instance;
-
-			_memoryWatcherTimer = new Timer(
-				delegate
-				{
-					var currentProcess = Process.GetCurrentProcess();
-					CheckMemoryUsage(currentProcess);
-					CheckCpuLoad(currentProcess);
-				},
-				null,
-				TimeSpan.FromSeconds(settings.DelayBeforeInitialCheck_Sec),
-				TimeSpan.FromSeconds(settings.CheckInterval_Sec));
 		}
 
 		public static string GetThisAppVersionString()
@@ -289,10 +156,9 @@ namespace SharedClasses
 			if (ActionIfUptoDate == null) ActionIfUptoDate = delegate { };
 
 			RegisterUnhandledExceptionHandler();
-
 			AddJumplistForNewfeaturesAndBugs_AlsoHandleCommandlineArguments();
-
-			RegisterMemoryAndCpuWatcher();
+			ResourceUsageTracker.RegisterMemoryAndCpuWatcher();
+			SettingsInterop.EnsureComputerHasNameForGuid();
 
 			Thread checkForUpdatesThread = _checkForUpdates(ActionIfUptoDate);
 			return checkForUpdatesThread;
@@ -303,7 +169,8 @@ namespace SharedClasses
 			//Step 2: Check for updates
 			//If running from Visual Studio paths
 			if (Environment.GetCommandLineArgs()[0].StartsWith(@"C:\Francois\Dev\VSprojects", StringComparison.InvariantCultureIgnoreCase)
-				|| Environment.GetCommandLineArgs()[0].StartsWith(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), @"Visual Studio 2010\Projects"), StringComparison.InvariantCultureIgnoreCase))
+				|| Environment.GetCommandLineArgs()[0].StartsWith(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), @"Visual Studio 2010\Projects"), StringComparison.InvariantCultureIgnoreCase)
+				|| Environment.GetCommandLineArgs()[0].StartsWith(@"C:\Francois\Binaries", StringComparison.InvariantCultureIgnoreCase))
 				return null;
 
 			Thread checkForUpdatesSilentlyThread = ThreadingInterop.PerformVoidFunctionSeperateThread(() =>

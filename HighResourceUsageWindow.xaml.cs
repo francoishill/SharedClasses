@@ -49,6 +49,15 @@ namespace SharedClasses
 			RemoveSelfFromListAndDeleteWorkspaceFile();
 		}
 
+		public void SetDialogResultToIgnoreOnceAndClose()
+		{
+			this.Dispatcher.Invoke((Action)delegate
+			{
+				this._dialogResult = ReturnResult.IgnoreOnce;
+				this.Close();
+			});
+		}
+
 		private void RemoveSelfFromListAndDeleteWorkspaceFile()
 		{
 			if (_listOfThisAppOpenWindowsWithWorkspaceFiles.ContainsKey(this))
@@ -174,16 +183,21 @@ namespace SharedClasses
 			this.Close();
 		}
 
-		public static ReturnResult ShowHighResourceUsageWindowReturnResult(string messageText, string messageTitle)
+		public static ReturnResult ShowHighResourceUsageWindowReturnResult(string messageText, string messageTitle, ref HighResourceUsageWindow windowReference)
 		{
-			var tmpwin = new HighResourceUsageWindow(messageText, messageTitle);
-			tmpwin.ShowDialog();
-			return tmpwin._dialogResult;
+			windowReference = new HighResourceUsageWindow(messageText, messageTitle);
+			windowReference.ShowDialog();
+			return windowReference._dialogResult;
 		}
 
 		private void textblockEditSettings_MouseUp(object sender, MouseButtonEventArgs e)
 		{
 			HighResourceUsageSettingsWindow.ShowWindowDialog();
+		}
+
+		private void textblockShowUsageHistory_MouseUp(object sender, MouseButtonEventArgs e)
+		{
+			ResourceUsageTracker.ShowResourceUsageChart();
 		}
 	}
 }

@@ -58,7 +58,7 @@ namespace SharedClasses
 		/// <param name="url">The url of the php, do not include the ?</param>
 		/// <param name="data">The data, i.e. "name=koos&surname=koekemoer". Note to not include the ?</param>
 		/// <returns>Returns the data received from the php (usually the "echo" statements in the php.</returns>
-		public static string PostPHP(Object textfeedbackSenderObject, string url, string data, TextFeedbackEventHandler textFeedbackEvent = null, bool separateThread = true)
+		public static string PostPHP(Object textfeedbackSenderObject, string url, string data, TextFeedbackEventHandler textFeedbackEvent = null, bool separateThread = true, bool autoreplacePlusWithBrackettedPipe = true)
 		{
 			string vystup = "";
 
@@ -66,9 +66,10 @@ namespace SharedClasses
 			{
 				try
 				{
-					data = (data ?? "").Replace("+", "[|]");
+					if (autoreplacePlusWithBrackettedPipe)
+						data = (data ?? "").Replace("+", "[|]");
 					//Our postvars
-					byte[] buffer = Encoding.ASCII.GetBytes(data);
+					byte[] buffer = Encoding.UTF8.GetBytes(data ?? "");//Encoding.ASCII.GetBytes(data);
 					//Initialisation, we use localhost, change if appliable
 					HttpWebRequest WebReq = (HttpWebRequest)WebRequest.Create(url);
 					//Our method is post, otherwise the buffer (postvars) would be useless
@@ -104,9 +105,11 @@ namespace SharedClasses
 					if (webexc != null && webexc.Response != null)
 					{
 						string responseError = new StreamReader(webexc.Response.GetResponseStream()).ReadToEnd();
-						vystup = responseError;
+						vystup = "ERROR:" + responseError;
 						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Post php: " + responseError);
 					}
+					else
+						vystup = "ERROR:" + exc.Message;
 
 					if (!exc.Message.ToUpper().StartsWith("The remote name could not be resolved:".ToUpper()))
 						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Post php: " + exc.Message);

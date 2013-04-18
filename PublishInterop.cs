@@ -242,6 +242,11 @@ namespace SharedClasses
 			actionOnMessage(startMsg + nsisFileName, FeedbackMessageTypes.Success);
 
 			string nsisDir = NsisInterop.GetNsisInstallDirectory();
+			if (nsisDir == null)
+			{
+				actionOnMessage("Cannot find NSIS installation directory", FeedbackMessageTypes.Error);
+				return false;
+			}
 
 			Dictionary<string, string> nsisRequiredPlugins = new Dictionary<string, string>()
 			{
@@ -315,18 +320,37 @@ namespace SharedClasses
 							if (DoNotKillProcessAndInstall)
 							{
 								actionOnMessage("Launching setup for '{0}', not running silently because same application name as current.".Fmt(projToBuild.ApplicationName), FeedbackMessageTypes.Status);
-								Process.Start(publishedSetupPath);
+
+								try
+								{
+									Process.Start(publishedSetupPath);
+								}
+								catch (Exception exc)
+								{
+									actionOnMessage(
+										"Error while trying to install (might be because user did not respond to UAC in a certain period), exception message: " + exc.Message,
+										FeedbackMessageTypes.Warning);
+								}
 							}
 							else
 							{
 								actionOnMessage("Installing '{0}' silently.".Fmt(projToBuild.ApplicationName), FeedbackMessageTypes.Status);
-								var setupProc = Process.Start(publishedSetupPath, "/S");
-								setupProc.WaitForExit();
-								if (InstallLocallyAfterSuccessfullNSIS_NullToNotRunAfterInstallingSilently == true)
+								try
 								{
-									actionOnMessage("Launching '{0}'.".Fmt(projToBuild.ApplicationName), FeedbackMessageTypes.Status);
-									try { Process.Start(projToBuild.ApplicationName + ".exe"); }
-									catch (Exception exc) { actionOnMessage("Error launching '{0}': {1}".Fmt(projToBuild.ApplicationName, exc.Message), FeedbackMessageTypes.Error); }
+									var setupProc = Process.Start(publishedSetupPath, "/S");
+									setupProc.WaitForExit();
+									if (InstallLocallyAfterSuccessfullNSIS_NullToNotRunAfterInstallingSilently == true)
+									{
+										actionOnMessage("Launching '{0}'.".Fmt(projToBuild.ApplicationName), FeedbackMessageTypes.Status);
+										try { Process.Start(projToBuild.ApplicationName + ".exe"); }
+										catch (Exception exc) { actionOnMessage("Error launching '{0}': {1}".Fmt(projToBuild.ApplicationName, exc.Message), FeedbackMessageTypes.Error); }
+									}
+								}
+								catch (Exception exc)
+								{
+									actionOnMessage(
+										"Error while trying to install (might be because user did not respond to UAC in a certain period), exception message: " + exc.Message,
+										FeedbackMessageTypes.Warning);
 								}
 							}
 						}
@@ -406,7 +430,7 @@ namespace SharedClasses
 				{
 					var filesLinkedToOwnAppsSharedProject = OwnAppsInterop.GetListOfLinkedFilesForCsProj(
 						Path.Combine(OwnAppsInterop.RootVSprojectsDir, @"SharedClasses\_OwnAppsSharedDll\_OwnAppsSharedDll.csproj"));
-					linkedFiles = linkedFiles.Concat(filesLinkedToOwnAppsSharedProject).ToList();	
+					linkedFiles = linkedFiles.Concat(filesLinkedToOwnAppsSharedProject).ToList();
 				}
 
 				var distinctVsProjRootFolderPaths =
@@ -422,12 +446,12 @@ namespace SharedClasses
 						tracUrl, out err);
 					if (tracExists == true)
 					{*/
-						var tmpChangeLogs = GetChangeLogs(
-							tracTicketsSinceDate,
-							System.IO.Path.GetFileNameWithoutExtension(dir),
-							actionOnMessage);
-						if (tmpChangeLogs != null)
-							listOfChangeLogsForEachRepo.Add(tmpChangeLogs);
+					var tmpChangeLogs = GetChangeLogs(
+						tracTicketsSinceDate,
+						System.IO.Path.GetFileNameWithoutExtension(dir),
+						actionOnMessage);
+					if (tmpChangeLogs != null)
+						listOfChangeLogsForEachRepo.Add(tmpChangeLogs);
 					/*}
 					else if (tracExists == false)
 						actionOnMessage("Dependant files of csproject does not have Trac environment, it does not exist: " + tracUrl, FeedbackMessageTypes.Warning);
@@ -486,6 +510,7 @@ namespace SharedClasses
 				foreach (var screenshotFile in listOfScreenshotsFullLocalPaths)
 					QueueFileToUpload(projToBuild.ApplicationName, Path.GetFileNameWithoutExtension(screenshotFile), screenshotFile, "Screenshots/" + Path.GetFileName(screenshotFile));
 			UploadIconAsFaviconIfExists(projToBuild.ApplicationName);
+			UploadAppSummaryIfExists(projToBuild.ApplicationName);
 
 			actionOnMessage("Attempting Ftp Uploading of Setup file and index file for " + projToBuild.ApplicationName, FeedbackMessageTypes.Status);
 			string uriAfterUploading = GlobalSettings.VisualStudioInteropSettings.Instance.GetCombinedUriForAFTERvspublishing() + "/" + validatedUrlsectionForProjname;
@@ -785,10 +810,10 @@ namespace SharedClasses
 			if (tmpBugsFixed.Count == 0
 				&& tmpImprovements.Count == 0
 				&& tmpNewFeatures.Count == 0)
-			actionOnMessage(
-				"No tickets were [CLOSED] yet"
-				+ (sinceDate.HasValue ? " since " + sinceDate.Value.ToString("yyyy-MM-dd HH:mm:ss") : ""),
-				FeedbackMessageTypes.Warning);//Warn if no CLOSED tickets?
+				actionOnMessage(
+					"No tickets were [CLOSED] yet"
+					+ (sinceDate.HasValue ? " since " + sinceDate.Value.ToString("yyyy-MM-dd HH:mm:ss") : ""),
+					FeedbackMessageTypes.Warning);//Warn if no CLOSED tickets?
 
 			return new TracXmlRpcInterop.ChangeLogs(rootProjectXmlRpcTracUri, tmpBugsFixed, tmpImprovements, tmpNewFeatures);
 		}
@@ -806,11 +831,32 @@ namespace SharedClasses
 			return Path.Combine(Path.GetDirectoryName(csprojPath), "app.ico");
 		}
 
+		private const string cAppSummaryFileExtensionWithDot = ".fjtxt";//DO NOT CHANGE, must correlate with php code in file "apps_helper.php"
+		private static string GetAppSummaryFullPath(string projectName)
+		{
+			string tmperr;
+			var tmpCsprojAndAppType = OwnAppsInterop.GetCsprojFullpathFromApplicationName(projectName, out tmperr);
+			if (tmperr != null)
+			{
+				UserMessages.ShowWarningMessage(tmperr);
+				return null;
+			}
+			string csprojPath = tmpCsprojAndAppType.Value.Key;
+			return Path.Combine(Path.GetDirectoryName(csprojPath), "appsummary" + cAppSummaryFileExtensionWithDot);
+		}
+
 		private static void UploadIconAsFaviconIfExists(string projectName)
 		{
 			string appIconPath = GetAppIconFullPath(projectName);
 			if (File.Exists(appIconPath))
 				QueueFileToUpload(projectName, "Favicon for " + projectName, appIconPath, "favicon.ico");
+		}
+
+		private static void UploadAppSummaryIfExists(string projectName)
+		{
+			string appSummaryPath = GetAppSummaryFullPath(projectName);
+			if (File.Exists(appSummaryPath))
+				QueueFileToUpload(projectName, "App summary for " + projectName, appSummaryPath, "appsummary" + cAppSummaryFileExtensionWithDot);
 		}
 
 		private static string GetHtmlLinkForTicket(int ticketID, TracXmlRpcInterop.TracTicketDetails ticketDetails, Func<int, string> functionToGetTicketUrl)

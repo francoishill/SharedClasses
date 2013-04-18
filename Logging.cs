@@ -110,9 +110,19 @@ namespace SharedClasses
 			}
 
 			isBusyWriting = true;
-			File.AppendAllLines(
-				filepath,
-				fullMessages.Select(m => m.GetLineToWriteInFile()));
+
+			int cRetryCountToWriteFile = 3;
+			Exception exceptionIfFailed;
+			if (!ThreadingInterop.RetryActionIfFails(
+				delegate
+				{
+					File.AppendAllLines(
+					   filepath,
+					   fullMessages.Select(m => m.GetLineToWriteInFile()));
+				},
+				cRetryCountToWriteFile,
+				out exceptionIfFailed))
+				UserMessages.ShowErrorMessage("Retried " + cRetryCountToWriteFile + " times to write log file, fail message: " + exceptionIfFailed.Message);
 
 			while (messagesToStillLog.Count > 0)
 			{

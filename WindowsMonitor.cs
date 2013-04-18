@@ -23,7 +23,7 @@ namespace SharedClasses
 
 	public class WindowsMonitor
 	{
-		public static bool IsFrancoisPC = Directory.Exists(@"c:\users\FrancoisLaptopDell") || Directory.Exists(@"c:\users\Francois");
+		public static bool MustRecord = false;//Directory.Exists(@"c:\users\FrancoisLaptopDell") || Directory.Exists(@"c:\users\Francois");
 
 		[DebuggerDisplay("IdleSeconds = {IdleSeconds}, TotalSeconds = {TotalSeconds}")]
 		public class WindowTimes
@@ -269,7 +269,7 @@ namespace SharedClasses
 
 			try
 			{
-				if (IsFrancoisPC)
+				if (MustRecord)
 					WinMMinterop.Recorder.Instance.StartRecording();
 			}
 			catch (Exception exc)
@@ -419,7 +419,7 @@ namespace SharedClasses
 		private void StartTicker()
 		{
 			ticker.Start();
-			if (IsFrancoisPC)
+			if (MustRecord)
 				StartRecordingAudio();
 			tickerRunning = true;
 		}
@@ -432,7 +432,7 @@ namespace SharedClasses
 			//    recorder.Stop();
 			//}
 
-			if (IsFrancoisPC)
+			if (MustRecord)
 				WinMMinterop.Recorder.Instance.StopAndSave(tmpRecordingPath);
 			tmpRecordingPath = null;
 
@@ -647,7 +647,7 @@ namespace SharedClasses
 			htmltext += "</body></html>";
 			File.WriteAllText(htmlFilepath, htmltext);
 
-			if (WindowsMonitor.IsFrancoisPC)
+			if (WindowsMonitor.MustRecord)
 			{
 				//foreach (var file in Directory.GetFiles(WindowsMonitor.TempRecordingDir, "*.wav"))
 				//{

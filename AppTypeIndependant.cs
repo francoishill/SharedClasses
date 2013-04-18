@@ -32,7 +32,8 @@ namespace SharedClasses
 							AppTypeIndependant.ShowErrorMessage(
 								"This is a forms application, please call the GetApplicationType method from the Form.Load event instead of from the Form constructor. "
 								+ "Application will now exit. See the current StackTrace below:" + new StackTrace().ToString());
-							Environment.Exit(0);
+							ResourceUsageTracker.FlushAllCurrentLogLines();
+							OwnAppsShared.ExitAppWithExitCode();
 						}
 					}
 				}

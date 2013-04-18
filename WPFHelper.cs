@@ -10,6 +10,8 @@ using System.IO;
 using System.Windows.Threading;
 using System.Threading;
 using System.Runtime.InteropServices;
+using System.ComponentModel;
+using System.Linq.Expressions;
 
 namespace SharedClasses
 {
@@ -46,6 +48,21 @@ namespace SharedClasses
 			int initialStyle = Win32Api.GetWindowLong(window.GetWindowHandle(), Win32Api.GWL_EXSTYLE);
 			Win32Api.SetWindowLong(window.GetWindowHandle(), Win32Api.GWL_EXSTYLE, initialStyle | Win32Api.WS_EX_LAYERED | Win32Api.WS_EX_TRANSPARENT);
 		}
+
+		public static void OnPropertyChanged<T>(T item) where T : INotifyPropertyChanged
+		{
+		}
+		/*Example of implementation of OnPropertyChanged
+		private void OnPropertyChanged(params Expression<Func<CloudNoteItem, object>>[] propertiesOrFieldsAsExpressions)
+		{
+			ReflectionInterop.DoForeachPropertOrField<CloudNoteItem>(
+				this,
+				propertiesOrFieldsAsExpressions,
+				(instanceObj, memberInfo, memberValue) =>
+				{
+					PropertyChanged(instanceObj, new PropertyChangedEventArgs(memberInfo.Name));
+				});
+		}*/
 
 		// Define the Win32 API methods we are going to use
 		[DllImport("user32.dll")]
@@ -292,6 +309,25 @@ namespace SharedClasses
 					waitUntilFinishIfSeparateThread);
 			else
 				action(item);
+		}
+
+		private static System.Windows.Forms.Timer _tempTimer;
+		private static Action _actionToDelayLoad;
+		public static void DelayLoadProcedure_CalledWithinWindowLoadedEvent(Action actionToBeDelayLoaded, int delayMilliseconds = 200)
+		{
+			if (actionToBeDelayLoaded == null) return;
+			_actionToDelayLoad = actionToBeDelayLoaded;
+			_tempTimer =
+				new System.Windows.Forms.Timer();
+			_tempTimer.Interval = delayMilliseconds;
+			_tempTimer.Tick +=
+				delegate
+				{
+					_tempTimer.Stop();
+					_tempTimer.Dispose(); _tempTimer = null;
+					_actionToDelayLoad();
+				};
+			_tempTimer.Start();
 		}
 
 		public static class MouseLocation

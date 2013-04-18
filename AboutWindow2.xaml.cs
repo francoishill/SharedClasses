@@ -99,6 +99,11 @@ namespace SharedClasses
 		{
 			HighResourceUsageSettingsWindow.ShowWindowDialog();
 		}
+
+		private void menuitemShowRecordedResourceUsagesChart_Click(object sender, RoutedEventArgs e)
+		{
+			ResourceUsageTracker.ShowResourceUsageChart();
+		}
 	}
 
 	public class DisplayItem : INotifyPropertyChanged

@@ -208,4 +208,24 @@ public class ThreadingInterop
 			delay,
 			TimeSpan.FromMilliseconds(-1));*/
 	}
+
+	public static bool RetryActionIfFails(Action action, int maximumRetryCount, out Exception exceptionIfFailed)
+	{
+		int currentRetryCount = 0;
+		retryhere:
+		try
+		{
+			action();
+			exceptionIfFailed = null;
+			return true;
+		}
+		catch (Exception exc)
+		{
+			if (currentRetryCount++ < maximumRetryCount)
+				goto retryhere;
+
+			exceptionIfFailed = exc;
+			return false;
+		}
+	}
 }

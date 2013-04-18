@@ -63,13 +63,13 @@ namespace SharedClasses
 								string newFeatureDescription = InputBoxWPF.Prompt("Please enter a description for the new feature of " + thisAppname, "New feature request");
 								if (newFeatureDescription != null)
 									DeveloperCommunication.RunMailto("Requesting a new feature for " + thisAppname + " v" + appVersion, newFeatureDescription);
-								Environment.Exit(0);
+								OwnAppsShared.ExitAppWithExitCode();
 								return true;
 							case StandardUserTasks.StandardUserTasks_ReportABug:
 								string newBugDescription = InputBoxWPF.Prompt("Please enter a description of the bug in " + thisAppname, "Bug to be reported");
 								if (newBugDescription != null)
 									DeveloperCommunication.RunMailto("A bug has been found in " + thisAppname + " v" + appVersion, newBugDescription);
-								Environment.Exit(0);
+								OwnAppsShared.ExitAppWithExitCode();
 								break;
 							default:
 								UserMessages.ShowInfoMessage("Unknown JumpList StandardUserTask = '" + sut.ToString() + "', just continuing to run application normal");

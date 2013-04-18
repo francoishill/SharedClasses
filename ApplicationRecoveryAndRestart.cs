@@ -39,7 +39,7 @@ namespace SharedClasses
 				AppTypeIndependant.ShowErrorMessage("Unable to handle unhandled exception: " + exc.Message);
 			}
 			ApplicationRecoveryAndRestart.WriteCrashReportFile(Process.GetCurrentProcess().ProcessName);//System.IO.Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]));
-			//Environment.Exit(0);
+			//OwnAppsShared.ExitAppWithExitCode();
 			Environment.FailFast("Exit application due to Unhandled exception.");
 		}
 
@@ -204,7 +204,7 @@ namespace SharedClasses
 						if (isCancelled)
 						{
 							Console.WriteLine("Recovery has been canceled by user.");
-							Environment.Exit(2);
+							OwnAppsShared.ExitAppWithExitCode(2);
 						}
 					}, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
 

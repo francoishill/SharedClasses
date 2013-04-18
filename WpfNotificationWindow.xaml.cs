@@ -362,7 +362,7 @@ namespace SharedClasses
 				return;
 
 			busy = true;
-			//Environment.Exit(0);//Application.Current.Shutdown(0);
+			//OwnAppsShared.ExitAppWithExitCode();//Application.Current.Shutdown(0);
 
 			int cnt = notifications.Count;
 			for (int i = 0; i < cnt; i++)

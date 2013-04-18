@@ -9,14 +9,6 @@ namespace SharedClasses
 	{
 		public const string SettingsFileExtension = ".fset";
 
-		public static string GetApplicationName()
-		{
-			string applicationName = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
-			if (applicationName.EndsWith(".vshost", StringComparison.InvariantCultureIgnoreCase))
-				applicationName = applicationName.Substring(0, applicationName.Length - ".vshost".Length);
-			return applicationName;
-		}
-
 		public static string GetComputerGuidAsString()
 		{
 			return GetComputerGuid().ToString();
@@ -41,6 +33,48 @@ namespace SharedClasses
 		public static string GetComputerGuidAsFileName()
 		{
 			return GetComputerGuid().ToString().Replace('-', '_');
+		}
+
+		private static readonly string _computerNamePath = SettingsInterop.GetFullFilePathInLocalAppdata("_ComputerName", "SharedClasses");
+		private static MultiUserInterop.LockSingleProcessAction _lockSingleProcess 
+			= new MultiUserInterop.LockSingleProcessAction(SettingsInterop.GetFullFolderPathInLocalAppdata("ComputerName", "SharedClasses", "_Locks"), "ComputerNameLock");
+		public static void EnsureComputerHasNameForGuid()
+		{
+			
+			if (File.Exists(_computerNamePath)
+				&& !string.IsNullOrWhiteSpace(File.ReadAllText(_computerNamePath)))
+				return;
+
+			if (_lockSingleProcess.DoesAnotherProcessHaveTheLockAndIsRunning())
+				return;
+
+			_lockSingleProcess.DoActionIfLockCouldBeObtainedAndThenUnlock(
+				delegate
+				{
+					ThreadingInterop.DoAction(
+						delegate
+						{
+							string chosenComputerName = InputBoxWPF.Prompt("Please specify a name for this machine (used for debugging-purposes).", "Computer name");
+							if (chosenComputerName == null) return;
+
+							try
+							{
+								File.WriteAllText(_computerNamePath, chosenComputerName);
+							}
+							catch { }
+						},
+						true,
+						apartmentState: System.Threading.ApartmentState.STA);
+				});
+		}
+
+		public static string GetComputerName()
+		{
+			EnsureComputerHasNameForGuid();
+			if (File.Exists(_computerNamePath))
+				return File.ReadAllText(_computerNamePath);
+			else
+				return null;
 		}
 
 		/// <summary>

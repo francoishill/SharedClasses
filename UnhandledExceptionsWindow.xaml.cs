@@ -103,11 +103,14 @@ namespace SharedClasses
 			string appVersion = FileVersionInfo.GetVersionInfo(Environment.GetCommandLineArgs()[0]).FileVersion;
 			string username = Environment.UserName;
 			string computerGuid = SettingsInterop.GetComputerGuidAsString();//Note this is not the same as fingerprint for Licensing
+			string computerName = (SettingsInterop.GetComputerName() ?? "[NONE SPECIFIED BY USER YET]");
 
-			subject = "Unhandled exception in '" + thisAppname + "' v" + appVersion;
+			subject = string.Format("Unhandled exception in '{0}' v{1} on computer '{2}'", thisAppname, appVersion, computerName);
 			body = "Username = " + username
 						+ Environment.NewLine
 						+ "computerGuid = " + computerGuid
+						+ Environment.NewLine
+						+ "computerName = " + computerName
 						+ Environment.NewLine
 						+ Environment.NewLine
 						+ "Exception message: " + exc.Message
@@ -161,12 +164,7 @@ namespace SharedClasses
 			(sender as TextBox).SelectAll();
 		}
 
-		private static string GetApplicationName()
-		{
-			return Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
-		}
-
-		private static readonly string cIsAutoSendingEnabledFilePath = SettingsInterop.GetFullFilePathInLocalAppdata("AutoSendingEnabled.fjbool", GetApplicationName(), "Settings");
+		private static readonly string cIsAutoSendingEnabledFilePath = SettingsInterop.GetFullFilePathInLocalAppdata("AutoSendingEnabled.fjbool", OwnAppsShared.GetApplicationName(), "Settings");
 		private static bool GetIsAutoSendingEnabled() { return File.Exists(cIsAutoSendingEnabledFilePath); }
 		private static void SetIsAutoSendingEnabled() { try { File.Create(cIsAutoSendingEnabledFilePath).Close(); } catch (Exception exc) { UserMessages.ShowErrorMessage("Could not enable auto sending of reports: " + exc.Message); } }
 
@@ -176,7 +174,7 @@ namespace SharedClasses
 			{
 				UnhandledExceptionsWindow uew = new UnhandledExceptionsWindow(exc);
 				uew.labelMainMessage.Content = uew.labelMainMessage.Content.ToString().Replace("[ApplicationName]",
-					GetApplicationName());
+					OwnAppsShared.GetApplicationName());
 				uew.ShowDialog();
 			}
 			else

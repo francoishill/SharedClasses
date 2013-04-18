@@ -1137,7 +1137,7 @@ InputBoxWPF.Prompt("Please enter a tasklist of XmlRpc urls (comma separated)").S
 			}
 		}
 
-		[Serializable]
+		/*[Serializable]
 		public sealed class MovieOrganizerSettings : GenericSettings
 		{
 			private static volatile MovieOrganizerSettings instance;
@@ -1174,7 +1174,7 @@ InputBoxWPF.Prompt("Please enter a tasklist of XmlRpc urls (comma separated)").S
 			{
 				SettingsInterop.FlushSettings<MovieOrganizerSettings>(instance, ApplicationName, SubfolderNameInApplication, CompanyName);
 			}
-		}
+		}*/
 	}
 
 	//public class StringList : List<string> { }

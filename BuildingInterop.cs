@@ -132,7 +132,7 @@ namespace SharedClasses
 		}
 		public static string GetTempOutputFolderPath(string projName)
 		{
-			string dir = Path.Combine(Path.GetTempPath(), "TempBuilds", OwnAppsInterop.GetApplicationName(), projName);
+			string dir = Path.Combine(Path.GetTempPath(), "TempBuilds", OwnAppsShared.GetApplicationName(), projName);
 			if (!Directory.Exists(dir))
 				Directory.CreateDirectory(dir);
 			return dir;
@@ -149,6 +149,8 @@ namespace SharedClasses
 		public virtual string ApplicationName { get; set; }
 		public virtual string CurrentStatusText { get; protected set; }
 		public virtual StatusTypes CurrentStatus { get; set; }
+		public virtual string LastError { get; set; }
+		public virtual string LastSuccess { get; set; }
 		public virtual int? CurrentProgressPercentage { get; set; }
 		//public virtual bool? LastBuildResult { get; set; }
 		public virtual bool HasFeedbackText { get { return !string.IsNullOrWhiteSpace(CurrentStatusText); } /*set; */}
@@ -226,9 +228,11 @@ namespace SharedClasses
 					if (buildapp.CurrentStatus != StatusTypes.Error
 						&& buildapp.CurrentStatus != StatusTypes.Warning)//Only set success if its not Error/Warning
 						buildapp.CurrentStatus = StatusTypes.Success;
+					buildapp.LastSuccess = message;
 					break;
 				case FeedbackMessageTypes.Error:
 					buildapp.CurrentStatus = StatusTypes.Error;
+					buildapp.LastError = message;
 					break;
 				case FeedbackMessageTypes.Warning:
 					if (buildapp.CurrentStatus != StatusTypes.Error)//Only set warning if its not Error
@@ -346,7 +350,7 @@ namespace SharedClasses
 								operDetails.Settings.OperationDisplayName,
 								_stopwathOverall.Elapsed.TotalSeconds),
 							Logging.ReportingFrequencies.Daily,
-							OwnAppsInterop.GetApplicationName(),
+							OwnAppsShared.GetApplicationName(),
 							"Benchmarks");
 					}
 
@@ -414,7 +418,7 @@ namespace SharedClasses
 						application.ApplicationName,
 						_stopwathOverall.Elapsed.TotalSeconds),
 					Logging.ReportingFrequencies.Daily,
-					OwnAppsInterop.GetApplicationName(),
+					OwnAppsShared.GetApplicationName(),
 					"Benchmarks");
 			}
 

@@ -1,0 +1,157 @@
+﻿<Window xmlns:Charts='clr-namespace:Visifire.Charts;assembly=WPFVisifire.Charts'
+        xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
+        xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
+        x:Class='SharedClasses.ResourceUsageChart'
+        Title='ResourceUsageChart'
+        Height='600'
+        Width='855'
+        WindowStartupLocation='CenterScreen'
+        Loaded='Window_Loaded_1'>
+    <Grid Margin='10'>
+        <Grid.RowDefinitions>
+            <RowDefinition Height='40' />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row='0'
+                    Orientation='Horizontal'
+                    VerticalAlignment='Center'
+                    HorizontalAlignment='Left'>
+            <Label Content='Display history for'
+                   VerticalAlignment='Center' />
+            <ComboBox Name='comboboxCurrentGroup'
+                      SelectionChanged='comboboxCurrentGroup_SelectionChanged' />
+        </StackPanel>
+
+        <Charts:Chart Grid.Row='1'
+                      Name='chart1'
+                      HorizontalAlignment='Stretch'
+                      VerticalAlignment='Stretch'
+                      ZoomingEnabled='True'
+                      ZoomingMode='MouseDragAndWheel'
+                      Background='#222'
+                      AnimationEnabled='True'
+                      AnimatedUpdate='True'
+                      CornerRadius='5,5,5,5'
+                      IndicatorEnabled='True'>
+            <Charts:Chart.Titles>
+                <Charts:Title Text='Resource usage history' />
+            </Charts:Chart.Titles>
+            <Charts:Chart.Legends>
+                <Charts:Legend Background='#000'
+							   Margin='0,0,0,18'
+							   LightingEnabled='False'
+							   FontSize='12'
+							   CornerRadius='5,5,5,5' />
+            </Charts:Chart.Legends>
+            <!--<Charts:Chart.TrendLines>
+                <Charts:TrendLine Name='trendLineMaximumMemory'
+                                  AxisType='Primary'
+                                  ToolTipText='Maximum memory'
+                                  LineThickness='1'
+                                  LineColor='Red'
+                                  Enabled='True'
+                                  Opacity='0.2'/>
+                <Charts:TrendLine Name='trendLineMaximumCpuLoad'
+                                  AxisType='Secondary'
+                                  ToolTipText='Maximum Cpu load'
+                                  LineThickness='1'
+                                  LineColor='Orange'
+                                  Enabled='True'
+                                  Opacity='0.2'/>
+            </Charts:Chart.TrendLines>-->
+            <Charts:Chart.AxesX>
+                <Charts:Axis Name='xAxisDate'
+                             AxisType='Primary'
+                             UseLayoutRounding='True'>
+                    <Charts:Axis.Grids>
+                        <Charts:ChartGrid AnimationEnabled='True' />
+                    </Charts:Axis.Grids>
+                    <Charts:Axis.AxisLabels>
+                        <Charts:AxisLabels Angle='-90' FontSize='9' />
+                    </Charts:Axis.AxisLabels>
+                </Charts:Axis>
+            </Charts:Chart.AxesX>
+            <Charts:Chart.AxesY>
+                <Charts:Axis Name='yAxisMemoryUsage'
+                             AxisType='Primary'/>
+                <Charts:Axis Name='yAxisCpuLoad'
+                             AxisType='Secondary' />
+            </Charts:Chart.AxesY>
+            <Charts:Chart.Series>
+                <Charts:DataSeries Name='memorySeries'
+                                   RenderAs='Line'
+                                   LegendText='Memory usage'
+                                   AxisXType='Primary'
+                                   XValueType='DateTime'
+                                   XValueFormatString='yyyy-MM-dd HH:mm:ss'
+                                   AxisYType='Primary'
+                                   DataSource='{Binding}'
+                                   Color='LightGreen'
+                                   LightingEnabled='False'
+								   ToolTipText='RAM #YValue'
+                                   LineThickness='1'
+                                   MarkerEnabled='False'
+                                   MarkerSize='4'>
+                    <Charts:DataSeries.DataMappings>
+                        <Charts:DataMapping MemberName='XValue'
+                                            Path='SnapshotTime' />
+                        <Charts:DataMapping MemberName='YValue'
+                                            Path='MemoryUsedInGB' />
+                    </Charts:DataSeries.DataMappings>
+                </Charts:DataSeries>
+                <Charts:DataSeries Name='cpuLoadSeries'
+                                   RenderAs='Line'
+								   LightWeight='True'
+                                   LegendText='Cpu load'
+                                   AxisXType='Primary'
+                                   XValueType='DateTime'
+                                   XValueFormatString='yyyy-MM-dd HH:mm:ss'
+                                   AxisYType='Secondary'
+                                   DataSource='{Binding}'
+                                   Color='#fff'
+                                   LineThickness='1'
+                                   LightingEnabled='False'
+								   ToolTipText='CPU #YValue #AxisXLabel'
+                                   MarkerEnabled='False'
+                                   MarkerSize='4'
+                                   MarkerType='Cross'>
+                    <Charts:DataSeries.DataMappings>
+                        <Charts:DataMapping MemberName='XValue'
+                                            Path='SnapshotTime' />
+                        <Charts:DataMapping MemberName='YValue'
+                                            Path='CpuLoadPercentage' />
+                        <Charts:DataMapping MemberName='AxisXLabel'
+                                            Path='LoggedStatus' />
+                    </Charts:DataSeries.DataMappings>
+                </Charts:DataSeries>
+                <Charts:DataSeries Name='logMessagesSeries'
+                                   RenderAs='Point'
+								   LightWeight='False'
+                                   LegendText='Log messages'
+                                   AxisXType='Primary'
+                                   XValueType='DateTime'
+                                   XValueFormatString='yyyy-MM-dd HH:mm:ss'
+                                   AxisYType='Secondary'
+                                   DataSource='{Binding}'
+                                   LineThickness='1'
+                                   LightingEnabled='False'
+								   LabelEnabled='False'
+								   LabelFontSize='12'
+								   LabelText='#AxisXLabel'
+								   ToolTipText='#AxisXLabel'
+								   LabelAngle='-90'
+								   MarkerType='Triangle'
+								   Margin='10,0,0,10'>
+                    <Charts:DataSeries.DataMappings>
+                        <Charts:DataMapping MemberName='XValue'
+                                            Path='SnapshotTime' />
+                        <Charts:DataMapping MemberName='YValue'
+                                            Path='CpuLoadPercentage' />
+						<Charts:DataMapping MemberName='AxisXLabel'
+                                            Path='LoggedStatus' />
+                    </Charts:DataSeries.DataMappings>
+                </Charts:DataSeries>
+            </Charts:Chart.Series>
+        </Charts:Chart>
+    </Grid>
+</Window>

@@ -36,14 +36,6 @@ namespace SharedClasses
 				applicationName + ".exe");
 		}
 
-		public static string GetApplicationName()
-		{
-			string applicationName = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
-			if (applicationName.EndsWith(".vshost", StringComparison.InvariantCultureIgnoreCase))
-				applicationName = applicationName.Substring(0, applicationName.Length - ".vshost".Length);
-			return applicationName;
-		}
-
 		private static string GetLicenseFilePath(string applicationName)
 		{
 			return SettingsInterop.GetFullFilePathInLocalAppdata("license.lic", "Licenses", applicationName);
@@ -76,7 +68,7 @@ namespace SharedClasses
 						File.SetAttributes(tmpcachedSignaturePath, FileAttributes.Normal);
 						File.WriteAllText(tmpcachedSignaturePath, fingerPrint);
 						File.SetAttributes(tmpcachedSignaturePath, fileAttributes);
-						string appname = GetApplicationName();
+						string appname = OwnAppsShared.GetApplicationName();
 						string tempfile = Path.Combine(Path.GetTempPath(), appname + " fingerprint error.txt");
 						File.WriteAllText(tempfile,
 							"Fingerprint error for '" + appname + "'"
@@ -85,7 +77,8 @@ namespace SharedClasses
 							+ Environment.NewLine + Environment.NewLine
 							+ "Application has exited.");
 						Process.Start(tempfile);
-						Environment.Exit(cApplicationExitCodeIfCachedFingerprintChanged);
+						ResourceUsageTracker.FlushAllCurrentLogLines();
+						OwnAppsShared.ExitAppWithExitCode(cApplicationExitCodeIfCachedFingerprintChanged);
 					}
 				},
 				false);
@@ -146,7 +139,7 @@ namespace SharedClasses
 		private static bool registrationSucceeded = false;
 		public static bool Client_ValidateLicense(out Dictionary<string, string> userPrivilages, Action<string> onError)//, string publicKeyXml, string licenseFilepath)
 		{
-			string applicationName = GetApplicationName();
+			string applicationName = OwnAppsShared.GetApplicationName();
 
 			//Ensure that the expirationDate of a license also fails to validate if it is a Trial license and the trial period expired
 			//I would assume that this is already the case
@@ -302,7 +295,7 @@ namespace SharedClasses
 
 		private static void ShowServerConfirmLicenseError(string err)
 		{
-			string appname = GetApplicationName();
+			string appname = OwnAppsShared.GetApplicationName();
 			string tempfile = Path.Combine(Path.GetTempPath(), appname + " license error.txt");
 			File.WriteAllText(tempfile,
 				"License validation error for '" + appname + "'"
@@ -322,7 +315,7 @@ namespace SharedClasses
 				{
 					Action<string> onError = validateOnServerActionOnError;
 
-					string applicationName = GetApplicationName()._DuplicateInsertSpacesBeforeCamelCase();
+					string applicationName = OwnAppsShared.GetApplicationName()._DuplicateInsertSpacesBeforeCamelCase();
 					string ownerEmail = licValidator.LicenseAttributes[LicensingInterop_Shared.cOwnerEmailKeyName];
 					string ordernumberReversed = licValidator.LicenseAttributes[LicensingInterop_Shared.cOrderCodeKeyName];
 					string machineSignature = licValidator.LicenseAttributes[LicensingInterop_Shared.cMachineSignatureKeyName];
@@ -362,7 +355,8 @@ namespace SharedClasses
 								ShowServerConfirmLicenseError("Could not confirm that license exists on server (empty response from server), application will now exit.");
 
 								//The application exits before it reaches this ExitCode
-								Environment.Exit(cApplicationExitCodeIfOnlineLicenseConfirmationFailed);
+								ResourceUsageTracker.FlushAllCurrentLogLines();
+								OwnAppsShared.ExitAppWithExitCode(cApplicationExitCodeIfOnlineLicenseConfirmationFailed);
 							}
 							else if (onlineFailedCount >= 15)//Start annoying user after 15 times
 							{
@@ -386,12 +380,12 @@ namespace SharedClasses
 									//License not found on server, delete the license file
 									File.Delete(GetLicenseFilePath(applicationName));
 									ShowServerConfirmLicenseError("License is not a valid issued license, please obtain a valid license. Application will now exit");
-									Environment.Exit(cApplicationExitCodeIfOnlineLicenseConfirmationFailed);
+									OwnAppsShared.ExitAppWithExitCode(cApplicationExitCodeIfOnlineLicenseConfirmationFailed);
 								}
 								else
 								{
 									ShowServerConfirmLicenseError("Unknown error confirming license existance on server (application will now exit): " + result);
-									Environment.Exit(cApplicationExitCodeIfOnlineLicenseConfirmationFailed);
+									OwnAppsShared.ExitAppWithExitCode(cApplicationExitCodeIfOnlineLicenseConfirmationFailed);
 								}
 							}
 							//else SUCCESS

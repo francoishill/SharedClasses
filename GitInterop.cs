@@ -32,8 +32,8 @@ public class GitInterop : INotifyPropertyChanged
 			string processArguments =
 				gitCommand ==
 				GitCommand.Commit ? "commit -a -m\"" + commitMessageOrRemoteName + "\""
-				: gitCommand == GitCommand.Push ? "push \"" + commitMessageOrRemoteName + "\""
-				: gitCommand == GitCommand.Pull ? "pull \"" + commitMessageOrRemoteName + "\""
+				: gitCommand == GitCommand.Push ? "push origin"//"push \"" + commitMessageOrRemoteName + "\""
+				: gitCommand == GitCommand.Pull ? "pull origin"//"pull \"" + commitMessageOrRemoteName + "\""
 				: gitCommand == GitCommand.Status ? "status --short"
 				: "";
 

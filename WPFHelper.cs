@@ -12,6 +12,9 @@ using System.Threading;
 using System.Runtime.InteropServices;
 using System.ComponentModel;
 using System.Linq.Expressions;
+using System.Windows.Input;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 
 namespace SharedClasses
 {
@@ -132,6 +135,35 @@ namespace SharedClasses
 			{
 				UserMessages.ShowWarningMessage("Failed saving last window position from file: " + exc.Message);
 				return false;
+			}
+		}
+
+		public static void ZoomControlBasedOnMouseWheelEvent(
+			this Control control, ref MouseWheelEventArgs evt, int zoomInterval = 2)
+		{
+			if (evt.Delta < 0)//Rolled down
+			{
+				if (control.FontSize - zoomInterval >= 8)
+					control.FontSize -= zoomInterval;
+			}
+			else if (evt.Delta > 0)//Rolled up
+			{
+				if (control.FontSize + zoomInterval <= 50)
+					control.FontSize += zoomInterval;
+			}
+		}
+
+		public static void ZoomTextboxbaseControlBasedOnMouseWheelEvent(
+			this TextBoxBase textboxbaseControl, ref MouseWheelEventArgs evt, int horizontalScrollInterval = 25)
+		{
+			evt.Handled = true;
+			if (evt.Delta < 0)//Rolled down
+			{
+				textboxbaseControl.ScrollToHorizontalOffset(textboxbaseControl.HorizontalOffset + horizontalScrollInterval);
+			}
+			else if (evt.Delta > 0)//Rolled up
+			{
+				textboxbaseControl.ScrollToHorizontalOffset(textboxbaseControl.HorizontalOffset - horizontalScrollInterval);
 			}
 		}
 

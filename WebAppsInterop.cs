@@ -3,6 +3,7 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Text;
 using System.Web;
+using System.Windows;
 
 namespace SharedClasses
 {
@@ -12,7 +13,7 @@ namespace SharedClasses
 		private const int cExpectedSecretLength = 24;
 
 		private Action<string> ActionOnError;
-		private TextFeedbackEventHandler textfeedbackHandler = (sn, msg) => { UserMessages.ShowInfoMessage(msg.FeedbackType.ToString() + ": " + msg.FeedbackText); };
+		private TextFeedbackEventHandler textfeedbackHandler = delegate { };//(sn, msg) => { UserMessages.ShowInfoMessage(msg.FeedbackType.ToString() + ": " + msg.FeedbackText); };
 
 		//private const string rootUrl = "http://localhost";
 		//private const string rootUrl = "http://localhost:8081";
@@ -157,8 +158,23 @@ namespace SharedClasses
 			lastResult = resultOrError;
 
 			if (!string.IsNullOrWhiteSpace(resultOrError)
-				&& resultOrError.StartsWith("ERROR:"))//Would have been the case of PostPHP method caught an Exception
+				&& resultOrError.StartsWith("ERROR:"))
+			{
+				//Would have been the case of PostPHP method caught an Exception
+				string errEncrypted = resultOrError.Substring("ERROR:".Length);
+				try
+				{
+					string errUnencrypted = EncryptionInterop.SimpleTripleDesDecrypt(errEncrypted, this.AccessSecret);
+					UserMessages.ShowErrorMessage("Error occurred:" + Environment.NewLine + Environment.NewLine
+						+ errUnencrypted);
+				}
+				catch
+				{
+					UserMessages.ShowErrorMessage("Error occurred:" + Environment.NewLine
+						+ errEncrypted);
+				}
 				return false;
+			}
 			else
 			{
 				if (this.IsLastResultSayingAccessTokenNotFound())
@@ -402,5 +418,51 @@ namespace SharedClasses
 
 			ObtainAccessTokenAndSecret();
 		}
+
+		#region Php AppsGeneric API interop
+
+		public event EventHandler BeforeSavingOnlineEvent = delegate { };
+		public event EventHandler AfterSavingOnlineEvent = delegate { };
+
+		private bool readyToSaveOnline = false;
+		private DateTime? LastTimestampChangesWasSavedOnline = null;
+
+		public void SetReadyToSaveOnlineFlag(bool newValue) { readyToSaveOnline = newValue; }
+		public bool WasChangesMadeOnlineYet() { return this.LastTimestampChangesWasSavedOnline.HasValue; }
+
+		public bool ModifyOnline(int itemIndex, string columnName, string newValue)
+		{
+			if (!readyToSaveOnline)
+				return true;
+
+			this.BeforeSavingOnlineEvent(this, new EventArgs());
+			try
+			{
+				var data = new NameValueCollection();
+				data.Add("index", itemIndex.ToString());
+				data.Add("column_name", columnName);
+				data.Add("new_value", newValue);
+
+				string resultOrError;
+				bool successfullyPostedRequest = this.GetPostResultOfApp_AndDecrypt("api_modify", data, out resultOrError);
+				if (successfullyPostedRequest)
+				{
+					if (resultOrError.StartsWith("Success:", StringComparison.InvariantCultureIgnoreCase))
+					{
+						this.LastTimestampChangesWasSavedOnline = DateTime.Now;
+						return true;
+					}
+				}
+
+				if (UserMessages.Confirm("Unable to save note text online, restoring old value. Do you want to place the value that failed into the Clipboard?"))
+					Clipboard.SetText(newValue);
+				return false;
+			}
+			finally
+			{
+				this.AfterSavingOnlineEvent(this, new EventArgs());
+			}
+		}
+		#endregion Php AppsGeneric API interop
 	}
 }

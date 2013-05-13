@@ -209,7 +209,7 @@ public class ThreadingInterop
 			TimeSpan.FromMilliseconds(-1));*/
 	}
 
-	public static bool RetryActionIfFails(Action action, int maximumRetryCount, out Exception exceptionIfFailed)
+	public static bool RetryActionIfFails(Action action, int maximumRetryCount, out Exception exceptionIfFailed, int millsecondsToPause = 0)
 	{
 		int currentRetryCount = 0;
 		retryhere:
@@ -222,7 +222,11 @@ public class ThreadingInterop
 		catch (Exception exc)
 		{
 			if (currentRetryCount++ < maximumRetryCount)
+			{
+				if (millsecondsToPause > 0)
+					Thread.Sleep(millsecondsToPause);
 				goto retryhere;
+			}
 
 			exceptionIfFailed = exc;
 			return false;

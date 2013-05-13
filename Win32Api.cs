@@ -526,6 +526,9 @@ namespace SharedClasses
 		public const int WM_NCACTIVATE = 0x086;
 		public const int WM_CLOSE = 0x010;
 
+		public const int WM_NCMOUSEMOVE = 0xA0;
+		public const int WM_NCMOUSELEAVE = 0x2A2;
+
 		public const int WM_PAINT = 0x000F;
 		public const int WM_ERASEBKGND = 0x0014;
 
@@ -983,5 +986,26 @@ namespace SharedClasses
 		[DllImport("kernel32.dll", SetLastError = true)]
 		static extern IntPtr BeginUpdateResource(string pFileName,
 		   [MarshalAs(UnmanagedType.Bool)]bool bDeleteExistingResources);
+
+		public static void TrackNcMouseLeave(IntPtr controlHandle)
+		{
+			TRACKMOUSEEVENT tme = new TRACKMOUSEEVENT();
+			tme.cbSize = (uint)Marshal.SizeOf(tme);
+			tme.dwFlags = 2 | 0x10; // TME_LEAVE | TME_NONCLIENT
+			tme.hwndTrack = controlHandle;
+			TrackMouseEvent(tme);
+		}
+
+		[DllImport("user32")]
+		public static extern bool TrackMouseEvent([In, Out] TRACKMOUSEEVENT lpEventTrack);
+
+		[StructLayout(LayoutKind.Sequential)]
+		public class TRACKMOUSEEVENT
+		{
+			public uint cbSize;
+			public uint dwFlags;
+			public IntPtr hwndTrack;
+			public uint dwHoverTime;
+		}
 	}
 }

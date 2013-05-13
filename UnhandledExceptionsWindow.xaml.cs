@@ -53,7 +53,8 @@ namespace SharedClasses
 		private void TextBlock_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
 		{
 			textblockBusySendingMessage.Visibility = System.Windows.Visibility.Visible;
-			Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { }));
+			if (Application.Current != null)
+				Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { }));
 
 			Exception exc = this.DataContext as Exception;
 			if (exc == null)

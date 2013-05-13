@@ -157,6 +157,30 @@ namespace SharedClasses
 
 			lastResult = resultOrError;
 
+			if (this.IsLastResultSayingAccessTokenNotFound())
+			{
+				if (!autoReauthorizeIfAccessTokenInvalid)
+				{
+					resultOrError = "The AccessToken was not found on the server";
+					return false;
+				}
+				ActionOnError("The AccessToken was not found on the server, please re-authorize.");
+				this.DeleteAccessTokenAndReAuthorize();
+				goto retryAction;
+			}
+
+			if (this.IsLastResultSayingAccessTokenExpired())
+			{
+				if (!autoReauthorizeIfAccessTokenInvalid)
+				{
+					resultOrError = "The AccessToken has expired.";
+					return false;
+				}
+				ActionOnError("The AccessToken has expired, please re-authorize.");
+				this.DeleteAccessTokenAndReAuthorize();
+				goto retryAction;
+			}
+
 			if (!string.IsNullOrWhiteSpace(resultOrError)
 				&& resultOrError.StartsWith("ERROR:"))
 			{
@@ -177,29 +201,6 @@ namespace SharedClasses
 			}
 			else
 			{
-				if (this.IsLastResultSayingAccessTokenNotFound())
-				{
-					if (!autoReauthorizeIfAccessTokenInvalid)
-					{
-						resultOrError = "The AccessToken was not found on the server";
-						return false;
-					}
-					ActionOnError("The AccessToken was not found on the server, please re-authorize.");
-					this.DeleteAccessTokenAndReAuthorize();
-					goto retryAction;
-				}
-				if (this.IsLastResultSayingAccessTokenNotFound())
-				{
-					if (!autoReauthorizeIfAccessTokenInvalid)
-					{
-						resultOrError = "The AccessToken was not found on the server";
-						return false;
-					}
-					ActionOnError("The AccessToken has expired, please re-authorize.");
-					this.DeleteAccessTokenAndReAuthorize();
-					goto retryAction;
-				}
-
 				resultOrError = EncryptionInterop.SimpleTripleDesDecrypt(resultOrError, this.AccessSecret);
 				return true;
 			}

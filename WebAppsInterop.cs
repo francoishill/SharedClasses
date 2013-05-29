@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Web;
@@ -431,39 +433,95 @@ namespace SharedClasses
 		public void SetReadyToSaveOnlineFlag(bool newValue) { readyToSaveOnline = newValue; }
 		public bool WasChangesMadeOnlineYet() { return this.LastTimestampChangesWasSavedOnline.HasValue; }
 
-		public bool ModifyOnline(int itemIndex, string columnName, string newValue)
+		private Queue<ModifyOnlinePropertyTask> QueueToSaveOnline = new Queue<ModifyOnlinePropertyTask>();
+
+		public void ModifyOnline(object Sender, int itemIndex, string columnName, string newValue, Action<string> onModifySuccessOfValue)
 		{
+			if (onModifySuccessOfValue == null) onModifySuccessOfValue = delegate { };
 			if (!readyToSaveOnline)
-				return true;
-
-			this.BeforeSavingOnlineEvent(this, new EventArgs());
-			try
 			{
-				var data = new NameValueCollection();
-				data.Add("index", itemIndex.ToString());
-				data.Add("column_name", columnName);
-				data.Add("new_value", newValue);
+				onModifySuccessOfValue(newValue);
+				return;
+			}
+			QueueSaveOnlineItem(new ModifyOnlinePropertyTask(Sender, itemIndex, columnName, newValue, onModifySuccessOfValue));
+		}
 
-				string resultOrError;
-				bool successfullyPostedRequest = this.GetPostResultOfApp_AndDecrypt("api_modify", data, out resultOrError);
-				if (successfullyPostedRequest)
+		private bool isBusySavingOnline = false;
+		private void QueueSaveOnlineItem(ModifyOnlinePropertyTask onlineSaveTask)
+		{
+			if (isBusySavingOnline)
+			{
+				QueueToSaveOnline.Enqueue(onlineSaveTask);
+				return;
+			}
+
+			isBusySavingOnline = true;
+			ThreadingInterop.PerformOneArgFunctionSeperateThread<ModifyOnlinePropertyTask>(
+				(task) =>
 				{
-					if (resultOrError.StartsWith("Success:", StringComparison.InvariantCultureIgnoreCase))
+					this.BeforeSavingOnlineEvent(task.Sender, new EventArgs());
+					try
 					{
-						this.LastTimestampChangesWasSavedOnline = DateTime.Now;
-						return true;
-					}
-				}
+						var data = new NameValueCollection();
+						data.Add("index", task.ItemIndex.ToString());
+						data.Add("column_name", task.ColumnName);
+						data.Add("new_value", task.NewValue);
 
-				if (UserMessages.Confirm("Unable to save note text online, restoring old value. Do you want to place the value that failed into the Clipboard?"))
-					Clipboard.SetText(newValue);
-				return false;
-			}
-			finally
-			{
-				this.AfterSavingOnlineEvent(this, new EventArgs());
-			}
+						string resultOrError;
+						bool successfullyPostedRequest = this.GetPostResultOfApp_AndDecrypt("api_modify", data, out resultOrError);
+						if (successfullyPostedRequest)
+						{
+							if (resultOrError.StartsWith("Success:", StringComparison.InvariantCultureIgnoreCase))
+							{
+								this.LastTimestampChangesWasSavedOnline = DateTime.Now;
+								task.OnModifySuccessOfValue(task.NewValue);
+								return;
+							}
+						}
+
+						if (UserMessages.Confirm("Unable to save note text online, restoring old value. Do you want to place the value that failed into the Clipboard?"))
+						{
+							try{Clipboard.SetText(task.NewValue);}catch{}
+							string clipBoardText = Clipboard.GetText();
+							if (!string.Equals(clipBoardText, task.NewValue))
+							{
+								string tempFilename = "Unsaved cloudnote - " + DateTime.Now.ToString("yyyyMMddHHmmss") + ".txt";
+								string tempTextFile = Path.Combine(Path.GetTempPath(), tempFilename);
+								File.WriteAllText(tempTextFile, task.NewValue);
+								Process.Start(tempTextFile);
+							}
+						}
+					}
+					finally
+					{
+						this.AfterSavingOnlineEvent(task.Sender, new EventArgs());
+						isBusySavingOnline = false;
+						if (QueueToSaveOnline.Count > 0)
+							QueueSaveOnlineItem(QueueToSaveOnline.Dequeue());
+					}
+				},
+				onlineSaveTask,
+				false,
+				apartmentState: System.Threading.ApartmentState.STA);
 		}
 		#endregion Php AppsGeneric API interop
+
+		private class ModifyOnlinePropertyTask
+		{
+			public object Sender;
+			public int ItemIndex;
+			public string ColumnName;
+			public string NewValue;
+			public Action<string> OnModifySuccessOfValue;
+
+			public ModifyOnlinePropertyTask(object Sender, int ItemIndex, string ColumnName, string NewValue, Action<string> OnModifySuccessOfValue)
+			{
+				this.Sender = Sender;
+				this.ItemIndex = ItemIndex;
+				this.ColumnName = ColumnName;
+				this.NewValue = NewValue;
+				this.OnModifySuccessOfValue = OnModifySuccessOfValue;
+			}
+		}
 	}
 }

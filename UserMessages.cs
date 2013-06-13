@@ -252,23 +252,23 @@ namespace SharedClasses
 			return true;
 		}
 
-		public static bool ShowInfoMessage(string Message, string Title = "Warning", bool AlwaysOnTop = true, params string[] argumentsIfMessageStringIsFormatted)
+		public static bool ShowInfoMessage(string Message, string Title = "Info", bool AlwaysOnTop = true, params string[] argumentsIfMessageStringIsFormatted)
 		{
 			ShowInfoMessage(null, Message, Title, AlwaysOnTop, argumentsIfMessageStringIsFormatted);
 			return true;
 		}
-		public static bool ShowInfoMessage(IWin32Window owner, string Message, string Title = "Warning", bool AlwaysOnTop = true, params string[] argumentsIfMessageStringIsFormatted)
+		public static bool ShowInfoMessage(IWin32Window owner, string Message, string Title = "Info", bool AlwaysOnTop = true, params string[] argumentsIfMessageStringIsFormatted)
 		{
 			ShowMsg(owner, Message, Title, MessageBoxIcon.Information, AlwaysOnTop, argumentsIfMessageStringIsFormatted);
 			return true;
 		}
 
-		public static bool ShowMessage(string Message, string Title = "Warning", bool AlwaysOnTop = true, params string[] argumentsIfMessageStringIsFormatted)
+		public static bool ShowMessage(string Message, string Title = "Message", bool AlwaysOnTop = true, params string[] argumentsIfMessageStringIsFormatted)
 		{
 			ShowMessage(null, Message, Title, AlwaysOnTop, argumentsIfMessageStringIsFormatted);
 			return true;
 		}
-		public static bool ShowMessage(IWin32Window owner, string Message, string Title = "Warning", bool AlwaysOnTop = true, params string[] argumentsIfMessageStringIsFormatted)
+		public static bool ShowMessage(IWin32Window owner, string Message, string Title = "Message", bool AlwaysOnTop = true, params string[] argumentsIfMessageStringIsFormatted)
 		{
 			ShowMsg(owner, Message, Title, MessageBoxIcon.None, AlwaysOnTop, argumentsIfMessageStringIsFormatted);
 			return true;

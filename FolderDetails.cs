@@ -12,11 +12,12 @@ namespace SharedClasses
 	{
 		private const int cMaxFilesToShowInUsermessages = 20;
 
+		private Action<int> onProgressChanged;
 		public string LocalRootDirectory;
 		/*public string FtpRootUrl;
 		public string FtpUsername;
 		public string FtpPassword;*/
-		public FileDetails[] Files;
+		public FileDetails[] FilesAndFolders;
 
 		//Add support for excluded files
 		//public List<string> ExcludedFiles;
@@ -24,8 +25,9 @@ namespace SharedClasses
 		private NetworkCredential CredentailsIfRequired;
 
 		public FolderDetails() { }
-		public FolderDetails(string LocalRootDirectory, List<string> ExcludedRelativeFolders = null, NetworkCredential CredentailsIfRequired = null)
+		public FolderDetails(string LocalRootDirectory, List<string> ExcludedRelativeFolders = null, NetworkCredential CredentailsIfRequired = null, Action<int> onProgressChanged = null)
 		{
+			this.onProgressChanged = onProgressChanged ?? delegate { };
 			LocalRootDirectory = LocalRootDirectory.TrimEnd('\\');
 			this.LocalRootDirectory = LocalRootDirectory;
 			//this.FtpRootUrl = FtpRootUrl.TrimEnd('/', '\\');
@@ -34,7 +36,7 @@ namespace SharedClasses
 			this.ExcludedRelativeFolders = ExcludedRelativeFolders;
 			this.CredentailsIfRequired = CredentailsIfRequired;
 			MakeNetworkConnectionIfHaveCredentials();
-			RegenerateFilesList();
+			RegenerateFilesAndFoldersList();
 		}
 		~FolderDetails()
 		{
@@ -49,18 +51,49 @@ namespace SharedClasses
 				connection = new NetworkConnection(LocalRootDirectory, CredentailsIfRequired);
 		}
 
-		public void RegenerateFilesList()
+		public void RegenerateFilesAndFoldersList()
 		{
-			var files = new List<FileDetails>();
+			var filesAndFolders = new List<FileDetails>();
 			string pathNoSlash = LocalRootDirectory;
-			foreach (var f in Directory.GetFiles(pathNoSlash, "*", SearchOption.AllDirectories))
+
+			string[] filePaths = Directory.GetFiles(pathNoSlash, "*", SearchOption.AllDirectories);
+			string[] folderPaths = Directory.GetDirectories(pathNoSlash, "*", SearchOption.AllDirectories);
+			int totalCount = filePaths.Length + folderPaths.Length;
+
+			var counter = 0;
+			int currentPerc = 0;
+			int lastProgressPerc = 0;
+			foreach (var f in filePaths)
 			{
 				//Must maybe give user option to ignore .svn or not
 				if (f.IndexOf(".svn", StringComparison.InvariantCultureIgnoreCase) == -1
 					&& !MustPathBeExcluded(FileDetails.GetRelativePath(pathNoSlash, f)))
-					files.Add(new FileDetails(pathNoSlash, f));
+					filesAndFolders.Add(new FileDetails(false, pathNoSlash, f));
+
+				counter++;
+				currentPerc = (int)Math.Round(100D * (double)counter / (double)totalCount);
+				if (currentPerc != lastProgressPerc)
+				{
+					onProgressChanged(currentPerc);
+					lastProgressPerc = currentPerc;
+				}
 			}
-			this.Files = files.ToArray();
+
+			foreach (var d in folderPaths)
+			{
+				if (d.IndexOf(".svn", StringComparison.InvariantCultureIgnoreCase) == -1
+					   && !MustPathBeExcluded(FileDetails.GetRelativePath(pathNoSlash, d)))
+					filesAndFolders.Add(new FileDetails(true, pathNoSlash, d));
+
+				counter++;
+				currentPerc = (int)Math.Round(100D * (double)counter / (double)totalCount);
+				if (currentPerc != lastProgressPerc)
+				{
+					onProgressChanged(currentPerc);
+					lastProgressPerc = currentPerc;
+				}
+			}
+			this.FilesAndFolders = filesAndFolders.ToArray();
 		}
 
 		public void SaveDetails(string overridePath = null)
@@ -121,6 +154,11 @@ namespace SharedClasses
 			return GetJsonFolderPath() + "\\" + FileSystemInterop.FilenameEncodeToValid(LocalRootDirectory, err => UserMessages.ShowErrorMessage(err)) + ".json";
 		}
 
+		public bool HasExcludedFolders()
+		{
+			return this.ExcludedRelativeFolders != null && this.ExcludedRelativeFolders.Count > 0;
+		}
+
 		private bool MustPathBeExcluded(string relativePath)
 		{
 			if (ExcludedRelativeFolders == null)
@@ -137,13 +175,13 @@ namespace SharedClasses
 		/// <param name="otherFolderDet"></param>
 		/// <param name="newIn2"></param>
 		/// <param name="missingIn2"></param>
-		/// <param name="changedItems"></param>
+		/// <param name="changedIn2"></param>
 		/// <returns></returns>
-		public bool? CompareDetails(FolderDetails otherFolderDet, out Dictionary<string, FileDetails> newIn2, out Dictionary<string, FileDetails> missingIn2, out Dictionary<string, FileDetails> changedItems)
+		public bool? CompareDetails(FolderDetails otherFolderDet, out Dictionary<string, FileDetails> newIn2, out Dictionary<string, FileDetails> missingIn2, out Dictionary<string, FileDetails> changedIn2)
 		{
 			newIn2 = null;
 			missingIn2 = null;
-			changedItems = null;
+			changedIn2 = null;
 
 			//Does not compare paths
 			/*if (this.FtpRootUrl != otherFolderDet.FtpRootUrl)
@@ -151,23 +189,23 @@ namespace SharedClasses
 			if (!AreStringListsEqual(this.ExcludedRelativeFolders, otherFolderDet.ExcludedRelativeFolders))
 				return null;
 
-			if (this.Files == null)
+			if (this.FilesAndFolders == null)
 			{
 				newIn2 = new Dictionary<string, FileDetails>();
-				foreach (var f in otherFolderDet.Files)
+				foreach (var f in otherFolderDet.FilesAndFolders)
 					newIn2.Add(f.RelativePath, f);
 
-				changedItems = new Dictionary<string, FileDetails>();
+				changedIn2 = new Dictionary<string, FileDetails>();
 				missingIn2 = new Dictionary<string, FileDetails>();
 				return false;
 			}
 
 			var tmpDict1= new Dictionary<string, FileDetails>();
-			foreach (var f in this.Files)
+			foreach (var f in this.FilesAndFolders)
 				tmpDict1.Add(f.RelativePath, f);
 
 			var tmpDict2 = new Dictionary<string, FileDetails>();
-			foreach (var f in otherFolderDet.Files)
+			foreach (var f in otherFolderDet.FilesAndFolders)
 				tmpDict2.Add(f.RelativePath, f);
 
 			newIn2 = new Dictionary<string, FileDetails>();
@@ -182,7 +220,7 @@ namespace SharedClasses
 					if (!MustPathBeExcluded(fpath))
 						missingIn2.Add(fpath, tmpDict1[fpath]);
 
-			changedItems = new Dictionary<string, FileDetails>();
+			changedIn2 = new Dictionary<string, FileDetails>();
 			foreach (var fpath in tmpDict1.Keys)
 				if (tmpDict2.ContainsKey(fpath))
 				{
@@ -191,13 +229,76 @@ namespace SharedClasses
 
 					if (!file1.Equals(file2))
 						if (!MustPathBeExcluded(fpath))
-							changedItems.Add(fpath, tmpDict1[fpath]);
+							changedIn2.Add(fpath, tmpDict1[fpath]);
 				}
 
 			return
 				newIn2.Count == 0
 				&& missingIn2.Count == 0
-				&& changedItems.Count == 0;
+				&& changedIn2.Count == 0;
+		}
+
+		public bool UpdateToMatchOtherFolder(FolderDetails otherFolderDetails, Dictionary<string, FileDetails> newInOther, Dictionary<string, FileDetails> missingInOther, Dictionary<string, FileDetails> changedInOther)
+		{
+			try
+			{
+				foreach (string newRelFilename in newInOther.Keys)
+				{
+					var tmpFileDetails = newInOther[newRelFilename];
+					var sourceOtherPath = otherFolderDetails.GetAbsolutePath(tmpFileDetails);
+					var destBasePath = this.GetAbsolutePath(tmpFileDetails);
+					if (tmpFileDetails.IsFolder)
+						Directory.CreateDirectory(destBasePath);
+					else
+					{
+						string tmpdir = Path.GetDirectoryName(destBasePath);
+						if (!Directory.Exists(tmpdir))
+							Directory.CreateDirectory(tmpdir);
+						File.Copy(sourceOtherPath, destBasePath);
+					}
+				}
+
+				foreach (string changedRelFilename in changedInOther.Keys)
+				{
+					var tmpFileDetails = changedInOther[changedRelFilename];
+					var sourceOtherPath = otherFolderDetails.GetAbsolutePath(tmpFileDetails);
+					var destBasePath = this.GetAbsolutePath(tmpFileDetails);
+					if (tmpFileDetails.IsFolder)
+					{
+						//The FileDetails.Equals method always returns TRUE folder folders
+						//We only check files for changes, folder only checked whether they were added/deleted
+					}
+					else
+					{
+						if (File.Exists(destBasePath))
+							File.Delete(destBasePath);
+						string tmpdir = Path.GetDirectoryName(destBasePath);
+						if (!Directory.Exists(tmpdir))
+							Directory.CreateDirectory(tmpdir);
+						File.Copy(sourceOtherPath, destBasePath);
+					}
+				}
+
+				foreach (string missingRelFilename in missingInOther.Keys)
+				{
+					var tmpFileDetails = missingInOther[missingRelFilename];
+					var basePath = this.GetAbsolutePath(tmpFileDetails);
+					if (tmpFileDetails.IsFolder)
+						Directory.Delete(basePath, true);
+					else
+					{
+						if (File.Exists(basePath))//Might have been deleted by its parent folder recursively
+							File.Delete(basePath);
+					}
+				}
+
+				return true;
+			}
+			catch (Exception exc)
+			{
+				UserMessages.ShowErrorMessage("Error while syncing: " + exc.Message);
+				return false;
+			}
 		}
 
 		public override bool Equals(object obj)
@@ -356,17 +457,27 @@ namespace SharedClasses
 
 	public class FileDetails
 	{
+		public bool IsFolder;
 		public string RelativePath;
 		public long FileSize;
 		public DateTime LastWriteLocal;
 		public FileDetails() { }
-		public FileDetails(string basePathNoSlashAtEnd, string fullFilePath)
+		public FileDetails(bool isFolder, string basePathNoSlashAtEnd, string fullFilePath)
 		{
+			this.IsFolder = isFolder;
 			this.RelativePath = GetRelativePath(basePathNoSlashAtEnd, fullFilePath);//fullFilePath.Substring(basePathNoSlashAtEnd.Length + 1);
-			var tmpFI = new FileInfo(fullFilePath);
-			this.FileSize = tmpFI.Length;
-			this.LastWriteLocal = tmpFI.LastWriteTime;
-			this.LastWriteLocal.AddMilliseconds(-this.LastWriteLocal.Millisecond);
+			if (isFolder)
+			{
+				this.FileSize = 0;
+				this.LastWriteLocal = DateTime.MinValue;
+			}
+			else
+			{
+				var tmpFI = new FileInfo(fullFilePath);
+				this.FileSize = tmpFI.Length;
+				this.LastWriteLocal = tmpFI.LastWriteTime;
+				this.LastWriteLocal.AddMilliseconds(-this.LastWriteLocal.Millisecond);
+			}
 		}
 
 		public static string GetRelativePath(string basePath, string fullFilePath)
@@ -387,6 +498,10 @@ namespace SharedClasses
 			FileDetails otherFileDet = obj as FileDetails;
 			if (otherFileDet == null)
 				return false;
+
+			if (this.IsFolder == true
+				&& this.IsFolder == otherFileDet.IsFolder)
+				return true;
 
 			return
 				this.RelativePath == otherFileDet.RelativePath &&

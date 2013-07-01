@@ -74,29 +74,44 @@ namespace SharedClasses
 			InputHardware
 		}
 
-		public static void ClickLeftMouseButton()
+		public static void LeftMouseButtonUp()
 		{
-			INPUT mouseDownInput = new INPUT();
-			mouseDownInput.type = SendInputEventType.InputMouse;
-			mouseDownInput.mkhi.mi.dwFlags = MouseEventFlags.MOUSEEVENTF_LEFTDOWN;
-			SendInput(1, ref mouseDownInput, Marshal.SizeOf(new INPUT()));
-
 			INPUT mouseUpInput = new INPUT();
 			mouseUpInput.type = SendInputEventType.InputMouse;
 			mouseUpInput.mkhi.mi.dwFlags = MouseEventFlags.MOUSEEVENTF_LEFTUP;
 			SendInput(1, ref mouseUpInput, Marshal.SizeOf(new INPUT()));
 		}
-		public static void ClickRightMouseButton()
+		public static void LeftMouseButtonDown()
+		{
+			INPUT mouseDownInput = new INPUT();
+			mouseDownInput.type = SendInputEventType.InputMouse;
+			mouseDownInput.mkhi.mi.dwFlags = MouseEventFlags.MOUSEEVENTF_LEFTDOWN;
+			SendInput(1, ref mouseDownInput, Marshal.SizeOf(new INPUT()));
+		}
+		public static void ClickLeftMouseButton()
+		{
+			LeftMouseButtonDown();
+			LeftMouseButtonUp();
+		}
+
+		public static void RightMouseButtonUp()
+		{
+			INPUT mouseUpInput = new INPUT();
+			mouseUpInput.type = SendInputEventType.InputMouse;
+			mouseUpInput.mkhi.mi.dwFlags = MouseEventFlags.MOUSEEVENTF_RIGHTUP;
+			SendInput(1, ref mouseUpInput, Marshal.SizeOf(new INPUT()));
+		}
+		public static void RightMouseButtonDown()
 		{
 			INPUT mouseDownInput = new INPUT();
 			mouseDownInput.type = SendInputEventType.InputMouse;
 			mouseDownInput.mkhi.mi.dwFlags = MouseEventFlags.MOUSEEVENTF_RIGHTDOWN;
 			SendInput(1, ref mouseDownInput, Marshal.SizeOf(new INPUT()));
-
-			INPUT mouseUpInput = new INPUT();
-			mouseUpInput.type = SendInputEventType.InputMouse;
-			mouseUpInput.mkhi.mi.dwFlags = MouseEventFlags.MOUSEEVENTF_RIGHTUP;
-			SendInput(1, ref mouseUpInput, Marshal.SizeOf(new INPUT()));
+		}
+		public static void ClickRightMouseButton()
+		{
+			RightMouseButtonDown();
+			RightMouseButtonUp();
 		}
 	}
 }

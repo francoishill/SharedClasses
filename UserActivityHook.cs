@@ -262,6 +262,7 @@ namespace SharedClasses
 			}
 		}
 		public delegate void MoreMouseEventHandler(object sender, MoreMouseEventArgs e);
+		public delegate bool MoreMouseEventHandlerWithHandledState(object sender, MoreMouseEventArgs e);
 
 		#region Windows structure definitions
 
@@ -700,6 +701,7 @@ namespace SharedClasses
 		/// Occurs when the user moves the mouse, presses any mouse button or scrolls the wheel
 		/// </summary>
 		public event MoreMouseEventHandler OnMouseActivity;
+		public event MoreMouseEventHandlerWithHandledState OnMouseActivityWithReturnHandledState;
 		/// <summary>
 		/// Occurs when the user presses a key
 		/// </summary>
@@ -759,7 +761,7 @@ namespace SharedClasses
 				hMouseHook = SetWindowsHookEx(
 						WH_MOUSE_LL,
 						MouseHookProcedure,
-						Marshal.GetHINSTANCE(Assembly.GetExecutingAssembly().GetModules()[0]),
+						Win32Api.GetModuleHandle("user32"),//Marshal.GetHINSTANCE(Assembly.GetExecutingAssembly().GetModules()[0]),
 						0);
 				//If SetWindowsHookEx fails.
 				if (hMouseHook == 0)
@@ -782,8 +784,7 @@ namespace SharedClasses
 				hKeyboardHook = SetWindowsHookEx(
 						WH_KEYBOARD_LL,
 						KeyboardHookProcedure,
-						Marshal.GetHINSTANCE(
-						Assembly.GetExecutingAssembly().GetModules()[0]),
+						Win32Api.GetModuleHandle("user32"),//Marshal.GetHINSTANCE(Assembly.GetExecutingAssembly().GetModules()[0]),
 						0);
 				//If SetWindowsHookEx fails.
 				if (hKeyboardHook == 0)
@@ -886,7 +887,7 @@ namespace SharedClasses
 		private int MouseHookProc(int nCode, int wParam, IntPtr lParam)
 		{
 			// if ok and someone listens to our events
-			if ((nCode >= 0) && (OnMouseActivity != null || OnGesture != null))
+			if ((nCode >= 0) && (OnMouseActivity != null || OnMouseActivityWithReturnHandledState != null || OnGesture != null))
 			{
 				//Marshall the data from callback.
 				MouseLLHookStruct mouseHookStruct = (MouseLLHookStruct)Marshal.PtrToStructure(lParam, typeof(MouseLLHookStruct));
@@ -992,7 +993,13 @@ namespace SharedClasses
 					mouseDelta);
 
 				//raise it
-				OnMouseActivity(this, e);
+				if (OnMouseActivity != null)
+					OnMouseActivity(this, e);
+				if (OnMouseActivityWithReturnHandledState != null)
+				{
+					if (OnMouseActivityWithReturnHandledState(this, e))
+						return 1;//If we return non-zero value, it marks the event as "handled"??
+				}
 			}
 			//call next hook
 			return CallNextHookEx(hMouseHook, nCode, wParam, lParam);
@@ -1039,7 +1046,7 @@ namespace SharedClasses
 						tmpOverlayForm.StartPosition = FormStartPosition.Manual;
 						tmpOverlayForm.WindowState = FormWindowState.Maximized;
 						tmpOverlayForm.Paint += (snder, evt) =>
-						{ 
+						{
 							//SendRightMouseClick();
 							foreach (var lineEndpoints in linesDrawn)
 								evt.Graphics.DrawLine(GestureLinePen, lineEndpoints.Key, lineEndpoints.Value);

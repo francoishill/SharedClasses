@@ -76,6 +76,22 @@ namespace SharedClasses
 			return result;
 		}
 
+		public static string SelectNewSaveFile(string title, string initialDir = null, string filterstring = null, bool promptIfFileExists = true, IWin32Window owner = null)
+		{
+			SaveFileDialog sfd = new SaveFileDialog();
+			sfd.OverwritePrompt = promptIfFileExists;
+
+			sfd.Title = title;
+			if (filterstring != null)
+				sfd.Filter = filterstring;
+			if (initialDir != null)
+				sfd.InitialDirectory = initialDir;
+			if (sfd.ShowDialog(owner) == DialogResult.OK)
+				return sfd.FileName;
+			else
+				return null;
+		}
+
 		public static string SelectFile(string title, string initialDir = null, string filterstring = null, IWin32Window owner = null)
 		{
 			OpenFileDialog ofd = new OpenFileDialog();

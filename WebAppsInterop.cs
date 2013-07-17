@@ -433,6 +433,12 @@ namespace SharedClasses
 		public void SetReadyToSaveOnlineFlag(bool newValue) { readyToSaveOnline = newValue; }
 		public bool WasChangesMadeOnlineYet() { return this.LastTimestampChangesWasSavedOnline.HasValue; }
 
+		public bool GetList_AsJson(out string resultOrError)
+		{
+			var data = new NameValueCollection();
+			return this.GetPostResultOfApp_AndDecrypt("api_getlist", data, out resultOrError);
+		}
+
 		private Queue<ModifyOnlinePropertyTask> QueueToSaveOnline = new Queue<ModifyOnlinePropertyTask>();
 
 		public void ModifyOnline(object Sender, int itemIndex, string columnName, string newValue, Action<string> onModifySuccessOfValue)
@@ -503,6 +509,28 @@ namespace SharedClasses
 				onlineSaveTask,
 				false,
 				apartmentState: System.Threading.ApartmentState.STA);
+		}
+
+		public int? AddItem_ReturnNewId(NameValueCollection columnNamesWithValues)
+		{
+			string resultOrError;
+			if (this.GetPostResultOfApp_AndDecrypt("api_additem", columnNamesWithValues, out resultOrError))
+			{
+				string cSuccessNewIdPrefix = "Success:New id=";
+				try
+				{
+					string newIdStr = resultOrError.Substring(cSuccessNewIdPrefix.Length);
+					int idVal = int.Parse(newIdStr);
+					return idVal;
+				}
+				catch (Exception exc)
+				{
+					UserMessages.ShowErrorMessage("Item was added but unable to obtain new ID, restart this application to see changes. Error: " + exc.Message);
+					return null;
+				}
+			}
+			else
+				return null;
 		}
 		#endregion Php AppsGeneric API interop
 

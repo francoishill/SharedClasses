@@ -35,9 +35,9 @@ namespace SharedClasses
 			}
 			set
 			{
-				if (string.IsNullOrWhiteSpace(value)) return;
 				_filecontent = value;
-				HasUnsavedChanges = true;
+				if (!string.IsNullOrWhiteSpace(value))
+					HasUnsavedChanges = true;
 				if (!IgnoreTodolineUpdate)
 					UpdateTodoLines();
 				UpdateLastModified();

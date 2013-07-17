@@ -521,6 +521,7 @@ namespace SharedClasses
 				{
 					string newIdStr = resultOrError.Substring(cSuccessNewIdPrefix.Length);
 					int idVal = int.Parse(newIdStr);
+					this.LastTimestampChangesWasSavedOnline = DateTime.Now;
 					return idVal;
 				}
 				catch (Exception exc)
@@ -541,6 +542,8 @@ namespace SharedClasses
 			var deleteSuccess = this.GetPostResultOfApp_AndDecrypt("api_deleteitem", nameValues, out resultOrError);
 			if (!deleteSuccess)
 				UserMessages.ShowErrorMessage("Unable to delete item: " + resultOrError);
+			else
+				this.LastTimestampChangesWasSavedOnline = DateTime.Now;
 			return deleteSuccess;
 		}
 		#endregion Php AppsGeneric API interop

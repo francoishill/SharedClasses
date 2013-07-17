@@ -153,7 +153,7 @@ namespace SharedClasses
 			}
 		}
 
-		public static void ZoomTextboxbaseControlBasedOnMouseWheelEvent(
+		public static void ScrollTextboxHorizontallyFromMouseWheelEvent(
 			this TextBoxBase textboxbaseControl, ref MouseWheelEventArgs evt, int horizontalScrollInterval = 25)
 		{
 			evt.Handled = true;

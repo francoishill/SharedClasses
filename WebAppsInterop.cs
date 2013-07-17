@@ -532,6 +532,17 @@ namespace SharedClasses
 			else
 				return null;
 		}
+
+		public bool DeleteItem(int itemIndex)
+		{
+			var nameValues = new NameValueCollection();
+			nameValues.Add("index", itemIndex.ToString());
+			string resultOrError;
+			var deleteSuccess = this.GetPostResultOfApp_AndDecrypt("api_deleteitem", nameValues, out resultOrError);
+			if (!deleteSuccess)
+				UserMessages.ShowErrorMessage("Unable to delete item: " + resultOrError);
+			return deleteSuccess;
+		}
 		#endregion Php AppsGeneric API interop
 
 		private class ModifyOnlinePropertyTask

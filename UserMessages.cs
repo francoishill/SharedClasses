@@ -335,11 +335,17 @@ namespace SharedClasses
 				owner = topmostForm;
 			}
 
+			var possibleForm = owner as Form;//It might be a WPF window as the IWin32Window
+
 			bool? result = false;
 			Action showConfirmAction = delegate
 			{
-				bool ownerOriginalTopmostState = ((Form)owner).TopMost;
-				((Form)owner).TopMost = AlwaysOnTop;
+				bool ownerOriginalTopmostState = false;
+				if (possibleForm != null)
+				{
+					ownerOriginalTopmostState = possibleForm.TopMost;
+					possibleForm.TopMost = AlwaysOnTop;
+				}
 				DialogResult tmpDialogResult = MessageBox.Show(
 					owner,
 					argumentsIfMessageStringIsFormatted.Length > 0 ? string.Format(Message, argumentsIfMessageStringIsFormatted) : Message,
@@ -353,16 +359,19 @@ namespace SharedClasses
 				else
 					result = null;
 				if (useTempForm && topmostForm != null && !topmostForm.IsDisposed) topmostForm.Dispose();
-				((Form)owner).TopMost = ownerOriginalTopmostState;
+				if (possibleForm != null)
+					possibleForm.TopMost = ownerOriginalTopmostState;
 			};
 
 			Logging.LogTypes logtype = Logging.LogTypes.Info;
 			string thisAppname = System.IO.Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
 			Logging.LogMessageToFile(Message, logtype, Logging.ReportingFrequencies.Daily, FJHmainFolderNameForLoggingMessages, thisAppname);
 
-			if (((Form)owner).InvokeRequired)
-				((Form)owner).Invoke(showConfirmAction, new object[] { });
-			else showConfirmAction();
+			if (possibleForm != null
+				&& possibleForm.InvokeRequired)
+				possibleForm.Invoke(showConfirmAction, new object[] { });
+			else
+				showConfirmAction();
 			return result;
 		}
 

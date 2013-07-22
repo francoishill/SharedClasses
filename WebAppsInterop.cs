@@ -439,6 +439,12 @@ namespace SharedClasses
 			return this.GetPostResultOfApp_AndDecrypt("api_getlist", data, out resultOrError);
 		}
 
+		public bool GetUsername(out string usernameOrError)
+		{
+			var data = new NameValueCollection();
+			return this.GetPostResultOfApp_AndDecrypt("api_getusername", data, out usernameOrError);
+		}
+
 		private Queue<ModifyOnlinePropertyTask> QueueToSaveOnline = new Queue<ModifyOnlinePropertyTask>();
 
 		public void ModifyOnline(object Sender, int itemIndex, string columnName, string newValue, Action<string> onModifySuccessOfValue)

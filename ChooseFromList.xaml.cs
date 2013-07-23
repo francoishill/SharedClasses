@@ -21,12 +21,13 @@ namespace SharedClasses
 	{
 		string NameOfAnItem;
 
-		public ChooseFromList(string nameOfAnItem, IEnumerable<object> listOfItems)
+		public ChooseFromList(string nameOfAnItem, IEnumerable<object> listOfItems, bool allowManualTextEntry)
 		{
 			InitializeComponent();
 			this.NameOfAnItem = nameOfAnItem;
 			this.labelUserMessage.Content = "Please select (or type) a " + nameOfAnItem;
 			this.comboBoxList.ItemsSource = listOfItems;
+			this.comboBoxList.IsEditable = allowManualTextEntry;
 		}
 
 		private void buttonCancel_Click(object sender, RoutedEventArgs e)

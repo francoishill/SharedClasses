@@ -112,7 +112,7 @@ namespace SharedClasses
 		}
 
 		private string lastResult = null;
-		public bool GetPostResultOfApp_AndDecrypt(string taskName, NameValueCollection data_unencrypted, out string resultOrError, bool autoReauthorizeIfAccessTokenInvalid = true)
+		public bool GetPostResultOfApp_AndDecrypt(string taskName, NameValueCollection data_unencrypted, out string resultOrError, bool autoReauthorizeIfAccessTokenInvalid = true, bool showIfError = true)
 		{
 			lastResult = null;
 
@@ -186,19 +186,23 @@ namespace SharedClasses
 			if (!string.IsNullOrWhiteSpace(resultOrError)
 				&& resultOrError.StartsWith("ERROR:"))
 			{
-				//Would have been the case of PostPHP method caught an Exception
-				string errEncrypted = resultOrError.Substring("ERROR:".Length);
-				try
+				if (showIfError)
 				{
-					string errUnencrypted = EncryptionInterop.SimpleTripleDesDecrypt(errEncrypted, this.AccessSecret);
-					UserMessages.ShowErrorMessage("Error occurred:" + Environment.NewLine + Environment.NewLine
-						+ errUnencrypted);
+					//Would have been the case of PostPHP method caught an Exception
+					string errEncrypted = resultOrError.Substring("ERROR:".Length);
+					try
+					{
+						string errUnencrypted = EncryptionInterop.SimpleTripleDesDecrypt(errEncrypted, this.AccessSecret);
+						UserMessages.ShowErrorMessage("Error occurred:" + Environment.NewLine + Environment.NewLine
+							+ errUnencrypted);
+					}
+					catch
+					{
+						UserMessages.ShowErrorMessage("Error occurred:" + Environment.NewLine
+							+ errEncrypted);
+					}
 				}
-				catch
-				{
-					UserMessages.ShowErrorMessage("Error occurred:" + Environment.NewLine
-						+ errEncrypted);
-				}
+				else UserMessages.ShowInfoMessage("Error skipped");
 				return false;
 			}
 			else
@@ -447,7 +451,7 @@ namespace SharedClasses
 
 		private Queue<ModifyOnlinePropertyTask> QueueToSaveOnline = new Queue<ModifyOnlinePropertyTask>();
 
-		public void ModifyOnline(object Sender, int itemIndex, string columnName, string newValue, Action<string> onModifySuccessOfValue)
+		public void ModifyOnline(object Sender, int itemIndex, string columnName, string newValue, bool showIfError, Action<string> onModifySuccessOfValue)
 		{
 			if (onModifySuccessOfValue == null) onModifySuccessOfValue = delegate { };
 			if (!readyToSaveOnline)
@@ -455,7 +459,7 @@ namespace SharedClasses
 				onModifySuccessOfValue(newValue);
 				return;
 			}
-			QueueSaveOnlineItem(new ModifyOnlinePropertyTask(Sender, itemIndex, columnName, newValue, onModifySuccessOfValue));
+			QueueSaveOnlineItem(new ModifyOnlinePropertyTask(Sender, itemIndex, columnName, newValue, showIfError, onModifySuccessOfValue));
 		}
 
 		private bool isBusySavingOnline = false;
@@ -480,7 +484,7 @@ namespace SharedClasses
 						data.Add("new_value", task.NewValue);
 
 						string resultOrError;
-						bool successfullyPostedRequest = this.GetPostResultOfApp_AndDecrypt("api_modify", data, out resultOrError);
+						bool successfullyPostedRequest = this.GetPostResultOfApp_AndDecrypt("api_modify", data, out resultOrError, task.ShowIfError);
 						if (successfullyPostedRequest)
 						{
 							if (resultOrError.StartsWith("Success:", StringComparison.InvariantCultureIgnoreCase))
@@ -560,14 +564,16 @@ namespace SharedClasses
 			public int ItemIndex;
 			public string ColumnName;
 			public string NewValue;
+			public bool ShowIfError;
 			public Action<string> OnModifySuccessOfValue;
 
-			public ModifyOnlinePropertyTask(object Sender, int ItemIndex, string ColumnName, string NewValue, Action<string> OnModifySuccessOfValue)
+			public ModifyOnlinePropertyTask(object Sender, int ItemIndex, string ColumnName, string NewValue, bool showIfError, Action<string> OnModifySuccessOfValue)
 			{
 				this.Sender = Sender;
 				this.ItemIndex = ItemIndex;
 				this.ColumnName = ColumnName;
 				this.NewValue = NewValue;
+				this.ShowIfError = showIfError;
 				this.OnModifySuccessOfValue = OnModifySuccessOfValue;
 			}
 		}

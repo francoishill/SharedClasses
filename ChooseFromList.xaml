@@ -19,8 +19,7 @@
                   Name='comboBoxList'
                   VerticalAlignment='Top'
                   HorizontalAlignment='Left'
-                  Width='261'
-                  IsEditable='True' />
+                  Width='261'/>
         <StackPanel Grid.Row='2'
                     Orientation='Horizontal'
                     VerticalAlignment='Center'

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
@@ -575,6 +576,49 @@ namespace SharedClasses
 				this.NewValue = NewValue;
 				this.ShowIfError = showIfError;
 				this.OnModifySuccessOfValue = OnModifySuccessOfValue;
+			}
+		}
+
+		public List<int> PollForModificationStamps(Dictionary<int, DateTime> noteIDsWithTheirModifiedDates)
+		{
+			try
+			{
+				string arrayAsJson = JSON.Instance.ToJSON(noteIDsWithTheirModifiedDates, false);
+
+				var data = new NameValueCollection();
+				data.Add("KeyValuePairsJson", arrayAsJson);
+				string resultOrError;
+				if (!this.GetPostResultOfApp_AndDecrypt("api_checkmodifications", data, out resultOrError))
+					UserMessages.ShowErrorMessage("Cannot check for changes on server: " + resultOrError);
+				else
+				{
+					if (resultOrError != "[]")//Blank array
+					{
+						List<int> listOfChangedIndexes = new List<int>();
+
+						ArrayList arrayFromJson = JSON.Instance.Parse(resultOrError) as ArrayList;
+						if (arrayFromJson != null)
+						{
+							var tmpArr = arrayFromJson.ToArray();
+							foreach (var expectedIndexElem in tmpArr)
+							{
+								int tmpInt;
+								if (!int.TryParse(expectedIndexElem.ToString(), out tmpInt))
+									UserMessages.ShowErrorMessage("Cannot parse item index to int, index = " + expectedIndexElem);
+								else
+									listOfChangedIndexes.Add(tmpInt);
+							}
+						}
+						return listOfChangedIndexes;
+					}
+				}
+
+				return null;
+			}
+			catch (Exception exc)
+			{
+				UserMessages.ShowErrorMessage("Cannot check for changes, error occurred: " + exc.Message);
+				return null;
 			}
 		}
 	}

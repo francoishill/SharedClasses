@@ -144,6 +144,9 @@ public class ThreadingInterop
 
 	public static bool ActionWithTimeout<T>(Action<T> action, int timeoutMilliseconds, T arg, Action<string> actionOnError)
 	{
+		if (actionOnError == null)
+			actionOnError = delegate { };
+
 		bool succeeded = false;
 		Action wrappedAction = () =>
 		{

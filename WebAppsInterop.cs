@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Web;
@@ -452,12 +453,12 @@ namespace SharedClasses
 
 		private Queue<ModifyOnlinePropertyTask> QueueToSaveOnline = new Queue<ModifyOnlinePropertyTask>();
 
-		public void ModifyOnline(object Sender, int itemIndex, string columnName, string newValue, bool showIfError, Action<string> onModifySuccessOfValue)
+		public void ModifyOnline(object Sender, int itemIndex, string columnName, string newValue, DateTime currentModifiedTime, bool showIfError, Action<string, DateTime> onModifySuccessOfValue)
 		{
 			if (onModifySuccessOfValue == null) onModifySuccessOfValue = delegate { };
 			if (!readyToSaveOnline)
 			{
-				onModifySuccessOfValue(newValue);
+				onModifySuccessOfValue(newValue, currentModifiedTime);
 				return;
 			}
 			QueueSaveOnlineItem(new ModifyOnlinePropertyTask(Sender, itemIndex, columnName, newValue, showIfError, onModifySuccessOfValue));
@@ -488,10 +489,19 @@ namespace SharedClasses
 						bool successfullyPostedRequest = this.GetPostResultOfApp_AndDecrypt("api_modify", data, out resultOrError, task.ShowIfError);
 						if (successfullyPostedRequest)
 						{
-							if (resultOrError.StartsWith("Success:", StringComparison.InvariantCultureIgnoreCase))
+							string cSuccessPrefix = "Success:";
+							if (resultOrError.StartsWith(cSuccessPrefix, StringComparison.InvariantCultureIgnoreCase))
 							{
+								string jsonStr = resultOrError.Substring(cSuccessPrefix.Length);
+								var jsonObj = JSON.Instance.Parse(jsonStr);
+
+								Dictionary<string, object> dict = jsonObj as Dictionary<string, object>;
+
+								string dateformat = "yyyy-MM-dd HH:mm:ss";
+								DateTime updatedModifiedTime = DateTime.ParseExact(dict["ModifiedTime"].ToString(), dateformat, CultureInfo.InvariantCulture, DateTimeStyles.None);
+
 								this.LastTimestampChangesWasSavedOnline = DateTime.Now;
-								task.OnModifySuccessOfValue(task.NewValue);
+								task.OnModifySuccessOfValue(task.NewValue, updatedModifiedTime);
 								return;
 							}
 						}
@@ -522,18 +532,27 @@ namespace SharedClasses
 				apartmentState: System.Threading.ApartmentState.STA);
 		}
 
-		public int? AddItem_ReturnNewId(NameValueCollection columnNamesWithValues)
+		public KeyValuePair<int, DateTime>? AddItem_ReturnNewId(NameValueCollection columnNamesWithValues)
 		{
 			string resultOrError;
 			if (this.GetPostResultOfApp_AndDecrypt("api_additem", columnNamesWithValues, out resultOrError))
 			{
-				string cSuccessNewIdPrefix = "Success:New id=";
+				//$returnObj['NewId'] = $addItemNewId;
+				//$returnObj['ModifiedTime'] = $modifiedTime;
+
+				string cSuccessPrefix = "Success:";
 				try
 				{
-					string newIdStr = resultOrError.Substring(cSuccessNewIdPrefix.Length);
-					int idVal = int.Parse(newIdStr);
+					string jsonObjStr = resultOrError.Substring(cSuccessPrefix.Length);
+					var jsonObj = JSON.Instance.Parse(jsonObjStr);
+					Dictionary<string, object> dict = jsonObj as Dictionary<string, object>;
+					
+					int idVal = int.Parse(dict["NewId"].ToString());
+					
+					string dateformat = "yyyy-MM-dd HH:mm:ss";
+					DateTime modifiedTime = DateTime.ParseExact(dict["ModifiedTime"].ToString(), dateformat, CultureInfo.InvariantCulture, DateTimeStyles.None);
 					this.LastTimestampChangesWasSavedOnline = DateTime.Now;
-					return idVal;
+					return new KeyValuePair<int,DateTime>(idVal, modifiedTime);
 				}
 				catch (Exception exc)
 				{
@@ -566,9 +585,9 @@ namespace SharedClasses
 			public string ColumnName;
 			public string NewValue;
 			public bool ShowIfError;
-			public Action<string> OnModifySuccessOfValue;
+			public Action<string, DateTime> OnModifySuccessOfValue;
 
-			public ModifyOnlinePropertyTask(object Sender, int ItemIndex, string ColumnName, string NewValue, bool showIfError, Action<string> OnModifySuccessOfValue)
+			public ModifyOnlinePropertyTask(object Sender, int ItemIndex, string ColumnName, string NewValue, bool showIfError, Action<string, DateTime> OnModifySuccessOfValue)
 			{
 				this.Sender = Sender;
 				this.ItemIndex = ItemIndex;

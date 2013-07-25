@@ -13,6 +13,8 @@ namespace SharedClasses
 {
 	public class WebAppsInterop
 	{
+		public const string cPhpDateFormat = "yyyy-MM-dd HH:mm:ss";
+
 		private const int cExpectedKeyLength = 24;
 		private const int cExpectedSecretLength = 24;
 
@@ -195,12 +197,15 @@ namespace SharedClasses
 					try
 					{
 						string errUnencrypted = EncryptionInterop.SimpleTripleDesDecrypt(errEncrypted, this.AccessSecret);
-						UserMessages.ShowErrorMessage("Error occurred:" + Environment.NewLine + Environment.NewLine
+						UserMessages.ShowErrorMessage("Error occurred on server:" + Environment.NewLine + Environment.NewLine
 							+ errUnencrypted);
 					}
-					catch
+					catch (Exception exc)
 					{
-						UserMessages.ShowErrorMessage("Error occurred:" + Environment.NewLine
+						UserMessages.ShowErrorMessage("Error occurred in decryption:"
+							+ Environment.NewLine + Environment.NewLine
+							+ exc.Message
+							+ Environment.NewLine + Environment.NewLine
 							+ errEncrypted);
 					}
 				}
@@ -461,7 +466,7 @@ namespace SharedClasses
 				onModifySuccessOfValue(newValue, currentModifiedTime);
 				return;
 			}
-			QueueSaveOnlineItem(new ModifyOnlinePropertyTask(Sender, itemIndex, columnName, newValue, showIfError, onModifySuccessOfValue));
+			QueueSaveOnlineItem(new ModifyOnlinePropertyTask(Sender, itemIndex, columnName, newValue, currentModifiedTime, showIfError, onModifySuccessOfValue));
 		}
 
 		private bool isBusySavingOnline = false;
@@ -484,6 +489,7 @@ namespace SharedClasses
 						data.Add("index", task.ItemIndex.ToString());
 						data.Add("column_name", task.ColumnName);
 						data.Add("new_value", task.NewValue);
+						data.Add("current_modifiedtime", task.ModifiedTime.ToString(WebAppsInterop.cPhpDateFormat));
 
 						string resultOrError;
 						bool successfullyPostedRequest = this.GetPostResultOfApp_AndDecrypt("api_modify", data, out resultOrError, task.ShowIfError);
@@ -497,8 +503,7 @@ namespace SharedClasses
 
 								Dictionary<string, object> dict = jsonObj as Dictionary<string, object>;
 
-								string dateformat = "yyyy-MM-dd HH:mm:ss";
-								DateTime updatedModifiedTime = DateTime.ParseExact(dict["ModifiedTime"].ToString(), dateformat, CultureInfo.InvariantCulture, DateTimeStyles.None);
+								DateTime updatedModifiedTime = DateTime.ParseExact(dict["ModifiedTime"].ToString(), WebAppsInterop.cPhpDateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None);
 
 								this.LastTimestampChangesWasSavedOnline = DateTime.Now;
 								task.OnModifySuccessOfValue(task.NewValue, updatedModifiedTime);
@@ -548,9 +553,8 @@ namespace SharedClasses
 					Dictionary<string, object> dict = jsonObj as Dictionary<string, object>;
 					
 					int idVal = int.Parse(dict["NewId"].ToString());
-					
-					string dateformat = "yyyy-MM-dd HH:mm:ss";
-					DateTime modifiedTime = DateTime.ParseExact(dict["ModifiedTime"].ToString(), dateformat, CultureInfo.InvariantCulture, DateTimeStyles.None);
+
+					DateTime modifiedTime = DateTime.ParseExact(dict["ModifiedTime"].ToString(), WebAppsInterop.cPhpDateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None);
 					this.LastTimestampChangesWasSavedOnline = DateTime.Now;
 					return new KeyValuePair<int,DateTime>(idVal, modifiedTime);
 				}
@@ -584,15 +588,17 @@ namespace SharedClasses
 			public int ItemIndex;
 			public string ColumnName;
 			public string NewValue;
+			public DateTime ModifiedTime;
 			public bool ShowIfError;
 			public Action<string, DateTime> OnModifySuccessOfValue;
 
-			public ModifyOnlinePropertyTask(object Sender, int ItemIndex, string ColumnName, string NewValue, bool showIfError, Action<string, DateTime> OnModifySuccessOfValue)
+			public ModifyOnlinePropertyTask(object sender, int itemIndex, string columnName, string newValue, DateTime modifiedTime, bool showIfError, Action<string, DateTime> OnModifySuccessOfValue)
 			{
-				this.Sender = Sender;
-				this.ItemIndex = ItemIndex;
-				this.ColumnName = ColumnName;
-				this.NewValue = NewValue;
+				this.Sender = sender;
+				this.ItemIndex = itemIndex;
+				this.ColumnName = columnName;
+				this.NewValue = newValue;
+				this.ModifiedTime = modifiedTime;
 				this.ShowIfError = showIfError;
 				this.OnModifySuccessOfValue = OnModifySuccessOfValue;
 			}

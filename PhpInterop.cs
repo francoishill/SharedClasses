@@ -105,8 +105,15 @@ namespace SharedClasses
 					if (webexc != null && webexc.Response != null)
 					{
 						string responseError = new StreamReader(webexc.Response.GetResponseStream()).ReadToEnd();
-						vystup = "ERROR (web):" + responseError;
+						vystup = "ERROR: [web]" + responseError;
 						TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Post php: " + responseError);
+					}
+					else if (webexc != null && webexc.InnerException != null)
+					{
+						if (webexc.InnerException.Message.StartsWith("A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond", StringComparison.InvariantCultureIgnoreCase))
+							vystup = "ERROR:[timeout]" + webexc.InnerException.Message;
+						else
+							vystup = "ERROR:[web inner]" + webexc.InnerException.Message;
 					}
 					else
 						vystup = "ERROR:" + exc.Message;

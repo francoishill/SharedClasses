@@ -69,6 +69,31 @@ namespace SharedClasses
 		}
 	}
 
+	public class BooleanToIntegerConverter : IValueConverter
+	{
+		private const int cDefaultIntegerIfFail = 1;
+		public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			if (!(value is bool))
+				return cDefaultIntegerIfFail;
+			if (!(bool)value)
+				return 0;
+
+			int tmpInt;
+			if (parameter == null || !int.TryParse(parameter.ToString(), out tmpInt))
+			{
+				return cDefaultIntegerIfFail;
+			}
+
+			return tmpInt;
+		}
+
+		public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+		{
+			throw new NotImplementedException();
+		}
+	}
+
 	[ValueConversion(typeof(bool), typeof(bool))]
 	public class InverseBooleanConverter : IValueConverter
 	{

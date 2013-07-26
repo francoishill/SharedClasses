@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Linq;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -116,7 +117,7 @@ namespace SharedClasses
 		}
 
 		private string lastResult = null;
-		public bool GetPostResultOfApp_AndDecrypt(string taskName, NameValueCollection data_unencrypted, out string resultOrError, bool autoReauthorizeIfAccessTokenInvalid = true, bool showIfError = true)
+		public bool GetPostResultOfApp_AndDecrypt(string taskName, NameValueCollection data_unencrypted, out string resultOrError, bool autoReauthorizeIfAccessTokenInvalid = true)
 		{
 			lastResult = null;
 
@@ -188,33 +189,45 @@ namespace SharedClasses
 			}
 
 			if (!string.IsNullOrWhiteSpace(resultOrError)
+			&& resultOrError.StartsWith("ERROR:["))//Note the '[' after ERROR:
+			{
+				//This is probably from 'PostPHP' method
+				return false;
+			}
+			else if (!string.IsNullOrWhiteSpace(resultOrError)
 				&& resultOrError.StartsWith("ERROR:"))
 			{
-				if (showIfError)
+				//Would have been the case of PostPHP method caught an Exception
+				string errEncrypted = resultOrError.Substring("ERROR:".Length);
+				try
 				{
-					//Would have been the case of PostPHP method caught an Exception
-					string errEncrypted = resultOrError.Substring("ERROR:".Length);
-					try
-					{
-						string errUnencrypted = EncryptionInterop.SimpleTripleDesDecrypt(errEncrypted, this.AccessSecret);
-						UserMessages.ShowErrorMessage("Error occurred on server:" + Environment.NewLine + Environment.NewLine
-							+ errUnencrypted);
-					}
-					catch (Exception exc)
-					{
-						UserMessages.ShowErrorMessage("Error occurred in decryption:"
-							+ Environment.NewLine + Environment.NewLine
-							+ exc.Message
-							+ Environment.NewLine + Environment.NewLine
-							+ errEncrypted);
-					}
+					string errUnencrypted = EncryptionInterop.SimpleTripleDesDecrypt(errEncrypted, this.AccessSecret);
+					resultOrError = "Error occurred on server:" + Environment.NewLine + Environment.NewLine + errUnencrypted;
 				}
-				else UserMessages.ShowInfoMessage("Error skipped");
+				catch (Exception exc)
+				{
+					resultOrError = "Error occurred in decryption:"
+						+ Environment.NewLine + Environment.NewLine
+						+ exc.Message
+						+ Environment.NewLine + Environment.NewLine
+						+ errEncrypted;
+				}
 				return false;
 			}
 			else
 			{
-				resultOrError = EncryptionInterop.SimpleTripleDesDecrypt(resultOrError, this.AccessSecret);
+				try
+				{
+					resultOrError = EncryptionInterop.SimpleTripleDesDecrypt(resultOrError, this.AccessSecret);
+				}
+				catch (Exception exc)
+				{
+					resultOrError = "Error occurred in decryption (2):"
+						+ Environment.NewLine + Environment.NewLine
+						+ exc.Message
+						+ Environment.NewLine + Environment.NewLine
+						+ resultOrError;
+				}
 				return true;
 			}
 		}
@@ -513,7 +526,8 @@ namespace SharedClasses
 
 						if (UserMessages.Confirm("Unable to save note text online, restoring old value. Do you want to place the value that failed into the Clipboard?"))
 						{
-							try{Clipboard.SetText(task.NewValue);}catch{}
+							try { Clipboard.SetText(task.NewValue); }
+							catch { }
 							string clipBoardText = Clipboard.GetText();
 							if (!string.Equals(clipBoardText, task.NewValue))
 							{
@@ -551,12 +565,12 @@ namespace SharedClasses
 					string jsonObjStr = resultOrError.Substring(cSuccessPrefix.Length);
 					var jsonObj = JSON.Instance.Parse(jsonObjStr);
 					Dictionary<string, object> dict = jsonObj as Dictionary<string, object>;
-					
+
 					int idVal = int.Parse(dict["NewId"].ToString());
 
 					DateTime modifiedTime = DateTime.ParseExact(dict["ModifiedTime"].ToString(), WebAppsInterop.cPhpDateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None);
 					this.LastTimestampChangesWasSavedOnline = DateTime.Now;
-					return new KeyValuePair<int,DateTime>(idVal, modifiedTime);
+					return new KeyValuePair<int, DateTime>(idVal, modifiedTime);
 				}
 				catch (Exception exc)
 				{
@@ -604,8 +618,12 @@ namespace SharedClasses
 			}
 		}
 
-		public List<int> PollForModificationStamps(Dictionary<int, DateTime> noteIDsWithTheirModifiedDates)
+		public int cPollingErrorsCachedMaxCount { get { return 2; } }
+		private Dictionary<DateTime, string> cachedPollingErrors = new Dictionary<DateTime, string>();
+		public List<int> PollForModificationStamps(Dictionary<int, DateTime> noteIDsWithTheirModifiedDates, Action<string> actionOnError)
 		{
+			if (actionOnError == null) actionOnError = delegate { };
+
 			try
 			{
 				string arrayAsJson = JSON.Instance.ToJSON(noteIDsWithTheirModifiedDates, false);
@@ -614,7 +632,21 @@ namespace SharedClasses
 				data.Add("KeyValuePairsJson", arrayAsJson);
 				string resultOrError;
 				if (!this.GetPostResultOfApp_AndDecrypt("api_checkmodifications", data, out resultOrError))
-					UserMessages.ShowErrorMessage("Cannot check for changes on server: " + resultOrError);
+				{
+					//Allow up to cPollingErrorsCachedMaxCount errors before we warn
+
+					cachedPollingErrors.Add(DateTime.Now, resultOrError);
+					actionOnError(resultOrError);
+					if (cachedPollingErrors.Count > cPollingErrorsCachedMaxCount)
+					{
+						UserMessages.ShowErrorMessage(
+							string.Format("The following ({0}) errors have occurred in polling the server:", cPollingErrorsCachedMaxCount)
+							+ Environment.NewLine + Environment.NewLine
+							+ string.Join(Environment.NewLine + Environment.NewLine, cachedPollingErrors.Select(kv => string.Format("[{0}] {1}", kv.Key.ToString("yyyy-MM-dd HH:mm:ss"), kv.Value))));
+
+						cachedPollingErrors.Remove(cachedPollingErrors.Keys.First());
+					}
+				}
 				else
 				{
 					if (resultOrError != "[]")//Blank array
@@ -645,6 +677,20 @@ namespace SharedClasses
 				UserMessages.ShowErrorMessage("Cannot check for changes, error occurred: " + exc.Message);
 				return null;
 			}
+		}
+
+		public void ShowCachedPollingErrors()
+		{
+			if (cachedPollingErrors.Count == 0)
+			{
+				UserMessages.ShowInfoMessage("No errors have occurred yet with the polling.");
+				return;
+			}
+
+			UserMessages.ShowErrorMessage(
+				"The following polling errors (maximum " + cPollingErrorsCachedMaxCount + ") were cached:"
+				+ Environment.NewLine + Environment.NewLine
+				+ string.Join(Environment.NewLine + Environment.NewLine, cachedPollingErrors.Select(kv => string.Format("[{0}] {1}", kv.Key.ToString("yyyy-MM-dd HH:mm:ss"), kv.Value))));
 		}
 	}
 }

@@ -9,6 +9,7 @@ using SharedClasses;
 #else
 using System.Drawing;
 using System.Windows.Forms;
+using System.Runtime.InteropServices;
 #endif
 
 namespace SharedClasses
@@ -40,6 +41,15 @@ namespace SharedClasses
 				return _mappedIcons;
 			}
 		}
+
+		/// <summary>The GetForegroundWindow function returns a handle to the foreground window.</summary>
+		[DllImport("user32.dll")]
+		public static extern IntPtr GetForegroundWindow();
+
+		// For Windows Mobile, replace user32.dll with coredll.dll 
+		[DllImport("user32.dll")]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool SetForegroundWindow(IntPtr hWnd);
 
 		private UserMessages()
 		{
@@ -139,7 +149,15 @@ namespace SharedClasses
 			string thisAppname = System.IO.Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
 			Logging.LogMessageToFile(Message, logtype, Logging.ReportingFrequencies.Daily, FJHmainFolderNameForLoggingMessages, thisAppname);
 
-			return umb.ShowDialog(owner);
+			var currentForegroundWindow = GetForegroundWindow();
+			try
+			{
+				return umb.ShowDialog(owner);
+			}
+			finally
+			{
+				SetForegroundWindow(currentForegroundWindow);
+			}
 		}
 
 		private void GlobalKeyDown(object sender, PreviewKeyDownEventArgs e)
@@ -346,21 +364,30 @@ namespace SharedClasses
 					ownerOriginalTopmostState = possibleForm.TopMost;
 					possibleForm.TopMost = AlwaysOnTop;
 				}
-				DialogResult tmpDialogResult = MessageBox.Show(
-					owner,
-					argumentsIfMessageStringIsFormatted.Length > 0 ? string.Format(Message, argumentsIfMessageStringIsFormatted) : Message,
-					Title,
-					AnswerIsNullable ? MessageBoxButtons.YesNoCancel : MessageBoxButtons.YesNo,
-					MessageBoxIcon.Question, DefaultYesButton ? MessageBoxDefaultButton.Button1 : MessageBoxDefaultButton.Button2);
-				if (tmpDialogResult == DialogResult.Yes)
-					result = true;
-				else if (tmpDialogResult == DialogResult.No)
-					result = false;
-				else
-					result = null;
-				if (useTempForm && topmostForm != null && !topmostForm.IsDisposed) topmostForm.Dispose();
-				if (possibleForm != null)
-					possibleForm.TopMost = ownerOriginalTopmostState;
+
+				var currentForegroundWindow = GetForegroundWindow();
+				try
+				{
+					DialogResult tmpDialogResult = MessageBox.Show(
+						owner,
+						argumentsIfMessageStringIsFormatted.Length > 0 ? string.Format(Message, argumentsIfMessageStringIsFormatted) : Message,
+						Title,
+						AnswerIsNullable ? MessageBoxButtons.YesNoCancel : MessageBoxButtons.YesNo,
+						MessageBoxIcon.Question, DefaultYesButton ? MessageBoxDefaultButton.Button1 : MessageBoxDefaultButton.Button2);
+					if (tmpDialogResult == DialogResult.Yes)
+						result = true;
+					else if (tmpDialogResult == DialogResult.No)
+						result = false;
+					else
+						result = null;
+					if (useTempForm && topmostForm != null && !topmostForm.IsDisposed) topmostForm.Dispose();
+					if (possibleForm != null)
+						possibleForm.TopMost = ownerOriginalTopmostState;
+				}
+				finally
+				{
+					SetForegroundWindow(currentForegroundWindow);
+				}
 			};
 
 			Logging.LogTypes logtype = Logging.LogTypes.Info;
@@ -417,9 +444,18 @@ namespace SharedClasses
 				if (SelectedPath != null) fbd.SelectedPath = SelectedPath;
 				if (RootFolder != Environment.SpecialFolder.SendTo) fbd.RootFolder = RootFolder;
 				fbd.ShowNewFolderButton = ShowNewFolderButton;
-				if (fbd.ShowDialog(owner) == DialogResult.OK)
-					return fbd.SelectedPath;
-				return null;
+
+				var currentForegroundWindow = GetForegroundWindow();
+				try
+				{
+					if (fbd.ShowDialog(owner) == DialogResult.OK)
+						return fbd.SelectedPath;
+					return null;
+				}
+				finally
+				{
+					SetForegroundWindow(currentForegroundWindow);
+				}
 			}
 			finally
 			{

@@ -8,6 +8,8 @@ namespace SharedClasses
 	/// </summary>
 	public static class LicensingInterop_Shared
 	{
+		public const string cRegisterApplicationFirstCommandlineArg = "registerapp";
+
 		public const string cErrorMessagePrefix = "[ERRORSTART]";
 		public const string cErrorMessagePostfix = "[ERROREND]";
 		public const string cSplitBetweenLicenseAndPublicKey = "[PUBLICKEYTOFOLLOW]";
@@ -26,6 +28,29 @@ namespace SharedClasses
 		public const string cLicenseExistsOnServerMessage = "LICENSE EXISTS:";
 		public const string cLicenseNonExistingOnServerMessage = "Machine is not registered on server.";
 		public const string cPublicKeyFoundOnServerStartMessage = "Public key found:";
+
+		public static bool WasUrlProtocolUsedToSpecifyRegistrationCredentials(string[] args, out string emailOrNull, out string orderCodeOrNull)
+		{
+			if (args.Length < 3
+				|| !args[1].Equals(LicensingInterop_Shared.cRegisterApplicationFirstCommandlineArg, StringComparison.InvariantCultureIgnoreCase))
+			{
+				emailOrNull = orderCodeOrNull = null;
+				return false;
+			}
+
+			string[] emailPipeOrderCode = args[2].Substring(args[2].IndexOf(":") + 1).Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+			if (emailPipeOrderCode.Length != 2)
+			{
+				emailOrNull = orderCodeOrNull = null;
+				return false;
+			}
+			else
+			{
+				emailOrNull = emailPipeOrderCode[0];
+				orderCodeOrNull = emailPipeOrderCode[1];
+				return true;
+			}
+		}
 
 		public static string EncryptStringForPhpServer(string originalString, Action<string> actionOnError)
 		{

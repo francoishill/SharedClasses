@@ -252,9 +252,15 @@ public class NsisInterop
 		//{
 		//No always start with windows if AutoUpdater
 		sectionGroupLines.Add("");
-		if (!isAutoUpdater) sectionGroupLines.Add(@"${If} $lastState_autostartCheckbox <> 0");
+		if (!isAutoUpdater)
+			sectionGroupLines.Add(@"${If} $lastState_autostartCheckbox <> 0");
 		sectionGroupLines.Add(@"  WriteRegStr HKCU ""SOFTWARE\Microsoft\Windows\CurrentVersion\Run"" '${PRODUCT_NAME}' '$INSTDIR\${PRODUCT_EXE_NAME}'");
-		if (!isAutoUpdater) sectionGroupLines.Add(@"${EndIf}");
+		if (!isAutoUpdater)
+		{
+			sectionGroupLines.Add(@"${Else}");
+			sectionGroupLines.Add(@"DeleteRegValue HKCU ""SOFTWARE\Microsoft\Windows\CurrentVersion\Run"" '${PRODUCT_NAME}'");
+			sectionGroupLines.Add(@"${EndIf}");
+		}
 		//}
 
 		sectionGroupLines.Add("");
@@ -869,6 +875,7 @@ public class NsisInterop
 			tmpList.Add("");
 			tmpList.Add(@"; HM NIS Edit Wizard helper defines");
 			tmpList.Add(@"!define PRODUCT_NAME """ + ProductName + @"""");
+			tmpList.Add(@"!define PRODUCT_NAME_LOWERCASE_NOSPACES """ + ProductName.Replace(" ", "").ToLower() + @"""");
 			tmpList.Add(@"!define PRODUCT_VERSION """ + ProductVersion + @"""");
 			tmpList.Add(@"!define PRODUCT_PUBLISHER """ + ProductPublisher + @"""");
 			tmpList.Add(@"!define PRODUCT_WEB_SITE """ + ProductWebsite + @"""");
@@ -1131,6 +1138,8 @@ public class NsisInterop
 				foreach (var regAssociatedRegistryline in explorerContextMenuItems.GetRegistryAssociationNsisLines((err) => UserMessages.ShowErrorMessage(err)))
 					tmpList.Add(Spacer + regAssociatedRegistryline.Replace("((EXEPATH))", "$INSTDIR\\${PRODUCT_EXE_NAME}"));
 
+			AddRegistrationUrlProtocolHandlerLines(ref tmpList);
+
 			tmpList.Add(@"SectionEnd"); tmpList.Add("");
 
 			tmpList.Add(";Section -CheckMutexOpen");
@@ -1202,6 +1211,13 @@ public class NsisInterop
 			tmpList.Add(@"SectionEnd");
 
 			return tmpList;
+		}
+
+		private void AddRegistrationUrlProtocolHandlerLines(ref List<string> tmpList)
+		{
+			tmpList.Add("WriteRegStr HKCR \"fjh${PRODUCT_NAME_LOWERCASE_NOSPACES}\" \"\" 'URL:${PRODUCT_NAME} protocol'");
+			tmpList.Add("WriteRegStr HKCR \"fjh${PRODUCT_NAME_LOWERCASE_NOSPACES}\" \"URL Protocol\" \"\"");
+			tmpList.Add("WriteRegStr HKCR \"fjh${PRODUCT_NAME_LOWERCASE_NOSPACES}\\shell\\open\\command\" \"\" '\"$INSTDIR\\${PRODUCT_EXE_NAME}\" " + LicensingInterop_Shared.cRegisterApplicationFirstCommandlineArg + " \"%1\"'");
 		}
 
 		public class SectionGroupClass

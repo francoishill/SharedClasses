@@ -97,7 +97,7 @@ namespace SharedClasses
 					//Congratulations, you just requested your first POST page, you
 					//can now start logging into most login forms, with your application
 					//Or other examples.
-					string tmpresult = vystup.Trim() + "\n";
+					//string tmpresult = vystup.Trim() + "\n";
 				}
 				catch (Exception exc)
 				{
@@ -130,7 +130,7 @@ namespace SharedClasses
 			};
 
 			if (separateThread)
-				ThreadingInterop.DoAction(delegate { action(); }, true);
+				ThreadingInterop.DoAction(delegate { action(); }, true, apartmentState: System.Threading.ApartmentState.STA);
 			else
 				action();
 			return vystup;

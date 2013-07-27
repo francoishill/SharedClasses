@@ -20,6 +20,19 @@ namespace SharedClasses
 			InitializeComponent();
 		}
 
+		private void Window_Loaded(object sender, RoutedEventArgs e)
+		{
+			if (!string.IsNullOrWhiteSpace(textboxOwnerEmail.Text)
+				&& !string.IsNullOrWhiteSpace(textboxOrderCode.Text))//Probably the user used the Url Protocol link from his Order Email
+			{
+				string errorIfFailed;
+				if (Register(out errorIfFailed))
+					this.DialogResult = true;
+				else
+					UserMessages.ShowErrorMessage(errorIfFailed);
+			}
+		}
+
 		private bool Register(out string errorIfFailed)
 		{
 			buttonRegister.IsEnabled = false;
@@ -93,7 +106,7 @@ namespace SharedClasses
 			//We reversed the code (in php) in the email sent to the user after paypal purchase (this is just a safety measure).
 			//We KEEP it reversed and pass it to the License server, he will unreverse it and check it against our firepuma db
 			string reversedOrderCode = textboxOrderCode.Text;
-			
+
 			currentUniqueSignature = LicensingInterop_Shared.GetMachineUIDForApplicationAndMachine(
 				   applicationName,
 				   textboxOwnerEmail.Text,
@@ -110,7 +123,7 @@ namespace SharedClasses
 			//UpdateUniqueSignature();
 		}
 
-		public static bool RegisterApplication(string applicationName, out string licenseXmlText, out string publicKey)
+		public static bool RegisterApplication(string applicationName, out string licenseXmlText, out string publicKey, string predefinedEmail = null, string predefinedOrdercode = null)
 		{
 			RegistrationWindow win = new RegistrationWindow();
 			//win.publicKey = publicKey;
@@ -118,6 +131,12 @@ namespace SharedClasses
 			win.Title = "Registration for " + applicationName;
 			//win.textboxMachineSignature.Text = LicensingInterop_Client.GetUniqueSignatureForApplicationAndMachine(
 			//applicationName,				);
+
+			if (!string.IsNullOrWhiteSpace(predefinedEmail))
+				win.textboxOwnerEmail.Text = predefinedEmail;
+			if (!string.IsNullOrWhiteSpace(predefinedOrdercode))
+				win.textboxOrderCode.Text = predefinedOrdercode;
+
 			bool success = win.ShowDialog() == true;
 			if (success)
 			{

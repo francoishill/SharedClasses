@@ -403,8 +403,21 @@ namespace SharedClasses
 			}
 		}
 
-		public static void AssociateUrlProtocolHandler(string urlStartString, string protocolName, string fullCommandline)
+		[Obsolete("Cannot use this anymore. Windows 8 UAC on (even Win 7 with UAC on).", true)]
+		public static void AssociateUrlProtocolHandler(string urlStartString, string protocolName, string fullCommandline) { }
+		/*public static void AssociateUrlProtocolHandler(string urlStartString, string protocolName, string fullCommandline)
 		{
+			//var classesRootKey = RegistryKey
+			//	.OpenBaseKey(RegistryHive.LocalMachine, RegistryInterop.Is64BitOperatingSystem ? RegistryView.Registry64 : RegistryView.Registry32)
+			//	.OpenSubKey(@"SOFTWARE\Classes");
+			//var quickaccessKey = classesRootKey.CreateSubKey(urlStartString);
+			//quickaccessKey.SetValue(null, "URL:" + protocolName);
+			//quickaccessKey.SetValue("URL Protocol", "");
+			//var shellSubkey = quickaccessKey.CreateSubKey("shell");
+			//var openSubkey = shellSubkey.CreateSubKey("open");
+			//var commandSubkey = openSubkey.CreateSubKey("command");
+			//commandSubkey.SetValue(null, fullCommandline);
+
 			var classesRootKey = RegistryKey.OpenBaseKey(RegistryHive.ClassesRoot, RegistryInterop.Is64BitOperatingSystem ? RegistryView.Registry64 : RegistryView.Registry32);
 			var quickaccessKey = classesRootKey.CreateSubKey(urlStartString);
 			quickaccessKey.SetValue(null, "URL:" + protocolName);
@@ -413,7 +426,7 @@ namespace SharedClasses
 			var openSubkey = shellSubkey.CreateSubKey("open");
 			var commandSubkey = openSubkey.CreateSubKey("command");
 			commandSubkey.SetValue(null, fullCommandline);
-		}
+		}*/
 	}
 
 	public static class RegistryExtensions

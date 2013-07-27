@@ -4,7 +4,9 @@
 		Title="RegistrationWindow"
 		Height='160'
 		Width='493'
-		WindowStartupLocation='CenterScreen'>
+		WindowStartupLocation='CenterScreen'
+		Topmost='True'
+		Loaded='Window_Loaded'>
 	<Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition Height='40' />

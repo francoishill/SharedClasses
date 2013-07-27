@@ -618,7 +618,7 @@ namespace SharedClasses
 			}
 		}
 
-		public int cPollingErrorsCachedMaxCount { get { return 2; } }
+		public int cPollingErrorsCachedMaxCount { get { return 20; } }
 		private Dictionary<DateTime, string> cachedPollingErrors = new Dictionary<DateTime, string>();
 		public List<int> PollForModificationStamps(Dictionary<int, DateTime> noteIDsWithTheirModifiedDates, Action<string> actionOnError)
 		{

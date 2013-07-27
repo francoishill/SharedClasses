@@ -7,6 +7,7 @@ using System.Runtime.Remoting.Channels.Ipc;//System.Runtime.Remoting must be ref
 using System.Threading;
 using System.Security.Permissions;
 using System.Reflection;
+using System.Collections.Generic;
 
 namespace SharedClasses
 {
@@ -24,12 +25,12 @@ namespace SharedClasses
 		/// </summary>
 		/// <param name="actionBeforeRunning">This could typically be the following for a winforms application: Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);</param>
 		/// <param name="actionToRunApplication">Typically for a winforms application: Application.Run(frm);</param>
-		/// <param name="actionToPerformOnFirstInstanceWhenSecondInstanceStarts">What should happen to the first started application when a second is called (parameters that are passed via this action are the second one's arguments and the first created form)</param>
-		public static MainFormOrWindowType CheckIfAlreadyRunningElseCreateNew(Action<InstanceCallbackEventArgs, MainFormOrWindowType> actionToPerformOnFirstInstanceWhenSecondInstanceStarts, Action<string[], MainFormOrWindowType> actionToStartAppWithFormOrWindowWithCommandlineArguments)
+		/// <param name="actionToPerformForSecondInstance">What should happen to the first started application when a second is called (parameters that are passed via this action are the second one's arguments and the first created form)</param>
+		public static MainFormOrWindowType CheckIfAlreadyRunningElseCreateNew(Action<InstanceCallbackEventArgs, MainFormOrWindowType> actionToPerformForSecondInstance, Action<string[], MainFormOrWindowType> actionToStartAppWithFormOrWindowWithCommandlineArguments)
 		{
 			if (!CreateSingleInstance(
 					Assembly.GetExecutingAssembly().GetName().Name,
-					actionToPerformOnFirstInstanceWhenSecondInstanceStarts))
+					actionToPerformForSecondInstance))
 				return mainformOrwindow;//default(MainFormOrWindowType);
 			mainformOrwindow = new MainFormOrWindowType();
 			actionToStartAppWithFormOrWindowWithCommandlineArguments(Environment.GetCommandLineArgs(), mainformOrwindow);
@@ -48,7 +49,7 @@ namespace SharedClasses
 		/// <param name="name">The name.</param>
 		/// <param name="callback">The callback.</param>
 		/// <returns></returns>
-		private static bool CreateSingleInstance(string name, Action<InstanceCallbackEventArgs, MainFormOrWindowType> actionToPerformOnFirstInstanceWhenSecondInstanceStarts)
+		private static bool CreateSingleInstance(string name, Action<InstanceCallbackEventArgs, MainFormOrWindowType> actionToPerformForSecondInstance)
 		{
 			EventWaitHandle eventWaitHandle = null;
 			string eventName = string.Format("{0}-{1}", Environment.MachineName, name);
@@ -75,7 +76,17 @@ namespace SharedClasses
 				callbackInFirstInstanceWhenAnotherStarts += (sn, ev) =>
 				{
 					while (mainformOrwindow == null) { }//Wait until main form created
-					actionToPerformOnFirstInstanceWhenSecondInstanceStarts(ev, mainformOrwindow);
+					string urlProtocolEmail, urlProtocolOrdercode;
+					if (LicensingInterop_Shared.WasUrlProtocolUsedToSpecifyRegistrationCredentials(ev.CommandLineArgs, out urlProtocolEmail, out urlProtocolOrdercode))
+					{
+						Dictionary<string, string> outUserPrivilages;
+						LicensingInterop_Client.Client_ValidateLicense(
+							out outUserPrivilages,
+							err => UserMessages.ShowErrorMessage(err),
+							ev.CommandLineArgs);
+					}
+					else
+						actionToPerformForSecondInstance(ev, mainformOrwindow);
 				};
 				// register wait handle for this instance (process)
 				ThreadPool.RegisterWaitForSingleObject(eventWaitHandle, WaitOrTimerCallback,

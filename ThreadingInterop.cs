@@ -46,7 +46,7 @@ public class ThreadingInterop
 			th.Abort();
 			th = null;
 			GC.Collect();
-			GC.WaitForPendingFinalizers();
+			//GC.WaitForPendingFinalizers();  This caused a hang when we try to Register in the RegisterWindow
 			return null;
 		}
 		else

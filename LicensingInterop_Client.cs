@@ -97,7 +97,7 @@ namespace SharedClasses
 		public static bool GetLicenseAndPublicKeyFromLicenseServer(string uniqueSignature, out string licenseKeyOrError, out string publicKey)
 		{
 			string result = PhpInterop.PostPHP(null,
-				"http://fjh.dyndns.org/licensing/getlicense",
+				"http://fjh.dyndns.org/licensing/getlicense",//"http://firepuma.com/licensing/getlicense"
 				"uniquesignature=" + LicensingInterop_Shared.EncryptStringForPhpServer(uniqueSignature, err => UserMessages.ShowErrorMessage(err)));
 
 			if (string.IsNullOrWhiteSpace(result))
@@ -136,10 +136,20 @@ namespace SharedClasses
 			}
 		}
 
+		//public const string cRegisterAppArgumentName = "registerapp";
+
 		private static bool registrationSucceeded = false;
-		public static bool Client_ValidateLicense(out Dictionary<string, string> userPrivilages, Action<string> onError)//, string publicKeyXml, string licenseFilepath)
+		public static bool Client_ValidateLicense(out Dictionary<string, string> userPrivilages, Action<string> onError, string[] customCommandlineArgs = null)//, string publicKeyXml, string licenseFilepath)
 		{
 			string applicationName = OwnAppsShared.GetApplicationName();
+
+			string[] args = customCommandlineArgs ?? Environment.GetCommandLineArgs();
+
+			bool showMessageIfAlreadyRegistered = false;
+			string predefinedEmail = null;
+			string predefinedOrdercode = null;
+			if (LicensingInterop_Shared.WasUrlProtocolUsedToSpecifyRegistrationCredentials(args, out predefinedEmail, out predefinedOrdercode))
+				showMessageIfAlreadyRegistered = true;
 
 			//Ensure that the expirationDate of a license also fails to validate if it is a Trial license and the trial period expired
 			//I would assume that this is already the case
@@ -199,7 +209,7 @@ namespace SharedClasses
 					{
 						string outLicenseXmlText;
 						string outPublicKey;
-						if (RegistrationWindow.RegisterApplication(applicationName, out outLicenseXmlText, out outPublicKey))
+						if (RegistrationWindow.RegisterApplication(applicationName, out outLicenseXmlText, out outPublicKey, predefinedEmail, predefinedOrdercode))
 						{
 							registrationSucceeded = true;
 							File.WriteAllText(licenseFilepath, outLicenseXmlText);
@@ -220,6 +230,9 @@ namespace SharedClasses
 				}
 				else
 				{
+					if (showMessageIfAlreadyRegistered)
+						UserMessages.ShowInfoMessage("Application is already registered, will now just ensure everything is still in tact.");
+
 					if (File.Exists(publicKeyPath) && new FileInfo(publicKeyPath).Length == 0)
 						File.Delete(publicKeyPath);//If it so happens that the public key is an empty file
 

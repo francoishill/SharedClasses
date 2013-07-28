@@ -101,6 +101,27 @@ namespace SharedClasses
 			SetWindowLong(hwnd, GWL_STYLE, (currentStyle & ~WS_MAXIMIZEBOX & ~WS_MINIMIZEBOX));
 		}
 
+		public static void ForceBringWindowToFront(this Window window)
+		{
+			Action<Window> action = (win) =>
+			{
+				win.Show();
+				win.Activate();
+				win.BringIntoView();
+				win.Topmost = !win.Topmost;
+				win.Topmost = !win.Topmost;
+				win.Activate();
+			};
+
+			action(window);
+			int cDelayBeforeSecondActive = 50;
+			//Activate again after 'cDelayBeforeSecondActive' milliseconds
+			ThreadingInterop.ActionAfterDelay(
+				delegate { action(window); },
+				TimeSpan.FromMilliseconds(cDelayBeforeSecondActive),
+				delegate { });
+		}
+
 		private static string GetLastWindowPositionFilename(string applicationName, string subfolderName = null)
 		{
 			return SettingsInterop.GetFullFilePathInLocalAppdata("LastWindowPos.fjset", applicationName, subfolderName);
@@ -184,6 +205,135 @@ namespace SharedClasses
 			{
 				textboxbaseControl.ScrollToHorizontalOffset(textboxbaseControl.HorizontalOffset - horizontalScrollInterval);
 			}
+		}
+
+		private static Rect? GetWorkArea(this Window window, Point pointToDetermineScreen)
+		{
+			foreach (var screen in System.Windows.Forms.Screen.AllScreens)
+				if (screen.WorkingArea.Contains(new System.Drawing.Point((int)pointToDetermineScreen.X, (int)pointToDetermineScreen.Y)))
+					return new Rect(new Point(screen.WorkingArea.Left, screen.WorkingArea.Top), new Size(screen.WorkingArea.Width, screen.WorkingArea.Height));
+			//If we did not find which screen obtains the point
+			return null;
+		}
+
+		public enum MoveMode { Major, Minor, Pixel };
+		private const double cKeyboardMoveDistance_Major = 100;
+		private const double cKeyboardMoveDistance_Minor = 10;
+		private const double cKeyboardMoveDistance_Pixel = 1;
+		public static double GetMoveDistanceFromMoveMode(this Window window, MoveMode moveMode)
+		{
+			return
+				moveMode == MoveMode.Major ? cKeyboardMoveDistance_Major
+				   : moveMode == MoveMode.Minor ? cKeyboardMoveDistance_Minor
+				   : cKeyboardMoveDistance_Pixel;
+		}
+
+		public static void MoveUp(this Window window, MoveMode moveMode)
+		{
+			double moveDistance = GetMoveDistanceFromMoveMode(window, moveMode);
+			double newTopPos = window.Top - moveDistance;
+			var workArea = GetWorkArea(window, new Point(window.Left, window.Top));
+			if (workArea.HasValue && newTopPos < workArea.Value.Top)
+			{
+				if (window.Top > workArea.Value.Top)//The window is not currently at the top edge
+					newTopPos = workArea.Value.Top;
+				else
+				{
+					window.Top -= moveDistance;
+					return;
+				}
+			}
+			window.Top = newTopPos;
+		}
+
+		public static void MoveDown(this Window window, MoveMode moveMode)
+		{
+			double moveDistance = GetMoveDistanceFromMoveMode(window, moveMode);
+			double newTopPos = window.Top + moveDistance;
+			var workArea = GetWorkArea(window, new Point(window.Left, window.Top)).Value;
+			if (newTopPos + window.ActualHeight > workArea.Bottom)
+			{
+				if (window.Top + window.ActualHeight < workArea.Bottom)//The window is not currently at the bottom edge
+					newTopPos = workArea.Bottom - window.ActualHeight;
+				else
+				{
+					window.Top += moveDistance;
+					return;
+				}
+			}
+			window.Top = newTopPos;
+		}
+
+		public static void MoveLeft(this Window window, MoveMode moveMode)
+		{
+			double moveDistance = GetMoveDistanceFromMoveMode(window, moveMode);
+			double newLeftPos = window.Left - moveDistance;
+			var workArea = GetWorkArea(window, new Point(window.Left, window.Top)).Value;
+			if (newLeftPos < workArea.Left)
+			{
+				if (window.Left > workArea.Left)//The window is not currently at the left edge
+					newLeftPos = workArea.Left;
+				else
+				{
+					window.Left -= moveDistance;
+					return;
+				}
+			}
+			window.Left = newLeftPos;
+		}
+
+		public static void MoveRight(this Window window, MoveMode moveMode)
+		{
+			double moveDistance = GetMoveDistanceFromMoveMode(window, moveMode);
+			double newLeftPos = window.Left + moveDistance;
+			var workArea = GetWorkArea(window, new Point(window.Left, window.Top)).Value;
+			if (newLeftPos + window.ActualWidth > workArea.Right)
+			{
+				if (window.Left + window.ActualWidth < workArea.Right)//The window is not currently at the right edge
+					newLeftPos = workArea.Right - window.ActualWidth;
+				else
+				{
+					window.Left += moveDistance;
+					return;
+				}
+			}
+			window.Left = newLeftPos;
+		}
+
+		private const double cMinHeight = 37;
+		private const double cMinWidth = 60;
+		public static void DecreaseHeight(this Window window, MoveMode moveMode)
+		{
+			double decreaseAmount = GetMoveDistanceFromMoveMode(window, moveMode);
+			double newHeight = window.ActualHeight - decreaseAmount;
+			if (newHeight < cMinHeight) newHeight = cMinHeight;
+			window.Height = newHeight;
+		}
+
+		public static void IncreaseHeight(this Window window, MoveMode moveMode)
+		{
+			double increaseAmount = GetMoveDistanceFromMoveMode(window, moveMode);
+			double newHeight = window.ActualHeight + increaseAmount;
+			var workArea = GetWorkArea(window, new Point(window.Left, window.Top)).Value;
+			if (window.Top < workArea.Bottom && window.Top + newHeight > workArea.Bottom) newHeight = newHeight = workArea.Bottom - window.Top;
+			window.Height = newHeight;
+		}
+
+		public static void DecreaseWidth(this Window window, MoveMode moveMode)
+		{
+			double decreaseAmount = GetMoveDistanceFromMoveMode(window, moveMode);
+			double newWidth = window.ActualWidth - decreaseAmount;
+			if (newWidth < cMinWidth) newWidth = cMinWidth;
+			window.Width = newWidth;
+		}
+
+		public static void IncreaseWidth(this Window window, MoveMode moveMode)
+		{
+			double increaseAmount = GetMoveDistanceFromMoveMode(window, moveMode);
+			double newWidth = window.ActualWidth + increaseAmount;
+			var workArea = GetWorkArea(window, new Point(window.Left, window.Top)).Value;
+			if (window.Left < workArea.Right && window.Left + newWidth > workArea.Right) newWidth = newWidth = workArea.Right - window.Left;
+			window.Width = newWidth;
 		}
 
 		public static void SetHookForSystemMenu(Window window, HwndSourceHook wndProc, List<SystemMenuItem> MenuItemList)

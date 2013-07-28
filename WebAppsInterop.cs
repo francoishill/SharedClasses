@@ -188,17 +188,18 @@ namespace SharedClasses
 				goto retryAction;
 			}
 
+
 			if (!string.IsNullOrWhiteSpace(resultOrError)
-			&& resultOrError.StartsWith("ERROR:["))//Note the '[' after ERROR:
-			{
-				//This is probably from 'PostPHP' method
-				return false;
-			}
-			else if (!string.IsNullOrWhiteSpace(resultOrError)
 				&& resultOrError.StartsWith("ERROR:"))
 			{
-				//Would have been the case of PostPHP method caught an Exception
-				string errEncrypted = resultOrError.Substring("ERROR:".Length);
+				string errEncrypted = resultOrError;
+
+				if (resultOrError.StartsWith("ERROR:[")
+					&& resultOrError.Contains(']'))//This is probably from 'PostPHP' method
+					errEncrypted = errEncrypted.Substring(errEncrypted.IndexOf(']') + 1);
+				else//Would have been the case of PostPHP method caught an Exception
+					errEncrypted = errEncrypted.Substring("ERROR:".Length);
+
 				try
 				{
 					string errUnencrypted = EncryptionInterop.SimpleTripleDesDecrypt(errEncrypted, this.AccessSecret);
@@ -463,6 +464,12 @@ namespace SharedClasses
 			return this.GetPostResultOfApp_AndDecrypt("api_getlist", data, out resultOrError);
 		}
 
+		public bool GetArchivedList_AsJson(out string resultOrError)
+		{
+			var data = new NameValueCollection();
+			return this.GetPostResultOfApp_AndDecrypt("api_getarchivedlist", data, out resultOrError);
+		}
+
 		public bool GetUsername(out string usernameOrError)
 		{
 			var data = new NameValueCollection();
@@ -582,12 +589,13 @@ namespace SharedClasses
 				return null;
 		}
 
-		public bool DeleteItem(int itemIndex)
+		public bool ArchiveItem(int itemIndex, DateTime currentModifiedTime)
 		{
 			var nameValues = new NameValueCollection();
 			nameValues.Add("index", itemIndex.ToString());
+			nameValues.Add("current_modifiedtime", currentModifiedTime.ToString(WebAppsInterop.cPhpDateFormat));
 			string resultOrError;
-			var deleteSuccess = this.GetPostResultOfApp_AndDecrypt("api_deleteitem", nameValues, out resultOrError);
+			var deleteSuccess = this.GetPostResultOfApp_AndDecrypt("api_archiveitem", nameValues, out resultOrError);
 			if (!deleteSuccess)
 				UserMessages.ShowErrorMessage("Unable to delete item: " + resultOrError);
 			else

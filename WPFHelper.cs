@@ -92,6 +92,31 @@ namespace SharedClasses
 
 		[DllImport("user32.dll")]
 		extern private static int SetWindowLong(IntPtr hwnd, int index, int value);
+		private const int GWL_HWNDPARENT = -8;
+		public static void SetOwner(this Window child, IntPtr ownerHandle)
+		{
+			Win32Api.SetWindowLong(
+				child.GetWindowHandle(),
+				GWL_HWNDPARENT,
+				ownerHandle.ToInt32());
+		}
+
+		public static int pNoTopMost = -2, pTopMost = -1, pTop = 0, pBottom = 1;
+		public static void ForceBringWindowToFrontButDoNotActivate(this Window window)
+		{
+			Win32Api.ShowWindow(window.GetWindowHandle(), (int)Win32Api.SW_SHOWNOACTIVATE);
+			//DebugTracerWindow.DebugOut("Win is foreground: " + (window.GetWindowHandle().ToInt32() != Win32Api.GetForegroundWindow().ToInt32()).ToString());
+			//if (window.GetWindowHandle().ToInt32() != Win32Api.GetForegroundWindow().ToInt32())
+			if (!window.IsActive)
+			{
+				window.SetOwner(Win32Api.GetForegroundWindow());
+				Win32Api.SetWindowPos(
+					window.GetWindowHandle().ToInt32(),
+					pTop,
+					(int)window.Left, (int)window.Top, (int)window.Width, (int)window.Height,
+					Win32Api.SWP_NOACTIVATE);
+			}
+		}
 
 		public static void HideMinimizeAndMaximizeButtons(this Window window)
 		{
@@ -101,7 +126,12 @@ namespace SharedClasses
 			SetWindowLong(hwnd, GWL_STYLE, (currentStyle & ~WS_MAXIMIZEBOX & ~WS_MINIMIZEBOX));
 		}
 
-		public static void ForceBringWindowToFront(this Window window)
+		public static bool IsForeground(this Window window)
+		{
+			return window != null && window.GetWindowHandle() == Win32Api.GetForegroundWindow();
+		}
+
+		public static void ForceBringWindowToFrontAndActivate(this Window window)
 		{
 			Action<Window> action = (win) =>
 			{

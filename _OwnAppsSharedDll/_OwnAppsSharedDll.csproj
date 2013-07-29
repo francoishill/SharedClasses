@@ -156,6 +156,10 @@
     <Compile Include="..\ConvertersGeneral.cs">
       <Link>ConvertersGeneral.cs</Link>
     </Compile>
+    <Compile Include="..\DebugTracerWindow.xaml.cs">
+      <Link>DebugTracerWindow.xaml.cs</Link>
+      <DependentUpon>DebugTracerWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="..\DeveloperCommunication.cs">
       <Link>DeveloperCommunication.cs</Link>
     </Compile>
@@ -314,6 +318,11 @@
   <ItemGroup>
     <Page Include="..\AboutWindow2.xaml">
       <Link>AboutWindow2.xaml</Link>
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="..\DebugTracerWindow.xaml">
+      <Link>DebugTracerWindow.xaml</Link>
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

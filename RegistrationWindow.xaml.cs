@@ -22,15 +22,19 @@ namespace SharedClasses
 
 		private void Window_Loaded(object sender, RoutedEventArgs e)
 		{
-			if (!string.IsNullOrWhiteSpace(textboxOwnerEmail.Text)
-				&& !string.IsNullOrWhiteSpace(textboxOrderCode.Text))//Probably the user used the Url Protocol link from his Order Email
-			{
-				string errorIfFailed;
-				if (Register(out errorIfFailed))
-					this.DialogResult = true;
-				else
-					UserMessages.ShowErrorMessage(errorIfFailed);
-			}
+			WPFHelper.DelayLoadProcedure_CalledWithinWindowLoadedEvent(
+				delegate
+				{
+					if (!string.IsNullOrWhiteSpace(textboxOwnerEmail.Text)
+						&& !string.IsNullOrWhiteSpace(textboxOrderCode.Text))//Probably the user used the Url Protocol link from his Order Email
+					{
+						string errorIfFailed;
+						if (Register(out errorIfFailed))
+							this.DialogResult = true;
+						else
+							UserMessages.ShowErrorMessage(errorIfFailed);
+					}
+				});
 		}
 
 		private bool Register(out string errorIfFailed)

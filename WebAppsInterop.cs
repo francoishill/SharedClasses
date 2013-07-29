@@ -502,7 +502,7 @@ namespace SharedClasses
 			ThreadingInterop.PerformOneArgFunctionSeperateThread<ModifyOnlinePropertyTask>(
 				(task) =>
 				{
-					this.BeforeSavingOnlineEvent(task.Sender, new EventArgs());
+					this.BeforeSavingOnlineEvent(onlineSaveTask.Sender, new EventArgs());
 					try
 					{
 						var data = new NameValueCollection();

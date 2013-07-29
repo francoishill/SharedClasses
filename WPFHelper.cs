@@ -152,15 +152,18 @@ namespace SharedClasses
 				delegate { });
 		}
 
-		private static string GetLastWindowPositionFilename(string applicationName, string subfolderName = null)
+		private static string GetLastWindowPositionFilename(string applicationName, string subfolderName = null, string customFileNameOnlyWithoutExtension = null)
 		{
-			return SettingsInterop.GetFullFilePathInLocalAppdata("LastWindowPos.fjset", applicationName, subfolderName);
+			return SettingsInterop.GetFullFilePathInLocalAppdata(
+				customFileNameOnlyWithoutExtension ?? "LastWindowPos.fjset",
+				applicationName,
+				subfolderName);
 		}
-		public static bool LoadLastWindowPosition(this Window window, string applicationName, string subfolderName = null)
+		public static bool LoadLastWindowPosition(this Window window, string applicationName, string subfolderName = null, string customFileNameOnlyWithoutExtension = null)
 		{
 			try
 			{
-				string LastWindowPositionFilename = GetLastWindowPositionFilename(applicationName, subfolderName);
+				string LastWindowPositionFilename = GetLastWindowPositionFilename(applicationName, subfolderName, customFileNameOnlyWithoutExtension);
 				if (!File.Exists(LastWindowPositionFilename))
 					return false;
 
@@ -187,11 +190,11 @@ namespace SharedClasses
 			}
 		}
 
-		public static bool SaveLastWindowPosition(this Window window, string applicationName, string subfolderName = null)
+		public static bool SaveLastWindowPosition(this Window window, string applicationName, string subfolderName = null, string customFileNameOnlyWithoutExtension = null)
 		{
 			try
 			{
-				string LastWindowPositionFilename = GetLastWindowPositionFilename(applicationName, subfolderName);
+				string LastWindowPositionFilename = GetLastWindowPositionFilename(applicationName, subfolderName, customFileNameOnlyWithoutExtension);
 				File.WriteAllLines(LastWindowPositionFilename, new string[]
 				{ 
 					window.Left.ToString(),

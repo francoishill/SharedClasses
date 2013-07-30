@@ -531,17 +531,25 @@ namespace SharedClasses
 							}
 						}
 
-						if (UserMessages.Confirm("Unable to save note text online, restoring old value. Do you want to place the value that failed into the Clipboard?"))
+						if (task.ShowIfError)
 						{
-							try { Clipboard.SetText(task.NewValue); }
-							catch { }
-							string clipBoardText = Clipboard.GetText();
-							if (!string.Equals(clipBoardText, task.NewValue))
+							if (UserMessages.Confirm("Unable to save note text online, restoring old value."
+								+ " Do you want to place the value that failed into the Clipboard?"
+								+ Environment.NewLine + Environment.NewLine
+								+ "Additional error message:"
+								+ Environment.NewLine
+								+ resultOrError))
 							{
-								string tempFilename = "Unsaved cloudnote - " + DateTime.Now.ToString("yyyyMMddHHmmss") + ".txt";
-								string tempTextFile = Path.Combine(Path.GetTempPath(), tempFilename);
-								File.WriteAllText(tempTextFile, task.NewValue);
-								Process.Start(tempTextFile);
+								try { Clipboard.SetText(task.NewValue); }
+								catch { }
+								string clipBoardText = Clipboard.GetText();
+								if (!string.Equals(clipBoardText, task.NewValue))
+								{
+									string tempFilename = "Unsaved cloudnote - " + DateTime.Now.ToString("yyyyMMddHHmmss") + ".txt";
+									string tempTextFile = Path.Combine(Path.GetTempPath(), tempFilename);
+									File.WriteAllText(tempTextFile, task.NewValue);
+									Process.Start(tempTextFile);
+								}
 							}
 						}
 					}

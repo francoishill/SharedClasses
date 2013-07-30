@@ -46,10 +46,15 @@ namespace SharedClasses
 			window.Activate();
 		}
 
-		public static void MakeWindowClickThrough(this Window window)
+		public static void MakeWindowClickThrough(this Window window, bool makeClickTrough = true)
 		{
+			//Very important!!! The window must have Opactiy < 1.0 and also to be transparent the property AllowsTransparency must be true.
 			int initialStyle = Win32Api.GetWindowLong(window.GetWindowHandle(), Win32Api.GWL_EXSTYLE);
-			Win32Api.SetWindowLong(window.GetWindowHandle(), Win32Api.GWL_EXSTYLE, initialStyle | Win32Api.WS_EX_LAYERED | Win32Api.WS_EX_TRANSPARENT);
+			if (makeClickTrough)
+				Win32Api.SetWindowLong(window.GetWindowHandle(), Win32Api.GWL_EXSTYLE, initialStyle | Win32Api.WS_EX_LAYERED | Win32Api.WS_EX_TRANSPARENT);
+			else
+				//Is the operator ^ correct on the next line, we have not tested this yet?
+				Win32Api.SetWindowLong(window.GetWindowHandle(), Win32Api.GWL_EXSTYLE, initialStyle ^ Win32Api.WS_EX_LAYERED ^ Win32Api.WS_EX_TRANSPARENT);
 		}
 
 		public static void OnPropertyChanged<T>(T item) where T : INotifyPropertyChanged

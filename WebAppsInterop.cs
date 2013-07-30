@@ -597,7 +597,7 @@ namespace SharedClasses
 			string resultOrError;
 			var deleteSuccess = this.GetPostResultOfApp_AndDecrypt("api_archiveitem", nameValues, out resultOrError);
 			if (!deleteSuccess)
-				UserMessages.ShowErrorMessage("Unable to delete item: " + resultOrError);
+				UserMessages.ShowErrorMessage("Unable to archive item: " + resultOrError);
 			else
 				this.LastTimestampChangesWasSavedOnline = DateTime.Now;
 			return deleteSuccess;

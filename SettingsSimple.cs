@@ -717,7 +717,7 @@ namespace SharedClasses
 					"StartupTodoManager",
 					"StickyNotes",
 					"TaskbarShortcuts",
-					"TestHoursWorkedCalculator",
+					//"TestHoursWorkedCalculator", application merged into WindowsStartupManager
 					"TestingByteArrayDiff",
 					"TestingMonitorSubversion",
 					"TopmostSearchBox",
@@ -843,7 +843,7 @@ namespace SharedClasses
 					"CodeSnippets",
 					"AutoUploadChangesToFtp",
 					"TestingByteArrayDiff",
-					"TestHoursWorkedCalculator",
+					//"TestHoursWorkedCalculator",application merged into WindowsStartupManager
 					"InstantMessengerClient",
 					"InstantMessengerServer",
 					"PublishFromCommandline",
@@ -917,7 +917,7 @@ namespace SharedClasses
 					"StartupTodoManager",
 					"StickyNotes",
 					"TaskbarShortcuts",
-					"TestHoursWorkedCalculator",
+					//"TestHoursWorkedCalculator",application merged into WindowsStartupManager
 					"TestingByteArrayDiff",
 					"TestingMonitorSubversion",
 					"TopmostSearchBox",

@@ -23,7 +23,7 @@ namespace SharedClasses
 
 	public class WindowsMonitor
 	{
-		public static bool MustRecord = false;//Directory.Exists(@"c:\users\FrancoisLaptopDell") || Directory.Exists(@"c:\users\Francois");
+		//public static bool MustRecord = false;//Directory.Exists(@"c:\users\FrancoisLaptopDell") || Directory.Exists(@"c:\users\Francois");
 
 		[DebuggerDisplay("IdleSeconds = {IdleSeconds}, TotalSeconds = {TotalSeconds}")]
 		public class WindowTimes
@@ -185,7 +185,7 @@ namespace SharedClasses
 			StartTicker();
 		}
 
-		//private static int? recordingDeviceNumber = null;
+		/*//private static int? recordingDeviceNumber = null;
 		public static string TempRecordingDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "TestHoursWorkedCalculator_recordings");
 		//public static List<string> UnmoveableFiles = new List<string>();
 		public static string tmpRecordingPath = null;
@@ -203,53 +203,54 @@ namespace SharedClasses
 				UserMessages.ShowWarningMessage("Cannot start recording, no audio devices found.");
 				return;
 			}
-			/*if (deviceCount == 1)
-				recordingDeviceNumber = 0;
+			
+			//if (deviceCount == 1)
+			//	recordingDeviceNumber = 0;
 
-			if (deviceCount > 1 && !recordingDeviceNumber.HasValue)
-			{
-				List<string> devices1 = new List<string>();
-				foreach (var device in WinMMinterop.GetRecordingDevicesNames())
-					devices1.Add(device);
+			//if (deviceCount > 1 && !recordingDeviceNumber.HasValue)
+			//{
+			//	List<string> devices1 = new List<string>();
+			//	foreach (var device in WinMMinterop.GetRecordingDevicesNames())
+			//		devices1.Add(device);
 
-				bool foundInFile = false;
-				if (File.Exists(ReportWindow.SelectedRecordingDeviceFilepath))
-				{
-					for (int i = 0; i < devices1.Count; i++)
-						if (devices1[i].Trim().Equals(File.ReadAllText(ReportWindow.SelectedRecordingDeviceFilepath).Trim(), StringComparison.InvariantCultureIgnoreCase))
-						{
-							recordingDeviceNumber = i;
-							foundInFile = true;
-							break;
-						}
-				}
-				if (!foundInFile)
-				{
-					//ThreadingInterop.PerformOneArgFunctionSeperateThread((devices_in) =>
-					//{
-					//List<string> devices = devices_in as List<string>;
-					//string pickedDevice = PickItemWPF.PickItem<string>(devices, "Please pick a recording device", devices[0]);
-					//int pickedIndex = devices.IndexOf(pickedDevice);
-					string pickedDevice = PickItemWPF.PickItem<string>(devices1, "Please pick a recording device", devices1[0]);
-					int pickedIndex = devices1.IndexOf(pickedDevice);
-					if (pickedIndex != -1)
-					{
-						recordingDeviceNumber = pickedIndex;
-						File.WriteAllText(ReportWindow.SelectedRecordingDeviceFilepath, pickedDevice);
-						//StopRecordingAudio(false);
-						//StartRecordingAudio();
-					}
-					//},
-					//devices1,
-					//false,
-					//apartmentState: System.Threading.ApartmentState.STA);
-					else
-					{
-						UserMessages.ShowWarningMessage("No devices picked, using first device = " + devices1[0]);
-						recordingDeviceNumber = 0;
-					}
-				}
-			}*/
+			//	bool foundInFile = false;
+			//	if (File.Exists(ReportWindow.SelectedRecordingDeviceFilepath))
+			//	{
+			//		for (int i = 0; i < devices1.Count; i++)
+			//			if (devices1[i].Trim().Equals(File.ReadAllText(ReportWindow.SelectedRecordingDeviceFilepath).Trim(), StringComparison.InvariantCultureIgnoreCase))
+			//			{
+			//				recordingDeviceNumber = i;
+			//				foundInFile = true;
+			//				break;
+			//			}
+			//	}
+			//	if (!foundInFile)
+			//	{
+			//		//ThreadingInterop.PerformOneArgFunctionSeperateThread((devices_in) =>
+			//		//{
+			//		//List<string> devices = devices_in as List<string>;
+			//		//string pickedDevice = PickItemWPF.PickItem<string>(devices, "Please pick a recording device", devices[0]);
+			//		//int pickedIndex = devices.IndexOf(pickedDevice);
+			//		string pickedDevice = PickItemWPF.PickItem<string>(devices1, "Please pick a recording device", devices1[0]);
+			//		int pickedIndex = devices1.IndexOf(pickedDevice);
+			//		if (pickedIndex != -1)
+			//		{
+			//			recordingDeviceNumber = pickedIndex;
+			//			File.WriteAllText(ReportWindow.SelectedRecordingDeviceFilepath, pickedDevice);
+			//			//StopRecordingAudio(false);
+			//			//StartRecordingAudio();
+			//		}
+			//		//},
+			//		//devices1,
+			//		//false,
+			//		//apartmentState: System.Threading.ApartmentState.STA);
+			//		else
+			//		{
+			//			UserMessages.ShowWarningMessage("No devices picked, using first device = " + devices1[0]);
+			//			recordingDeviceNumber = 0;
+			//		}
+			//	}
+			//}
 
 			if (!actionAlreadySet)
 			{
@@ -269,8 +270,8 @@ namespace SharedClasses
 
 			try
 			{
-				if (MustRecord)
-					WinMMinterop.Recorder.Instance.StartRecording();
+				//if (MustRecord)
+				//	WinMMinterop.Recorder.Instance.StartRecording();
 			}
 			catch (Exception exc)
 			{
@@ -296,7 +297,7 @@ namespace SharedClasses
 			//    //    recorder.Stopped += new EventHandler(recorder_Stopped);
 			//    //}
 			//}
-		}
+		}*/
 
 		//private static void recorder_Stopped(object sender, EventArgs e)
 		//{
@@ -419,8 +420,8 @@ namespace SharedClasses
 		private void StartTicker()
 		{
 			ticker.Start();
-			if (MustRecord)
-				StartRecordingAudio();
+			//if (MustRecord)
+			//	StartRecordingAudio();
 			tickerRunning = true;
 		}
 		public static void StopRecordingAudio()//bool preventAutoRestart = true)
@@ -432,8 +433,8 @@ namespace SharedClasses
 			//    recorder.Stop();
 			//}
 
-			if (MustRecord)
-				WinMMinterop.Recorder.Instance.StopAndSave(tmpRecordingPath);
+			//if (MustRecord)
+			//	WinMMinterop.Recorder.Instance.StopAndSave(tmpRecordingPath);
 			tmpRecordingPath = null;
 
 			//if (SndRec.Instance.Status != SndStatus.Uninitialized)
@@ -596,7 +597,7 @@ namespace SharedClasses
 				.Where(wt => wt.TotalSeconds >= minimumSeconds));
 		}
 
-		public static void SaveReportsToJsonAndHtmlAndRecordedWave(ObservableCollection<WindowsMonitor.WindowTimes> reportList, string jsonFilepath, string htmlFilepath, string recordingSaveToDirectory)
+		public static void SaveReportsToJsonAndHtmlAndRecordedWave(ObservableCollection<WindowsMonitor.WindowTimes> reportList, string jsonFilepath, string htmlFilepath/*, string recordingSaveToDirectory*/)
 		{
 			if (reportList == null || reportList.Count == 0)
 			{
@@ -647,7 +648,7 @@ namespace SharedClasses
 			htmltext += "</body></html>";
 			File.WriteAllText(htmlFilepath, htmltext);
 
-			if (WindowsMonitor.MustRecord)
+			/*if (WindowsMonitor.MustRecord)
 			{
 				//foreach (var file in Directory.GetFiles(WindowsMonitor.TempRecordingDir, "*.wav"))
 				//{
@@ -660,7 +661,7 @@ namespace SharedClasses
 				//if (WindowsMonitor.tmpRecordingPath != null)
 				foreach (var file in Directory.GetFiles(WindowsMonitor.TempRecordingDir, "*.wav"))
 					WindowsMonitor.MoveAndConvertToMP3(file, recordingSaveToDirectory);
-			}
+			}*/
 
 			Process.Start("explorer", "/select,\"" + htmlFilepath + "\"");
 		}

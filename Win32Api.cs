@@ -1007,5 +1007,22 @@ namespace SharedClasses
 			public IntPtr hwndTrack;
 			public uint dwHoverTime;
 		}
+
+		public static bool TryToRegisterAHotkey(string applicationName, IntPtr windowHandle, int hotkeyId, uint modifiers, int keyCode)
+		{
+			if (!RegisterHotKey(windowHandle, hotkeyId, modifiers, (uint)keyCode))
+			{
+				var processes = System.Diagnostics.Process.GetProcessesByName(applicationName);
+				var foundAnotherCloudnoteProcess = false;
+				foreach (var proc in processes)
+					if (proc.Id != System.Diagnostics.Process.GetCurrentProcess().Id)
+						foundAnotherCloudnoteProcess = true;
+				if (!foundAnotherCloudnoteProcess)
+					ThreadingInterop.DoAction(delegate { UserMessages.ShowWarningMessage(applicationName + " could not register hotkey WinKey + S"); }, false);
+				return false;
+			}
+			else
+				return true;
+		}
 	}
 }

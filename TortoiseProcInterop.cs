@@ -10,7 +10,7 @@ namespace SharedClasses
 	{
 		private enum VersioningClient { Subversion, Git };
 		public enum TortoiseSvnCommands { Log, Commit, Update };
-		public enum TortoiseGitCommands { Log, Pull, Commit, Push };
+		public enum TortoiseGitCommands { Log, Fetch, Pull, Commit, Push };
 
 		private const string cTortoiseSvnPath = @"C:\Program Files\TortoiseSVN\bin\TortoiseProc.exe";
 		private const string cTortoiseGitPath = @"C:\Program Files\TortoiseGit\bin\TortoiseGitProc.exe";
@@ -70,7 +70,7 @@ namespace SharedClasses
 					: cGitIgnoreOutputPredicate;
 		}
 
-		private static bool CheckFolderChanges(VersioningClient client, string dir, out string changesText)
+		private static bool CheckFolderChanges(VersioningClient client, string dir, out string changesText, bool ifGitShowShort = true)
 		{
 			List<string> outputs, errors;
 			int exitCode;
@@ -82,8 +82,12 @@ namespace SharedClasses
 
 			string cmdlineArgs =
 				client == VersioningClient.Subversion
-				? string.Format("status --show-updates {0} \"{1}\"", GetExtraSvnParams(), dir)
-				: string.Format("status --short \"{0}\"", dir);
+				? string.Format("status --show-updates {0} \"{1}\"",
+					GetExtraSvnParams(),
+					dir)
+				: string.Format("status {0} \"{1}\"",
+					(ifGitShowShort ? "--short " : ""),
+					dir);
 
 			//Only need credentials if this if apache called this EXE (like for the BuildTestSystem) and apache is running as service
 			bool? runResult = ProcessesInterop.RunProcessCatchOutput(
@@ -132,9 +136,9 @@ namespace SharedClasses
 			return CheckFolderChanges(VersioningClient.Subversion, dir, out changesText);
 		}
 
-		public static bool CheckFolderGitChanges(string dir, out string changesText)
+		public static bool CheckFolderGitChanges(string dir, out string changesText, bool shortSummaryOnly = true)
 		{
-			return CheckFolderChanges(VersioningClient.Git, dir, out changesText);
+			return CheckFolderChanges(VersioningClient.Git, dir, out changesText, shortSummaryOnly);
 		}
 
 		private static bool CheckFolderDiff(VersioningClient client, string dir, out string diffText)

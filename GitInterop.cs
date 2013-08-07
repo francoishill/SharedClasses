@@ -10,10 +10,11 @@ using SharedClasses;
 
 public class GitInterop : INotifyPropertyChanged
 {
-	public enum GitCommand { Log, Pull, Commit, Push, Status };
+	public enum GitCommand { Log, Fetch, Pull, Commit, Push, Status, StatusShort };
 	public enum MessagesTypes { Output, Error }
 
-	public static bool? PerformGitCommand(string gitClonedFolder, GitCommand gitCommand, out string errorIfFailed, out List<string> outputs, out List<string> errors, string commitMessageOrRemoteName = null)
+	//False=error/could not run. Null=ran successfully but had outputs/errors. True=succeeded, no output
+	public static bool? PerformGitCommand(string gitClonedFolder, GitCommand gitCommand, out string errorIfFailed, out List<string> outputs, out List<string> errors, string commitMessage = null)
 	{
 		if (!Directory.Exists(gitClonedFolder))
 		{
@@ -23,23 +24,34 @@ public class GitInterop : INotifyPropertyChanged
 			return false;
 		}
 
-		Environment.CurrentDirectory = gitClonedFolder;
+		Console.WriteLine("Current folder: " + gitClonedFolder);
 
 		string gitpath = @"C:\Program Files (x86)\Git\bin\git.exe";
+		if (!File.Exists(gitpath))
+		{
+			errorIfFailed = "Git EXE not found in this directory: " + gitpath;
+			outputs = null;
+			errors = null;
+			return false;
+		}
 
 		try
 		{
 			string processArguments =
 				gitCommand ==
-				GitCommand.Commit ? "commit -a -m\"" + commitMessageOrRemoteName + "\""
+				GitCommand.Commit ? "commit -a -m\"" + commitMessage + "\""
 				: gitCommand == GitCommand.Push ? "push origin"//"push \"" + commitMessageOrRemoteName + "\""
 				: gitCommand == GitCommand.Pull ? "pull origin"//"pull \"" + commitMessageOrRemoteName + "\""
-				: gitCommand == GitCommand.Status ? "status --short"
+				: gitCommand == GitCommand.Status ? "status"
+				: gitCommand == GitCommand.StatusShort ? "status --short"
 				: "";
 
 			int exitcode;
 			bool? runsuccess = ProcessesInterop.RunProcessCatchOutput(
-				new ProcessStartInfo(gitpath, processArguments),
+				new ProcessStartInfo(gitpath, processArguments)
+				{
+					WorkingDirectory = gitClonedFolder
+				},
 				out outputs,
 				out errors,
 				out exitcode);

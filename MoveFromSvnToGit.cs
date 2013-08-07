@@ -182,6 +182,39 @@ namespace SharedClasses
 			return result;
 		}
 
+		public static MoveFromSvnToGit GetMoveItemFromFolder(string svnDirectory, string localGitClonedDir, string localGitRepoDir, out bool skippedDirectoryDueToHttps)
+		{
+			skippedDirectoryDueToHttps = false;
+
+			if (!DirIsValidSvnPath(svnDirectory))
+				return null;
+
+			string svnCheckoutPath;
+			bool isStandardLayout;
+			bool failedBecauseWasHttps;
+			string svnServeDirIfRequiredToBeRun;
+			if (!GetSvnUrlFromCheckedOutDir(svnDirectory, out svnCheckoutPath, out isStandardLayout, out failedBecauseWasHttps, out svnServeDirIfRequiredToBeRun))
+			{
+				if (failedBecauseWasHttps)
+				{
+					skippedDirectoryDueToHttps = true;
+					return null;
+				}
+			}
+			int svnFirstRevisionNumber = GetSvnFirstRevisionNumberOfDir(svnDirectory);
+			if (svnFirstRevisionNumber == -1)
+				return null;
+			var tmpMoveItem = new MoveFromSvnToGit(
+				svnCheckoutPath,
+				isStandardLayout,
+				1,//??,
+				localGitClonedDir,
+				localGitRepoDir,
+				true,
+				svnServeDirIfRequiredToBeRun);
+			return tmpMoveItem;
+		}
+
 		public static List<MoveFromSvnToGit> GetListInRootSvnDir(string rootSvnDir, string rootDirToCloneIn, string rootDirForGitRepos, bool autoCloseSvnServeIfNeeded, out List<string> skippedDirectoriesDueToHttps, Action<int> onProgress)
 		{
 			if (onProgress == null) onProgress = delegate { };
@@ -193,32 +226,23 @@ namespace SharedClasses
 			skippedDirectoriesDueToHttps = new List<string>();
 			foreach (var subdir in Directory.GetDirectories(rootSvnDir))
 			{
-				if (!DirIsValidSvnPath(subdir))
-					continue;
 				try
 				{
 					string FolderNameOnly = Path.GetFileNameWithoutExtension(subdir);
-					string svnCheckoutPath;
-					bool isStandardLayout;
-					bool failedBecauseWasHttps;
-					string svnServeDirIfRequiredToBeRun;
-					if (!GetSvnUrlFromCheckedOutDir(subdir, out svnCheckoutPath, out isStandardLayout, out failedBecauseWasHttps, out svnServeDirIfRequiredToBeRun))
-					{
-						if (failedBecauseWasHttps)
-							skippedDirectoriesDueToHttps.Add(subdir);
-						continue;
-					}
-					int svnFirstRevisionNumber = GetSvnFirstRevisionNumberOfDir(subdir);
-					if (svnFirstRevisionNumber == -1)
-						continue;
-					var tmpMoveItem = new MoveFromSvnToGit(
-						svnCheckoutPath,
-						isStandardLayout,
-						1,//??,
+
+					bool tmpSkippedDirectoryDueToHttps;
+					var tmpMoveItem = GetMoveItemFromFolder(
+						subdir,
 						Path.Combine(rootDirToCloneIn, FolderNameOnly),
 						Path.Combine(rootDirForGitRepos, FolderNameOnly),
-						true,
-						svnServeDirIfRequiredToBeRun);
+						out tmpSkippedDirectoryDueToHttps);
+
+					if (tmpSkippedDirectoryDueToHttps)
+						skippedDirectoriesDueToHttps.Add(subdir);
+
+					if (tmpMoveItem == null)
+						continue;
+
 					tmplist.Add(tmpMoveItem);
 				}
 				finally

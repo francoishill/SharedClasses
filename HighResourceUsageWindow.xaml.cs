@@ -183,11 +183,18 @@ namespace SharedClasses
 			this.Close();
 		}
 
-		public static ReturnResult ShowHighResourceUsageWindowReturnResult(string messageText, string messageTitle, ref HighResourceUsageWindow windowReference)
+		public static ReturnResult? ShowHighResourceUsageWindowReturnResult(string messageText, string messageTitle, ref HighResourceUsageWindow windowReference)
 		{
-			windowReference = new HighResourceUsageWindow(messageText, messageTitle);
-			windowReference.ShowDialog();
-			return windowReference._dialogResult;
+			try
+			{
+				windowReference = new HighResourceUsageWindow(messageText, messageTitle);
+				windowReference.ShowDialog();
+				return windowReference._dialogResult;
+			}
+			catch
+			{
+				return null;
+			}
 		}
 
 		private void textblockEditSettings_MouseUp(object sender, MouseButtonEventArgs e)

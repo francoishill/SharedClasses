@@ -22,12 +22,22 @@ namespace SharedClasses
 				"/command:" + tortoiseCommand.ToString().ToLower()
 				+ @" /path:""" + dir + @"""");
 		}
-		public static Process Git_StartTortoiseProc(TortoiseGitCommands tortoiseCommand, string dir)
+		public static Process Git_StartTortoiseProc(TortoiseGitCommands tortoiseCommand, string dir, bool waitForExit)
 		{
-			return Process.Start(
+			if (!File.Exists(cTortoiseGitPath))
+			{
+				UserMessages.ShowErrorMessage("Is TortoiseGit installed? File not found: " + cTortoiseGitPath);
+				return null;
+			}
+
+			var tmpProcess = Process.Start(
 				cTortoiseGitPath,
 				"/command:" + tortoiseCommand.ToString().ToLower()
 				+ @" /path:""" + dir + @"""");
+			if (tmpProcess != null
+				&& waitForExit)
+				tmpProcess.WaitForExit();
+			return tmpProcess;
 		}
 
 		public static string GetExtraSvnParams()

@@ -24,8 +24,6 @@ public class GitInterop : INotifyPropertyChanged
 			return false;
 		}
 
-		Console.WriteLine("Current folder: " + gitClonedFolder);
-
 		string gitpath = @"C:\Program Files (x86)\Git\bin\git.exe";
 		if (!File.Exists(gitpath))
 		{
@@ -41,6 +39,7 @@ public class GitInterop : INotifyPropertyChanged
 				gitCommand ==
 				GitCommand.Commit ? "commit -a -m\"" + commitMessage + "\""
 				: gitCommand == GitCommand.Push ? "push origin"//"push \"" + commitMessageOrRemoteName + "\""
+				: gitCommand == GitCommand.Fetch ? "fetch origin"
 				: gitCommand == GitCommand.Pull ? "pull origin"//"pull \"" + commitMessageOrRemoteName + "\""
 				: gitCommand == GitCommand.Status ? "status"
 				: gitCommand == GitCommand.StatusShort ? "status --short"

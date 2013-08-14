@@ -335,7 +335,7 @@ namespace SharedClasses
 
 					//At this point we know the license is valid but now also (on separate thread) confirm it exists on the server
 					string result = PhpInterop.PostPHP(null,
-						string.Format("http://firepuma.com/licensing/{0}/{1}/{2}/{3}/{4}",
+						string.Format("https://firepuma.com/licensing/{0}/{1}/{2}/{3}/{4}",//"http://firepuma.com/licensing/{0}/{1}/{2}/{3}/{4}",
 							"confirmlicenseisindb",
 							LicensingInterop_Shared.EncryptStringForPhpServer(applicationName, onError),
 							LicensingInterop_Shared.EncryptStringForPhpServer(ownerEmail, onError),

@@ -404,8 +404,18 @@ namespace SharedClasses
 
 			//DateTime publishDate = DateTime.Now;
 
-			actionOnMessage("Obtaining previously published date.", FeedbackMessageTypes.Status);
-			DateTime? tracTicketsSinceDate;//Use previous published version's publishedDate as the 'sinceDate' for trac tickets
+
+
+			/**************************************************************************************************/
+			/*****We disabled change logs until we built the functionality in to use GitHub's isues system*****/
+			/**************************************************************************************************/
+
+
+
+			DateTime? tracTicketsSinceDate = null;//Use previous published version's publishedDate as the 'sinceDate' for trac tickets
+			var listOfChangeLogsForEachRepo = new List<TracXmlRpcInterop.ChangeLogs>();
+
+			/*actionOnMessage("Obtaining previously published date.", FeedbackMessageTypes.Status);
 			if (!ObtainPreviouslyPublishedDate(projToBuild.ApplicationName, actionOnMessage, out tracTicketsSinceDate))
 				return false;//actionOnMessage already occurred inside 'ObtainPreviouslyPublishedDate'
 
@@ -417,7 +427,6 @@ namespace SharedClasses
 			if (changeLogs == null)
 				return false;
 
-			var listOfChangeLogsForEachRepo = new List<TracXmlRpcInterop.ChangeLogs>();
 			listOfChangeLogsForEachRepo.Add(changeLogs);
 
 			string err2;//Not used
@@ -440,25 +449,14 @@ namespace SharedClasses
 					.Select(grpFoldername => System.IO.Path.Combine(OwnAppsInterop.RootVSprojectsDir, grpFoldername.Key));
 				foreach (var dir in distinctVsProjRootFolderPaths)
 				{
-					/*string err;
-					string tracUrl = TracXmlRpcInterop.ChangeLogs.GetTracBaseUrlForApplication(System.IO.Path.GetFileNameWithoutExtension(dir));
-					bool? tracExists = OwnAppsInterop._checkTracUrlExists(
-						tracUrl, out err);
-					if (tracExists == true)
-					{*/
 					var tmpChangeLogs = GetChangeLogs(
 						tracTicketsSinceDate,
 						System.IO.Path.GetFileNameWithoutExtension(dir),
 						actionOnMessage);
 					if (tmpChangeLogs != null)
 						listOfChangeLogsForEachRepo.Add(tmpChangeLogs);
-					/*}
-					else if (tracExists == false)
-						actionOnMessage("Dependant files of csproject does not have Trac environment, it does not exist: " + tracUrl, FeedbackMessageTypes.Warning);
-					else if (tracExists == null)
-						actionOnMessage("Cannot determine if dependant files of csproject has Trac environment: " + err);*/
 				}
-			}
+			}*/
 
 			PublishDetails currentlyPublishDetails = new PublishDetails(
 					projToBuild.ApplicationName,

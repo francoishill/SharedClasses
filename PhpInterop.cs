@@ -17,7 +17,7 @@ namespace SharedClasses
 
 		//private const string ServerAddress = "http://localhost";
 		//private const string ServerAddress = "https://fjh.co.za";
-		public static readonly string ServerAddress = "http://firepuma.com";
+		public static readonly string ServerAddress = "https://firepuma.com";//"http://firepuma.com";
 		public static readonly string doWorkAddress = ServerAddress + "/desktopapp";
 		public static readonly string Username = "f";
 		public static readonly string Password = "f";
@@ -172,7 +172,8 @@ namespace SharedClasses
 		public static bool AddBtwTextFirepuma(Object textfeedbackSenderObject, string btwtext, TextFeedbackEventHandler textFeedbackEvent)
 		{
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Sending btw text, please wait...");
-			string responsestr  = PhpInterop.PostPHP(textfeedbackSenderObject, "http://firepuma.com/btw/directadd/f/" + EncodeAndDecodeInterop.EncodeStringHex(btwtext, err => TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, err)), "");
+			//string responsestr  = PhpInterop.PostPHP(textfeedbackSenderObject, "http://firepuma.com/btw/directadd/f/" + EncodeAndDecodeInterop.EncodeStringHex(btwtext, err => TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, err)), "");
+			string responsestr  = PhpInterop.PostPHP(textfeedbackSenderObject, "https://firepuma.com/btw/directadd/f/" + EncodeAndDecodeInterop.EncodeStringHex(btwtext, err => TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, err)), "");
 
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, responsestr);
 			return responsestr.ToLower().StartsWith("success:");
@@ -185,7 +186,7 @@ namespace SharedClasses
 			TextFeedbackEventArgs.RaiseTextFeedbackEvent_Ifnotnull(textfeedbackSenderObject, textFeedbackEvent, "Sending journal item, please wait...");
 			string responsestr  = PhpInterop.PostPHP(
 				textfeedbackSenderObject,
-				"http://firepuma.com/journal/directadd/f"
+				"https://firepuma.com/journal/directadd/f"//"http://firepuma.com/journal/directadd/f"
 					+ "/" + EncodeAndDecodeInterop.EncodeStringHex(description, err => TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, err))
 					+ "/" + EncodeAndDecodeInterop.EncodeStringHex(link, err => TextFeedbackEventArgs.RaiseSimple(textFeedbackEvent, err)),
 					"",

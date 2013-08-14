@@ -435,7 +435,7 @@ namespace SharedClasses
 
 			//if (MustRecord)
 			//	WinMMinterop.Recorder.Instance.StopAndSave(tmpRecordingPath);
-			tmpRecordingPath = null;
+			//tmpRecordingPath = null;
 
 			//if (SndRec.Instance.Status != SndStatus.Uninitialized)
 			//{

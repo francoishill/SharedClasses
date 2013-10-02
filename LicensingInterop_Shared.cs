@@ -106,7 +106,7 @@ namespace SharedClasses
 		{
 			List<string> caughtErrors = new List<string>();
 			string result = PhpInterop.PostPHP(null,
-				string.Format("https://firepuma.com/licensing/{0}/{1}/{2}",//"http://firepuma.com/licensing/{0}/{1}/{2}",
+				string.Format("http://oldfirepuma.firepuma.com/licensing/{0}/{1}/{2}",//"http://firepuma.com/licensing/{0}/{1}/{2}",
 					"getpublicandprivatekeyfromdb",
 					LicensingInterop_Shared.EncryptStringForPhpServer(orderCodeReversed, err => caughtErrors.Add(err)),
 					LicensingInterop_Shared.EncryptStringForPhpServer(machineSignature, err => caughtErrors.Add(err))),

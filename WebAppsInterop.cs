@@ -24,7 +24,7 @@ namespace SharedClasses
 
 		//private const string rootUrl = "http://localhost";
 		//private const string rootUrl = "http://localhost:8081";
-		private const string rootUrl = "https://firepuma.com";//"http://firepuma.com";
+		private const string rootUrl = "http://oldfirepuma.firepuma.com";//"http://firepuma.com";
 
 		private string AppName;
 		private string AppKey;

@@ -53,7 +53,7 @@
 				 HorizontalScrollBarVisibility="Auto"
 				 VerticalScrollBarVisibility="Auto"
 				 MouseDoubleClick='TextBox_MouseDoubleClick' />
-		<!--<TextBlock local:NavigationService.Text="https://firepuma.com/apps/quickaccess/reporterror"
+		<!--<TextBlock local:NavigationService.Text="http://oldfirepuma.firepuma.com/apps/quickaccess/reporterror"
 							 DockPanel.Dock='Bottom'
 							 Height='20'
 							 Margin='0,0,20,0'

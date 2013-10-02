@@ -783,5 +783,34 @@ namespace SharedClasses
 
 			#endregion
 		}
+
+		private static Dictionary<Window, KeyValuePair<UIElement[], Size>> monitoredWindowsWithControlsToHideBasedOnSize = new Dictionary<Window, KeyValuePair<UIElement[], Size>>();
+		public static void MonitorWindowSizeAndHideControlsBasedOnSize(this Window window, Size sizeToStartHiding, params UIElement[] controls)
+		{
+			if (!monitoredWindowsWithControlsToHideBasedOnSize.ContainsKey(window))
+			{
+				monitoredWindowsWithControlsToHideBasedOnSize.Add(
+					window,
+					new KeyValuePair<UIElement[], Size>(controls, sizeToStartHiding));
+				window.SizeChanged += (sn, ev) => { DoControlHidingOrShowingBasedOnWindowSize(sn as Window); };
+			}
+			else
+				monitoredWindowsWithControlsToHideBasedOnSize[window] = new KeyValuePair<UIElement[], Size>(controls, sizeToStartHiding);
+
+		}
+		private static void DoControlHidingOrShowingBasedOnWindowSize(Window window)
+		{
+			if (window == null)
+				return;
+			if (!monitoredWindowsWithControlsToHideBasedOnSize.ContainsKey(window))
+				return;
+			var controlsAndSize = monitoredWindowsWithControlsToHideBasedOnSize[window];
+			UIElement[] controls  = controlsAndSize.Key;
+			Size size = controlsAndSize.Value;
+
+			var isSmallerThan = window.Width < size.Width || window.Height < size.Height;
+			for (int i = 0; i < controls.Length; i++)
+				controls[i].Visibility = isSmallerThan ? Visibility.Collapsed : Visibility.Visible;
+		}
 	}
 }

@@ -936,11 +936,11 @@ namespace SharedClasses
 
 			public HomePcUrls()//Defaults
 			{
-				this.JsonDataRoot = "https://firepuma.com";//"http://firepuma.com";//"http://json.getmyip.com";
-				this.PhpDownloadUrl = "https://firepuma.com/downloadownapps.php";//"http://firepuma.com/downloadownapps.php";//"http://ftpviahttp.getmyip.com/downloadownapps.php";
-				this.PhpUploadUrl = "https://firepuma.com/uploadownapps.php";//"http://firepuma.com/uploadownapps.php";//"http://ftpviahttp.getmyip.com/uploadownapps.php";
-				this.AppsPublishingRoot = "https://firepuma.com";//"http://firepuma.com";// "http://fjh.dyndns.org";
-				this.WebappsRoot = "https://firepuma.com";//"http://firepuma.com";
+				this.JsonDataRoot = "http://oldfirepuma.firepuma.com";//"http://firepuma.com";//"http://json.getmyip.com";
+				this.PhpDownloadUrl = "http://oldfirepuma.firepuma.com/downloadownapps.php";//"http://firepuma.com/downloadownapps.php";//"http://ftpviahttp.getmyip.com/downloadownapps.php";
+				this.PhpUploadUrl = "http://oldfirepuma.firepuma.com/uploadownapps.php";//"http://firepuma.com/uploadownapps.php";//"http://ftpviahttp.getmyip.com/uploadownapps.php";
+				this.AppsPublishingRoot = "http://oldfirepuma.firepuma.com";//"http://firepuma.com";// "http://fjh.dyndns.org";
+				this.WebappsRoot = "http://oldfirepuma.firepuma.com";//"http://firepuma.com";
 			}
 		}
 

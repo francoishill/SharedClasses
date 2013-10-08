@@ -27,6 +27,8 @@ namespace SharedClasses
 	public partial class WpfNotificationWindow : Window
 	{
 		public static Action actionToShowAboutWindow = delegate { };//This gets set in the App.xaml.cs override OnStartup, the actual code for AboutWindow has to exist inside the MainWindow to make the AnalaseProjects app succeed for ShowNoCallbackNotifications
+		public static bool PreventWindowAutoClosingIfZeroNotificationsLeft = false;
+		public static bool PreventAutoDisposeOfNotificationObjectsOnFadeOut = false;
 
 		private static bool collectionChangedEventBusy = false;
 		private static ObservableCollection<NotificationClass> _notifications;// = new ObservableCollection<NotificationClass>();
@@ -114,7 +116,8 @@ namespace SharedClasses
 				collectionChangedEventBusy = false;
 
 				if (notifications.Count == 0)
-					notificationWindow.Close();
+					if (!PreventWindowAutoClosingIfZeroNotificationsLeft)
+						notificationWindow.Close();
 			};
 			InitializeTimerToCheckForNotificationTimeouts();
 		}
@@ -338,8 +341,11 @@ namespace SharedClasses
 				notif.OnCloseCallback_WasClickedToCallback(notif.OnCloseCallbackArgument, notif.WasClosedViaClick);
 			notifications.Remove(notif);
 
-			notif.Dispose();
-			notif = null;
+			if (!PreventAutoDisposeOfNotificationObjectsOnFadeOut)
+			{
+				notif.Dispose();
+				notif = null;
+			}
 		}
 
 		private void NotificationClosebutton_Click(object sender, RoutedEventArgs e)
@@ -434,7 +440,8 @@ namespace SharedClasses
 
 		public bool WasClosedViaClick = false;
 
-		public SolidColorBrush TitleFontColor
+		public SolidColorBrush /*MessageFontColor*/TitleFontColor { get { return new SolidColorBrush(Colors.Black); } }//.White); } }
+		public SolidColorBrush /*TitleFontColor*/MessageFontColor
 		{
 			get
 			{
@@ -455,7 +462,6 @@ namespace SharedClasses
 				}
 			}
 		}
-		public SolidColorBrush MessageFontColor { get { return new SolidColorBrush(Colors.Black); } }//.White); } }
 
 		public NotificationClass(
 			string Title, string Message,
